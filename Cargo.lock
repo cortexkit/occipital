@@ -1066,9 +1066,9 @@ dependencies = [
 
 [[package]]
 name = "subc-control"
-version = "0.34.0"
+version = "0.34.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d339866d62da0f376dec7f13c897cd764ead24fc93ca6d764cb3e6ab81844d64"
+checksum = "028752c3f1dfc829ef22a7534ce729902fe32fc6a1a99d6052a01d91695f387c"
 dependencies = [
  "serde",
  "serde_json",

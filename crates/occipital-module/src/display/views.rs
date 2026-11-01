@@ -3,11 +3,12 @@
 //! A write's view authorizes the join only when the writer itself serves it for
 //! the pin and the pin belongs to a tool in that writer's `tool.catalog` when
 //! the view is first fetched (tool-display §6). The answer is kept with the
-//! writer's `module_version`, so a call recorded before its provider changed
-//! its catalog still joins. A kept view or `unknown` is fetched again when the
-//! writer's version changes (tool-provider §2.1), and also when it was last
-//! asked an hour or more ago, because a provider can serve a revised template
-//! under an unchanged version: many modules keep one version across builds.
+//! writer's version (see [`ModuleFacts::version`]), so a call recorded before
+//! its provider changed its catalog still joins. A kept view or `unknown` is
+//! fetched again when that version changes (tool-provider §2.1), and also when
+//! it was last asked an hour or more ago, because a provider that declares no
+//! build can serve a revised template under an unchanged `module_version`:
+//! many modules keep one across builds.
 //! A view with a higher template revision replaces the kept one, and any other
 //! difference keeps it.
 //! A failed fetch keeps nothing new: the next write or page that names the pin
@@ -58,6 +59,9 @@ const ASK_AGAIN_AFTER_MS: i64 = 60 * 60 * 1000;
 /// `catalog.list`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ModuleFacts {
+    /// The module's `module_version`, followed by `+` and its declared build
+    /// commit when the catalog carries one (`provenance.build_git_sha`), as in
+    /// a semver build suffix. Empty from a daemon that reports no version.
     pub version: String,
     /// Whether it declares `tool-views/v1`, so has views to ask for.
     pub serves_views: bool,
@@ -207,6 +211,17 @@ pub fn start(
         }
     });
     (Fetcher { queue }, task)
+}
+
+/// A writer's version as [`ModuleFacts::version`] keeps it: `module_version`,
+/// then `+build` when a build commit is declared, so a new build of an
+/// unchanged version is a new version here.
+fn versioned(module_version: Option<&str>, build: Option<&str>) -> String {
+    let version = module_version.unwrap_or_default();
+    match build {
+        Some(build) if !build.is_empty() => format!("{version}+{build}"),
+        _ => version.to_owned(),
+    }
 }
 
 /// Whether a kept answer is fetched again under the writer's `version` at
@@ -427,7 +442,7 @@ impl Providers for DaemonProviders {
         };
         // A module listed without a version comes from a daemon that
         // predates the field; its views are kept under the empty version, so
-        // they are fetched again only once the daemon reports one.
+        // they are fetched again once the daemon reports one or by age.
         Ok(listed
             .modules
             .into_iter()
@@ -437,8 +452,12 @@ impl Providers for DaemonProviders {
                         capability == cortexkit_role_tool_provider::TOOL_VIEWS_CAPABILITY
                     })
                 });
+                let build = module
+                    .provenance
+                    .as_ref()
+                    .and_then(|provenance| provenance.build_git_sha.as_deref());
                 let facts = ModuleFacts {
-                    version: module.module_version.unwrap_or_default(),
+                    version: versioned(module.module_version.as_deref(), build),
                     serves_views,
                 };
                 (module.module_id, facts)
@@ -710,6 +729,31 @@ mod tests {
             pins.push(hint);
         }
         assert_eq!(pins, [Hint::Pin(pin("bash")), Hint::Pin(pin("bash"))]);
+    }
+
+    /// A declared build is part of the writer's version, so a new build of the
+    /// same `module_version` makes its kept answers due.
+    #[test]
+    fn a_declared_build_is_part_of_the_version() {
+        assert_eq!(versioned(Some("0.1.0"), None), "0.1.0");
+        assert_eq!(versioned(Some("0.1.0"), Some("")), "0.1.0");
+        assert_eq!(versioned(Some("0.1.0"), Some("4a1d473")), "0.1.0+4a1d473");
+        assert_eq!(versioned(None, None), "");
+        let kept = KeptView {
+            state: ViewState::Unknown,
+            module_version: versioned(Some("0.1.0"), Some("4a1d473")),
+            asked_at_ms: 1_000,
+        };
+        assert!(!is_due(
+            &kept,
+            &versioned(Some("0.1.0"), Some("4a1d473")),
+            1_000
+        ));
+        assert!(is_due(
+            &kept,
+            &versioned(Some("0.1.0"), Some("f67814a")),
+            1_000
+        ));
     }
 
     /// A kept answer is asked again under a new writer version, or once it was
