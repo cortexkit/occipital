@@ -8,6 +8,11 @@
 //!   now asks for on Broca too, since Broca declares `read_display_facts`.
 //! - `session.history` display rows, read only from a runner without display
 //!   facts; a user row's `sender` now also names steers and queued sends.
+//! - `role.describe`, which gains `sender_succession`, `read_display_facts`,
+//!   `finish_reason` and `message_senders`, in three captures: as Broca serves it
+//!   in production; with Broca's optional features switched on (compaction, model
+//!   view, tag checkpoints), which add capability groups; and as served beside
+//!   the members Broca adds to `session.head`.
 
 use super::*;
 use std::path::{Path, PathBuf};
@@ -26,7 +31,7 @@ fn result(name: &str) -> Value {
 #[test]
 fn the_contract_0748_samples_keep_their_checksums() {
     let sums = std::fs::read_to_string(root().join("SHA256SUMS")).unwrap();
-    assert_eq!(sums.lines().count(), 12);
+    assert_eq!(sums.lines().count(), 15);
     for line in sums.lines() {
         let (expected, name) = line.split_once("  ").unwrap();
         let bytes = std::fs::read(root().join(name)).unwrap();
@@ -75,6 +80,44 @@ fn broca_display_facts_reach_the_rows() {
     assert!(timed, "{}", with[1].display);
     let without = rows_of("display-facts-samples/default-read.json");
     assert!(without[0].display.get("clientMessageId").is_none());
+}
+
+/// Each describe passes the contract's check, which the reader requires before it
+/// caches one, and the plain decode the send path uses. Both still declare the
+/// groups the reader acts on, so display facts are asked for and a head without
+/// `sender` still reads as "may not send" rather than unknown.
+#[test]
+fn broca_0748_describes_decode_on_both_paths() {
+    let head: cortexkit_role_llm_runner::read::HeadMeta = serde_json::from_value(json!({
+        "lineage_id": "l1", "first_ordinal": 0, "history_version": 1, "updated_at": 1,
+        "last_run_state": {"run_id": "r1", "state": "active"},
+    }))
+    .unwrap();
+    for name in [
+        "role-describe/role_describe_reader.json",
+        "role-describe/role_describe.json",
+        "role-describe/role_describe.head_additions.json",
+    ] {
+        let value = result(name);
+        let checked = check_describe(&value).unwrap_or_else(|error| panic!("{name}: {error:?}"));
+        let plain: RoleDescribe = serde_json::from_value(value).unwrap();
+        for describe in [&checked, &plain] {
+            for group in [
+                "read_display_facts",
+                "message_senders",
+                "head_sender",
+                "history_display",
+                "retract",
+            ] {
+                assert!(describe.declares(group), "{name}: {group}");
+            }
+            assert_eq!(
+                send_grant(&head, Some(describe), false),
+                SendGrant::MayNotSend,
+                "{name}"
+            );
+        }
+    }
 }
 
 /// Display history rows decode as the reader reads them, with `sender` naming
