@@ -64,6 +64,33 @@ fn pi_rows_are_the_runners_display_rows() {
     }
 }
 
+/// Pi's empty system entry at ordinal 0 is left out of pages, which an app would
+/// draw as an empty prompt card; the page still reaches the start, and the
+/// rows kept keep their ordinals. A system row with text stays.
+#[tokio::test]
+async fn a_pi_page_leaves_out_the_empty_system_entry() {
+    let messages = sample("01-session-read.json")["messages"]
+        .as_array()
+        .unwrap()
+        .clone();
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = messages[..2].to_vec();
+    let source = BrocaSource::new(pi_binding(), route);
+    let page = source.newest(20).await.unwrap();
+    let ordinals: Vec<_> = page.rows.iter().map(|row| row.ordinal).collect();
+    assert_eq!(ordinals, [Some(1)]);
+    assert!(page.older.is_none(), "the page still reaches the start");
+
+    let rows = source.rows(&messages[..1], false, &[]).unwrap();
+    assert!(is_empty_system_row(&rows[0].display));
+    let mut prompt = rows[0].display.clone();
+    prompt["text"] = json!("You are a worker.");
+    assert!(!is_empty_system_row(&prompt));
+    let mut image = rows[0].display.clone();
+    image["parts"] = json!([{"type": "image", "part": "0"}]);
+    assert!(!is_empty_system_row(&image));
+}
+
 /// Feed a recorded `session.subscribe` stream to a Pi source whose runner
 /// declares `groups`, and return the display frames the apps then read:
 /// each frame's kind, `messageID` and words.

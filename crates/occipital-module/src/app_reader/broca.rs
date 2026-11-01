@@ -1243,6 +1243,11 @@ impl BrocaSource {
         let mut rows = super::observe::synchronous("projection", || {
             self.rows(&page.messages, false, &page.pruned_reasoning)
         })?;
+        // The apps draw every system row as a prompt card that opens on tap, so
+        // one with nothing in it, such as the entry Pi writes when a session
+        // starts, is left out of pages. The rows kept keep their ordinals, and
+        // whether the page reached the start comes from the runner's page.
+        rows.retain(|row| !is_empty_system_row(&row.display));
         let mut seen = HashSet::new();
         let mut last = None;
         let mut numbered = false;
@@ -1582,6 +1587,19 @@ fn log_identity(head: &Head) -> (Option<String>, Option<String>) {
         Some(incarnation) => (Some(incarnation.clone()), None),
         None => (None, head.lineage_id.clone()),
     }
+}
+
+/// Whether a row is a system row with nothing to show: no text, and only text
+/// parts that are empty. A system row with text, such as a Broca worker's
+/// instructions, has something to show.
+fn is_empty_system_row(display: &Value) -> bool {
+    display["role"] == "system"
+        && display["text"].as_str().unwrap_or_default().is_empty()
+        && display["parts"].as_array().is_none_or(|parts| {
+            parts.iter().all(|part| {
+                part["type"] == "text" && part["text"].as_str().unwrap_or_default().is_empty()
+            })
+        })
 }
 
 impl Snapshot {
