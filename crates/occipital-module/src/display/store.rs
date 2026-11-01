@@ -144,6 +144,9 @@ impl ViewState {
 pub struct KeptView {
     pub state: ViewState,
     pub module_version: String,
+    /// When the writer was last asked for this pin, in Unix milliseconds:
+    /// the first fetch, a replacement or a check that kept the answer.
+    pub asked_at_ms: i64,
 }
 
 /// One stored write, as the join reads it.
@@ -350,8 +353,8 @@ impl DisplayStore {
         self.records.with_conn(|conn| {
             let kept = conn
                 .query_row(
-                    "SELECT state, manifest, input_schema, module_version FROM display_views
-                     WHERE writer = ?1 AND pin = ?2",
+                    "SELECT state, manifest, input_schema, module_version, fetched_at_ms
+                     FROM display_views WHERE writer = ?1 AND pin = ?2",
                     rusqlite::params![writer, pin],
                     |row| {
                         let state: String = row.get(0)?;
@@ -368,6 +371,7 @@ impl DisplayStore {
                         Ok(Some(KeptView {
                             state,
                             module_version: row.get(3)?,
+                            asked_at_ms: row.get(4)?,
                         }))
                     },
                 )
@@ -418,18 +422,20 @@ impl DisplayStore {
     }
 
     /// Record that the answer kept for `pin` was checked again under
-    /// `module_version` and stays, so it isn't fetched again until the
-    /// writer's version changes once more.
+    /// `module_version` at `now_ms` and stays, so it isn't fetched again until
+    /// the writer's version changes or it is due again by age.
     pub fn stamp_view(
         &self,
         writer: &str,
         pin: &str,
         module_version: &str,
+        now_ms: i64,
     ) -> Result<(), StoreError> {
         self.records.with_conn_fenced(|tx| {
             tx.execute(
-                "UPDATE display_views SET module_version = ?3 WHERE writer = ?1 AND pin = ?2",
-                rusqlite::params![writer, pin, module_version],
+                "UPDATE display_views SET module_version = ?3, fetched_at_ms = ?4
+                 WHERE writer = ?1 AND pin = ?2",
+                rusqlite::params![writer, pin, module_version, now_ms],
             )?;
             Ok(())
         })
@@ -741,7 +747,7 @@ mod tests {
 
     /// Keeping never overwrites the first answer for a writer's pin, and each
     /// writer's answer is its own; only a replace changes one, and a stamp
-    /// changes only the version it was checked under.
+    /// changes only the version it was checked under and when it was asked.
     #[test]
     fn the_first_view_kept_stays_until_replaced() {
         let dir = ScratchDir::new("occipital-display-views");
@@ -759,21 +765,24 @@ mod tests {
         assert_eq!(store.view("aft", "pin").unwrap(), Some(ViewState::Unknown));
         assert_eq!(store.view("core", "pin").unwrap(), Some(view.clone()));
 
-        store.stamp_view("aft", "pin", "1.1").unwrap();
         let kept = |writer| store.kept_view(writer, "pin").unwrap().unwrap();
+        assert_eq!(kept("aft").asked_at_ms, 1);
+        store.stamp_view("aft", "pin", "1.1", 5).unwrap();
         assert_eq!(
             kept("aft"),
             KeptView {
                 state: ViewState::Unknown,
                 module_version: "1.1".into(),
+                asked_at_ms: 5,
             }
         );
-        store.replace_view("aft", "pin", &view, "1.2", 4).unwrap();
+        store.replace_view("aft", "pin", &view, "1.2", 6).unwrap();
         assert_eq!(
             kept("aft"),
             KeptView {
                 state: view,
                 module_version: "1.2".into(),
+                asked_at_ms: 6,
             }
         );
         assert_eq!(kept("core").module_version, "2.0");

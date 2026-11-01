@@ -112,6 +112,17 @@ impl ToolDisplay {
             let mut answers = Map::new();
             for pin in pins {
                 let kept = this.store.views_for_pin(&pin).map_err(unavailable)?;
+                // A kept answer may be due to be asked again, after its
+                // writer's version changed or an hour since it was asked. The
+                // fetcher decides and never waits; this answers from what is
+                // kept now.
+                if let Some(views) = &this.views {
+                    for (writer, kept) in &kept {
+                        if !matches!(kept.state, ViewState::NotInCatalog) {
+                            views.want(writer, &pin);
+                        }
+                    }
+                }
                 if let Some(answer) = this.answer(&pin, &kept, held.get(&pin).copied()) {
                     answers.insert(pin, answer);
                 }

@@ -203,4 +203,34 @@ mod tests {
         );
         assert!(announced.try_recv().is_err());
     }
+
+    /// Asking an app for views asks the fetcher about each writer with a kept
+    /// view or `unknown` for the pin, so one due again is fetched; a writer
+    /// whose catalog didn't hold the pin is never asked.
+    #[tokio::test]
+    async fn reading_views_asks_about_each_kept_answer() {
+        let dir = cortexkit_test_support::ScratchDir::new("occipital-display-view-wants");
+        let descriptor = crate::store::tests::descriptor(&dir);
+        let store = Arc::new(store::DisplayStore::open(&descriptor, dir.path()).unwrap());
+        let pin = "tp1:bash:0123:1";
+        for (writer, state) in [
+            ("aft", store::ViewState::Unknown),
+            ("core", store::ViewState::NotInCatalog),
+        ] {
+            store.keep_view(writer, pin, &state, "1.0", 1).unwrap();
+        }
+        let (queue, mut wanted) = tokio::sync::mpsc::channel(8);
+        let (hints, _) = tokio::sync::broadcast::channel(8);
+        let display = Arc::new(app::ToolDisplay::new(
+            store,
+            Some(views::Fetcher::from_queue(queue)),
+            hints,
+        ));
+        display.views(&json!({"pins": [pin]})).await.unwrap();
+        assert_eq!(
+            wanted.try_recv().unwrap(),
+            views::Want::Writer("aft".to_owned(), pin.to_owned())
+        );
+        assert!(wanted.try_recv().is_err());
+    }
 }

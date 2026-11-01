@@ -4,9 +4,12 @@
 //! the pin and the pin belongs to a tool in that writer's `tool.catalog` when
 //! the view is first fetched (tool-display §6). The answer is kept with the
 //! writer's `module_version`, so a call recorded before its provider changed
-//! its catalog still joins. When the writer's version changes, a kept view or
-//! `unknown` is fetched again (tool-provider §2.1): a view with a higher
-//! template revision replaces the kept one, and any other difference keeps it.
+//! its catalog still joins. A kept view or `unknown` is fetched again when the
+//! writer's version changes (tool-provider §2.1), and also when it was last
+//! asked an hour or more ago, because a provider can serve a revised template
+//! under an unchanged version: many modules keep one version across builds.
+//! A view with a higher template revision replaces the kept one, and any other
+//! difference keeps it.
 //! A failed fetch keeps nothing new: the next write or page that names the pin
 //! asks again.
 //!
@@ -45,6 +48,11 @@ const REST_AFTER_FAILURE: Duration = Duration::from_secs(60);
 /// How long the writers' versions read from the daemon are used before they
 /// are read again, so a burst of wants costs one daemon read.
 const VERSIONS_FRESH: Duration = Duration::from_secs(10);
+
+/// How long a kept answer is trusted under an unchanged writer version: past
+/// this, the next want for its pin asks the writer again. One `tool.views`
+/// call per writer an hour at most, and only while its calls are drawn.
+const ASK_AGAIN_AFTER_MS: i64 = 60 * 60 * 1000;
 
 /// A registered module as the fetcher needs it, from the daemon's
 /// `catalog.list`.
@@ -166,11 +174,14 @@ pub fn start(
                 let Some(version) = current.get(&writer).map(|facts| &facts.version) else {
                     continue;
                 };
+                let now = now_ms();
                 let due: Vec<(String, Option<ViewState>)> = pins
                     .into_iter()
                     .filter_map(|pin| match store.kept_view(&writer, &pin) {
                         Ok(None) => Some((pin, None)),
-                        Ok(Some(kept)) if is_due(&kept, version) => Some((pin, Some(kept.state))),
+                        Ok(Some(kept)) if is_due(&kept, version, now) => {
+                            Some((pin, Some(kept.state)))
+                        }
                         _ => None,
                     })
                     .collect();
@@ -198,11 +209,14 @@ pub fn start(
     (Fetcher { queue }, task)
 }
 
-/// Whether a kept answer is fetched again under the writer's `version`: a
-/// view or `unknown` kept under another version. A pin that wasn't in the
-/// writer's catalog at its first fetch never joins, so it isn't asked again.
-fn is_due(kept: &KeptView, version: &str) -> bool {
-    !matches!(kept.state, ViewState::NotInCatalog) && kept.module_version != version
+/// Whether a kept answer is fetched again under the writer's `version` at
+/// `now_ms`: a view or `unknown` kept under another version, or last asked
+/// [`ASK_AGAIN_AFTER_MS`] or more ago. A pin that wasn't in the writer's
+/// catalog at its first fetch never joins, so it isn't asked again.
+fn is_due(kept: &KeptView, version: &str, now_ms: i64) -> bool {
+    !matches!(kept.state, ViewState::NotInCatalog)
+        && (kept.module_version != version
+            || now_ms.saturating_sub(kept.asked_at_ms) >= ASK_AGAIN_AFTER_MS)
 }
 
 /// Fetch `writer`'s answers for `due`, each pin with what is kept for it, and
@@ -362,7 +376,7 @@ fn put(
     match decision {
         Decision::Keep(state) => store.keep_view(writer, pin, &state, version, now),
         Decision::Replace(state) => store.replace_view(writer, pin, &state, version, now),
-        Decision::Stamp(_) => store.stamp_view(writer, pin, version),
+        Decision::Stamp(_) => store.stamp_view(writer, pin, version, now),
     }
     .map_err(|error| error.to_string())
 }
@@ -678,12 +692,10 @@ mod tests {
         );
 
         // The pin outside the catalog stayed as first kept, never asked again.
+        let foreign_kept = kept(foreign).unwrap();
         assert_eq!(
-            kept(foreign).unwrap(),
-            KeptView {
-                state: ViewState::NotInCatalog,
-                module_version: "1.0".into(),
-            }
+            (foreign_kept.state, foreign_kept.module_version.as_str()),
+            (ViewState::NotInCatalog, "1.0")
         );
         assert!(aft
             .calls
@@ -698,6 +710,25 @@ mod tests {
             pins.push(hint);
         }
         assert_eq!(pins, [Hint::Pin(pin("bash")), Hint::Pin(pin("bash"))]);
+    }
+
+    /// A kept answer is asked again under a new writer version, or once it was
+    /// last asked an hour ago under the same one; a pin outside the writer's
+    /// catalog never is.
+    #[test]
+    fn kept_answers_fall_due_by_version_or_age() {
+        let kept = |state: ViewState| KeptView {
+            state,
+            module_version: "1.0".into(),
+            asked_at_ms: 1_000,
+        };
+        let due = |kept: &KeptView, version: &str, now: i64| is_due(kept, version, now);
+        let unknown = kept(ViewState::Unknown);
+        assert!(!due(&unknown, "1.0", 1_000 + ASK_AGAIN_AFTER_MS - 1));
+        assert!(due(&unknown, "1.0", 1_000 + ASK_AGAIN_AFTER_MS));
+        assert!(due(&unknown, "1.1", 1_000));
+        let outside = kept(ViewState::NotInCatalog);
+        assert!(!due(&outside, "1.1", 1_000 + ASK_AGAIN_AFTER_MS));
     }
 
     /// Every refetch outcome the integration test doesn't reach: the same view,
