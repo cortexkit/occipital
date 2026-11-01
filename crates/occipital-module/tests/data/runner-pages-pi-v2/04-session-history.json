@@ -1,0 +1,457 @@
+{
+  "history_version": 0,
+  "lineage_id": "lin_abc3db80591b4be495a5e8bcd5ce158c",
+  "messages": [
+    {
+      "message": {
+        "id": "fc3315d0",
+        "message": {
+          "content": "",
+          "role": "system",
+          "sections": {
+            "cwd": "<cwd>\n/motor-home/tmp/.tmpM0fhCC/work\n</cwd>",
+            "docs": "<docs>\nPi documentation (read only when the user asks about pi itself, its SDK, extensions, themes, skills, or TUI):\n- Main documentation: /motor-home/tmp/tmp.js91zNkSC3/install/node_modules/@earendil-works/pi-coding-agent/README.md\n- Additional docs: /motor-home/tmp/tmp.js91zNkSC3/install/node_modules/@earendil-works/pi-coding-agent/docs\n- Examples: /motor-home/tmp/tmp.js91zNkSC3/install/node_modules/@earendil-works/pi-coding-agent/examples (extensions, custom tools, SDK)\n- When reading pi docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory\n- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), pi packages (docs/packages.md), environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md), codemode scripts and non-LLM models such as classifiers and image models (docs/codemode.md)\n- When working on pi topics, read the docs and examples, and follow .md cross-references before implementing\n- Always read pi .md files completely and follow links to related docs (e.g., tui.md for TUI API details)\n</docs>",
+            "preamble": "You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.",
+            "rules": "<rules>\n- Use bash for file operations like ls, rg, find\n- Be concise in your responses\n- Show file paths clearly when working with files\n</rules>",
+            "tools": "<tools>\n(none)\n\nIn addition to the tools above, you may have access to other custom tools depending on the project.\n</tools>"
+          },
+          "timestamp": 1793561779184,
+          "toolsAdded": [
+            {
+              "description": "bash from aft",
+              "name": "bash",
+              "parameters": {
+                "properties": {},
+                "type": "object"
+              }
+            },
+            {
+              "description": "edit from aft",
+              "name": "edit",
+              "parameters": {
+                "properties": {},
+                "type": "object"
+              }
+            },
+            {
+              "description": "read from aft",
+              "name": "read",
+              "parameters": {
+                "properties": {},
+                "type": "object"
+              }
+            },
+            {
+              "description": "ask from prefrontal-core",
+              "name": "ask",
+              "parameters": {
+                "properties": {},
+                "type": "object"
+              }
+            },
+            {
+              "description": "browser_use from prefrontal-core",
+              "name": "browser_use",
+              "parameters": {
+                "properties": {},
+                "type": "object"
+              }
+            },
+            {
+              "description": "computer_use from prefrontal-core",
+              "name": "computer_use",
+              "parameters": {
+                "properties": {},
+                "type": "object"
+              }
+            },
+            {
+              "description": "knowhow from prefrontal-core",
+              "name": "knowhow",
+              "parameters": {
+                "properties": {},
+                "type": "object"
+              }
+            },
+            {
+              "description": "sidekick from prefrontal-core",
+              "name": "sidekick",
+              "parameters": {
+                "properties": {},
+                "type": "object"
+              }
+            }
+          ]
+        },
+        "parentId": "a9ab0a4c",
+        "timestamp": "2026-11-01T19:36:19.186Z",
+        "type": "message"
+      },
+      "mid": "fc3315d0",
+      "ordinal": 0,
+      "role": "system",
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779253
+    },
+    {
+      "message": {
+        "id": "8cfe234f",
+        "message": {
+          "content": [
+            {
+              "text": "TOOL_TURN",
+              "type": "text"
+            }
+          ],
+          "role": "user",
+          "timestamp": 1793561779183
+        },
+        "parentId": "fc3315d0",
+        "timestamp": "2026-11-01T19:36:19.187Z",
+        "type": "message"
+      },
+      "mid": "8cfe234f",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_ba4d65f768fdbc0e09be7139"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779253
+    },
+    {
+      "message": {
+        "id": "ec3e5c7d",
+        "message": {
+          "api": "openai-completions",
+          "content": [
+            {
+              "arguments": {
+                "command": "printf PROBE_TOOL"
+              },
+              "id": "call_probe_1",
+              "name": "bash",
+              "type": "toolCall"
+            }
+          ],
+          "durationMs": 14,
+          "model": "probe",
+          "provider": "probe",
+          "rawStopReason": "tool_calls",
+          "responseId": "chatcmpl-probe",
+          "role": "assistant",
+          "stopReason": "toolUse",
+          "thinkingLevel": "off",
+          "timestamp": 1793561779200,
+          "usage": {
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "cost": {
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "input": 11,
+            "output": 2,
+            "reasoning": 0,
+            "totalTokens": 13
+          }
+        },
+        "parentId": "8cfe234f",
+        "timestamp": "2026-11-01T19:36:19.214Z",
+        "type": "message"
+      },
+      "mid": "ec3e5c7d",
+      "ordinal": 2,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_ba4d65f768fdbc0e09be7139"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779282
+    },
+    {
+      "message": {
+        "id": "21569bcc",
+        "message": {
+          "content": [
+            {
+              "text": "PROBE_TOOL",
+              "type": "text"
+            }
+          ],
+          "durationMs": 14,
+          "isError": false,
+          "role": "toolResult",
+          "timestamp": 1793561779230,
+          "toolCallId": "call_probe_1",
+          "toolName": "bash"
+        },
+        "parentId": "ec3e5c7d",
+        "timestamp": "2026-11-01T19:36:19.230Z",
+        "type": "message"
+      },
+      "mid": "21569bcc",
+      "ordinal": 3,
+      "role": "toolResult",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_ba4d65f768fdbc0e09be7139"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779282
+    },
+    {
+      "message": {
+        "id": "9096292d",
+        "message": {
+          "api": "openai-completions",
+          "content": [
+            {
+              "text": "PROBE_DONE",
+              "type": "text"
+            }
+          ],
+          "durationMs": 5,
+          "model": "probe",
+          "provider": "probe",
+          "rawStopReason": "stop",
+          "responseId": "chatcmpl-probe",
+          "role": "assistant",
+          "stopReason": "stop",
+          "thinkingLevel": "off",
+          "timestamp": 1793561779233,
+          "usage": {
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "cost": {
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "input": 11,
+            "output": 2,
+            "reasoning": 0,
+            "totalTokens": 13
+          }
+        },
+        "parentId": "21569bcc",
+        "timestamp": "2026-11-01T19:36:19.239Z",
+        "type": "message"
+      },
+      "mid": "9096292d",
+      "ordinal": 4,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_ba4d65f768fdbc0e09be7139"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779282
+    },
+    {
+      "message": {
+        "id": "972c62b7",
+        "message": {
+          "content": [
+            {
+              "text": "DELIVERED_TURN",
+              "type": "text"
+            }
+          ],
+          "role": "user",
+          "timestamp": 1793561779254
+        },
+        "parentId": "9096292d",
+        "timestamp": "2026-11-01T19:36:19.255Z",
+        "type": "message"
+      },
+      "mid": "972c62b7",
+      "ordinal": 5,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_ba4d65f768fdbc0e09be7139"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779282
+    },
+    {
+      "message": {
+        "id": "21a42dbb",
+        "message": {
+          "api": "openai-completions",
+          "content": [
+            {
+              "text": "PROBE_DONE",
+              "type": "text"
+            }
+          ],
+          "durationMs": 2,
+          "model": "probe",
+          "provider": "probe",
+          "rawStopReason": "stop",
+          "responseId": "chatcmpl-probe",
+          "role": "assistant",
+          "stopReason": "stop",
+          "thinkingLevel": "off",
+          "timestamp": 1793561779256,
+          "usage": {
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "cost": {
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "input": 11,
+            "output": 2,
+            "reasoning": 0,
+            "totalTokens": 13
+          }
+        },
+        "parentId": "972c62b7",
+        "timestamp": "2026-11-01T19:36:19.259Z",
+        "type": "message"
+      },
+      "mid": "21a42dbb",
+      "ordinal": 6,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_ba4d65f768fdbc0e09be7139"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779282
+    },
+    {
+      "message": {
+        "id": "7caebb24",
+        "message": {
+          "content": [
+            {
+              "text": "CORE_TURN SLOW_TURN",
+              "type": "text"
+            }
+          ],
+          "role": "user",
+          "timestamp": 1793561779385
+        },
+        "parentId": "21a42dbb",
+        "timestamp": "2026-11-01T19:36:19.386Z",
+        "type": "message"
+      },
+      "mid": "7caebb24",
+      "ordinal": 7,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_5546373cabcd8814a10351a1"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779411
+    },
+    {
+      "message": {
+        "id": "351aac36",
+        "message": {
+          "api": "openai-completions",
+          "content": [
+            {
+              "text": "PROBE_DONE",
+              "type": "text"
+            }
+          ],
+          "durationMs": 803,
+          "model": "probe",
+          "provider": "probe",
+          "rawStopReason": "stop",
+          "responseId": "chatcmpl-probe",
+          "role": "assistant",
+          "stopReason": "stop",
+          "thinkingLevel": "off",
+          "timestamp": 1793561779387,
+          "usage": {
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "cost": {
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "input": 0,
+              "output": 0,
+              "total": 0
+            },
+            "input": 11,
+            "output": 2,
+            "reasoning": 0,
+            "totalTokens": 13
+          }
+        },
+        "parentId": "7caebb24",
+        "timestamp": "2026-11-01T19:36:20.190Z",
+        "type": "message"
+      },
+      "mid": "351aac36",
+      "ordinal": 8,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_5546373cabcd8814a10351a1"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561780198
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "history_version": 0,
+  "lineage_id": "lin_abc3db80591b4be495a5e8bcd5ce158c",
+  "messages": [
+    {
+      "message": {
+        "id": "7caebb24",
+        "message": {
+          "content": [
+            {
+              "text": "CORE_TURN SLOW_TURN",
+              "type": "text"
+            }
+          ],
+          "role": "user",
+          "timestamp": 1793561779385
+        },
+        "parentId": "21a42dbb",
+        "timestamp": "2026-11-01T19:36:19.386Z",
+        "type": "message"
+      },
+      "mid": "7caebb24",
+      "ordinal": 7,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_5546373cabcd8814a10351a1"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779411
+    }
+  ],
+  "newer": "eyJzZXNzaW9uIjoiMGExOWRmYjI4MGMwODQ2YmQwYjI5YWMzN2JlZWIwODciLCJoaXN0b3J5X3ZlcnNpb24iOjAsInN0ZXAiOnsia2luZCI6IndpbmRvd19mcm9tIiwiZnJvbSI6OH19",
+  "older": "eyJzZXNzaW9uIjoiMGExOWRmYjI4MGMwODQ2YmQwYjI5YWMzN2JlZWIwODciLCJoaXN0b3J5X3ZlcnNpb24iOjAsInN0ZXAiOnsia2luZCI6IndpbmRvd19iZWZvcmUiLCJiZWZvcmUiOjd9fQ"
+}

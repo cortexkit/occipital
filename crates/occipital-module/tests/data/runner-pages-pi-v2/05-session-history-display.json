@@ -1,0 +1,199 @@
+{
+  "history_version": 0,
+  "lineage_id": "lin_abc3db80591b4be495a5e8bcd5ce158c",
+  "messages": [
+    {
+      "mid": "fc3315d0",
+      "ordinal": 0,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "",
+            "type": "text"
+          }
+        ],
+        "role": "system",
+        "text": ""
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779253
+    },
+    {
+      "mid": "8cfe234f",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "TOOL_TURN",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "text": "TOOL_TURN"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779253
+    },
+    {
+      "mid": "ec3e5c7d",
+      "ordinal": 2,
+      "row": {
+        "parts": [
+          {
+            "arguments": "{\"command\":\"printf PROBE_TOOL\"}",
+            "name": "bash",
+            "part": "0",
+            "tool_call_id": "call_probe_1",
+            "type": "tool_call"
+          }
+        ],
+        "role": "assistant",
+        "text": ""
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779282
+    },
+    {
+      "mid": "21569bcc",
+      "ordinal": 3,
+      "row": {
+        "parts": [
+          {
+            "content": "PROBE_TOOL",
+            "part": "0",
+            "tool_call_id": "call_probe_1",
+            "type": "tool_result"
+          }
+        ],
+        "role": "toolResult",
+        "text": ""
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779282
+    },
+    {
+      "mid": "9096292d",
+      "ordinal": 4,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "PROBE_DONE",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "PROBE_DONE"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779282
+    },
+    {
+      "mid": "972c62b7",
+      "ordinal": 5,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "DELIVERED_TURN",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "text": "DELIVERED_TURN"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779282
+    },
+    {
+      "mid": "21a42dbb",
+      "ordinal": 6,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "PROBE_DONE",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "PROBE_DONE"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779282
+    },
+    {
+      "mid": "7caebb24",
+      "ordinal": 7,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "CORE_TURN SLOW_TURN",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "CORE_TURN SLOW_TURN"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561779411
+    },
+    {
+      "mid": "351aac36",
+      "ordinal": 8,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "PROBE_DONE",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "PROBE_DONE"
+      },
+      "tags": [
+        {
+          "part": "0"
+        }
+      ],
+      "written_at": 1793561780198
+    }
+  ]
+}

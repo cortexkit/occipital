@@ -1,0 +1,54 @@
+{
+  "first_ordinal": 0,
+  "head": {
+    "sub_index": 0,
+    "wal_seq": 15
+  },
+  "history_version": 0,
+  "input": {
+    "attachments": "unknown"
+  },
+  "last_ordinal": 8,
+  "last_run_state": {
+    "run_id": "run_5546373cabcd8814a10351a1",
+    "state": "completed"
+  },
+  "lineage_id": "lin_abc3db80591b4be495a5e8bcd5ce158c",
+  "model": {
+    "model": "probe",
+    "provider": "probe"
+  },
+  "sender": {
+    "interrupt": true,
+    "modes": [
+      "tool_result",
+      "steer",
+      "idle_start"
+    ],
+    "owner": true
+  },
+  "updated_at": 1793561780204,
+  "usage": {
+    "by_model": [
+      {
+        "cache_write_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 44,
+        "model": "probe",
+        "output_tokens": 8,
+        "provider": "probe",
+        "reasoning_tokens": 0,
+        "steps": 4,
+        "unreported_steps": 0
+      }
+    ],
+    "cache_write_tokens": 0,
+    "cached_input_tokens": 0,
+    "input_tokens": 44,
+    "output_tokens": 8,
+    "reasoning_tokens": 0,
+    "since": "run_ba4d65f768fdbc0e09be7139",
+    "steps": 4,
+    "unreported_steps": 0
+  }
+}

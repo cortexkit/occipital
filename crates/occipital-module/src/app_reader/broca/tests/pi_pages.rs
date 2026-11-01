@@ -1,24 +1,50 @@
-//! A Pi head's runner replies recorded from real Pi 1.4.0, `runner-pages-pi-v1`:
-//! Thalamus's tag of that name (annotated, object `4afd77d50272…`, commit
-//! `83e06a6da1ff…`), copied byte for byte into `tests/data`. Its README, also
-//! Thalamus's, says what each file is; "the plan" there is the session's plan
-//! from core, which sets the head's system text and the tools it may call.
-//! Pi heads run on `thalamus-pi` with `harness: "pi"`.
+//! A Pi head's runner replies recorded from real Pi 1.4.0, in two sets copied
+//! byte for byte from Thalamus's tags of the same names into `tests/data`:
+//! - `runner-pages-pi-v1` (annotated, object `4afd77d50272…`, commit
+//!   `83e06a6da1ff…`);
+//! - `runner-pages-pi-v2` (object `09f85fce8393…`, commit `20070c8ac7e6…`),
+//!   recorded after two runner fixes: the run's start comes before the reply,
+//!   and a `live_id` reaches only a subscriber that asked for one.
+//!
+//! Each README, also Thalamus's, says what each file is; "the plan" there is the
+//! session's plan from core, which sets the head's system text and the tools it
+//! may call. Pi heads run on `thalamus-pi` with `harness: "pi"`. A message's
+//! `mid` is the runner's id for it once stored, which the apps see as
+//! `messageID`; a `live_id` stands in for it while Pi hasn't stored the message.
 
 use super::*;
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 
-const SET: &str = "tests/data/runner-pages-pi-v1";
-/// The set's `SHA256SUMS` as Thalamus published it.
-const SUMS_SHA256: &str = "5350b1d9cb39e98e0669f243c346bda78c3194c70e1493c7abdee757549ad45e";
+const V1: &str = "runner-pages-pi-v1";
+const V2: &str = "runner-pages-pi-v2";
+/// Each set's `SHA256SUMS` as Thalamus published it.
+const SETS: [(&str, &str); 2] = [
+    (
+        V1,
+        "5350b1d9cb39e98e0669f243c346bda78c3194c70e1493c7abdee757549ad45e",
+    ),
+    (
+        V2,
+        "83880baebd092cda1a3c08a087ed55bec19626d82e0e749b7c9f92b352afcf75",
+    ),
+];
 
-fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join(SET)
+fn root(set: &str) -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data")
+        .join(set)
 }
 
-fn sample(name: &str) -> Value {
-    serde_json::from_slice(&std::fs::read(root().join(name)).unwrap()).unwrap()
+fn sample(set: &str, name: &str) -> Value {
+    serde_json::from_slice(&std::fs::read(root(set).join(name)).unwrap()).unwrap()
+}
+
+fn messages(set: &str) -> Vec<Value> {
+    sample(set, "01-session-read.json")["messages"]
+        .as_array()
+        .unwrap()
+        .clone()
 }
 
 fn pi_binding() -> Resolved {
@@ -29,15 +55,21 @@ fn pi_binding() -> Resolved {
 }
 
 #[test]
-fn the_pi_pages_are_the_published_set() {
-    let sums = std::fs::read(root().join("SHA256SUMS")).unwrap();
-    assert_eq!(format!("{:x}", Sha256::digest(&sums)), SUMS_SHA256);
-    let sums = String::from_utf8(sums).unwrap();
-    assert_eq!(sums.lines().count(), 8, "the eight replies");
-    for line in sums.lines() {
-        let (expected, name) = line.split_once("  ").unwrap();
-        let bytes = std::fs::read(root().join(name)).unwrap();
-        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+fn the_pi_pages_are_the_published_sets() {
+    for (set, sums_sha256) in SETS {
+        let sums = std::fs::read(root(set).join("SHA256SUMS")).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(&sums)), sums_sha256, "{set}");
+        let sums = String::from_utf8(sums).unwrap();
+        assert_eq!(sums.lines().count(), 8, "{set}: the eight replies");
+        for line in sums.lines() {
+            let (expected, name) = line.split_once("  ").unwrap();
+            let bytes = std::fs::read(root(set).join(name)).unwrap();
+            assert_eq!(
+                format!("{:x}", Sha256::digest(bytes)),
+                expected,
+                "{set}/{name}"
+            );
+        }
     }
 }
 
@@ -48,19 +80,19 @@ fn the_pi_pages_are_the_published_set() {
 fn pi_rows_are_the_runners_display_rows() {
     let source = BrocaSource::new(pi_binding(), FakeRoute::new());
     assert_eq!(source.harness(), "pi");
-    let read = sample("01-session-read.json");
-    let entries = read["messages"].as_array().unwrap();
-    let rows = source.rows(entries, false, &[]).unwrap();
-    let display = sample("05-session-history-display.json");
-    let expected = display["messages"].as_array().unwrap();
-    assert_eq!(rows.len(), 9);
-    assert_eq!(rows.len(), expected.len());
-    for (row, want) in rows.iter().zip(expected) {
-        assert_eq!(row.mid, want["mid"].as_str().unwrap());
-        assert_eq!(row.ordinal, want["ordinal"].as_u64());
-        let mut want = want["row"].clone();
-        want.as_object_mut().unwrap().remove("sender");
-        assert_eq!(row.display, want, "{}", row.mid);
+    for (set, _) in SETS {
+        let rows = source.rows(&messages(set), false, &[]).unwrap();
+        let display = sample(set, "05-session-history-display.json");
+        let expected = display["messages"].as_array().unwrap();
+        assert_eq!(rows.len(), 9, "{set}");
+        assert_eq!(rows.len(), expected.len(), "{set}");
+        for (row, want) in rows.iter().zip(expected) {
+            assert_eq!(row.mid, want["mid"].as_str().unwrap(), "{set}");
+            assert_eq!(row.ordinal, want["ordinal"].as_u64(), "{set}");
+            let mut want = want["row"].clone();
+            want.as_object_mut().unwrap().remove("sender");
+            assert_eq!(row.display, want, "{set}: {}", row.mid);
+        }
     }
 }
 
@@ -69,10 +101,7 @@ fn pi_rows_are_the_runners_display_rows() {
 /// rows kept keep their ordinals. A system row with text stays.
 #[tokio::test]
 async fn a_pi_page_leaves_out_the_empty_system_entry() {
-    let messages = sample("01-session-read.json")["messages"]
-        .as_array()
-        .unwrap()
-        .clone();
+    let messages = messages(V1);
     let route = FakeRoute::new();
     *route.entries.lock().unwrap() = messages[..2].to_vec();
     let source = BrocaSource::new(pi_binding(), route);
@@ -91,21 +120,22 @@ async fn a_pi_page_leaves_out_the_empty_system_entry() {
     assert!(!is_empty_system_row(&image));
 }
 
-/// Feed a recorded `session.subscribe` stream to a Pi source whose runner
-/// declares `groups`, and return the display frames the apps then read:
-/// each frame's kind, `messageID` and words.
-async fn display_of(file: &str, groups: &[&str]) -> (Vec<bool>, Vec<(String, String, String)>) {
+/// Feed a set's recorded `session.subscribe` stream to a Pi source whose runner
+/// declares `groups`, and return whether it asked for `live_id`s and the
+/// display frames the apps then read: each frame's kind, `messageID` and words.
+async fn display_of(
+    set: &str,
+    file: &str,
+    groups: &[&str],
+) -> (Vec<bool>, Vec<(String, String, String)>) {
     let route = FakeRoute::new();
     *route.describe.lock().unwrap() = Some(describe_with(groups));
-    *route.entries.lock().unwrap() = sample("01-session-read.json")["messages"]
-        .as_array()
-        .unwrap()
-        .clone();
+    *route.entries.lock().unwrap() = messages(set);
     let source = BrocaSource::new(pi_binding(), route.clone());
     let mut lease = source.acquire().await.unwrap();
     let asked = route.live_ids.lock().unwrap().clone();
     let hub = Arc::new(DisplayHub::default());
-    for frame in sample(file).as_array().unwrap() {
+    for frame in sample(set, file).as_array().unwrap() {
         route.emit(frame.clone()).await;
     }
     while let Ok(Ok(input)) =
@@ -133,11 +163,13 @@ fn frame(kind: &str, message: &str, words: &str) -> (String, String, String) {
 }
 
 /// With `live_ids`, each reply's words show under its `live_id` from the first
-/// word to its end, and Pi's stored `mid` never appears on them.
+/// word to its end, and Pi's stored `mid` never appears on them. In v1 the
+/// stream opens on the tail of an earlier run; in v2 the reply arrives in two
+/// pieces, joined into one frame by the display's batching.
 #[tokio::test]
 async fn a_pi_reply_streams_under_its_live_id() {
-    let (asked, frames) =
-        display_of("07-subscribe-live-ids.json", &["live_events", "live_ids"]).await;
+    let groups = ["live_events", "live_ids"];
+    let (asked, frames) = display_of(V1, "07-subscribe-live-ids.json", &groups).await;
     assert_eq!(asked, [true]);
     let first = "live-e42e5ae1-2880-4296-92a8-fe95cd2b8e7a";
     let second = "live-d97b5d76-4f9e-4931-a7f9-f6244b42727e";
@@ -153,18 +185,50 @@ async fn a_pi_reply_streams_under_its_live_id() {
             frame("display_end", "", ""),
         ]
     );
+
+    let (asked, frames) = display_of(V2, "07-subscribe-live-ids.json", &groups).await;
+    assert_eq!(asked, [true]);
+    assert_eq!(
+        frames,
+        [
+            frame("display_gap", "", ""),
+            frame(
+                "display",
+                "live-e26f890f-3373-409d-a1c4-e6f49bdd293c",
+                "PROBE_DONE"
+            ),
+            frame("display_end", "", ""),
+            frame("display_end", "", ""),
+        ]
+    );
 }
 
 /// Without `live_ids`, Pi's runner holds the words until it stores the reply
-/// and then sends them under the `mid`, after a `message_started` that names
-/// both; Occipital shows them under the `mid`.
+/// and then sends them under the `mid`; Occipital shows them under the `mid`.
+/// In v1 the runner also named the `live_id` on `message_started`, which v2's
+/// runner no longer sends to a subscriber that didn't ask.
 #[tokio::test]
 async fn without_live_ids_a_pi_reply_shows_under_its_mid() {
-    let (asked, frames) = display_of("08-subscribe-plain.json", &["live_events"]).await;
-    assert_eq!(asked, [false]);
-    assert!(
-        frames.contains(&frame("display", "568d566a", "PROBE_DONE")),
-        "{frames:?}"
+    for (set, mid) in [(V1, "568d566a"), (V2, "351aac36")] {
+        let (asked, frames) = display_of(set, "08-subscribe-plain.json", &["live_events"]).await;
+        assert_eq!(asked, [false], "{set}");
+        assert!(
+            frames.contains(&frame("display", mid, "PROBE_DONE")),
+            "{set}: {frames:?}"
+        );
+        assert!(
+            !frames.iter().any(|(_, id, _)| id.starts_with("live-")),
+            "{set}"
+        );
+    }
+    let (_, frames) = display_of(V2, "08-subscribe-plain.json", &["live_events"]).await;
+    assert_eq!(
+        frames,
+        [
+            frame("display_gap", "", ""),
+            frame("display", "351aac36", "PROBE_DONE"),
+            frame("display_end", "", ""),
+            frame("display_end", "", ""),
+        ]
     );
-    assert!(!frames.iter().any(|(_, id, _)| id.starts_with("live-")));
 }

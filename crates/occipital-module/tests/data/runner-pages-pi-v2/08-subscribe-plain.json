@@ -1,0 +1,121 @@
+[
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 11
+    },
+    "delivery": "queue",
+    "kind": "control",
+    "run_id": "run_5546373cabcd8814a10351a1",
+    "runner_event": "send_accepted",
+    "send_id": "[\"prefrontal-core\",\"core-send\"]",
+    "seq": 1
+  },
+  {
+    "as": "turn",
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 12
+    },
+    "kind": "control",
+    "ref": "run_5546373cabcd8814a10351a1",
+    "runner_event": "delivered",
+    "send_id": "[\"prefrontal-core\",\"core-send\"]",
+    "seq": 2
+  },
+  {
+    "cursor": {
+      "sub_index": 1,
+      "wal_seq": 12
+    },
+    "event": {
+      "run_id": "run_5546373cabcd8814a10351a1",
+      "type": "run_started"
+    },
+    "kind": "control",
+    "run_id": "run_5546373cabcd8814a10351a1",
+    "runner_event": "run_started",
+    "seq": 3
+  },
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 13
+    },
+    "event": {
+      "mid": "7caebb24",
+      "type": "message_started"
+    },
+    "kind": "control",
+    "seq": 4
+  },
+  {
+    "cursor": {
+      "sub_index": 1,
+      "wal_seq": 13
+    },
+    "event": {
+      "mid": "7caebb24",
+      "type": "message_finished"
+    },
+    "kind": "control",
+    "mid": "7caebb24",
+    "ordinal": 7,
+    "runner_event": "message",
+    "seq": 5
+  },
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 14
+    },
+    "event": {
+      "mid": "351aac36",
+      "type": "message_started"
+    },
+    "kind": "control",
+    "seq": 6
+  },
+  {
+    "event": {
+      "delta": "PROBE_DONE",
+      "message_id": "",
+      "mid": "351aac36",
+      "part": "0",
+      "type": "text_delta"
+    },
+    "kind": "display",
+    "seq": 7
+  },
+  {
+    "cursor": {
+      "sub_index": 1,
+      "wal_seq": 14
+    },
+    "event": {
+      "mid": "351aac36",
+      "type": "message_finished"
+    },
+    "kind": "control",
+    "mid": "351aac36",
+    "ordinal": null,
+    "runner_event": "message",
+    "seq": 8
+  },
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 15
+    },
+    "event": {
+      "reason": "completed",
+      "run_id": "run_5546373cabcd8814a10351a1",
+      "type": "run_finished"
+    },
+    "kind": "control",
+    "run_id": "run_5546373cabcd8814a10351a1",
+    "runner_event": "run_ended",
+    "seq": 9,
+    "state": "completed"
+  }
+]
