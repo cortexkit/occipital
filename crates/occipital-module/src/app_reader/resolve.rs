@@ -19,6 +19,20 @@ use subc_protocol::{BindIdentity, RouteTarget};
 pub const BROCA_RUNNER_MODULE_ID: &str = "broca";
 /// Thalamus's runner, which hosts OpenCode sessions.
 pub const OPENCODE_RUNNER_MODULE_ID: &str = "thalamus-harness";
+/// Thalamus's runner for Pi sessions: the same program as the OpenCode one,
+/// registered as its own module.
+pub const PI_RUNNER_MODULE_ID: &str = "thalamus-pi";
+
+/// The harness of the sessions `runner` hosts, for every runner this reader
+/// serves; `None` for any other.
+pub fn served_harness(runner: &str) -> Option<&'static str> {
+    match runner {
+        BROCA_RUNNER_MODULE_ID => Some("broca"),
+        OPENCODE_RUNNER_MODULE_ID => Some("opencode"),
+        PI_RUNNER_MODULE_ID => Some("pi"),
+        _ => None,
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SessionRef {
@@ -459,12 +473,9 @@ fn resolved(
             reference.session, reference.runner
         ),
     )?;
-    // Broca sessions are Broca's; Thalamus's runner hosts OpenCode ones.
-    let expected = if reference.runner == OPENCODE_RUNNER_MODULE_ID {
-        "opencode"
-    } else {
-        "broca"
-    };
+    // Each runner hosts one harness's sessions; a runner this reader doesn't
+    // know is read as Broca's, which the harness check then refuses.
+    let expected = served_harness(&reference.runner).unwrap_or("broca");
     if harness != expected {
         return Err(invalid(format!(
             "session {} on runner {} is not a {expected} session",

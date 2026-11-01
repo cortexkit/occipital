@@ -253,7 +253,9 @@ pub(crate) mod test_support {
                 }
                 DisplayInput::MessageStored { mid, live_id } => {
                     self.flush();
-                    self.projection.store_message(&mid, &live_id);
+                    if !self.projection.store_message(&mid, &live_id) {
+                        self.projection.start_display();
+                    }
                     None
                 }
                 DisplayInput::RunStart { rich_ui } => {
@@ -675,20 +677,27 @@ mod tests {
         assert_eq!(frames(&session)[3], ("display".to_owned(), "m2".to_owned()));
     }
 
-    /// A store naming a `live_id` whose words weren't shown, as on a replay, does
-    /// nothing: it neither renames a message nor reopens a run that ended.
+    /// A store naming a `live_id` whose words weren't shown renames nothing. It is
+    /// the message's start, as a reader that didn't ask for `live_id`s gets it
+    /// before the words under the `mid`: after a run ended, those words show.
     #[test]
-    fn a_store_for_a_live_id_never_shown_does_nothing() {
+    fn a_store_for_a_live_id_never_shown_is_the_messages_start() {
         let session = FakeSession::new("ses", 32);
         session.ingest(json!({"kind":"control","event":{"type":"run_started"}}));
         session.ingest(delta("m0", "done"));
         session.ingest(json!({"kind":"control","event":{"type":"run_finished"}}));
-        let ended = frames(&session);
-        assert_eq!(ended.len(), 2);
+        assert_eq!(frames(&session).len(), 2);
         session.ingest(json!({"kind":"control","event":{"type":"message_started",
             "mid":"m9", "live_id":"live-9"}}));
-        session.ingest(json!({"kind":"control","event":{"type":"run_finished"}}));
-        assert_eq!(frames(&session), ended);
+        session.ingest(delta("m9", "words"));
+        session.ingest(json!({"kind":"control","event":{"type":"message_finished","mid":"m9"}}));
+        assert_eq!(
+            frames(&session)[2..],
+            [
+                ("display".to_owned(), "m9".to_owned()),
+                ("display_end".to_owned(), String::new()),
+            ]
+        );
     }
 
     #[tokio::test(start_paused = true)]

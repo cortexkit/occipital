@@ -1,0 +1,204 @@
+[
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 8
+    },
+    "event": {
+      "mid": "ea2d72e2",
+      "type": "message_started"
+    },
+    "kind": "control",
+    "seq": 1
+  },
+  {
+    "cursor": {
+      "sub_index": 1,
+      "wal_seq": 8
+    },
+    "event": {
+      "mid": "ea2d72e2",
+      "type": "message_finished"
+    },
+    "kind": "control",
+    "mid": "ea2d72e2",
+    "ordinal": 5,
+    "runner_event": "message",
+    "seq": 2
+  },
+  {
+    "event": {
+      "delta": "PROBE_DONE",
+      "live_id": "live-e42e5ae1-2880-4296-92a8-fe95cd2b8e7a",
+      "message_id": "",
+      "part": "0",
+      "type": "text_delta"
+    },
+    "kind": "display",
+    "seq": 3
+  },
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 9
+    },
+    "event": {
+      "live_id": "live-e42e5ae1-2880-4296-92a8-fe95cd2b8e7a",
+      "mid": "93076830",
+      "type": "message_started"
+    },
+    "kind": "control",
+    "seq": 4
+  },
+  {
+    "cursor": {
+      "sub_index": 1,
+      "wal_seq": 9
+    },
+    "event": {
+      "mid": "93076830",
+      "type": "message_finished"
+    },
+    "kind": "control",
+    "mid": "93076830",
+    "ordinal": null,
+    "runner_event": "message",
+    "seq": 5
+  },
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 10
+    },
+    "event": {
+      "reason": "completed",
+      "run_id": "run_d176b9f59ab7d566bc94c59c",
+      "type": "run_finished"
+    },
+    "kind": "control",
+    "run_id": "run_d176b9f59ab7d566bc94c59c",
+    "runner_event": "run_ended",
+    "seq": 6,
+    "state": "completed"
+  },
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 11
+    },
+    "delivery": "queue",
+    "kind": "control",
+    "run_id": "run_59b4d1f6617e8dcfefeb5e0f",
+    "runner_event": "send_accepted",
+    "send_id": "[\"prefrontal-core\",\"core-send\"]",
+    "seq": 7
+  },
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 12
+    },
+    "event": {
+      "mid": "73314553",
+      "type": "message_started"
+    },
+    "kind": "control",
+    "seq": 8
+  },
+  {
+    "cursor": {
+      "sub_index": 1,
+      "wal_seq": 12
+    },
+    "event": {
+      "mid": "73314553",
+      "type": "message_finished"
+    },
+    "kind": "control",
+    "mid": "73314553",
+    "ordinal": null,
+    "runner_event": "message",
+    "seq": 9
+  },
+  {
+    "event": {
+      "delta": "PROBE_DONE",
+      "live_id": "live-d97b5d76-4f9e-4931-a7f9-f6244b42727e",
+      "message_id": "",
+      "part": "0",
+      "type": "text_delta"
+    },
+    "kind": "display",
+    "seq": 10
+  },
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 13
+    },
+    "event": {
+      "live_id": "live-d97b5d76-4f9e-4931-a7f9-f6244b42727e",
+      "mid": "568d566a",
+      "type": "message_started"
+    },
+    "kind": "control",
+    "seq": 11
+  },
+  {
+    "cursor": {
+      "sub_index": 1,
+      "wal_seq": 13
+    },
+    "event": {
+      "mid": "568d566a",
+      "type": "message_finished"
+    },
+    "kind": "control",
+    "mid": "568d566a",
+    "ordinal": null,
+    "runner_event": "message",
+    "seq": 12
+  },
+  {
+    "as": "turn",
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 14
+    },
+    "kind": "control",
+    "ref": "run_59b4d1f6617e8dcfefeb5e0f",
+    "runner_event": "delivered",
+    "send_id": "[\"prefrontal-core\",\"core-send\"]",
+    "seq": 13
+  },
+  {
+    "cursor": {
+      "sub_index": 1,
+      "wal_seq": 14
+    },
+    "event": {
+      "run_id": "run_59b4d1f6617e8dcfefeb5e0f",
+      "type": "run_started"
+    },
+    "kind": "control",
+    "run_id": "run_59b4d1f6617e8dcfefeb5e0f",
+    "runner_event": "run_started",
+    "seq": 14
+  },
+  {
+    "cursor": {
+      "sub_index": 2,
+      "wal_seq": 14
+    },
+    "event": {
+      "reason": "completed",
+      "run_id": "run_59b4d1f6617e8dcfefeb5e0f",
+      "type": "run_finished"
+    },
+    "kind": "control",
+    "run_id": "run_59b4d1f6617e8dcfefeb5e0f",
+    "runner_event": "run_ended",
+    "seq": 15,
+    "state": "completed"
+  }
+]

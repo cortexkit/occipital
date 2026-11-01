@@ -117,12 +117,15 @@ impl DisplayHub {
             }
             DisplayInput::TurnStart => projection.start_display(),
             // Words held for batching are the live message's, so they go out
-            // first and the store finds them.
+            // first and the store finds them. A store whose words weren't shown
+            // is the message's start, as `message_started` is without a `live_id`.
             DisplayInput::MessageStored { mid, live_id } => {
                 for chunk in state.batcher.drain_session(session) {
                     projection.observe_display(chunk);
                 }
-                projection.store_message(&mid, &live_id);
+                if !projection.store_message(&mid, &live_id) {
+                    projection.start_display();
+                }
             }
             DisplayInput::RunStart { rich_ui } => projection.start_run(rich_ui),
             DisplayInput::MessageEnd { mid } => {

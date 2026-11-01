@@ -686,15 +686,20 @@ impl DisplayProjection {
     /// that message's words are the live footer, `mid` becomes another name for
     /// it: [`DisplayProjection::message_key`] turns later words under `mid` back
     /// into the `live_id`, and [`DisplayProjection::end_message`] ends it by
-    /// either. Otherwise, as for a replayed store of a message never shown, it
-    /// does nothing.
-    pub fn store_message(&self, mid: &str, live_id: &str) {
+    /// either. Returns whether it did; when no words were shown under the
+    /// `live_id`, the event is the message's start, as a reader that didn't ask
+    /// for `live_id`s sees it, and the caller treats it as one.
+    pub fn store_message(&self, mid: &str, live_id: &str) -> bool {
         let mut state = self.state.lock().expect("display projection poisoned");
         if state.display_end_emitted {
-            return;
+            return false;
         }
-        if let Some(live) = state.live.as_mut().filter(|live| live.key == live_id) {
-            live.stored_as = Some(mid.to_owned());
+        match state.live.as_mut().filter(|live| live.key == live_id) {
+            Some(live) => {
+                live.stored_as = Some(mid.to_owned());
+                true
+            }
+            None => false,
         }
     }
 

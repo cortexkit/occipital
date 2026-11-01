@@ -42,8 +42,7 @@ use crate::display::call_pins::CallPinSlot;
 use super::{
     display_hub::DisplayHub,
     resolve::{
-        DaemonEntorhinal, Resolved, Resolver, SessionRef, BROCA_RUNNER_MODULE_ID,
-        OPENCODE_RUNNER_MODULE_ID,
+        served_harness, DaemonEntorhinal, Resolved, Resolver, SessionRef, BROCA_RUNNER_MODULE_ID,
     },
     send::{RunnerError, SendTarget, SendTargets},
     SourceResolver, SourceWatch,
@@ -650,9 +649,9 @@ impl BrocaSources {
 impl BrocaSources {
     /// The session the phone named, under the runner that serves it. A session named
     /// without a harness, or as Broca's, is a Broca session. Any other harness is routed
-    /// by the runner Entorhinal records for the session: Thalamus's OpenCode runner is
-    /// read like Broca, and any other runner, or none, is refused `session_unknown`
-    /// naming it (null for none), so the phone reads the runner again.
+    /// by the runner Entorhinal records for the session: Thalamus's OpenCode and Pi
+    /// runners are read like Broca, and any other runner, or none, is refused
+    /// `session_unknown` naming it (null for none), so the phone reads the runner again.
     async fn reference(
         &self,
         session: &str,
@@ -665,10 +664,14 @@ impl BrocaSources {
             });
         };
         match self.resolver.runner_by_harness(harness, session).await? {
-            Some(runner) if runner == OPENCODE_RUNNER_MODULE_ID => Ok(SessionRef {
-                runner,
-                session: session.into(),
-            }),
+            Some(runner)
+                if runner != BROCA_RUNNER_MODULE_ID && served_harness(&runner).is_some() =>
+            {
+                Ok(SessionRef {
+                    runner,
+                    session: session.into(),
+                })
+            }
             runner => Err(ReadError::new(
                 "session_unknown",
                 format!(
@@ -2005,7 +2008,9 @@ mod tests {
     mod subscribe_flatten_1028;
     mod tool_outage_1027;
 
-    use super::super::resolve::{Entorhinal, Network, NetworkChange};
+    use super::super::resolve::{
+        Entorhinal, Network, NetworkChange, OPENCODE_RUNNER_MODULE_ID, PI_RUNNER_MODULE_ID,
+    };
     use super::*;
     use occipital_app_reader::source::TranscriptReader;
     use std::sync::atomic::{AtomicU64, AtomicUsize};
@@ -2927,15 +2932,25 @@ mod tests {
     }
 
     /// Entorhinal's answers for one head, with the runner it records: found by harness,
-    /// and then, for a runner this reader serves, by that runner.
+    /// and then, for a runner this reader serves, by that runner. The head is a Pi
+    /// one under Thalamus's Pi runner and an OpenCode one otherwise.
     struct ByHarness(Option<&'static str>);
+    impl ByHarness {
+        fn harness(&self) -> &'static str {
+            match self.0 {
+                Some(PI_RUNNER_MODULE_ID) => "pi",
+                _ => "opencode",
+            }
+        }
+    }
     #[async_trait]
     impl Entorhinal for ByHarness {
         async fn request(&self, method: &str, params: Value) -> Result<Value, ReadError> {
             match method {
-                "agent.session_for_harness" => {
-                    assert_eq!(params, json!({"harness":"opencode", "session":"ses_head"}))
-                }
+                "agent.session_for_harness" => assert_eq!(
+                    params,
+                    json!({"harness": self.harness(), "session":"ses_head"})
+                ),
                 "agent.session_for_runner" => {
                     assert_eq!(params, json!({"runner": self.0, "session":"ses_head"}))
                 }
@@ -2948,7 +2963,7 @@ mod tests {
                 runner => {
                     json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref",
                     "incarnation":"entorhinal-test", "ended_at_ms":null, "runner":runner, "session":"ses_head",
-                    "harness":"opencode", "project_root":"/workspace/head", "network":"unknown", "network_history":[]}})
+                    "harness":self.harness(), "project_root":"/workspace/head", "network":"unknown", "network_history":[]}})
                 }
             })
         }
@@ -3032,7 +3047,7 @@ mod tests {
     }
 
     /// A send names its session's harness as a read does. A session Thalamus's
-    /// OpenCode runner hosts gets that runner's send path. Another recorded runner is
+    /// OpenCode or Pi runner hosts gets that runner's send path. Another recorded runner is
     /// refused `session_unknown` with that runner in `detail.runner`, and no recorded
     /// runner with `detail.runner` null. Neither opens a send path.
     #[tokio::test]
@@ -3050,6 +3065,14 @@ mod tests {
             .unwrap();
         assert_eq!(target.reference().runner, OPENCODE_RUNNER_MODULE_ID);
         assert_eq!(target.reference().session, "ses_head");
+        let pi = BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(ByHarness(Some(
+                PI_RUNNER_MODULE_ID,
+            ))))),
+            routes.clone(),
+        );
+        let target = pi.send_target("ses_head", Some("pi")).await.unwrap();
+        assert_eq!(target.reference().runner, PI_RUNNER_MODULE_ID);
         for (recorded, runner) in [(None, json!(null)), (Some("elsewhere"), json!("elsewhere"))] {
             let sources = BrocaSources::new(
                 Arc::new(Resolver::new(Arc::new(ByHarness(recorded)))),
@@ -3062,7 +3085,7 @@ mod tests {
             assert_eq!(error.code, "session_unknown");
             assert_eq!(error.detail, Some(json!({"runner": runner})));
         }
-        assert_eq!(routes.0.load(std::sync::atomic::Ordering::SeqCst), 1);
+        assert_eq!(routes.0.load(std::sync::atomic::Ordering::SeqCst), 2);
     }
 
     struct Routes(Arc<FakeRoute>);
@@ -3729,6 +3752,7 @@ mod tests {
     mod outside_window;
     mod part_keys;
     mod pi_display;
+    mod pi_pages;
     #[path = "../../../../../occipital-app-reader/tests/fixtures/broca_0_7.rs"]
     pub(crate) mod samples_0_7;
     mod served_samples;

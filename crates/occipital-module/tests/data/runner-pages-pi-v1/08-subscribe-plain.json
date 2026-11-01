@@ -1,0 +1,138 @@
+[
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 10
+    },
+    "event": {
+      "reason": "completed",
+      "run_id": "run_d176b9f59ab7d566bc94c59c",
+      "type": "run_finished"
+    },
+    "kind": "control",
+    "run_id": "run_d176b9f59ab7d566bc94c59c",
+    "runner_event": "run_ended",
+    "seq": 1,
+    "state": "completed"
+  },
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 11
+    },
+    "delivery": "queue",
+    "kind": "control",
+    "run_id": "run_59b4d1f6617e8dcfefeb5e0f",
+    "runner_event": "send_accepted",
+    "send_id": "[\"prefrontal-core\",\"core-send\"]",
+    "seq": 2
+  },
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 12
+    },
+    "event": {
+      "mid": "73314553",
+      "type": "message_started"
+    },
+    "kind": "control",
+    "seq": 3
+  },
+  {
+    "cursor": {
+      "sub_index": 1,
+      "wal_seq": 12
+    },
+    "event": {
+      "mid": "73314553",
+      "type": "message_finished"
+    },
+    "kind": "control",
+    "mid": "73314553",
+    "ordinal": null,
+    "runner_event": "message",
+    "seq": 4
+  },
+  {
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 13
+    },
+    "event": {
+      "live_id": "live-d97b5d76-4f9e-4931-a7f9-f6244b42727e",
+      "mid": "568d566a",
+      "type": "message_started"
+    },
+    "kind": "control",
+    "seq": 5
+  },
+  {
+    "event": {
+      "delta": "PROBE_DONE",
+      "message_id": "",
+      "mid": "568d566a",
+      "part": "0",
+      "type": "text_delta"
+    },
+    "kind": "display",
+    "seq": 6
+  },
+  {
+    "cursor": {
+      "sub_index": 1,
+      "wal_seq": 13
+    },
+    "event": {
+      "mid": "568d566a",
+      "type": "message_finished"
+    },
+    "kind": "control",
+    "mid": "568d566a",
+    "ordinal": null,
+    "runner_event": "message",
+    "seq": 7
+  },
+  {
+    "as": "turn",
+    "cursor": {
+      "sub_index": 0,
+      "wal_seq": 14
+    },
+    "kind": "control",
+    "ref": "run_59b4d1f6617e8dcfefeb5e0f",
+    "runner_event": "delivered",
+    "send_id": "[\"prefrontal-core\",\"core-send\"]",
+    "seq": 8
+  },
+  {
+    "cursor": {
+      "sub_index": 1,
+      "wal_seq": 14
+    },
+    "event": {
+      "run_id": "run_59b4d1f6617e8dcfefeb5e0f",
+      "type": "run_started"
+    },
+    "kind": "control",
+    "run_id": "run_59b4d1f6617e8dcfefeb5e0f",
+    "runner_event": "run_started",
+    "seq": 9
+  },
+  {
+    "cursor": {
+      "sub_index": 2,
+      "wal_seq": 14
+    },
+    "event": {
+      "reason": "completed",
+      "run_id": "run_59b4d1f6617e8dcfefeb5e0f",
+      "type": "run_finished"
+    },
+    "kind": "control",
+    "run_id": "run_59b4d1f6617e8dcfefeb5e0f",
+    "runner_event": "run_ended",
+    "seq": 10,
+    "state": "completed"
+  }
+]
