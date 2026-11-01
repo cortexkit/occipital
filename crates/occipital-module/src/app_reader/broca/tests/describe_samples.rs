@@ -63,6 +63,39 @@ fn every_broca_describe_decodes_on_both_paths_and_still_declares_head_sender() {
     }
 }
 
+/// Broca 0.3.299's `role.describe` with its service-tier switch on, captured
+/// from its serve path: it adds the `service_tier` group and a `service_tiers`
+/// member. Both decoders must still accept it and keep the groups the reader
+/// relies on, or the reader would stop caching it and treat sends as unknown.
+#[test]
+fn the_service_tier_describe_decodes_on_both_paths() {
+    const TIER: &str = "tests/data/broca-describe-0.3.299";
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join(TIER);
+    let bytes = std::fs::read(root.join("role.describe.json")).unwrap();
+    let sums = std::fs::read_to_string(root.join("SHA256SUMS")).unwrap();
+    assert_eq!(
+        sums,
+        format!("{:x}  role.describe.json\n", Sha256::digest(&bytes))
+    );
+    let value = serde_json::from_slice::<Value>(&bytes).unwrap()["result"].clone();
+    let checked = check_describe(&value).unwrap_or_else(|error| panic!("{error:?}"));
+    let plain: RoleDescribe = serde_json::from_value(value).unwrap();
+    let head: cortexkit_role_llm_runner::read::HeadMeta = serde_json::from_value(json!({
+        "lineage_id": "l1", "first_ordinal": 0, "history_version": 1, "updated_at": 1,
+        "last_run_state": {"run_id": "r1", "state": "active"},
+    }))
+    .unwrap();
+    for describe in [&checked, &plain] {
+        for group in ["service_tier", "head_sender", "history_display", "retract"] {
+            assert!(describe.declares(group), "{group}");
+        }
+        assert_eq!(
+            send_grant(&head, Some(describe), false),
+            SendGrant::MayNotSend
+        );
+    }
+}
+
 #[test]
 fn broca_0_7_describes_preserve_sender_grants_on_both_decoders() {
     for file in ["role.describe.before.json", "role.describe.after.json"] {
