@@ -1,0 +1,11 @@
+{
+  "op": "upload.finish",
+  "refusal": {
+    "code": "checksum_mismatch",
+    "message": "the file holds 20 bytes with SHA-256 c3127154644798d03d535bed5682032cb3602e1c426b438b9f809e0f3cd0f863, not 20 bytes with 455314660dc0a594f3a6a9f9382ac50b370d8a36d882eba3915dcf83299697c2"
+  },
+  "request": {
+    "upload_id": "00000000000a11ce0000000000000005"
+  },
+  "tag": "checksum_mismatch"
+}

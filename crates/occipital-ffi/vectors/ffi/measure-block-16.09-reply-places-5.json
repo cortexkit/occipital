@@ -1,0 +1,11 @@
+{
+  "entry": "occ_measure_block",
+  "request": {
+    "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+    "metrics": "fixed",
+    "path_json": "[5]",
+    "tree_json": "{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"resolved\"}}},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{\"images\":[{\"snapshot\":{\"record_id\":\"record-art_k1\",\"state\":\"resolved\"}},{\"snapshot\":{\"record_id\":\"record-art_k2\",\"state\":\"resolved\"}}],\"aspect\":\"4:3\",\"caption\":\"Kahve Durağı, inside and out\"},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"resolved\"}}},\"k\":[]}]},{\"c\":\"Map\",\"p\":{\"places\":{\"snapshot\":{\"record_id\":\"14\",\"state\":\"resolved\",\"value\":[{\"record\":{\"name\":\"Kahve Durağı\",\"lat\":{\"number\":\"41\"},\"lon\":{\"number\":\"29\"}}},{\"record\":{\"name\":\"Liman Kahvesi\",\"lat\":{\"number\":\"41.01\"},\"lon\":{\"number\":\"29.01\"}}}]}},\"aspect\":\"16:9\"},\"k\":[]},{\"c\":\"LinkCard\",\"p\":{\"href\":\"https://limankahvesi.example/menu\",\"title\":\"Liman Kahvesi menu\"},\"k\":[]}]}"
+  },
+  "status": 0,
+  "response": "{\"height\":{\"known\":\"66\"},\"key\":{\"instance_epoch\":0,\"revision\":0,\"state_hash\":\"\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":4,\"reservation\":\"deferred\",\"boxes\":[{\"path\":\"/0\",\"height\":\"66\",\"width\":\"320\",\"state\":\"ready\"}],\"row_frame\":null}"
+}

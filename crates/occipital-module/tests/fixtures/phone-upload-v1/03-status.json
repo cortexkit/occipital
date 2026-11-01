@@ -1,0 +1,10 @@
+{
+  "op": "upload.status",
+  "reply": {
+    "committed": 20
+  },
+  "request": {
+    "upload_id": "00000000000a11ce0000000000000001"
+  },
+  "tag": "status"
+}

@@ -1,0 +1,31 @@
+export const work = Query("work_get", {}, {state: null, model: null, variant: null, tokens: {input: 0, output: 0, cacheRead: 0, cacheWrite: 0}, lastLines: []}, 5)
+
+export const tokens = work.value.tokens
+export const promptTokens = tokens.input + tokens.cacheRead + tokens.cacheWrite
+export const hitRatio = promptTokens > 0 ? tokens.cacheRead / promptTokens * 100 : 0
+export const stateText = work.status == "error" ? "Unavailable" : (work.value.state ?? "Loading")
+export const stateTone = (
+  work.value.state == "running" ? "info"
+  : work.value.state == "done" ? "success"
+  : work.value.state == "failed" ? "danger"
+  : "neutral"
+)
+
+<CardHeader title={input.title} />
+<Badge text={stateText} tone={stateTone} />
+
+**Model:** {work.value.model} · **Variant:** {work.value.variant}
+
+### Token use
+<Table columns={[
+  <Col label="Token type" data={["Input", "Output", "Cache read", "Cache write"]} />,
+  <Col label="Tokens" type="number" data={[tokens.input, tokens.output, tokens.cacheRead, tokens.cacheWrite]} />
+]} />
+<Progress value={hitRatio} label={"Cache hit ratio " + FormatNumber(hitRatio, 1) + "%"} />
+
+### Latest transcript lines
+<Table columns={[<Col label="Transcript" data={work.value.lastLines} />]} />
+
+Refreshes every 5 seconds.
+
+<Button label="Refresh" appearance="secondary" action={Refresh(work)} />

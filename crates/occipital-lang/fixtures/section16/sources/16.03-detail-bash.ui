@@ -1,0 +1,35 @@
+export let $page = 1
+
+export const job = Query("bash_status", {}, {running: null, exitCode: null}, 2)
+export const out = Query("bash_output", {page: $page}, {lines: [], page: 0, pages: 0})
+
+export const pages = Max(out.value.pages, 1)
+export const statusTag = (
+  job.status == "error" ? <Badge text="Status unavailable" tone="warning" />
+  : job.status == "loading" ? <Badge text="Checking…" tone="neutral" />
+  : job.value.running ? <Badge text="Running" tone="info" />
+  : job.value.exitCode == 0 ? <Badge text="Finished · exit 0" tone="success" />
+  : <Badge text={"Finished · exit " + job.value.exitCode} tone="danger" />
+)
+export const prevBtn = <Button label="Previous" appearance="secondary" action={Set($page, Max($page - 1, 1))} />
+export const nextBtn = <Button label="Next" appearance="secondary" action={Set($page, Min($page + 1, pages))} />
+
+<CardHeader title="Shell command" />
+
+### Command
+<CodeBlock language="bash" codeString={input.command} />
+
+### Status
+{statusTag}
+
+### Output
+<Table columns={[<Col label={"Lines, page " + $page} data={out.value.lines} />]} />
+{out.status == "loading" ? "Loading the page…" : null}
+
+<Card appearance="clear" direction="row" justify="between" align="center">
+{$page > 1 ? prevBtn : null}
+Page {$page} of {pages}
+{$page < pages ? nextBtn : null}
+</Card>
+
+<Button label="Refresh status" appearance="secondary" action={Refresh(job)} />

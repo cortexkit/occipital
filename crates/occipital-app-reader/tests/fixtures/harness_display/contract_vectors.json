@@ -1,0 +1,124 @@
+{
+  "_provenance": "Producer-real display polling vectors. The module lib test drives coalesced display deltas through ManagerRuntime, then invokes the session.display_read wire arm and compares serialized replies byte-for-byte.",
+  "_delivery_notes": {
+    "consumer_ping_fields": [
+      "absent",
+      "seq",
+      "frame",
+      "frames",
+      "windowExpired",
+      "oldestSeq",
+      "kind",
+      "sessionID",
+      "messageID",
+      "chunk",
+      "partType"
+    ]
+  },
+  "vectors": [
+    {
+      "name": "frames_present_cold_read_returns_current_accumulated_text",
+      "drive": {
+        "session": "ses_display_present",
+        "ringEntries": 2,
+        "frames": [
+          { "messageID": "msg_display", "chunk": "read ", "partType": "text" },
+          { "messageID": "msg_display", "chunk": "the ring", "partType": "text" }
+        ]
+      },
+      "request": { "session": "ses_display_present" },
+      "reply": {
+        "seq": 2,
+        "frame": {
+          "kind": "display",
+          "sessionID": "ses_display_present",
+          "messageID": "msg_display",
+          "chunk": "read the ring",
+          "partType": "text"
+        }
+      }
+    },
+    {
+      "name": "since_seq_returns_all_retained_frames_after_cursor",
+      "drive": {
+        "session": "ses_display_incremental",
+        "ringEntries": 3,
+        "frames": [
+          { "messageID": "msg_display", "chunk": "first", "partType": "text" },
+          { "messageID": "msg_display", "chunk": "second", "partType": "text" }
+        ]
+      },
+      "request": { "session": "ses_display_incremental", "sinceSeq": 0 },
+      "reply": {
+        "seq": 2,
+        "frames": [
+          {
+            "seq": 1,
+            "frame": {
+              "kind": "display",
+              "sessionID": "ses_display_incremental",
+              "messageID": "msg_display",
+              "chunk": "first",
+              "partType": "text"
+            }
+          },
+          {
+            "seq": 2,
+            "frame": {
+              "kind": "display",
+              "sessionID": "ses_display_incremental",
+              "messageID": "msg_display",
+              "chunk": "second",
+              "partType": "text"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "since_seq_current_returns_an_empty_live_increment",
+      "drive": {
+        "session": "ses_display_current",
+        "ringEntries": 2,
+        "frames": [
+          { "messageID": "msg_display", "chunk": "already ", "partType": "text" },
+          { "messageID": "msg_display", "chunk": "seen", "partType": "text" }
+        ]
+      },
+      "request": { "session": "ses_display_current", "sinceSeq": 2 },
+      "reply": { "seq": 2, "frames": [] }
+    },
+    {
+      "name": "expired_since_returns_window_expired_with_oldest_seq",
+      "drive": {
+        "session": "ses_display_expired",
+        "ringEntries": 2,
+        "frames": [
+          { "messageID": "msg_display", "chunk": "one", "partType": "text" },
+          { "messageID": "msg_display", "chunk": "two", "partType": "text" },
+          { "messageID": "msg_display", "chunk": "three", "partType": "text" }
+        ]
+      },
+      "request": { "session": "ses_display_expired", "sinceSeq": 0 },
+      "reply": {
+        "seq": 3,
+        "windowExpired": { "oldestSeq": 2 }
+      }
+    },
+    {
+      "name": "no_ring_attached_is_explicitly_absent",
+      "request": { "session": "ses_display_absent" },
+      "reply": { "absent": "no_ring_attached" }
+    },
+    {
+      "name": "ring_attached_but_quiet_is_distinctly_absent",
+      "drive": {
+        "session": "ses_display_quiet",
+        "ringEntries": 2,
+        "frames": []
+      },
+      "request": { "session": "ses_display_quiet" },
+      "reply": { "absent": "ring_quiet" }
+    }
+  ]
+}

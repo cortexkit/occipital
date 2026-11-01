@@ -1,0 +1,31 @@
+source="export const q = Query(\"read\", {}, 0)\n\n{q.value} {q.value}\n\n<Button label=\"Refresh\" action={Refresh(q)} />"
+identity=Identity { authority: Authority { computer: "computer", session: "session", scope_epoch: "scope-1", provider: "provider", entity: "validated-command", serving_computer: "computer", verified_holder: "computer" }, operation: "read", version: ReadVersion { operation: "operation-1", schema: "schema-1" }, kind: "query", arguments: "{}", default_digest: [95, 236, 235, 102, 255, 200, 111, 56, 217, 82, 120, 108, 109, 105, 108, 121, 194, 219, 194, 57, 221, 78, 145, 180, 103, 41, 215, 58, 39, 251, 87, 233], refresh: None, page_size: None }
+load: evaluations=2 fuel=50 committed=None rejected=[]
+effect Arm(FirstAnswer(42), Decimal(5))
+issue q read {} 42:1
+effect Arm(Timeout(Epoch { instance: 42, request: 1 }), Decimal(30))
+revision=1 layout=LayoutContext { width: Decimal(200), content_size_category: "normal", network: Yes, placement: Row } loading=true controls=[]
+Tree { blocks: [Component { name: DisplayText("LoadingRoot"), props: [], children: [] }] }
+measure-root: evaluations=0 fuel=0 committed=Some(1) rejected=[]
+answer-1: evaluations=1 fuel=25 committed=Some(1) rejected=[]
+effect Stop(Timeout(Epoch { instance: 42, request: 1 }))
+effect Stop(FirstAnswer(42))
+revision=2 layout=LayoutContext { width: Decimal(200), content_size_category: "normal", network: Yes, placement: Row } loading=false controls=[ControlId([Child(1), Prop("action")])]
+Tree { blocks: [Markdown { kind: Paragraph, children: [Text(DisplayText("7")), Text(DisplayText(" ")), Text(DisplayText("7"))] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("q"))] }]))], children: [] }] }
+measure-ready: evaluations=0 fuel=0 committed=Some(2) rejected=[]
+same-identity-demand: evaluations=1 fuel=25 committed=Some(2) rejected=[]
+revision=3 layout=LayoutContext { width: Decimal(200), content_size_category: "normal", network: Yes, placement: Row } loading=false controls=[ControlId([Child(1), Prop("action")])]
+Tree { blocks: [Markdown { kind: Paragraph, children: [Text(DisplayText("7")), Text(DisplayText(" ")), Text(DisplayText("7"))] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("q"))] }]))], children: [] }] }
+activate-committed: evaluations=1 fuel=25 committed=Some(2) rejected=[]
+issue q read {} 42:2
+effect Arm(Timeout(Epoch { instance: 42, request: 2 }), Decimal(30))
+revision=4 layout=LayoutContext { width: Decimal(200), content_size_category: "normal", network: Yes, placement: Row } loading=false controls=[ControlId([Child(1), Prop("action")])]
+Tree { blocks: [Markdown { kind: Paragraph, children: [Text(DisplayText("7")), Text(DisplayText(" ")), Text(DisplayText("7"))] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("q"))] }]))], children: [] }] }
+late-epoch: evaluations=0 fuel=0 committed=Some(2) rejected=[]
+answer-2: evaluations=1 fuel=25 committed=Some(2) rejected=[]
+effect Stop(Timeout(Epoch { instance: 42, request: 2 }))
+revision=5 layout=LayoutContext { width: Decimal(200), content_size_category: "normal", network: Yes, placement: Row } loading=false controls=[ControlId([Child(1), Prop("action")])]
+Tree { blocks: [Markdown { kind: Paragraph, children: [Text(DisplayText("8")), Text(DisplayText(" ")), Text(DisplayText("8"))] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("q"))] }]))], children: [] }] }
+obsolete-measure: evaluations=0 fuel=0 committed=Some(2) rejected=[]
+measure-current: evaluations=0 fuel=0 committed=Some(5) rejected=[]
+stale-control: evaluations=0 fuel=0 committed=Some(5) rejected=[Stale]

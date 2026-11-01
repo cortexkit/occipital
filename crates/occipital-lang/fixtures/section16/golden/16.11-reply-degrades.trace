@@ -1,0 +1,13 @@
+example=16.11-reply-degrades profile=reply
+streamed one byte at a time: provisional=76
+final: id=77 provisional=false literals=[SourceSpan { line: 3, column: 1, end_line: 3, end_column: 42 }, SourceSpan { line: 5, column: 14, end_line: 5, end_column: 21 }, SourceSpan { line: 5, column: 23, end_line: 5, end_column: 44 }, SourceSpan { line: 5, column: 45, end_line: 5, end_column: 79 }]
+  diagnostic {"code":"E_REPLY_FORBIDDEN","severity":"error","phase":"check","span":{"line":5,"column":45,"endLine":5,"endColumn":79},"message":"This tag or prop value is not allowed in replies."}
+  diagnostic {"code":"E_UNKNOWN_COMPONENT","severity":"error","phase":"check","span":{"line":5,"column":23,"endLine":5,"endColumn":44},"subject":"Gauge","message":"The catalog has no component with this name."}
+  plain-text="Here is the summary. [Draft]\n\nexport const total = Sum(data.rows.sales)\n\nThe total is {total}. <Gauge value={0.4} /> <Badge tone=\"info\" text={total} />"
+tree-definition=be77056e3152bd8d4d94dbaf6eafd161034b5c4b2e0de9993638f3d1a22d6c9a Tree { blocks: [Markdown { kind: Paragraph, children: [Text(DisplayText("Here is the summary. ")), Component { name: DisplayText("Badge"), props: [(DisplayText("tone"), String(DisplayText("info")))], children: [Text(DisplayText("Draft"))] }] }, Markdown { kind: Paragraph, children: [Text(DisplayText("export const total = Sum(data.rows.sales)"))] }, Markdown { kind: Paragraph, children: [Text(DisplayText("The total is ")), Text(DisplayText("{total}")), Text(DisplayText(". ")), Text(DisplayText("<Gauge value={0.4} />")), Text(DisplayText(" ")), Text(DisplayText("<Badge tone=\"info\" text={total} />"))] }] }
+tree-sha256=be77056e3152bd8d4d94dbaf6eafd161034b5c4b2e0de9993638f3d1a22d6c9a
+  | Here is the summary. <Badge tone="info">Draft</Badge>
+  | export const total = Sum(data.rows.sales)
+  | The total is {total}. <Gauge value={0.4} /> <Badge tone="info" text={total} />
+  measured height=ProseDeferred states=[]
+  committed id=77

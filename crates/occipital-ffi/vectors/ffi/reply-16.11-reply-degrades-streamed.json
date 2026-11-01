@@ -1,0 +1,1438 @@
+{
+  "entry": "occ_reply_new",
+  "request": {
+    "app": 1,
+    "chat": 0,
+    "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+    "stamp_json": "{\"dialect\":\"1.0\"}"
+  },
+  "status": 0,
+  "response": [
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "SA=="
+      },
+      "status": 0,
+      "response": "{\"id\":1,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"H\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":2,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"He\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cg=="
+      },
+      "status": 0,
+      "response": "{\"id\":3,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Her\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":4,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":5,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "aQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":6,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here i\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cw=="
+      },
+      "status": 0,
+      "response": "{\"id\":7,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":8,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "{\"id\":9,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "aA=="
+      },
+      "status": 0,
+      "response": "{\"id\":10,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":11,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":12,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cw=="
+      },
+      "status": 0,
+      "response": "{\"id\":13,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the s\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":14,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the su\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":15,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the sum\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":16,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summ\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":17,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summa\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cg=="
+      },
+      "status": 0,
+      "response": "{\"id\":18,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summar\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "eQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":19,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Lg=="
+      },
+      "status": 0,
+      "response": "{\"id\":20,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":21,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "PA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Qg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Zw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "PQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Ig=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "aQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Zg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Ig=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Pg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "RA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Zg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "PA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Lw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Qg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Zw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Pg=="
+      },
+      "status": 0,
+      "response": "{\"id\":22,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Cg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Cg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "eA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Yw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":23,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "{\"id\":24,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bw=="
+      },
+      "status": 0,
+      "response": "{\"id\":25,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const to\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "{\"id\":26,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const tot\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":27,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const tota\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bA=="
+      },
+      "status": 0,
+      "response": "{\"id\":28,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":29,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "PQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":30,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total =\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":31,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Uw=="
+      },
+      "status": 0,
+      "response": "{\"id\":32,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = S\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":33,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Su\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":34,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "KA=="
+      },
+      "status": 0,
+      "response": "{\"id\":35,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZA=="
+      },
+      "status": 0,
+      "response": "{\"id\":36,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(d\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":37,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(da\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "{\"id\":38,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(dat\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":39,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Lg=="
+      },
+      "status": 0,
+      "response": "{\"id\":40,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cg=="
+      },
+      "status": 0,
+      "response": "{\"id\":41,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.r\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bw=="
+      },
+      "status": 0,
+      "response": "{\"id\":42,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.ro\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dw=="
+      },
+      "status": 0,
+      "response": "{\"id\":43,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.row\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cw=="
+      },
+      "status": 0,
+      "response": "{\"id\":44,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Lg=="
+      },
+      "status": 0,
+      "response": "{\"id\":45,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cw=="
+      },
+      "status": 0,
+      "response": "{\"id\":46,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.s\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":47,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sa\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bA=="
+      },
+      "status": 0,
+      "response": "{\"id\":48,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sal\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":49,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sale\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cw=="
+      },
+      "status": 0,
+      "response": "{\"id\":50,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "KQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":51,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Cg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Cg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "VA=="
+      },
+      "status": 0,
+      "response": "{\"id\":52,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"T\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "aA=="
+      },
+      "status": 0,
+      "response": "{\"id\":53,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"Th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":54,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":55,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "{\"id\":56,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bw=="
+      },
+      "status": 0,
+      "response": "{\"id\":57,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The to\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "{\"id\":58,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The tot\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":59,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The tota\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bA=="
+      },
+      "status": 0,
+      "response": "{\"id\":60,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":61,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "aQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":62,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total i\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "cw=="
+      },
+      "status": 0,
+      "response": "{\"id\":63,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":64,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ew=="
+      },
+      "status": 0,
+      "response": "{\"id\":65,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "{\"id\":66,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bw=="
+      },
+      "status": 0,
+      "response": "{\"id\":67,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{to\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "{\"id\":68,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{tot\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":69,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{tota\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bA=="
+      },
+      "status": 0,
+      "response": "{\"id\":70,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "fQ=="
+      },
+      "status": 0,
+      "response": "{\"id\":71,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Lg=="
+      },
+      "status": 0,
+      "response": "{\"id\":72,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\".\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":73,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "PA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Rw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Zw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "PQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ew=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "MA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Lg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "NA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "fQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Lw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Pg=="
+      },
+      "status": 0,
+      "response": "{\"id\":74,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"c\":\"Gauge\",\"p\":{},\"k\":[]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "{\"id\":75,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"c\":\"Gauge\",\"p\":{},\"k\":[]},{\"t\":\" \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "PA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Qg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Zw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "PQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Ig=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "aQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Zg=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Ig=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ZQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "eA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "PQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "ew=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "dA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "YQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "bA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "fQ=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "IA=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Lw=="
+      },
+      "status": 0,
+      "response": "null"
+    },
+    {
+      "entry": "occ_reply_chunk",
+      "request": {
+        "bytes": "Pg=="
+      },
+      "status": 0,
+      "response": "{\"id\":76,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"c\":\"Gauge\",\"p\":{},\"k\":[]},{\"t\":\" \"},{\"t\":\"<Badge tone=\\\"info\\\" text={total} />\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+    },
+    {
+      "entry": "occ_reply_finish",
+      "request": {
+        "records_json": "{\"handles\":[],\"references\":{}}",
+        "tail": ""
+      },
+      "status": 0,
+      "response": "{\"id\":77,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{\"tone\":\"info\"},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"t\":\"<Gauge value={0.4} />\"},{\"t\":\" \"},{\"t\":\"<Badge tone=\\\"info\\\" text={total} />\"}]}]},\"literals\":[{\"line\":3,\"column\":1,\"endLine\":3,\"endColumn\":42},{\"line\":5,\"column\":14,\"endLine\":5,\"endColumn\":21},{\"line\":5,\"column\":23,\"endLine\":5,\"endColumn\":44},{\"line\":5,\"column\":45,\"endLine\":5,\"endColumn\":79}],\"diagnostics\":[{\"code\":\"E_REPLY_FORBIDDEN\",\"severity\":\"error\",\"phase\":\"check\",\"span\":{\"line\":5,\"column\":45,\"endLine\":5,\"endColumn\":79},\"message\":\"This tag or prop value is not allowed in replies.\"},{\"code\":\"E_UNKNOWN_COMPONENT\",\"severity\":\"error\",\"phase\":\"check\",\"span\":{\"line\":5,\"column\":23,\"endLine\":5,\"endColumn\":44},\"subject\":\"Gauge\",\"message\":\"The catalog has no component with this name.\"}],\"plain_text\":\"Here is the summary. [Draft]\\n\\nexport const total = Sum(data.rows.sales)\\n\\nThe total is {total}. <Gauge value={0.4} /> <Badge tone=\\\"info\\\" text={total} />\"}"
+    },
+    {
+      "entry": "occ_reply_measure",
+      "request": {
+        "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+        "metrics": "fixed"
+      },
+      "status": 0,
+      "response": "{\"height\":\"prose_deferred\",\"key\":{\"instance_epoch\":0,\"revision\":77,\"state_hash\":\"be77056e3152bd8d4d94dbaf6eafd161034b5c4b2e0de9993638f3d1a22d6c9a\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":2,\"reservation\":\"deferred\",\"boxes\":[],\"row_frame\":null}"
+    }
+  ]
+}

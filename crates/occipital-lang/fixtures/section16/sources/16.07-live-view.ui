@@ -1,0 +1,12 @@
+export const live = Watch("bash_watch", {})
+export const history = PagedList("bash_lines", {}, 200)
+
+### Live output
+{live.status == "ended" ? "The command has finished." : null}
+<Table columns={[<Col label="Latest lines" data={Slice(live.value, -20)} />]} />
+{live.dropped > 0 ? FormatNumber(live.dropped) + " earlier lines are not shown." : null}
+
+### Full output
+<Table columns={[<Col label="Line" data={history.items} />]} />
+{history.done ? null : <Button label="Load more" appearance="secondary" action={LoadMore(history)} />}
+{history.capped ? "This view reached its retained limit. Use a separate scoped output page for another range." : null}

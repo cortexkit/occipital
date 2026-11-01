@@ -1,0 +1,43 @@
+[package]
+name = "cortexkit-occipital-lang"
+version = "0.1.1"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "The rich UI language the CortexKit apps draw agent replies, pages and tool rows with: parser, checker, evaluator and layout"
+readme = "README.md"
+keywords = ["cortexkit", "rich-ui", "language", "layout"]
+categories = ["parser-implementations", "gui"]
+# Only what builds the library and its `traces` feature: the catalogs it
+# embeds and the golden trace sources. The crate's tests and tools stay in the
+# repository.
+include = [
+    "Cargo.toml",
+    "README.md",
+    "LICENSE",
+    "src/**/*.rs",
+    "catalog/catalog-v1.json",
+    "catalog/catalog-tool-v1.1.json",
+    "fixtures/section16/**/*",
+]
+
+[lib]
+name = "occipital_lang"
+
+[dependencies]
+cortexkit-rich-ui-syntax = "=0.3.0"
+# Dependency-free, pure-Rust SHA-256 for catalog and table digests on every target.
+hmac-sha256 = { version = "1", default-features = false }
+serde = { version = "1", features = ["derive"] }
+# Keep decimal source tokens exact while canonicalizing identity JSON (§14.3).
+serde_json = { version = "1", features = ["arbitrary_precision"] }
+
+[features]
+# Compiles the committed §16 golden traces and their builders into the library
+# and exposes `run_golden_traces`, so an app can run them on its own target
+# (§14.1). Off by default; builds that do not enable `traces` carry no fixtures.
+traces = []
+
+[dev-dependencies]
+# Thread-local requested-byte measurements without unsafe allocator code in this crate.
+allocation-counter = "0.8.1"

@@ -1,0 +1,56 @@
+{
+  "role.describe.before.json": {"result": {
+    "majors": [{"version": "llm-runner/v1", "ops": ["role.describe", "session.baseline", "session.read", "session.history", "session.output_refs", "session.output_ref_read", "session.head", "run.result", "run.tool_calls", "run.status", "run.cancel", "session.retract", "session.subscribe", "session.send", "session.resolve", "send.status"], "stability": "alpha"}],
+    "implementation_version": "fixture", "session_capabilities_from": "admission", "capabilities": ["head_sender", "history_display"]
+  }},
+  "role.describe.after.json": {"result": {
+    "majors": [{"version": "llm-runner/v1", "ops": ["role.describe", "session.baseline", "session.read", "session.history", "session.output_refs", "session.output_ref_read", "session.head", "run.result", "run.tool_calls", "run.status", "run.cancel", "session.retract", "session.subscribe", "session.send", "session.resolve", "send.status"], "stability": "alpha"}],
+    "implementation_version": "fixture", "session_capabilities_from": "admission", "capabilities": ["head_sender", "history_display", "call_identity", "system_text_default"]
+  }},
+  "session.head.completed.json": {"result": {
+    "lineage_id": "00000000-0000-4000-8000-000000000007", "incarnation": "00000000-0000-4000-8000-000000000007",
+    "first_ordinal": 0, "last_ordinal": 3, "history_version": 0, "updated_at": 506,
+    "last_run_state": {"run_id": "run", "state": "completed", "reason": "completed"},
+    "sender": {"modes": ["tool_result", "steer", "idle_start"], "interrupt": true, "owner": true}
+  }},
+  "session.head.error.fractional.json": {"result": {
+    "lineage_id": "00000000-0000-4000-8000-000000000007", "first_ordinal": 0, "last_ordinal": 0, "history_version": 0, "updated_at": 506,
+    "last_run_state": {"run_id": "sample-error-run", "state": "error", "reason": "error"},
+    "sender": {"modes": ["tool_result", "steer", "idle_start"], "interrupt": true, "owner": true},
+    "last_run_error": {"class": "transient", "retry_after_secs": 1.5, "resets_at_ms": 1790000003000}
+  }},
+  "session.head.error.missing-delay.json": {"result": {
+    "lineage_id": "00000000-0000-4000-8000-000000000007", "first_ordinal": 0, "last_ordinal": 0, "history_version": 0, "updated_at": 506,
+    "last_run_state": {"run_id": "sample-error-run", "state": "error", "reason": "error"},
+    "sender": {"modes": ["tool_result", "steer", "idle_start"], "interrupt": true, "owner": true},
+    "last_run_error": {"class": "transient", "resets_at_ms": 1790000003000}
+  }},
+  "approved.session.read.json": {"result": {
+    "lineage_id": "00000000-0000-4000-8000-000000000007", "head": {"wal_seq": 14, "sub_index": 0},
+    "lineage_state": {"last_run_id": "run", "state": "completed", "reason": "completed"},
+    "messages": [
+      {"mid": "m0", "ordinal": 0, "written_at": 500, "message": {"role": "user", "content": [{"type": "text", "text": "prompt"}]}},
+      {"mid": "m1", "ordinal": 1, "written_at": 501, "message": {"role": "assistant", "content": [{"type": "tool_call", "tool_call_id": "approved-call", "tool_name": "work", "input": {}}]}, "tool_calls": [{"tool_call_id": "approved-call", "call_key": "00000000-0000-4000-8000-000000000007:5", "dispatched_to": "tools", "indeterminate": false}]},
+      {"mid": "m2", "ordinal": 2, "written_at": 505, "message": {"role": "tool", "content": [{"type": "tool_result", "tool_call_id": "approved-call", "output": {"kind": "text", "text": "result"}, "is_error": false}]}},
+      {"mid": "m3", "ordinal": 3, "written_at": 506, "message": {"role": "assistant", "content": [{"type": "text", "text": "answer"}]}}
+    ]
+  }},
+  "session.history.json": {"result": {
+    "history_version": 0, "lineage_id": "00000000-0000-4000-8000-000000000007",
+    "messages": [
+      {"mid": "m0", "ordinal": 0, "written_at": 500, "row": {"role": "user", "text": "prompt", "parts": [{"type": "text", "text": "prompt", "part": "m0#0"}]}},
+      {"mid": "m1", "ordinal": 1, "written_at": 501, "row": {"role": "assistant", "text": "", "parts": [{"type": "tool_call", "part": "m1#0", "tool_call_id": "sample-call", "name": "work", "arguments": "{}", "call_key": "00000000-0000-4000-8000-000000000007:5", "schema_pin": "tp1:work:fixture:7"}]}}
+    ]
+  }},
+  "approved.session.history.json": {"result": {
+    "history_version": 0, "lineage_id": "00000000-0000-4000-8000-000000000007",
+    "messages": [
+      {"mid": "m0", "ordinal": 0, "written_at": 500, "row": {"role": "user", "text": "prompt", "parts": [{"type": "text", "text": "prompt", "part": "m0#0"}]}},
+      {"mid": "m1", "ordinal": 1, "written_at": 501, "row": {"role": "assistant", "text": "", "parts": [{"type": "tool_call", "part": "m1#0", "tool_call_id": "approved-call", "name": "work", "arguments": "{}", "call_key": "00000000-0000-4000-8000-000000000007:5", "schema_pin": "tp1:work:fixture:7"}]}}
+    ]
+  }},
+  "tool_started.json": {"type": "tool_started", "mid": "m1", "tool_call_id": "sample-call", "name": "work", "arguments": "{}", "started_at": 501, "call_key": "00000000-0000-4000-8000-000000000007:5", "schema_pin": "tp1:work:fixture:7"},
+  "tool_finished.json": {"type": "tool_finished", "mid": "m1", "tool_call_id": "sample-call", "outcome": "ok", "output_bytes": 6, "finished_at": 505, "call_key": "00000000-0000-4000-8000-000000000007:5", "schema_pin": "tp1:work:fixture:7"},
+  "approved.tool_started.json": {"type": "tool_started", "mid": "m1", "tool_call_id": "approved-call", "name": "work", "arguments": "{}", "started_at": 502, "call_key": "00000000-0000-4000-8000-000000000007:5"},
+  "approved.tool_finished.json": {"type": "tool_finished", "mid": "m1", "tool_call_id": "approved-call", "outcome": "ok", "output_bytes": 16, "finished_at": 505, "call_key": "00000000-0000-4000-8000-000000000007:5", "schema_pin": "tp1:work:fixture:7"}
+}

@@ -1,0 +1,16 @@
+{
+  "op": "upload.begin",
+  "reply": {
+    "chunk_bytes": 1048576,
+    "expires_at": 1767312000000,
+    "upload_id": "00000000000a11ce0000000000000001"
+  },
+  "request": {
+    "mime": "application/octet-stream",
+    "name": "clip.mov",
+    "session": "phone-target",
+    "sha256": "c3127154644798d03d535bed5682032cb3602e1c426b438b9f809e0f3cd0f863",
+    "size": 20
+  },
+  "tag": "begin"
+}

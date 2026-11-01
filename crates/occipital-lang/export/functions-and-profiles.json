@@ -1,0 +1,482 @@
+{
+  "functions": [
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Count",
+      "signature": "Count(list: list | absent)"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Sum",
+      "signature": "Sum(list: list | absent)"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Avg",
+      "signature": "Avg(list: list | absent)"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "First",
+      "signature": "First(list: list | absent)"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Last",
+      "signature": "Last(list: list | absent)"
+    },
+    {
+      "maxArgs": null,
+      "minArgs": 1,
+      "name": "Min",
+      "signature": "Min(list) or (a: number | string, b: number | string, ...)"
+    },
+    {
+      "maxArgs": null,
+      "minArgs": 1,
+      "name": "Max",
+      "signature": "Max(list) or (a: number | string, b: number | string, ...)"
+    },
+    {
+      "maxArgs": 4,
+      "minArgs": 4,
+      "name": "Filter",
+      "signature": "Filter(list, field: string | null, op: string, value) -> list"
+    },
+    {
+      "maxArgs": 3,
+      "minArgs": 1,
+      "name": "Sort",
+      "signature": "Sort(list, field?: string | null, direction?: string) -> list"
+    },
+    {
+      "maxArgs": 3,
+      "minArgs": 3,
+      "name": "Each",
+      "signature": "Each(list, \"name\", template) -> list"
+    },
+    {
+      "maxArgs": 3,
+      "minArgs": 2,
+      "name": "Slice",
+      "signature": "Slice(x: list | string | absent, start: number, end?: number)"
+    },
+    {
+      "maxArgs": 3,
+      "minArgs": 2,
+      "name": "Range",
+      "signature": "Range(start: number, end: number, step?: number) -> list<number>"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 2,
+      "name": "Contains",
+      "signature": "Contains(x: list | string | absent, y) -> boolean"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Keys",
+      "signature": "Keys(record: record | absent) -> list"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Values",
+      "signature": "Values(record: record | absent) -> list"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 2,
+      "name": "Join",
+      "signature": "Join(list, separator: string) -> string"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "IsError",
+      "signature": "IsError(x) -> boolean"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 1,
+      "name": "Round",
+      "signature": "Round(x: number, digits?: number) -> number"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Floor",
+      "signature": "Floor(x: number) -> number"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Ceil",
+      "signature": "Ceil(x: number) -> number"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Abs",
+      "signature": "Abs(x: number) -> number"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Sqrt",
+      "signature": "Sqrt(x: number) -> number"
+    },
+    {
+      "maxArgs": 3,
+      "minArgs": 3,
+      "name": "Clamp",
+      "signature": "Clamp(x: number, low: number, high: number) -> number"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 2,
+      "name": "Div",
+      "signature": "Div(a: number, b: number) -> number"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Number",
+      "signature": "Number(x: number | string | absent) -> number | null"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Text",
+      "signature": "Text(x: scalar) -> string"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Len",
+      "signature": "Len(s: string | absent)"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Lines",
+      "signature": "Lines(s: string | absent)"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Upper",
+      "signature": "Upper(s: string) -> string"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Lower",
+      "signature": "Lower(s: string) -> string"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Trim",
+      "signature": "Trim(s: string) -> string"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 2,
+      "name": "StartsWith",
+      "signature": "StartsWith(s: string | absent, pattern: string)"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 2,
+      "name": "EndsWith",
+      "signature": "EndsWith(s: string | absent, pattern: string)"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 2,
+      "name": "Split",
+      "signature": "Split(s: string | absent, pattern: string)"
+    },
+    {
+      "maxArgs": 3,
+      "minArgs": 3,
+      "name": "Replace",
+      "signature": "Replace(s: string, from: string, to: string) -> string"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 2,
+      "name": "Truncate",
+      "signature": "Truncate(s: string, max: number) -> string"
+    },
+    {
+      "maxArgs": 3,
+      "minArgs": 1,
+      "name": "FormatNumber",
+      "signature": "FormatNumber(x: number, decimals?: number | null, grouping?: boolean) -> string"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 1,
+      "name": "FormatBytes",
+      "signature": "FormatBytes(n: number, decimals?: number) -> string"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 1,
+      "name": "FormatDuration",
+      "signature": "FormatDuration(ms: number, style?: string) -> string"
+    },
+    {
+      "maxArgs": 3,
+      "minArgs": 1,
+      "name": "FormatDate",
+      "signature": "FormatDate(ms: number, pattern?: string, zone?: string) -> string"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 2,
+      "name": "FormatRelative",
+      "signature": "FormatRelative(time: number, now: number) -> string"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "ParseDate",
+      "signature": "ParseDate(s: string) -> number"
+    },
+    {
+      "maxArgs": 3,
+      "minArgs": 2,
+      "name": "Parse",
+      "signature": "Parse(snapshot, format: string, options?: record)"
+    },
+    {
+      "maxArgs": 4,
+      "minArgs": 3,
+      "name": "Query",
+      "signature": "Query(op: string, args: data, default: data, refreshSeconds?: number)"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 2,
+      "name": "Watch",
+      "signature": "Watch(op: string, args: data)"
+    },
+    {
+      "maxArgs": 3,
+      "minArgs": 2,
+      "name": "PagedList",
+      "signature": "PagedList(op: string, args: data, pageSize?: number)"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Action",
+      "signature": "Action(steps: list<action>) -> action"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 2,
+      "name": "Set",
+      "signature": "Set($state, value: data) -> action"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Reset",
+      "signature": "Reset($state) -> action"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Refresh",
+      "signature": "Refresh(site) -> action"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "LoadMore",
+      "signature": "LoadMore(site) -> action"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Compose",
+      "signature": "Compose(text: string) -> action"
+    },
+    {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "Open",
+      "signature": "Open(target: string | handle) -> action"
+    }
+  ],
+  "language": "1.0",
+  "profiles": [
+    {
+      "components": [
+        "Badge",
+        "Callout",
+        "Chart",
+        "Citation",
+        "Image",
+        "ImageGroup",
+        "LinkCard",
+        "Map",
+        "Styled",
+        "Table"
+      ],
+      "hostValues": [],
+      "mode": "reply",
+      "name": "reply",
+      "references": true,
+      "sites": []
+    },
+    {
+      "components": [
+        "Badge",
+        "Button",
+        "Buttons",
+        "Callout",
+        "Card",
+        "CardHeader",
+        "Chart",
+        "Citation",
+        "CodeBlock",
+        "Col",
+        "Divider",
+        "FormControl",
+        "Image",
+        "ImageGroup",
+        "InlineCode",
+        "Input",
+        "LinkCard",
+        "List",
+        "ListItem",
+        "LiveOutput",
+        "Map",
+        "Progress",
+        "Select",
+        "SelectItem",
+        "Series",
+        "Slider",
+        "Stat",
+        "Styled",
+        "TabItem",
+        "Table",
+        "Tabs",
+        "TextContent",
+        "Toggle"
+      ],
+      "hostValues": [
+        "data",
+        "now",
+        "zone"
+      ],
+      "mode": "program",
+      "name": "show_ui",
+      "references": true,
+      "sites": [
+        "Query",
+        "Watch",
+        "PagedList"
+      ]
+    },
+    {
+      "components": [
+        "Badge",
+        "Card",
+        "Divider",
+        "InlineCode",
+        "Progress",
+        "Stat",
+        "Styled",
+        "TextContent"
+      ],
+      "hostValues": [
+        "input",
+        "view",
+        "now",
+        "zone"
+      ],
+      "mode": "program",
+      "name": "tool_row",
+      "references": false,
+      "sites": []
+    },
+    {
+      "components": [
+        "Badge",
+        "Button",
+        "Buttons",
+        "Callout",
+        "Card",
+        "CardHeader",
+        "Chart",
+        "CodeBlock",
+        "Col",
+        "Divider",
+        "FormControl",
+        "InlineCode",
+        "Input",
+        "LinkCard",
+        "List",
+        "ListItem",
+        "LiveOutput",
+        "Progress",
+        "Select",
+        "SelectItem",
+        "Series",
+        "Slider",
+        "Stat",
+        "Styled",
+        "TabItem",
+        "Table",
+        "Tabs",
+        "TextContent",
+        "Toggle"
+      ],
+      "hostValues": [
+        "input",
+        "view",
+        "now",
+        "zone"
+      ],
+      "mode": "program",
+      "name": "tool_page",
+      "references": false,
+      "sites": [
+        "Query",
+        "Watch",
+        "PagedList"
+      ]
+    }
+  ],
+  "reservedWrites": [
+    "Mutation",
+    "Run"
+  ],
+  "versions": {
+    "catalogs": [
+      {
+        "aliases": [
+          "beb0904e8b402916d84d7609a8b06db30ac308f692dcc048db2dc1138cd0c986"
+        ],
+        "digest": "4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5",
+        "layout": "1",
+        "version": "1.0"
+      }
+    ],
+    "dialects": [
+      "1.0"
+    ]
+  }
+}

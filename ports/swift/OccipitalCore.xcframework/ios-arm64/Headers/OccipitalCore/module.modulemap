@@ -1,0 +1,4 @@
+module OccipitalCore {
+    header "occipital.h"
+    export *
+}

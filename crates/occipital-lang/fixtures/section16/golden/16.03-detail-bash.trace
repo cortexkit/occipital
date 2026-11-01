@@ -1,0 +1,101 @@
+example=16.03-detail-bash case=1-page profile=tool_page
+check={"ok":true,"language":"1.0","executionDialect":"1.0","approvalChecked":false,"requires":"1.0","diagnostics":[],"omitted":0,"trial":{"fuel":0,"nodes":0,"outcome":"not_run"}}
+load: evaluations=1 fuel=166 rejected=[] abort=None
+  Arm(FirstAnswer(42), Decimal(5))
+  issue job bash_status {} epoch=42:1 refresh=Some("2")
+  Arm(Timeout(Epoch { instance: 42, request: 1 }), Decimal(30))
+  issue out bash_output {"page":1} epoch=42:2 refresh=None
+  Arm(Timeout(Epoch { instance: 42, request: 2 }), Decimal(30))
+  candidate revision=1 loading=true controls=0 bindings=[]
+tree-definition=cb98d421b95cf64ba672c7a98d4083b6c3db4f4cc9264ed98fe3940026d95e65 Tree { blocks: [Component { name: DisplayText("LoadingRoot"), props: [], children: [] }] }
+tree-sha256=cb98d421b95cf64ba672c7a98d4083b6c3db4f4cc9264ed98fe3940026d95e65
+  | <LoadingRoot />
+load/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=1 fallback=false
+answers: evaluations=1 fuel=184 rejected=[] abort=None
+  Stop(Timeout(Epoch { instance: 42, request: 1 }))
+  Arm(Refresh(Identity { authority: Authority { computer: "computer", session: "session", scope_epoch: "scope-1", provider: "provider", entity: "validated-command", serving_computer: "computer", verified_holder: "computer" }, operation: "bash_status", version: ReadVersion { operation: "bash_status-v1", schema: "bash_status-schema-1" }, kind: "query", arguments: "{}", default_digest: [70, 238, 7, 219, 194, 55, 236, 128, 95, 98, 230, 21, 54, 11, 246, 180, 216, 76, 149, 247, 193, 62, 167, 245, 202, 25, 114, 51, 70, 58, 232, 57], refresh: Some(Decimal(2)), page_size: None }, Epoch { instance: 42, request: 1 }), Decimal(2))
+  Stop(Timeout(Epoch { instance: 42, request: 2 }))
+  Stop(FirstAnswer(42))
+  candidate revision=2 loading=false controls=2 bindings=[]
+tree-definition=8f3b151642a9c299c3e071746fffc2adbb3490566d32d6f8606d38b4267f2f01 Tree { blocks: [Component { name: DisplayText("CardHeader"), props: [(DisplayText("title"), String(DisplayText("Shell command")))], children: [] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Command"))] }, Component { name: DisplayText("CodeBlock"), props: [(DisplayText("language"), String(DisplayText("bash"))), (DisplayText("codeString"), String(DisplayText("cargo test --workspace")))], children: [] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Status"))] }, Markdown { kind: Paragraph, children: [Component { name: DisplayText("Badge"), props: [(DisplayText("text"), String(DisplayText("Running"))), (DisplayText("tone"), String(DisplayText("info")))], children: [] }] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Output"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Lines, page 1"))), (DisplayText("data"), List([String(DisplayText("Compiling occipital-lang")), String(DisplayText("Running tests"))]))], children: [] })]))], children: [] }, Component { name: DisplayText("Card"), props: [(DisplayText("appearance"), String(DisplayText("clear"))), (DisplayText("direction"), String(DisplayText("row"))), (DisplayText("justify"), String(DisplayText("between"))), (DisplayText("align"), String(DisplayText("center")))], children: [Markdown { kind: Paragraph, children: [Markdown { kind: SoftBreak, children: [] }, Text(DisplayText("Page ")), Text(DisplayText("1")), Text(DisplayText(" of ")), Text(DisplayText("3")), Markdown { kind: SoftBreak, children: [] }] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Next"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Set, arguments: [String(DisplayText("page")), Number(Decimal(2))] }]))], children: [] }] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh status"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("job"))] }]))], children: [] }] }
+tree-sha256=8f3b151642a9c299c3e071746fffc2adbb3490566d32d6f8606d38b4267f2f01
+  | <CardHeader title="Shell command" />
+  | ### Command
+  | <CodeBlock language="bash" codeString="cargo test --workspace" />
+  | ### Status
+  | <Badge text="Running" tone="info" />
+  | ### Output
+  | <Table columns=[<Col label="Lines, page 1" data=["Compiling occipital-lang", "Running tests"] />] />
+  | <Card appearance="clear" direction="row" justify="between" align="center"> Page 1 of 3 <Button label="Next" appearance="secondary" action=action(Set) /></Card>
+  | <Button label="Refresh status" appearance="secondary" action=action(Refresh) />
+answers/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=2 fallback=false
+next: evaluations=1 fuel=208 rejected=[] abort=None
+  issue out bash_output {"page":2} epoch=42:3 refresh=None
+  Arm(Timeout(Epoch { instance: 42, request: 3 }), Decimal(30))
+  candidate revision=3 loading=false controls=3 bindings=[]
+tree-definition=53b94395fda158e0a3ae0bd2aac1e4c802d939cf6829f1752244ebd3934cb024 Tree { blocks: [Component { name: DisplayText("CardHeader"), props: [(DisplayText("title"), String(DisplayText("Shell command")))], children: [] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Command"))] }, Component { name: DisplayText("CodeBlock"), props: [(DisplayText("language"), String(DisplayText("bash"))), (DisplayText("codeString"), String(DisplayText("cargo test --workspace")))], children: [] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Status"))] }, Markdown { kind: Paragraph, children: [Component { name: DisplayText("Badge"), props: [(DisplayText("text"), String(DisplayText("Running"))), (DisplayText("tone"), String(DisplayText("info")))], children: [] }] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Output"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Lines, page 2"))), (DisplayText("data"), List([String(DisplayText("Compiling occipital-lang")), String(DisplayText("Running tests"))]))], children: [] })]))], children: [] }, Markdown { kind: Paragraph, children: [Text(DisplayText("Loading the page…"))] }, Component { name: DisplayText("Card"), props: [(DisplayText("appearance"), String(DisplayText("clear"))), (DisplayText("direction"), String(DisplayText("row"))), (DisplayText("justify"), String(DisplayText("between"))), (DisplayText("align"), String(DisplayText("center")))], children: [Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Previous"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Set, arguments: [String(DisplayText("page")), Number(Decimal(1))] }]))], children: [] }, Markdown { kind: Paragraph, children: [Markdown { kind: SoftBreak, children: [] }, Text(DisplayText("Page ")), Text(DisplayText("2")), Text(DisplayText(" of ")), Text(DisplayText("3")), Markdown { kind: SoftBreak, children: [] }] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Next"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Set, arguments: [String(DisplayText("page")), Number(Decimal(3))] }]))], children: [] }] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh status"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("job"))] }]))], children: [] }] }
+tree-sha256=53b94395fda158e0a3ae0bd2aac1e4c802d939cf6829f1752244ebd3934cb024
+  | <CardHeader title="Shell command" />
+  | ### Command
+  | <CodeBlock language="bash" codeString="cargo test --workspace" />
+  | ### Status
+  | <Badge text="Running" tone="info" />
+  | ### Output
+  | <Table columns=[<Col label="Lines, page 2" data=["Compiling occipital-lang", "Running tests"] />] />
+  | Loading the page…
+  | <Card appearance="clear" direction="row" justify="between" align="center"><Button label="Previous" appearance="secondary" action=action(Set) /> Page 2 of 3 <Button label="Next" appearance="secondary" action=action(Set) /></Card>
+  | <Button label="Refresh status" appearance="secondary" action=action(Refresh) />
+next/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=3 fallback=false
+page-2: evaluations=1 fuel=203 rejected=[] abort=None
+  Stop(Timeout(Epoch { instance: 42, request: 3 }))
+  candidate revision=4 loading=false controls=3 bindings=[]
+tree-definition=3af4cd91c992c68ff7484bd0bda3057ea57848675cc2135a8f1bea174c135878 Tree { blocks: [Component { name: DisplayText("CardHeader"), props: [(DisplayText("title"), String(DisplayText("Shell command")))], children: [] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Command"))] }, Component { name: DisplayText("CodeBlock"), props: [(DisplayText("language"), String(DisplayText("bash"))), (DisplayText("codeString"), String(DisplayText("cargo test --workspace")))], children: [] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Status"))] }, Markdown { kind: Paragraph, children: [Component { name: DisplayText("Badge"), props: [(DisplayText("text"), String(DisplayText("Running"))), (DisplayText("tone"), String(DisplayText("info")))], children: [] }] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Output"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Lines, page 2"))), (DisplayText("data"), List([String(DisplayText("test result: ok"))]))], children: [] })]))], children: [] }, Component { name: DisplayText("Card"), props: [(DisplayText("appearance"), String(DisplayText("clear"))), (DisplayText("direction"), String(DisplayText("row"))), (DisplayText("justify"), String(DisplayText("between"))), (DisplayText("align"), String(DisplayText("center")))], children: [Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Previous"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Set, arguments: [String(DisplayText("page")), Number(Decimal(1))] }]))], children: [] }, Markdown { kind: Paragraph, children: [Markdown { kind: SoftBreak, children: [] }, Text(DisplayText("Page ")), Text(DisplayText("2")), Text(DisplayText(" of ")), Text(DisplayText("3")), Markdown { kind: SoftBreak, children: [] }] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Next"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Set, arguments: [String(DisplayText("page")), Number(Decimal(3))] }]))], children: [] }] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh status"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("job"))] }]))], children: [] }] }
+tree-sha256=3af4cd91c992c68ff7484bd0bda3057ea57848675cc2135a8f1bea174c135878
+  | <CardHeader title="Shell command" />
+  | ### Command
+  | <CodeBlock language="bash" codeString="cargo test --workspace" />
+  | ### Status
+  | <Badge text="Running" tone="info" />
+  | ### Output
+  | <Table columns=[<Col label="Lines, page 2" data=["test result: ok"] />] />
+  | <Card appearance="clear" direction="row" justify="between" align="center"><Button label="Previous" appearance="secondary" action=action(Set) /> Page 2 of 3 <Button label="Next" appearance="secondary" action=action(Set) /></Card>
+  | <Button label="Refresh status" appearance="secondary" action=action(Refresh) />
+page-2/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=4 fallback=false
+refresh-status: evaluations=1 fuel=203 rejected=[] abort=None
+  Stop(Refresh(Identity { authority: Authority { computer: "computer", session: "session", scope_epoch: "scope-1", provider: "provider", entity: "validated-command", serving_computer: "computer", verified_holder: "computer" }, operation: "bash_status", version: ReadVersion { operation: "bash_status-v1", schema: "bash_status-schema-1" }, kind: "query", arguments: "{}", default_digest: [70, 238, 7, 219, 194, 55, 236, 128, 95, 98, 230, 21, 54, 11, 246, 180, 216, 76, 149, 247, 193, 62, 167, 245, 202, 25, 114, 51, 70, 58, 232, 57], refresh: Some(Decimal(2)), page_size: None }, Epoch { instance: 42, request: 1 }))
+  issue job bash_status {} epoch=42:4 refresh=Some("2")
+  Arm(Timeout(Epoch { instance: 42, request: 4 }), Decimal(30))
+  candidate revision=5 loading=false controls=3 bindings=[]
+tree-sha256=3af4cd91c992c68ff7484bd0bda3057ea57848675cc2135a8f1bea174c135878
+  | <CardHeader title="Shell command" />
+  | ### Command
+  | <CodeBlock language="bash" codeString="cargo test --workspace" />
+  | ### Status
+  | <Badge text="Running" tone="info" />
+  | ### Output
+  | <Table columns=[<Col label="Lines, page 2" data=["test result: ok"] />] />
+  | <Card appearance="clear" direction="row" justify="between" align="center"><Button label="Previous" appearance="secondary" action=action(Set) /> Page 2 of 3 <Button label="Next" appearance="secondary" action=action(Set) /></Card>
+  | <Button label="Refresh status" appearance="secondary" action=action(Refresh) />
+refresh-status/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=5 fallback=false
+status-error: evaluations=1 fuel=193 rejected=[] abort=None
+  Stop(Timeout(Epoch { instance: 42, request: 4 }))
+  Arm(Refresh(Identity { authority: Authority { computer: "computer", session: "session", scope_epoch: "scope-1", provider: "provider", entity: "validated-command", serving_computer: "computer", verified_holder: "computer" }, operation: "bash_status", version: ReadVersion { operation: "bash_status-v1", schema: "bash_status-schema-1" }, kind: "query", arguments: "{}", default_digest: [70, 238, 7, 219, 194, 55, 236, 128, 95, 98, 230, 21, 54, 11, 246, 180, 216, 76, 149, 247, 193, 62, 167, 245, 202, 25, 114, 51, 70, 58, 232, 57], refresh: Some(Decimal(2)), page_size: None }, Epoch { instance: 42, request: 4 }), Decimal(4))
+  candidate revision=6 loading=false controls=3 bindings=[]
+tree-definition=3faeefe1429f040f17257a9b3a3cef3c4f1f30016f2cc34e47706892826d2f90 Tree { blocks: [Component { name: DisplayText("CardHeader"), props: [(DisplayText("title"), String(DisplayText("Shell command")))], children: [] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Command"))] }, Component { name: DisplayText("CodeBlock"), props: [(DisplayText("language"), String(DisplayText("bash"))), (DisplayText("codeString"), String(DisplayText("cargo test --workspace")))], children: [] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Status"))] }, Markdown { kind: Paragraph, children: [Component { name: DisplayText("Badge"), props: [(DisplayText("text"), String(DisplayText("Status unavailable"))), (DisplayText("tone"), String(DisplayText("warning")))], children: [] }] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Output"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Lines, page 2"))), (DisplayText("data"), List([String(DisplayText("test result: ok"))]))], children: [] })]))], children: [] }, Component { name: DisplayText("Card"), props: [(DisplayText("appearance"), String(DisplayText("clear"))), (DisplayText("direction"), String(DisplayText("row"))), (DisplayText("justify"), String(DisplayText("between"))), (DisplayText("align"), String(DisplayText("center")))], children: [Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Previous"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Set, arguments: [String(DisplayText("page")), Number(Decimal(1))] }]))], children: [] }, Markdown { kind: Paragraph, children: [Markdown { kind: SoftBreak, children: [] }, Text(DisplayText("Page ")), Text(DisplayText("2")), Text(DisplayText(" of ")), Text(DisplayText("3")), Markdown { kind: SoftBreak, children: [] }] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Next"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Set, arguments: [String(DisplayText("page")), Number(Decimal(3))] }]))], children: [] }] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh status"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("job"))] }]))], children: [] }] }
+tree-sha256=3faeefe1429f040f17257a9b3a3cef3c4f1f30016f2cc34e47706892826d2f90
+  | <CardHeader title="Shell command" />
+  | ### Command
+  | <CodeBlock language="bash" codeString="cargo test --workspace" />
+  | ### Status
+  | <Badge text="Status unavailable" tone="warning" />
+  | ### Output
+  | <Table columns=[<Col label="Lines, page 2" data=["test result: ok"] />] />
+  | <Card appearance="clear" direction="row" justify="between" align="center"><Button label="Previous" appearance="secondary" action=action(Set) /> Page 2 of 3 <Button label="Next" appearance="secondary" action=action(Set) /></Card>
+  | <Button label="Refresh status" appearance="secondary" action=action(Refresh) />
+status-error/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=6 fallback=false

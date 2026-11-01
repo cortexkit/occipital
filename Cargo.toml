@@ -1,0 +1,29 @@
+[workspace]
+members = [
+    "crates/occipital-lang",
+    "crates/occipital-registry",
+    "crates/occipital-module",
+    "crates/occipital-ffi",
+    "crates/occipital-app-reader",
+    "crates/occipital-files",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+authors = ["Ufuk Altinok"]
+
+# occipital-module must catch panics from the language library with
+# `std::panic::catch_unwind`, so one bad program cannot stop the module serving
+# everyone else. occipital-ffi relies on the same unwinding to turn a panic
+# into the OCC_PANIC status instead of crashing the app embedding it. Both only
+# work when panics unwind, so no profile may switch
+# to `panic = "abort"`.
+# Test builds inherit `dev` (and Cargo always unwinds test targets), and the
+# module refuses to compile without unwinding.
+[profile.dev]
+panic = "unwind"
+
+[profile.release]
+panic = "unwind"

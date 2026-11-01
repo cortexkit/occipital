@@ -1,0 +1,10 @@
+{
+  "claim" : {
+    "heldFloorMessageId" : "m6",
+    "heldVersion" : "history:0:lineage:b1e99ee9-edce-4f82-9b7d-0f8d60beb737",
+    "sinceMessageId" : "m8"
+  },
+  "harness" : "broca",
+  "limit" : 4,
+  "session" : "alfonso:bg_0e46af454901d03e"
+}

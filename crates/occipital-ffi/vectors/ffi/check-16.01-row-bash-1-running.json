@@ -1,0 +1,9 @@
+{
+  "entry": "occ_program_check",
+  "request": {
+    "ctx_json": "{\"context\":{\"execution_dialect\":\"1.0\",\"handles\":[],\"profile\":\"tool_row\",\"references\":{},\"registry\":{},\"show_ui\":{\"data_columns\":{},\"data_format\":null,\"summary\":\"\",\"title\":\"\"},\"tool\":{\"input\":{\"schema\":{\"properties\":{\"command\":{\"type\":\"string\"}},\"required\":[\"command\"],\"type\":\"object\"},\"value\":{\"command\":\"cargo test --workspace\"}},\"truncated\":false,\"truncated_fields\":[],\"view\":{\"schema\":{\"properties\":{\"durationMs\":{\"nullable\":true,\"type\":\"number\"},\"exitCode\":{\"nullable\":true,\"type\":\"number\"},\"phase\":{\"type\":\"string\"}},\"required\":[\"phase\",\"exitCode\",\"durationMs\"],\"type\":\"object\"},\"value\":{\"durationMs\":null,\"exitCode\":null,\"phase\":\"running\"}}}}}",
+    "src": "ZXhwb3J0IGNvbnN0IHJ1bm5pbmcgPSB2aWV3LnBoYXNlID09ICJydW5uaW5nIgpleHBvcnQgY29uc3Qgc3RhdHVzID0gcnVubmluZyA/ICJSdW5uaW5nIiA6ICh2aWV3LmV4aXRDb2RlID09IG51bGwgPyAiRmluaXNoZWQsIGV4aXQgdW5hdmFpbGFibGUiIDogKHZpZXcuZXhpdENvZGUgPT0gMCA/ICJTdWNjZWVkZWQiIDogIkZhaWxlZCwgZXhpdCAiICsgdmlldy5leGl0Q29kZSkpCmV4cG9ydCBjb25zdCB0b25lID0gcnVubmluZyA/ICJpbmZvIiA6ICh2aWV3LmV4aXRDb2RlID09IG51bGwgPyAibmV1dHJhbCIgOiAodmlldy5leGl0Q29kZSA9PSAwID8gInN1Y2Nlc3MiIDogImRhbmdlciIpKQoKPENhcmQgYXBwZWFyYW5jZT0iY2xlYXIiIGRpcmVjdGlvbj0icm93IiBnYXA9InMiIGFsaWduPSJjZW50ZXIiIHdyYXA+CjxJbmxpbmVDb2RlIGNvZGU9e2lucHV0LmNvbW1hbmR9IC8+CjxCYWRnZSB0ZXh0PXtzdGF0dXN9IHRvbmU9e3RvbmV9IC8+CjxUZXh0Q29udGVudCB0ZXh0PXt2aWV3LmR1cmF0aW9uTXMgPT0gbnVsbCA/ICJEdXJhdGlvbiB1bmF2YWlsYWJsZSIgOiBGb3JtYXROdW1iZXIodmlldy5kdXJhdGlvbk1zIC8gMTAwMCwgMSkgKyAiIHMifSBzaXplPSJzbWFsbCIgLz4KPC9DYXJkPg=="
+  },
+  "status": 0,
+  "response": "{\"ok\":true,\"language\":\"1.0\",\"executionDialect\":\"1.0\",\"approvalChecked\":false,\"requires\":\"1.0\",\"diagnostics\":[],\"omitted\":0,\"trial\":{\"fuel\":0,\"nodes\":0,\"outcome\":\"not_run\"}}"
+}

@@ -1,0 +1,10 @@
+{
+  "op": "upload.abort",
+  "reply": {
+    "aborted": true
+  },
+  "request": {
+    "upload_id": "00000000000a11ce0000000000000002"
+  },
+  "tag": "abort"
+}

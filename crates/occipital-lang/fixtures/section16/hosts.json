@@ -1,0 +1,144 @@
+{
+  "16.01-row-bash": {
+    "1-running": {
+      "input": {
+        "value": {"command": "cargo test --workspace"},
+        "schema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}
+      },
+      "view": {
+        "value": {"phase": "running", "exitCode": null, "durationMs": null},
+        "schema": {"type": "object", "properties": {"phase": {"type": "string"}, "exitCode": {"type": "number", "nullable": true}, "durationMs": {"type": "number", "nullable": true}}, "required": ["phase", "exitCode", "durationMs"]}
+      },
+      "truncated": false,
+      "truncated_fields": []
+    },
+    "2-succeeded": {
+      "input": {
+        "value": {"command": "cargo test --workspace"},
+        "schema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}
+      },
+      "view": {
+        "value": {"phase": "finished", "exitCode": 0, "durationMs": 4200},
+        "schema": {"type": "object", "properties": {"phase": {"type": "string"}, "exitCode": {"type": "number", "nullable": true}, "durationMs": {"type": "number", "nullable": true}}, "required": ["phase", "exitCode", "durationMs"]}
+      },
+      "truncated": false,
+      "truncated_fields": []
+    },
+    "3-failed": {
+      "input": {
+        "value": {"command": "cargo test --workspace"},
+        "schema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}
+      },
+      "view": {
+        "value": {"phase": "finished", "exitCode": 2, "durationMs": null},
+        "schema": {"type": "object", "properties": {"phase": {"type": "string"}, "exitCode": {"type": "number", "nullable": true}, "durationMs": {"type": "number", "nullable": true}}, "required": ["phase", "exitCode", "durationMs"]}
+      },
+      "truncated": false,
+      "truncated_fields": []
+    },
+    "4-exit-unavailable": {
+      "input": {
+        "value": {"command": "cargo test --workspace"},
+        "schema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}
+      },
+      "view": {
+        "value": {"phase": "finished", "exitCode": null, "durationMs": 61050},
+        "schema": {"type": "object", "properties": {"phase": {"type": "string"}, "exitCode": {"type": "number", "nullable": true}, "durationMs": {"type": "number", "nullable": true}}, "required": ["phase", "exitCode", "durationMs"]}
+      },
+      "truncated": false,
+      "truncated_fields": []
+    }
+  },
+  "16.02-row-edit": {
+    "1-running": {
+      "input": {
+        "value": {"path": "src/main.rs"},
+        "schema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}
+      },
+      "view": {
+        "value": {"phase": "running", "added": null, "removed": null, "hunks": null},
+        "schema": {"type": "object", "properties": {"phase": {"type": "string"}, "added": {"type": "number", "nullable": true}, "removed": {"type": "number", "nullable": true}, "hunks": {"type": "number", "nullable": true}}, "required": ["phase", "added", "removed", "hunks"]}
+      },
+      "truncated": false,
+      "truncated_fields": []
+    },
+    "2-one-place": {
+      "input": {
+        "value": {"path": "src/main.rs"},
+        "schema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}
+      },
+      "view": {
+        "value": {"phase": "finished", "added": 1234, "removed": 5, "hunks": 1},
+        "schema": {"type": "object", "properties": {"phase": {"type": "string"}, "added": {"type": "number", "nullable": true}, "removed": {"type": "number", "nullable": true}, "hunks": {"type": "number", "nullable": true}}, "required": ["phase", "added", "removed", "hunks"]}
+      },
+      "truncated": false,
+      "truncated_fields": []
+    },
+    "3-many-places": {
+      "input": {
+        "value": {"path": "src/main.rs"},
+        "schema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}
+      },
+      "view": {
+        "value": {"phase": "finished", "added": 3, "removed": 0, "hunks": 4},
+        "schema": {"type": "object", "properties": {"phase": {"type": "string"}, "added": {"type": "number", "nullable": true}, "removed": {"type": "number", "nullable": true}, "hunks": {"type": "number", "nullable": true}}, "required": ["phase", "added", "removed", "hunks"]}
+      },
+      "truncated": false,
+      "truncated_fields": []
+    },
+    "4-counts-unavailable": {
+      "input": {
+        "value": {"path": "src/main.rs"},
+        "schema": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}
+      },
+      "view": {
+        "value": {"phase": "finished", "added": null, "removed": 2, "hunks": null},
+        "schema": {"type": "object", "properties": {"phase": {"type": "string"}, "added": {"type": "number", "nullable": true}, "removed": {"type": "number", "nullable": true}, "hunks": {"type": "number", "nullable": true}}, "required": ["phase", "added", "removed", "hunks"]}
+      },
+      "truncated": false,
+      "truncated_fields": []
+    }
+  },
+  "16.03-detail-bash": {
+    "1-page": {
+      "input": {
+        "value": {"command": "cargo test --workspace"},
+        "schema": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]}
+      },
+      "view": {
+        "value": {"phase": "running", "exitCode": null, "durationMs": null},
+        "schema": {"type": "object", "properties": {"phase": {"type": "string"}, "exitCode": {"type": "number", "nullable": true}, "durationMs": {"type": "number", "nullable": true}}, "required": ["phase", "exitCode", "durationMs"]}
+      },
+      "truncated": false,
+      "truncated_fields": []
+    }
+  },
+  "16.04-detail-work": {
+    "1-page": {
+      "input": {
+        "value": {"title": "Fix the paging cursor"},
+        "schema": {"type": "object", "properties": {"title": {"type": "string"}}, "required": ["title"]}
+      },
+      "view": {
+        "value": {},
+        "schema": {"type": "object"}
+      },
+      "truncated": false,
+      "truncated_fields": []
+    }
+  },
+  "16.07-live-view": {
+    "1-page": {
+      "input": {
+        "value": {},
+        "schema": {"type": "object"}
+      },
+      "view": {
+        "value": {},
+        "schema": {"type": "object"}
+      },
+      "truncated": false,
+      "truncated_fields": []
+    }
+  }
+}

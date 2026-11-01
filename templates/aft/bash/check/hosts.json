@@ -1,0 +1,894 @@
+{
+ "1-running": {
+  "input": {
+   "value": {
+    "command": "cargo test --workspace"
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "command": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "workdir": {
+      "type": "string"
+     },
+     "runon": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "command"
+    ]
+   }
+  },
+  "view": {
+   "value": {
+    "schema": "aft.bash.view",
+    "version": 1,
+    "task_id": null,
+    "schema_pin": null,
+    "phase": "running",
+    "exitCode": null,
+    "durationMs": null,
+    "outputBytes": null,
+    "endReason": null,
+    "templates": {
+     "row": "tool-view:aft.bash.row/v1",
+     "page": "tool-view:aft.bash.page/v1"
+    }
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "schema": {
+      "type": "string"
+     },
+     "version": {
+      "type": "number"
+     },
+     "task_id": {
+      "type": "string",
+      "nullable": true
+     },
+     "schema_pin": {
+      "type": "string",
+      "nullable": true
+     },
+     "phase": {
+      "type": "string"
+     },
+     "exitCode": {
+      "type": "number",
+      "nullable": true
+     },
+     "durationMs": {
+      "type": "number",
+      "nullable": true
+     },
+     "outputBytes": {
+      "type": "number",
+      "nullable": true
+     },
+     "endReason": {
+      "type": "string",
+      "nullable": true
+     },
+     "templates": {
+      "type": "object",
+      "properties": {
+       "row": {
+        "type": "string"
+       },
+       "page": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "row",
+       "page"
+      ]
+     }
+    },
+    "required": [
+     "schema",
+     "version",
+     "task_id",
+     "schema_pin",
+     "phase",
+     "exitCode",
+     "durationMs",
+     "outputBytes",
+     "endReason",
+     "templates"
+    ]
+   }
+  },
+  "truncated": false,
+  "truncated_fields": []
+ },
+ "2-running-remote-described": {
+  "input": {
+   "value": {
+    "command": "cargo clippy --all-targets -- -D warnings",
+    "description": "Lint the workspace",
+    "workdir": "/home/u/occipital",
+    "runon": "linux,4c"
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "command": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "workdir": {
+      "type": "string"
+     },
+     "runon": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "command"
+    ]
+   }
+  },
+  "view": {
+   "value": {
+    "schema": "aft.bash.view",
+    "version": 1,
+    "task_id": null,
+    "schema_pin": null,
+    "phase": "running",
+    "exitCode": null,
+    "durationMs": null,
+    "outputBytes": null,
+    "endReason": null,
+    "templates": {
+     "row": "tool-view:aft.bash.row/v1",
+     "page": "tool-view:aft.bash.page/v1"
+    }
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "schema": {
+      "type": "string"
+     },
+     "version": {
+      "type": "number"
+     },
+     "task_id": {
+      "type": "string",
+      "nullable": true
+     },
+     "schema_pin": {
+      "type": "string",
+      "nullable": true
+     },
+     "phase": {
+      "type": "string"
+     },
+     "exitCode": {
+      "type": "number",
+      "nullable": true
+     },
+     "durationMs": {
+      "type": "number",
+      "nullable": true
+     },
+     "outputBytes": {
+      "type": "number",
+      "nullable": true
+     },
+     "endReason": {
+      "type": "string",
+      "nullable": true
+     },
+     "templates": {
+      "type": "object",
+      "properties": {
+       "row": {
+        "type": "string"
+       },
+       "page": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "row",
+       "page"
+      ]
+     }
+    },
+    "required": [
+     "schema",
+     "version",
+     "task_id",
+     "schema_pin",
+     "phase",
+     "exitCode",
+     "durationMs",
+     "outputBytes",
+     "endReason",
+     "templates"
+    ]
+   }
+  },
+  "truncated": false,
+  "truncated_fields": []
+ },
+ "3-completed": {
+  "input": {
+   "value": {
+    "command": "git status --short",
+    "description": "Show changed files"
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "command": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "workdir": {
+      "type": "string"
+     },
+     "runon": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "command"
+    ]
+   }
+  },
+  "view": {
+   "value": {
+    "schema": "aft.bash.view",
+    "version": 1,
+    "task_id": "task_7f3c",
+    "schema_pin": "tp1:bash:sha256-0000:v1",
+    "phase": "finished",
+    "exitCode": 0,
+    "durationMs": 142,
+    "outputBytes": 96,
+    "endReason": "completed",
+    "templates": {
+     "row": "tool-view:aft.bash.row/v1",
+     "page": "tool-view:aft.bash.page/v1"
+    }
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "schema": {
+      "type": "string"
+     },
+     "version": {
+      "type": "number"
+     },
+     "task_id": {
+      "type": "string",
+      "nullable": true
+     },
+     "schema_pin": {
+      "type": "string",
+      "nullable": true
+     },
+     "phase": {
+      "type": "string"
+     },
+     "exitCode": {
+      "type": "number",
+      "nullable": true
+     },
+     "durationMs": {
+      "type": "number",
+      "nullable": true
+     },
+     "outputBytes": {
+      "type": "number",
+      "nullable": true
+     },
+     "endReason": {
+      "type": "string",
+      "nullable": true
+     },
+     "templates": {
+      "type": "object",
+      "properties": {
+       "row": {
+        "type": "string"
+       },
+       "page": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "row",
+       "page"
+      ]
+     }
+    },
+    "required": [
+     "schema",
+     "version",
+     "task_id",
+     "schema_pin",
+     "phase",
+     "exitCode",
+     "durationMs",
+     "outputBytes",
+     "endReason",
+     "templates"
+    ]
+   }
+  },
+  "truncated": false,
+  "truncated_fields": []
+ },
+ "4-failed": {
+  "input": {
+   "value": {
+    "command": "swift test"
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "command": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "workdir": {
+      "type": "string"
+     },
+     "runon": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "command"
+    ]
+   }
+  },
+  "view": {
+   "value": {
+    "schema": "aft.bash.view",
+    "version": 1,
+    "task_id": "task_7f3c",
+    "schema_pin": "tp1:bash:sha256-0000:v1",
+    "phase": "finished",
+    "exitCode": 1,
+    "durationMs": 61234,
+    "outputBytes": 20480,
+    "endReason": "failed",
+    "templates": {
+     "row": "tool-view:aft.bash.row/v1",
+     "page": "tool-view:aft.bash.page/v1"
+    }
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "schema": {
+      "type": "string"
+     },
+     "version": {
+      "type": "number"
+     },
+     "task_id": {
+      "type": "string",
+      "nullable": true
+     },
+     "schema_pin": {
+      "type": "string",
+      "nullable": true
+     },
+     "phase": {
+      "type": "string"
+     },
+     "exitCode": {
+      "type": "number",
+      "nullable": true
+     },
+     "durationMs": {
+      "type": "number",
+      "nullable": true
+     },
+     "outputBytes": {
+      "type": "number",
+      "nullable": true
+     },
+     "endReason": {
+      "type": "string",
+      "nullable": true
+     },
+     "templates": {
+      "type": "object",
+      "properties": {
+       "row": {
+        "type": "string"
+       },
+       "page": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "row",
+       "page"
+      ]
+     }
+    },
+    "required": [
+     "schema",
+     "version",
+     "task_id",
+     "schema_pin",
+     "phase",
+     "exitCode",
+     "durationMs",
+     "outputBytes",
+     "endReason",
+     "templates"
+    ]
+   }
+  },
+  "truncated": false,
+  "truncated_fields": []
+ },
+ "5-timed-out": {
+  "input": {
+   "value": {
+    "command": "sleep 100"
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "command": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "workdir": {
+      "type": "string"
+     },
+     "runon": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "command"
+    ]
+   }
+  },
+  "view": {
+   "value": {
+    "schema": "aft.bash.view",
+    "version": 1,
+    "task_id": "task_7f3c",
+    "schema_pin": "tp1:bash:sha256-0000:v1",
+    "phase": "finished",
+    "exitCode": null,
+    "durationMs": 30000,
+    "outputBytes": 0,
+    "endReason": "timed_out",
+    "templates": {
+     "row": "tool-view:aft.bash.row/v1",
+     "page": "tool-view:aft.bash.page/v1"
+    }
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "schema": {
+      "type": "string"
+     },
+     "version": {
+      "type": "number"
+     },
+     "task_id": {
+      "type": "string",
+      "nullable": true
+     },
+     "schema_pin": {
+      "type": "string",
+      "nullable": true
+     },
+     "phase": {
+      "type": "string"
+     },
+     "exitCode": {
+      "type": "number",
+      "nullable": true
+     },
+     "durationMs": {
+      "type": "number",
+      "nullable": true
+     },
+     "outputBytes": {
+      "type": "number",
+      "nullable": true
+     },
+     "endReason": {
+      "type": "string",
+      "nullable": true
+     },
+     "templates": {
+      "type": "object",
+      "properties": {
+       "row": {
+        "type": "string"
+       },
+       "page": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "row",
+       "page"
+      ]
+     }
+    },
+    "required": [
+     "schema",
+     "version",
+     "task_id",
+     "schema_pin",
+     "phase",
+     "exitCode",
+     "durationMs",
+     "outputBytes",
+     "endReason",
+     "templates"
+    ]
+   }
+  },
+  "truncated": false,
+  "truncated_fields": []
+ },
+ "6-killed": {
+  "input": {
+   "value": {
+    "command": "npm run dev"
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "command": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "workdir": {
+      "type": "string"
+     },
+     "runon": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "command"
+    ]
+   }
+  },
+  "view": {
+   "value": {
+    "schema": "aft.bash.view",
+    "version": 1,
+    "task_id": "task_7f3c",
+    "schema_pin": "tp1:bash:sha256-0000:v1",
+    "phase": "finished",
+    "exitCode": null,
+    "durationMs": 512000,
+    "outputBytes": 4096,
+    "endReason": "killed",
+    "templates": {
+     "row": "tool-view:aft.bash.row/v1",
+     "page": "tool-view:aft.bash.page/v1"
+    }
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "schema": {
+      "type": "string"
+     },
+     "version": {
+      "type": "number"
+     },
+     "task_id": {
+      "type": "string",
+      "nullable": true
+     },
+     "schema_pin": {
+      "type": "string",
+      "nullable": true
+     },
+     "phase": {
+      "type": "string"
+     },
+     "exitCode": {
+      "type": "number",
+      "nullable": true
+     },
+     "durationMs": {
+      "type": "number",
+      "nullable": true
+     },
+     "outputBytes": {
+      "type": "number",
+      "nullable": true
+     },
+     "endReason": {
+      "type": "string",
+      "nullable": true
+     },
+     "templates": {
+      "type": "object",
+      "properties": {
+       "row": {
+        "type": "string"
+       },
+       "page": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "row",
+       "page"
+      ]
+     }
+    },
+    "required": [
+     "schema",
+     "version",
+     "task_id",
+     "schema_pin",
+     "phase",
+     "exitCode",
+     "durationMs",
+     "outputBytes",
+     "endReason",
+     "templates"
+    ]
+   }
+  },
+  "truncated": false,
+  "truncated_fields": []
+ },
+ "7-fate-unknown": {
+  "input": {
+   "value": {
+    "command": "xcodebuild test"
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "command": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "workdir": {
+      "type": "string"
+     },
+     "runon": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "command"
+    ]
+   }
+  },
+  "view": {
+   "value": {
+    "schema": "aft.bash.view",
+    "version": 1,
+    "task_id": "task_7f3c",
+    "schema_pin": "tp1:bash:sha256-0000:v1",
+    "phase": "finished",
+    "exitCode": null,
+    "durationMs": null,
+    "outputBytes": null,
+    "endReason": "fate_unknown",
+    "templates": {
+     "row": "tool-view:aft.bash.row/v1",
+     "page": "tool-view:aft.bash.page/v1"
+    }
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "schema": {
+      "type": "string"
+     },
+     "version": {
+      "type": "number"
+     },
+     "task_id": {
+      "type": "string",
+      "nullable": true
+     },
+     "schema_pin": {
+      "type": "string",
+      "nullable": true
+     },
+     "phase": {
+      "type": "string"
+     },
+     "exitCode": {
+      "type": "number",
+      "nullable": true
+     },
+     "durationMs": {
+      "type": "number",
+      "nullable": true
+     },
+     "outputBytes": {
+      "type": "number",
+      "nullable": true
+     },
+     "endReason": {
+      "type": "string",
+      "nullable": true
+     },
+     "templates": {
+      "type": "object",
+      "properties": {
+       "row": {
+        "type": "string"
+       },
+       "page": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "row",
+       "page"
+      ]
+     }
+    },
+    "required": [
+     "schema",
+     "version",
+     "task_id",
+     "schema_pin",
+     "phase",
+     "exitCode",
+     "durationMs",
+     "outputBytes",
+     "endReason",
+     "templates"
+    ]
+   }
+  },
+  "truncated": false,
+  "truncated_fields": []
+ },
+ "8-windows-exit": {
+  "input": {
+   "value": {
+    "command": "msbuild"
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "command": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "workdir": {
+      "type": "string"
+     },
+     "runon": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "command"
+    ]
+   }
+  },
+  "view": {
+   "value": {
+    "schema": "aft.bash.view",
+    "version": 1,
+    "task_id": "task_7f3c",
+    "schema_pin": "tp1:bash:sha256-0000:v1",
+    "phase": "finished",
+    "exitCode": 3221225477,
+    "durationMs": 8123,
+    "outputBytes": 1024,
+    "endReason": "failed",
+    "templates": {
+     "row": "tool-view:aft.bash.row/v1",
+     "page": "tool-view:aft.bash.page/v1"
+    }
+   },
+   "schema": {
+    "type": "object",
+    "properties": {
+     "schema": {
+      "type": "string"
+     },
+     "version": {
+      "type": "number"
+     },
+     "task_id": {
+      "type": "string",
+      "nullable": true
+     },
+     "schema_pin": {
+      "type": "string",
+      "nullable": true
+     },
+     "phase": {
+      "type": "string"
+     },
+     "exitCode": {
+      "type": "number",
+      "nullable": true
+     },
+     "durationMs": {
+      "type": "number",
+      "nullable": true
+     },
+     "outputBytes": {
+      "type": "number",
+      "nullable": true
+     },
+     "endReason": {
+      "type": "string",
+      "nullable": true
+     },
+     "templates": {
+      "type": "object",
+      "properties": {
+       "row": {
+        "type": "string"
+       },
+       "page": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "row",
+       "page"
+      ]
+     }
+    },
+    "required": [
+     "schema",
+     "version",
+     "task_id",
+     "schema_pin",
+     "phase",
+     "exitCode",
+     "durationMs",
+     "outputBytes",
+     "endReason",
+     "templates"
+    ]
+   }
+  },
+  "truncated": false,
+  "truncated_fields": []
+ }
+}

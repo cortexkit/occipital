@@ -1,0 +1,33 @@
+export let $width = 4
+export let $length = 5
+export let $height = 2.5
+export let $coats = 2
+export let $doors = 1
+export let $windows = 2
+
+export const grossArea = 2 * ($width + $length) * $height
+export const openings = ($doors ?? 0) * 1.9 + ($windows ?? 0) * 1.5
+export const wallArea = Max(grossArea - openings, 0)
+export const litres = wallArea * $coats / 10
+export const cans = Ceil(litres / 2.5)
+
+<CardHeader title="Paint calculator" subtitle="One room. The results follow the controls." />
+
+<FormControl label={"Width: " + FormatNumber($width, 1) + " m"} input={<Slider min={2} max={10} step={0.1} value={$width} />} />
+<FormControl label={"Length: " + FormatNumber($length, 1) + " m"} input={<Slider min={2} max={10} step={0.1} value={$length} />} />
+<FormControl label={"Height: " + FormatNumber($height, 1) + " m"} input={<Slider min={2} max={4} step={0.1} value={$height} />} />
+<FormControl label={"Coats: " + $coats} input={<Slider min={1} max={3} step={1} value={$coats} />} />
+<FormControl label="Doors" hint="1.9 m² each" input={<Input type="number" min={0} step={1} value={$doors} />} />
+<FormControl label="Windows" hint="1.5 m² each" input={<Input type="number" min={0} step={1} value={$windows} />} />
+
+### Results
+
+| Result | Value |
+|---|---|
+| Wall area to paint | {FormatNumber(wallArea, 1)} m² |
+| Paint needed | {FormatNumber(litres, 1)} L |
+| 2.5 L cans to buy | {cans} |
+
+<Callout tone="success" title={"Buy " + cans + (cans == 1 ? " can" : " cans") + " of 2.5 L"} description={"Walls of " + FormatNumber(grossArea, 1) + " m² minus " + FormatNumber(openings, 1) + " m² of doors and windows, at 10 m² per litre per coat."} />
+
+<Buttons buttons={[<Button label="Reset" appearance="secondary" action={Action([Reset($width), Reset($length), Reset($height), Reset($coats), Reset($doors), Reset($windows)])} />]} />

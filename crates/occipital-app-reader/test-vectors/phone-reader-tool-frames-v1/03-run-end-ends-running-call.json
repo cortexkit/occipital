@@ -1,0 +1,1 @@
+{"result":{"frames":[{"frame":{"asOfMs":1793500100000,"callId":"c3","kind":"tool","messageID":"m1","phase":"unanswered","sessionID":"ses_head","startedAtMs":1793500003000,"tool":"bash","unanswered":"interrupted"},"seq":9},{"frame":{"kind":"display_end"},"seq":10}],"seq":10}}

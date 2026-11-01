@@ -1,0 +1,9 @@
+{
+  "entry": "occ_program_check",
+  "request": {
+    "ctx_json": "{\"context\":{\"execution_dialect\":\"1.0\",\"handles\":[],\"profile\":\"show_ui\",\"references\":{},\"registry\":{},\"show_ui\":{\"data_columns\":{},\"data_format\":null,\"summary\":\"\",\"title\":\"\"},\"tool\":null}}",
+    "src": "e1J1bigicm0gLXJmIGJ1aWxkIil9"
+  },
+  "status": 0,
+  "response": "{\"ok\":false,\"language\":\"1.0\",\"executionDialect\":\"1.0\",\"approvalChecked\":false,\"requires\":\"1.0\",\"diagnostics\":[{\"code\":\"E_WRITE_NOT_ALLOWED\",\"severity\":\"error\",\"phase\":\"check\",\"span\":{\"line\":1,\"column\":2,\"endLine\":1,\"endColumn\":21},\"subject\":\"Run\",\"message\":\"Write constructors and steps are not allowed in language version 1.\"}],\"omitted\":0,\"trial\":{\"fuel\":0,\"nodes\":0,\"outcome\":\"not_run\"}}"
+}

@@ -1,0 +1,13 @@
+{
+  "op": "upload.chunk",
+  "reply": {
+    "committed": 20
+  },
+  "request": {
+    "framed_request": "02-chunk.request.bin",
+    "offset": 0,
+    "payload_hex": "70686f6e652075706c6f61642073616d706c650a",
+    "upload_id": "00000000000a11ce0000000000000001"
+  },
+  "tag": "chunk"
+}

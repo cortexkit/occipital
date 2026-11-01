@@ -1,0 +1,79 @@
+{
+  "op": "session.transcript_page",
+  "reply": {
+    "acceptedMimeTypes": [],
+    "acceptsAttachments": false,
+    "diagnostics": {
+      "deltaRead": "scan",
+      "identity": "durable",
+      "invalidation": "none"
+    },
+    "generation": 7,
+    "messages": [
+      {
+        "blockSummaries": [],
+        "createdAtMs": 1767225600000,
+        "messageId": "assistant-turn",
+        "ordinal": 4,
+        "parts": [
+          {
+            "text": "answer",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "answer"
+      },
+      {
+        "blockSummaries": [],
+        "createdAtMs": 1767225600000,
+        "messageId": "wake-turn",
+        "ordinal": 3,
+        "parts": [
+          {
+            "text": "<system-reminder>wake digest</system-reminder>",
+            "type": "injected"
+          }
+        ],
+        "role": "user",
+        "text": "<system-reminder>wake digest</system-reminder>"
+      },
+      {
+        "blockSummaries": [],
+        "clientMessageId": "81da9e96-3e61-4e48-92d4-fbf1d7075710",
+        "createdAtMs": 1767225600000,
+        "messageId": "phone-turn",
+        "ordinal": 2,
+        "parts": [
+          {
+            "text": "hello",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "text": "hello"
+      },
+      {
+        "blockSummaries": [],
+        "createdAtMs": 1767225600000,
+        "messageId": "base",
+        "ordinal": 1,
+        "parts": [
+          {
+            "text": "earlier",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "text": "earlier"
+      }
+    ],
+    "nextBeforeOrdinal": null,
+    "version": "<version>"
+  },
+  "request": {
+    "harness": "pi",
+    "session": "phone-target"
+  },
+  "tag": "transcript-page"
+}

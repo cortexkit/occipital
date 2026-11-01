@@ -1,0 +1,75 @@
+{
+  "provenance": {
+    "source": "live Broca management-surface session.read reply",
+    "capturedAt": "2026-08-23",
+    "session": "alfonso:consult-ct_00000000-0000-4002-98ce-6467ea1ba308-merge-r3-search-semantic-UPDATE-room-members-SET-harness-1b145ebe-a1",
+    "request": {
+      "limit": 20,
+      "direction": "newest_last"
+    },
+    "note": "Exact producer blocks extracted from ordinals 8 and 9. The unrelated encrypted redacted_reasoning block at ordinal 8 was omitted; tool block kind names and body fields are unchanged from the live reply."
+  },
+  "response": {
+    "messages": [
+      {
+        "ordinal": 8,
+        "mid": "m8",
+        "message": {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "tool_call",
+              "tool_call_id": "call_JW3G4l49upIG9JJKvQ4eZna1",
+              "tool_name": "read",
+              "input": {
+                "endLine": 200,
+                "filePath": ".",
+                "limit": 200,
+                "offset": 1,
+                "startLine": 1
+              }
+            }
+          ],
+          "origin": {
+            "provider_module_id": "openai",
+            "model_id": "gpt-5.6-luna"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "mid": "m9",
+        "message": {
+          "role": "tool",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_call_id": "call_JW3G4l49upIG9JJKvQ4eZna1",
+              "output": {
+                "kind": "error",
+                "message": "tool plane unavailable"
+              },
+              "is_error": true
+            }
+          ]
+        }
+      }
+    ],
+    "head": {
+      "wal_seq": 28,
+      "sub_index": 0
+    },
+    "lineage_state": {
+      "last_run_id": "run-sid-8ctvaEZsykXDNOVsdqGcM5",
+      "state": "completed",
+      "reason": "completed",
+      "usage": {
+        "input_tokens": 8352,
+        "cached_input_tokens": 15360,
+        "cache_write_tokens": 0,
+        "output_tokens": 403,
+        "reasoning_tokens": 156
+      }
+    }
+  }
+}

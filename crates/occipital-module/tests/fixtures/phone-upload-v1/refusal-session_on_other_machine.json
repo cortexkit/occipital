@@ -1,0 +1,18 @@
+{
+  "op": "upload.begin",
+  "refusal": {
+    "code": "session_on_other_machine",
+    "detail": {
+      "machine_id": "other-computer"
+    },
+    "message": "session data is held on another machine"
+  },
+  "request": {
+    "mime": "application/octet-stream",
+    "name": "clip.mov",
+    "session": "held-session",
+    "sha256": "c3127154644798d03d535bed5682032cb3602e1c426b438b9f809e0f3cd0f863",
+    "size": 20
+  },
+  "tag": "session_on_other_machine"
+}

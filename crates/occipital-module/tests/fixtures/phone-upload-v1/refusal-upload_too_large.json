@@ -1,0 +1,18 @@
+{
+  "op": "upload.begin",
+  "refusal": {
+    "code": "upload_too_large",
+    "detail": {
+      "max_bytes": 2147483648
+    },
+    "message": "a file may be at most 2147483648 bytes"
+  },
+  "request": {
+    "mime": "application/octet-stream",
+    "name": "huge.mov",
+    "session": "phone-target",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 2147483649
+  },
+  "tag": "upload_too_large"
+}

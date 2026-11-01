@@ -1,0 +1,1138 @@
+{
+  "addresses": [
+    {
+      "rule": "scheme",
+      "name": "lowercase scheme and host",
+      "input": "HTTPS://EXAMPLE.COM",
+      "derivation": "Rules 1, 2, 8: ASCII case mapping and empty path slash.",
+      "canonical": "https://example.com/",
+      "whatwg": "https://example.com/"
+    },
+    {
+      "rule": "scheme",
+      "name": "http allowed",
+      "input": "http://example.com/",
+      "derivation": "Rule 1.",
+      "canonical": "http://example.com/",
+      "whatwg": "http://example.com/"
+    },
+    {
+      "rule": "scheme",
+      "name": "ftp://example.com/",
+      "input": "ftp://example.com/",
+      "derivation": "Rules 1, 9: only absolute HTTP(S) with a host.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "scheme",
+      "name": "javascript:alert(1)",
+      "input": "javascript:alert(1)",
+      "derivation": "Rules 1, 9: only absolute HTTP(S) with a host.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "scheme",
+      "name": "//example.com/",
+      "input": "//example.com/",
+      "derivation": "Rules 1, 9: only absolute HTTP(S) with a host.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "scheme",
+      "name": "/x",
+      "input": "/x",
+      "derivation": "Rules 1, 9: only absolute HTTP(S) with a host.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "scheme",
+      "name": "example.com",
+      "input": "example.com",
+      "derivation": "Rules 1, 9: only absolute HTTP(S) with a host.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "scheme",
+      "name": "https:example.com",
+      "input": "https:example.com",
+      "derivation": "Rules 1, 9: only absolute HTTP(S) with a host.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "scheme",
+      "name": "https:///example.com",
+      "input": "https:///example.com",
+      "derivation": "Rules 1, 9: only absolute HTTP(S) with a host.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "mapping",
+      "name": "sharp s nontransitional",
+      "input": "https://fa\u00df.de",
+      "derivation": "Rule 2: Unicode 16 mapping table; deviation \u00df retained; U+1C89 maps to U+1C8A.",
+      "canonical": "https://xn--fa-hia.de/",
+      "whatwg": "https://xn--fa-hia.de/"
+    },
+    {
+      "rule": "mapping",
+      "name": "A-label stable",
+      "input": "https://XN--FA-HIA.DE",
+      "derivation": "Rule 2: Unicode 16 mapping table; deviation \u00df retained; U+1C89 maps to U+1C8A.",
+      "canonical": "https://xn--fa-hia.de/",
+      "whatwg": "https://xn--fa-hia.de/"
+    },
+    {
+      "rule": "mapping",
+      "name": "Unicode dot and width mapping",
+      "input": "https://\uff25\uff38\uff21\uff2d\uff30\uff2c\uff25\u3002com",
+      "derivation": "Rule 2: Unicode 16 mapping table; deviation \u00df retained; U+1C89 maps to U+1C8A.",
+      "canonical": "https://example.com/",
+      "whatwg": "https://example.com/"
+    },
+    {
+      "rule": "mapping",
+      "name": "ignored soft hyphen",
+      "input": "https://exam\u00adple.com",
+      "derivation": "Rule 2: Unicode 16 mapping table; deviation \u00df retained; U+1C89 maps to U+1C8A.",
+      "canonical": "https://example.com/",
+      "whatwg": "https://example.com/"
+    },
+    {
+      "rule": "mapping",
+      "name": "Unicode 16 Cyrillic mapping",
+      "input": "https://\u1c89.com",
+      "derivation": "Rule 2: Unicode 16 mapping table; deviation \u00df retained; U+1C89 maps to U+1C8A.",
+      "canonical": "https://xn--d4f.com/",
+      "whatwg": "https://xn--d4f.com/"
+    },
+    {
+      "rule": "mapping",
+      "name": "invalid mapping or A-label xn--.com",
+      "input": "https://xn--.com",
+      "derivation": "Rule 2: strict A-label decoding and valid/deviation status validation.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "mapping",
+      "name": "invalid mapping or A-label xn--abc-.com",
+      "input": "https://xn--abc-.com",
+      "derivation": "Rule 2: strict A-label decoding and valid/deviation status validation.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "mapping",
+      "name": "invalid mapping or A-label xn--0.com",
+      "input": "https://xn--0.com",
+      "derivation": "Rule 2: strict A-label decoding and valid/deviation status validation.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "mapping",
+      "name": "invalid mapping or A-label xn--zzzzzzzzzzzzzzzzzzzz.com",
+      "input": "https://xn--zzzzzzzzzzzzzzzzzzzz.com",
+      "derivation": "Rule 2: strict A-label decoding and valid/deviation status validation.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "mapping",
+      "name": "invalid mapping or A-label \ufffd.com",
+      "input": "https://\ufffd.com",
+      "derivation": "Rule 2: strict A-label decoding and valid/deviation status validation.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "mapping",
+      "name": "invalid mapping or A-label \u0378.com",
+      "input": "https://\u0378.com",
+      "derivation": "Rule 2: strict A-label decoding and valid/deviation status validation.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "nfc",
+      "name": "NFC bu\u0308cher.de",
+      "input": "https://bu\u0308cher.de",
+      "derivation": "Rule 2: canonical NFC composition before Punycode.",
+      "canonical": "https://xn--bcher-kva.de/",
+      "whatwg": "https://xn--bcher-kva.de/"
+    },
+    {
+      "rule": "nfc",
+      "name": "NFC \u1100\u1161.com",
+      "input": "https://\u1100\u1161.com",
+      "derivation": "Rule 2: canonical NFC composition before Punycode.",
+      "canonical": "https://xn--o39a.com/",
+      "whatwg": "https://xn--o39a.com/"
+    },
+    {
+      "rule": "nfc",
+      "name": "non-NFC A-label or leading mark xn--u-ccb.com",
+      "input": "https://xn--u-ccb.com",
+      "derivation": "Rule 2: decoded A-label must already be NFC; initial General_Category=Mark forbidden, even with CCC=0.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "nfc",
+      "name": "non-NFC A-label or leading mark \u0308a.com",
+      "input": "https://\u0308a.com",
+      "derivation": "Rule 2: decoded A-label must already be NFC; initial General_Category=Mark forbidden, even with CCC=0.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "nfc",
+      "name": "non-NFC A-label or leading mark \u0903a.com",
+      "input": "https://\u0903a.com",
+      "derivation": "Rule 2: decoded A-label must already be NFC; initial General_Category=Mark forbidden, even with CCC=0.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "bidi",
+      "name": "bidi accepted \u05d0.example",
+      "input": "https://\u05d0.example",
+      "derivation": "Rule 2: RFC5893; numeric label only permitted outside a bidi domain.",
+      "canonical": "https://xn--4db.example/",
+      "whatwg": "https://xn--4db.example/"
+    },
+    {
+      "rule": "bidi",
+      "name": "bidi accepted xn--4db.example",
+      "input": "https://xn--4db.example",
+      "derivation": "Rule 2: RFC5893; numeric label only permitted outside a bidi domain.",
+      "canonical": "https://xn--4db.example/",
+      "whatwg": "https://xn--4db.example/"
+    },
+    {
+      "rule": "bidi",
+      "name": "bidi accepted 123.example",
+      "input": "https://123.example",
+      "derivation": "Rule 2: RFC5893; numeric label only permitted outside a bidi domain.",
+      "canonical": "https://123.example/",
+      "whatwg": "https://123.example/"
+    },
+    {
+      "rule": "bidi",
+      "name": "bidi refused \u05d0a.example",
+      "input": "https://\u05d0a.example",
+      "derivation": "Rule 2: bidi triggers across decoded labels; first/last class, permitted classes and EN/AN mixing enforced.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "bidi",
+      "name": "bidi refused \u05d01\u0661.example",
+      "input": "https://\u05d01\u0661.example",
+      "derivation": "Rule 2: bidi triggers across decoded labels; first/last class, permitted classes and EN/AN mixing enforced.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "bidi",
+      "name": "bidi refused 123.\u05d0.example",
+      "input": "https://123.\u05d0.example",
+      "derivation": "Rule 2: bidi triggers across decoded labels; first/last class, permitted classes and EN/AN mixing enforced.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "bidi",
+      "name": "bidi refused 123.xn--4db.example",
+      "input": "https://123.xn--4db.example",
+      "derivation": "Rule 2: bidi triggers across decoded labels; first/last class, permitted classes and EN/AN mixing enforced.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "bidi",
+      "name": "bidi refused \u0661.example",
+      "input": "https://\u0661.example",
+      "derivation": "Rule 2: bidi triggers across decoded labels; first/last class, permitted classes and EN/AN mixing enforced.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "bidi",
+      "name": "LTR trailing neutral in bidi domain",
+      "input": "https://a\u00b7.\u05d0.example",
+      "derivation": "Rule 2: an LTR label in a bidi domain must end in L or EN, ignoring NSM.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "joiners",
+      "name": "ContextJ accepted \u0915\u094d\u200d\u0937.example",
+      "input": "https://\u0915\u094d\u200d\u0937.example",
+      "derivation": "Rule 2: ZWJ after virama; ZWNJ between D/R joining types, skipping T marks.",
+      "canonical": "https://xn--11b2ezcw70k.example/",
+      "whatwg": "https://xn--11b2ezcw70k.example/"
+    },
+    {
+      "rule": "joiners",
+      "name": "ContextJ accepted \u0628\u200c\u0628.example",
+      "input": "https://\u0628\u200c\u0628.example",
+      "derivation": "Rule 2: ZWJ after virama; ZWNJ between D/R joining types, skipping T marks.",
+      "canonical": "https://xn--ngba799q.example/",
+      "whatwg": "https://xn--ngba799q.example/"
+    },
+    {
+      "rule": "joiners",
+      "name": "ContextJ accepted \u0628\u064e\u200c\u064e\u0628.example",
+      "input": "https://\u0628\u064e\u200c\u064e\u0628.example",
+      "derivation": "Rule 2: ZWJ after virama; ZWNJ between D/R joining types, skipping T marks.",
+      "canonical": "https://xn--ngba7ia3604a.example/",
+      "whatwg": "https://xn--ngba7ia3604a.example/"
+    },
+    {
+      "rule": "joiners",
+      "name": "ContextJ refused a\u200db.example",
+      "input": "https://a\u200db.example",
+      "derivation": "Rule 2: joiners need virama or the ZWNJ joining context.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "joiners",
+      "name": "ContextJ refused a\u200cb.example",
+      "input": "https://a\u200cb.example",
+      "derivation": "Rule 2: joiners need virama or the ZWNJ joining context.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "joiners",
+      "name": "ContextJ refused \u200db.example",
+      "input": "https://\u200db.example",
+      "derivation": "Rule 2: joiners need virama or the ZWNJ joining context.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "joiners",
+      "name": "ContextJ refused \u0628\u200c.example",
+      "input": "https://\u0628\u200c.example",
+      "derivation": "Rule 2: joiners need virama or the ZWNJ joining context.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "joiners",
+      "name": "ZWJ between dual-joining Arabic letters",
+      "input": "https://\u0628\u200d\u0628.example",
+      "derivation": "Rule 2: ZWJ is permitted only after virama. Dual-joining Arabic context permits ZWNJ, not ZWJ; bidi accepts both labels.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "hyphens",
+      "name": "ordinary hyphen",
+      "input": "https://ab-cd.example",
+      "derivation": "Rule 2: interior hyphen allowed.",
+      "canonical": "https://ab-cd.example/",
+      "whatwg": "https://ab-cd.example/"
+    },
+    {
+      "rule": "hyphens",
+      "name": "ab--cd.example",
+      "input": "https://ab--cd.example",
+      "derivation": "Rule 2: CheckHyphens rejects boundary and position 3/4 hyphens.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "hyphens",
+      "name": "-abc.example",
+      "input": "https://-abc.example",
+      "derivation": "Rule 2: CheckHyphens rejects boundary and position 3/4 hyphens.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "hyphens",
+      "name": "abc-.example",
+      "input": "https://abc-.example",
+      "derivation": "Rule 2: CheckHyphens rejects boundary and position 3/4 hyphens.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "std3",
+      "name": "LDH host",
+      "input": "https://a-b2.example",
+      "derivation": "Rule 2: STD3 ASCII LDH only.",
+      "canonical": "https://a-b2.example/",
+      "whatwg": "https://a-b2.example/"
+    },
+    {
+      "rule": "std3",
+      "name": "a_b.example",
+      "input": "https://a_b.example",
+      "derivation": "Rule 2: STD3 forbids underscore, punctuation and host percent escapes.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "std3",
+      "name": "a!b.example",
+      "input": "https://a!b.example",
+      "derivation": "Rule 2: STD3 forbids underscore, punctuation and host percent escapes.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "std3",
+      "name": "%65xample.com",
+      "input": "https://%65xample.com",
+      "derivation": "Rule 2: STD3 forbids underscore, punctuation and host percent escapes.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "std3",
+      "name": "a%2eb.com",
+      "input": "https://a%2eb.com",
+      "derivation": "Rule 2: STD3 forbids underscore, punctuation and host percent escapes.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "dns",
+      "name": "label 63 octets",
+      "input": {
+        "prefix": "https://",
+        "unit": "a",
+        "count": 63,
+        "suffix": ".example/"
+      },
+      "derivation": "Rule 2: each ASCII label has 1..63 octets.",
+      "canonical": {
+        "prefix": "https://",
+        "unit": "a",
+        "count": 63,
+        "suffix": ".example/"
+      },
+      "whatwg": {
+        "prefix": "https://",
+        "unit": "a",
+        "count": 63,
+        "suffix": ".example/"
+      }
+    },
+    {
+      "rule": "dns",
+      "name": "label 64 octets",
+      "input": {
+        "prefix": "https://",
+        "unit": "a",
+        "count": 64,
+        "suffix": ".example/"
+      },
+      "derivation": "Rule 2: each ASCII label has 1..63 octets.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "dns",
+      "name": "domain 253 octets",
+      "input": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/",
+      "derivation": "Rule 2: total ASCII host at most 253 octets.",
+      "canonical": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/",
+      "whatwg": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/"
+    },
+    {
+      "rule": "dns",
+      "name": "domain 254 octets",
+      "input": "https://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/",
+      "derivation": "Rule 2: total ASCII host at most 253 octets.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "dns",
+      "name": "empty or expanded label .example.com",
+      "input": "https://.example.com",
+      "derivation": "Rule 2: length checks follow ASCII conversion, not Unicode scalar count.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "dns",
+      "name": "empty or expanded label example..com",
+      "input": "https://example..com",
+      "derivation": "Rule 2: length checks follow ASCII conversion, not Unicode scalar count.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "dns",
+      "name": "empty or expanded label \u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9.example",
+      "input": "https://\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9.example",
+      "derivation": "Rule 2: length checks follow ASCII conversion, not Unicode scalar count.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "public named host",
+      "input": "https://public.example",
+      "derivation": "Rule 3: multi-label nonnumeric public-style hostname.",
+      "canonical": "https://public.example/",
+      "whatwg": "https://public.example/"
+    },
+    {
+      "rule": "host",
+      "name": "[::1]",
+      "input": "https://[::1]",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "[2001:db8::1]",
+      "input": "https://[2001:db8::1]",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "127.0.0.1",
+      "input": "https://127.0.0.1",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "127.1",
+      "input": "https://127.1",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "2130706433",
+      "input": "https://2130706433",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "0177.0.0.1",
+      "input": "https://0177.0.0.1",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "0x7f.1",
+      "input": "https://0x7f.1",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "0x7f000001",
+      "input": "https://0x7f000001",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "example.123",
+      "input": "https://example.123",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "example.0xFF",
+      "input": "https://example.0xFF",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "example.0x",
+      "input": "https://example.0x",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "example.\uff11\uff12\uff13",
+      "input": "https://example.\uff11\uff12\uff13",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "printer",
+      "input": "https://printer",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "localhost",
+      "input": "https://localhost",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "a.localhost",
+      "input": "https://a.localhost",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "a.local",
+      "input": "https://a.local",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "a.internal",
+      "input": "https://a.internal",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "a.home.arpa",
+      "input": "https://a.home.arpa",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "home.arpa",
+      "input": "https://home.arpa",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "example.com.",
+      "input": "https://example.com.",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "host",
+      "name": "example.com\u3002",
+      "input": "https://example.com\u3002",
+      "derivation": "Rule 3: refuse IP/numeric-ending, single-label, local suffix or trailing-dot hosts (including mapped dots); bare 0x is numeric in WHATWG.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "userinfo",
+      "name": "at sign in path",
+      "input": "https://example.com/@x",
+      "derivation": "Rule 4: @ only forbidden in authority.",
+      "canonical": "https://example.com/@x",
+      "whatwg": "https://example.com/@x"
+    },
+    {
+      "rule": "userinfo",
+      "name": "https://user:pass@example.com",
+      "input": "https://user:pass@example.com",
+      "derivation": "Rule 4: any authority @, including empty userinfo, refused.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "userinfo",
+      "name": "https://user@example.com",
+      "input": "https://user@example.com",
+      "derivation": "Rule 4: any authority @, including empty userinfo, refused.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "userinfo",
+      "name": "https://@example.com",
+      "input": "https://@example.com",
+      "derivation": "Rule 4: any authority @, including empty userinfo, refused.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "userinfo",
+      "name": "https://a@@example.com",
+      "input": "https://a@@example.com",
+      "derivation": "Rule 4: any authority @, including empty userinfo, refused.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "port",
+      "name": "http://example.com:80",
+      "input": "http://example.com:80",
+      "derivation": "Rule 5: remove only scheme default; retain other decimal ports 1..65535.",
+      "canonical": "http://example.com/",
+      "whatwg": "http://example.com/"
+    },
+    {
+      "rule": "port",
+      "name": "https://example.com:443",
+      "input": "https://example.com:443",
+      "derivation": "Rule 5: remove only scheme default; retain other decimal ports 1..65535.",
+      "canonical": "https://example.com/",
+      "whatwg": "https://example.com/"
+    },
+    {
+      "rule": "port",
+      "name": "https://example.com:80",
+      "input": "https://example.com:80",
+      "derivation": "Rule 5: remove only scheme default; retain other decimal ports 1..65535.",
+      "canonical": "https://example.com:80/",
+      "whatwg": "https://example.com:80/"
+    },
+    {
+      "rule": "port",
+      "name": "http://example.com:65535",
+      "input": "http://example.com:65535",
+      "derivation": "Rule 5: remove only scheme default; retain other decimal ports 1..65535.",
+      "canonical": "http://example.com:65535/",
+      "whatwg": "http://example.com:65535/"
+    },
+    {
+      "rule": "port",
+      "name": "https://example.com:1",
+      "input": "https://example.com:1",
+      "derivation": "Rule 5: remove only scheme default; retain other decimal ports 1..65535.",
+      "canonical": "https://example.com:1/",
+      "whatwg": "https://example.com:1/"
+    },
+    {
+      "rule": "port",
+      "name": "invalid port 0",
+      "input": "https://example.com:0",
+      "derivation": "Rule 5: reject zero, leading zeros, empty, out-of-range or nondigit port.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "port",
+      "name": "invalid port 080",
+      "input": "https://example.com:080",
+      "derivation": "Rule 5: reject zero, leading zeros, empty, out-of-range or nondigit port.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "port",
+      "name": "invalid port 0443",
+      "input": "https://example.com:0443",
+      "derivation": "Rule 5: reject zero, leading zeros, empty, out-of-range or nondigit port.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "port",
+      "name": "invalid port 65536",
+      "input": "https://example.com:65536",
+      "derivation": "Rule 5: reject zero, leading zeros, empty, out-of-range or nondigit port.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "port",
+      "name": "invalid port -1",
+      "input": "https://example.com:-1",
+      "derivation": "Rule 5: reject zero, leading zeros, empty, out-of-range or nondigit port.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "port",
+      "name": "invalid port +80",
+      "input": "https://example.com:+80",
+      "derivation": "Rule 5: reject zero, leading zeros, empty, out-of-range or nondigit port.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "port",
+      "name": "invalid port ",
+      "input": "https://example.com:",
+      "derivation": "Rule 5: reject zero, leading zeros, empty, out-of-range or nondigit port.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "port",
+      "name": "invalid port abc",
+      "input": "https://example.com:abc",
+      "derivation": "Rule 5: reject zero, leading zeros, empty, out-of-range or nondigit port.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "port",
+      "name": "invalid port 80:90",
+      "input": "https://example.com:80:90",
+      "derivation": "Rule 5: reject zero, leading zeros, empty, out-of-range or nondigit port.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "escape",
+      "name": "escape uppercase without decoding",
+      "input": "https://example.com/%7e%2f%FF?q=%ab#%c0",
+      "derivation": "Rule 6: keep valid escapes, even non-UTF8 octets, uppercase hex.",
+      "canonical": "https://example.com/%7E%2F%FF?q=%AB#%C0",
+      "whatwg": "https://example.com/%7E%2F%FF?q=%AB#%C0"
+    },
+    {
+      "rule": "escape",
+      "name": "escape then hex is ordinary text",
+      "input": "https://example.com/%001",
+      "derivation": "Rule 6: exactly two hex digits belong to an escape; following digits remain text.",
+      "canonical": "https://example.com/%001",
+      "whatwg": "https://example.com/%001"
+    },
+    {
+      "rule": "escape",
+      "name": "malformed /%",
+      "input": "https://example.com/%",
+      "derivation": "Rule 6: each percent must be followed by two ASCII hex digits.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "escape",
+      "name": "malformed /%0",
+      "input": "https://example.com/%0",
+      "derivation": "Rule 6: each percent must be followed by two ASCII hex digits.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "escape",
+      "name": "malformed /%GG",
+      "input": "https://example.com/%GG",
+      "derivation": "Rule 6: each percent must be followed by two ASCII hex digits.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "escape",
+      "name": "malformed /%0g",
+      "input": "https://example.com/%0g",
+      "derivation": "Rule 6: each percent must be followed by two ASCII hex digits.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "escape",
+      "name": "malformed /%\u00e90",
+      "input": "https://example.com/%\u00e90",
+      "derivation": "Rule 6: each percent must be followed by two ASCII hex digits.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "escape",
+      "name": "malformed /?q=%",
+      "input": "https://example.com/?q=%",
+      "derivation": "Rule 6: each percent must be followed by two ASCII hex digits.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "escape",
+      "name": "malformed /#%Q0",
+      "input": "https://example.com/#%Q0",
+      "derivation": "Rule 6: each percent must be followed by two ASCII hex digits.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "encoding",
+      "name": "component encoding /\u00e9?q=\u00e9#\u00e9",
+      "input": "https://example.com/\u00e9?q=\u00e9#\u00e9",
+      "derivation": "Rule 7 with fixed-point exception: RFC3986 UTF8 escapes; apostrophe additionally escaped in HTTP(S) query only. Invisibles stay percent-encoded in canonical display.",
+      "canonical": "https://example.com/%C3%A9?q=%C3%A9#%C3%A9",
+      "whatwg": "https://example.com/%C3%A9?q=%C3%A9#%C3%A9"
+    },
+    {
+      "rule": "encoding",
+      "name": "component encoding /a'/?q='#'",
+      "input": "https://example.com/a'/?q='#'",
+      "derivation": "Rule 7 with fixed-point exception: RFC3986 UTF8 escapes; apostrophe additionally escaped in HTTP(S) query only. Invisibles stay percent-encoded in canonical display.",
+      "canonical": "https://example.com/a'/?q=%27#'",
+      "whatwg": "https://example.com/a'/?q=%27#'"
+    },
+    {
+      "rule": "encoding",
+      "name": "component encoding /[]^`{|}<>\"?q=[]^`{|}<>\"#[]^`{|}<>\"#",
+      "input": "https://example.com/[]^`{|}<>\"?q=[]^`{|}<>\"#[]^`{|}<>\"#",
+      "derivation": "Rule 7 with fixed-point exception: RFC3986 UTF8 escapes; apostrophe additionally escaped in HTTP(S) query only. Invisibles stay percent-encoded in canonical display.",
+      "canonical": "https://example.com/%5B%5D%5E%60%7B%7C%7D%3C%3E%22?q=%5B%5D%5E%60%7B%7C%7D%3C%3E%22#%5B%5D%5E%60%7B%7C%7D%3C%3E%22%23",
+      "whatwg": "https://example.com/%5B%5D%5E%60%7B%7C%7D%3C%3E%22?q=%5B%5D%5E%60%7B%7C%7D%3C%3E%22#%5B%5D%5E%60%7B%7C%7D%3C%3E%22%23"
+    },
+    {
+      "rule": "encoding",
+      "name": "component encoding /-._~!$&'()*+,;=:@/?q=/?:@!$&()*+,;=#/?:@!$&'()*+,;=",
+      "input": "https://example.com/-._~!$&'()*+,;=:@/?q=/?:@!$&()*+,;=#/?:@!$&'()*+,;=",
+      "derivation": "Rule 7 with fixed-point exception: RFC3986 UTF8 escapes; apostrophe additionally escaped in HTTP(S) query only. Invisibles stay percent-encoded in canonical display.",
+      "canonical": "https://example.com/-._~!$&'()*+,;=:@/?q=/?:@!$&()*+,;=#/?:@!$&'()*+,;=",
+      "whatwg": "https://example.com/-._~!$&'()*+,;=:@/?q=/?:@!$&()*+,;=#/?:@!$&'()*+,;="
+    },
+    {
+      "rule": "encoding",
+      "name": "component encoding /\u200b\u202e?q=\u2066#\ufeff",
+      "input": "https://example.com/\u200b\u202e?q=\u2066#\ufeff",
+      "derivation": "Rule 7 with fixed-point exception: RFC3986 UTF8 escapes; apostrophe additionally escaped in HTTP(S) query only. Invisibles stay percent-encoded in canonical display.",
+      "canonical": "https://example.com/%E2%80%8B%E2%80%AE?q=%E2%81%A6#%EF%BB%BF",
+      "whatwg": "https://example.com/%E2%80%8B%E2%80%AE?q=%E2%81%A6#%EF%BB%BF"
+    },
+    {
+      "rule": "path",
+      "name": "path accepted ",
+      "input": "https://example.com",
+      "derivation": "Rule 8: slash for empty path; preserve nondot path segments and empty query/fragment.",
+      "canonical": "https://example.com/",
+      "whatwg": "https://example.com/"
+    },
+    {
+      "rule": "path",
+      "name": "path accepted ?",
+      "input": "https://example.com?",
+      "derivation": "Rule 8: slash for empty path; preserve nondot path segments and empty query/fragment.",
+      "canonical": "https://example.com/?",
+      "whatwg": "https://example.com/?"
+    },
+    {
+      "rule": "path",
+      "name": "path accepted #",
+      "input": "https://example.com#",
+      "derivation": "Rule 8: slash for empty path; preserve nondot path segments and empty query/fragment.",
+      "canonical": "https://example.com/#",
+      "whatwg": "https://example.com/#"
+    },
+    {
+      "rule": "path",
+      "name": "path accepted //a///b",
+      "input": "https://example.com//a///b",
+      "derivation": "Rule 8: slash for empty path; preserve nondot path segments and empty query/fragment.",
+      "canonical": "https://example.com//a///b",
+      "whatwg": "https://example.com//a///b"
+    },
+    {
+      "rule": "path",
+      "name": "path accepted /.a/..a/%252e?x=..#..",
+      "input": "https://example.com/.a/..a/%252e?x=..#..",
+      "derivation": "Rule 8: slash for empty path; preserve nondot path segments and empty query/fragment.",
+      "canonical": "https://example.com/.a/..a/%252e?x=..#..",
+      "whatwg": "https://example.com/.a/..a/%252e?x=..#.."
+    },
+    {
+      "rule": "path",
+      "name": "dot segment /.",
+      "input": "https://example.com/.",
+      "derivation": "Rule 8: literal or escape-spelled single/double dot segment refused, never normalized away.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "path",
+      "name": "dot segment /..",
+      "input": "https://example.com/..",
+      "derivation": "Rule 8: literal or escape-spelled single/double dot segment refused, never normalized away.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "path",
+      "name": "dot segment /a/../b",
+      "input": "https://example.com/a/../b",
+      "derivation": "Rule 8: literal or escape-spelled single/double dot segment refused, never normalized away.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "path",
+      "name": "dot segment /%2e",
+      "input": "https://example.com/%2e",
+      "derivation": "Rule 8: literal or escape-spelled single/double dot segment refused, never normalized away.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "path",
+      "name": "dot segment /%2E%2e/",
+      "input": "https://example.com/%2E%2e/",
+      "derivation": "Rule 8: literal or escape-spelled single/double dot segment refused, never normalized away.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "path",
+      "name": "dot segment /.%2e",
+      "input": "https://example.com/.%2e",
+      "derivation": "Rule 8: literal or escape-spelled single/double dot segment refused, never normalized away.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "path",
+      "name": "dot segment /%2E.",
+      "input": "https://example.com/%2E.",
+      "derivation": "Rule 8: literal or escape-spelled single/double dot segment refused, never normalized away.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "raw Unicode noncontrol allowed",
+      "input": "https://example.com/\u732b",
+      "derivation": "Rule 9: noncontrol Unicode is encoded, not refused.",
+      "canonical": "https://example.com/%E7%8C%AB",
+      "whatwg": "https://example.com/%E7%8C%AB"
+    },
+    {
+      "rule": "raw",
+      "name": "raw refused '/a b'",
+      "input": "https://example.com/a b",
+      "derivation": "Rule 9: space, backslash, C0/C1 raw controls refused before splitting.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "raw refused '/a\\\\b'",
+      "input": "https://example.com/a\\b",
+      "derivation": "Rule 9: space, backslash, C0/C1 raw controls refused before splitting.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "raw refused '/\\t'",
+      "input": "https://example.com/\t",
+      "derivation": "Rule 9: space, backslash, C0/C1 raw controls refused before splitting.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "raw refused '/\\r'",
+      "input": "https://example.com/\r",
+      "derivation": "Rule 9: space, backslash, C0/C1 raw controls refused before splitting.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "raw refused '/\\n'",
+      "input": "https://example.com/\n",
+      "derivation": "Rule 9: space, backslash, C0/C1 raw controls refused before splitting.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "raw refused '/\\x00'",
+      "input": "https://example.com/\u0000",
+      "derivation": "Rule 9: space, backslash, C0/C1 raw controls refused before splitting.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "raw refused '/\\x1f'",
+      "input": "https://example.com/\u001f",
+      "derivation": "Rule 9: space, backslash, C0/C1 raw controls refused before splitting.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "raw refused '/\\x7f'",
+      "input": "https://example.com/\u007f",
+      "derivation": "Rule 9: space, backslash, C0/C1 raw controls refused before splitting.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "raw refused '/\\x85'",
+      "input": "https://example.com/\u0085",
+      "derivation": "Rule 9: space, backslash, C0/C1 raw controls refused before splitting.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "raw refused '/\\x9f'",
+      "input": "https://example.com/\u009f",
+      "derivation": "Rule 9: space, backslash, C0/C1 raw controls refused before splitting.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "leading space refused",
+      "input": " https://example.com/",
+      "derivation": "Rule 9: no browser whitespace trimming.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "raw",
+      "name": "host control refused",
+      "input": "https://exam\tple.com/",
+      "derivation": "Rule 9: no browser tab removal.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "length",
+      "name": "ASCII input/output 2048",
+      "input": {
+        "prefix": "https://example.com/",
+        "unit": "a",
+        "count": 2028,
+        "suffix": ""
+      },
+      "derivation": "Rule 10: 20-scalar prefix plus payload; inclusive cap 2048.",
+      "canonical": {
+        "prefix": "https://example.com/",
+        "unit": "a",
+        "count": 2028,
+        "suffix": ""
+      },
+      "whatwg": {
+        "prefix": "https://example.com/",
+        "unit": "a",
+        "count": 2028,
+        "suffix": ""
+      }
+    },
+    {
+      "rule": "length",
+      "name": "scalar-not-byte input 2048",
+      "input": {
+        "prefix": "https://exam",
+        "unit": "\u00ad",
+        "count": 2028,
+        "suffix": "ple.com/"
+      },
+      "derivation": "Rule 10: ignored soft hyphens take one input scalar each; output is 20 scalars, input cap still enforced.",
+      "canonical": "https://example.com/",
+      "whatwg": "https://example.com/"
+    },
+    {
+      "rule": "length",
+      "name": "ASCII input/output 2049",
+      "input": {
+        "prefix": "https://example.com/",
+        "unit": "a",
+        "count": 2029,
+        "suffix": ""
+      },
+      "derivation": "Rule 10: 20-scalar prefix plus payload; inclusive cap 2048.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "length",
+      "name": "scalar-not-byte input 2049",
+      "input": {
+        "prefix": "https://exam",
+        "unit": "\u00ad",
+        "count": 2029,
+        "suffix": "ple.com/"
+      },
+      "derivation": "Rule 10: ignored soft hyphens take one input scalar each; output is 20 scalars, input cap still enforced.",
+      "error": "E_SCHEME"
+    },
+    {
+      "rule": "length",
+      "name": "expanded output 2048",
+      "input": {
+        "prefix": "https://example.com/",
+        "unit": "\u00e9",
+        "count": 338,
+        "suffix": ""
+      },
+      "derivation": "Rule 10: each \u00e9 becomes six ASCII scalars; 20+338*6=2048, 20+339*6=2054.",
+      "canonical": {
+        "prefix": "https://example.com/",
+        "unit": "%C3%A9",
+        "count": 338,
+        "suffix": ""
+      },
+      "whatwg": {
+        "prefix": "https://example.com/",
+        "unit": "%C3%A9",
+        "count": 338,
+        "suffix": ""
+      }
+    },
+    {
+      "rule": "length",
+      "name": "expanded output 2054",
+      "input": {
+        "prefix": "https://example.com/",
+        "unit": "\u00e9",
+        "count": 339,
+        "suffix": ""
+      },
+      "derivation": "Rule 10: each \u00e9 becomes six ASCII scalars; 20+338*6=2048, 20+339*6=2054.",
+      "error": "E_SCHEME"
+    }
+  ],
+  "display": [
+    {
+      "input": "https://example.com/\u0000\t\n\r\u001f\u007f\u0085\u009f",
+      "expected": "https://example.com/\\u{0}\\u{9}\\u{A}\\u{D}\\u{1F}\\u{7F}\\u{85}\\u{9F}"
+    },
+    {
+      "input": "x\u061c\u200e\u200f\u202e\u2066\u200b\u180e\u034f\ufeff",
+      "expected": "x\\u{61C}\\u{200E}\\u{200F}\\u{202E}\\u{2066}\\u{200B}\\u{180E}\\u{34F}\\u{FEFF}"
+    },
+    {
+      "input": "https://xn--fa-hia.de/%E2%80%8B?x='END#visible",
+      "expected": "https://xn--fa-hia.de/%E2%80%8B?x='END#visible"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+[
+  {"name":"html", "scoped":true, "arguments":{"kind":"html","title":"T","summary":"S","program":"P"}, "code":"kind_unsupported"},
+  {"name":"unscoped", "scoped":false, "arguments":{"kind":"native","title":"T","summary":"S","program":"P"}, "code":"route_unscoped"},
+  {"name":"unknown", "scoped":true, "arguments":{"kind":"native","title":"T","summary":"S","program":"P","owner":"spoof"}, "code":"unknown_argument"},
+  {"name":"missing", "scoped":true, "arguments":{"title":"T","summary":"S","program":"P"}, "code":"argument_missing"},
+  {"name":"invalid", "scoped":true, "arguments":{"kind":"foo","title":"T","summary":"S","program":"P"}, "code":"argument_invalid"},
+  {"name":"forbidden", "scoped":true, "arguments":{"kind":"native","title":"T","summary":"S","program":"P","data_format":"json"}, "code":"argument_forbidden"},
+  {"name":"references-unavailable", "scoped":true, "arguments":{"kind":"native","title":"T","summary":"S","program":"P"}, "output_refs":{"set_id":"set-1","mid":"mid-1","dialect":"rich-ui/1","count":4,"digest":"29c975b699c864040cacd7797bba4eb53337b30a68a00acbb6efe608249f3a0f"}, "code":"references_unavailable"},
+  {"name":"data-unknown", "scoped":true, "arguments":{"kind":"native","title":"T","summary":"S","program":"P","data":"$$tc(7)"}, "code":"data_reference_unknown"},
+  {"name":"malformed-descriptor", "scoped":true, "arguments":{"kind":"native","title":"T","summary":"S","program":"P"}, "output_refs":{"count":1}, "code":"argument_invalid"}
+]

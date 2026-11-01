@@ -1,0 +1,1 @@
+{"code":"routing_not_ready","message":"routing catalog targets await a catalog snapshot and credential listing; retry shortly","detail":{"retry_after_ms":1000,"retryable":true}}

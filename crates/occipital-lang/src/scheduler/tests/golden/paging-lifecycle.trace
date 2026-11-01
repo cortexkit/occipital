@@ -1,0 +1,130 @@
+source="export const p = PagedList(\"pages\", {}, 200)\n\n<List more={p} />\n\n<Button label=\"Refresh\" action={Refresh(p)} />\n\n<Button label=\"More\" action={LoadMore(p)} />"
+registry: pages item_key=id page=any
+first-demand: eval=2 fuel=62 revision=Some(1) loading=Some(true) rejected=[]
+Arm(FirstAnswer(42), Decimal(5))
+page p 42:1 cursor=None limit=200
+Arm(Timeout(Epoch { instance: 42, request: 1 }), Decimal(30))
+tree-definition=cb98d421b95cf64ba672c7a98d4083b6c3db4f4cc9264ed98fe3940026d95e65 Tree { blocks: [Component { name: DisplayText("LoadingRoot"), props: [], children: [] }] }
+tree-sha256=cb98d421b95cf64ba672c7a98d4083b6c3db4f4cc9264ed98fe3940026d95e65
+items=[] status="loading" error=null stale=false done=false total=null loadingMore=false capped=false
+first-error: eval=1 fuel=31 revision=Some(2) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 1 }))
+Stop(FirstAnswer(42))
+tree-definition=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526 Tree { blocks: [Component { name: DisplayText("List"), props: [(DisplayText("more"), Site(DisplayText("p")))], children: [] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("p"))] }]))], children: [] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("More"))), (DisplayText("action"), Action([TreeStep { operation: LoadMore, arguments: [Site(DisplayText("p"))] }]))], children: [] }] }
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="error" error="first failed" stale=false done=false total=null loadingMore=false capped=false
+auto-no-error-retry-consumes-token: eval=1 fuel=31 revision=Some(3) loading=Some(false) rejected=[]
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="error" error="first failed" stale=false done=false total=null loadingMore=false capped=false
+explicit-first-retry: eval=1 fuel=31 revision=Some(4) loading=Some(false) rejected=[]
+page p 42:2 cursor=None limit=200
+Arm(Timeout(Epoch { instance: 42, request: 2 }), Decimal(30))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="error" error="first failed" stale=false done=false total=null loadingMore=false capped=false
+valid-first: eval=1 fuel=31 revision=Some(5) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 2 }))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1}] status="ready" error=null stale=false done=false total=4 loadingMore=false capped=false
+automatic-more: eval=1 fuel=31 revision=Some(6) loading=Some(false) rejected=[]
+page p 42:3 cursor=Some("a") limit=200
+Arm(Timeout(Epoch { instance: 42, request: 3 }), Decimal(30))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1}] status="ready" error=null stale=false done=false total=4 loadingMore=true capped=false
+duplicate-only: eval=1 fuel=31 revision=Some(7) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 3 }))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1}] status="ready" error=null stale=false done=false total=null loadingMore=false capped=false
+no-auto-without-progress: eval=1 fuel=31 revision=Some(8) loading=Some(false) rejected=[]
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1}] status="ready" error=null stale=false done=false total=null loadingMore=false capped=false
+later-timeout: eval=1 fuel=31 revision=Some(10) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 4 }))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1}] status="error" error="timed out" stale=true done=false total=null loadingMore=false capped=false
+later-retry-same-cursor: eval=1 fuel=31 revision=Some(11) loading=Some(false) rejected=[]
+page p 42:5 cursor=Some("b") limit=200
+Arm(Timeout(Epoch { instance: 42, request: 5 }), Decimal(30))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1}] status="error" error="timed out" stale=true done=false total=null loadingMore=true capped=false
+valid-later: eval=1 fuel=31 revision=Some(12) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 5 }))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1},{"id":2}] status="ready" error=null stale=false done=false total=2 loadingMore=false capped=false
+empty-nonfinal: eval=1 fuel=31 revision=Some(14) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 6 }))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1},{"id":2}] status="ready" error=null stale=false done=false total=null loadingMore=false capped=false
+disconnect-pending: eval=1 fuel=31 revision=Some(16) loading=Some(false) rejected=[]
+Arm(Offline(Epoch { instance: 42, request: 1 }), Decimal(30))
+cancel p 42:7
+Stop(Timeout(Epoch { instance: 42, request: 7 }))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1},{"id":2}] status="ready" error=null stale=true done=false total=null loadingMore=false capped=false
+late-epoch: eval=0 fuel=0 revision=None loading=None rejected=[]
+items=[{"id":1},{"id":2}] status="ready" error=null stale=true done=false total=null loadingMore=false capped=false
+reconnect-pending: eval=1 fuel=31 revision=Some(17) loading=Some(false) rejected=[]
+Stop(Offline(Epoch { instance: 42, request: 1 }))
+page p 42:8 cursor=Some("d") limit=200
+Arm(Timeout(Epoch { instance: 42, request: 8 }), Decimal(30))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1},{"id":2}] status="ready" error=null stale=true done=false total=null loadingMore=true capped=false
+empty-final: eval=1 fuel=31 revision=Some(18) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 8 }))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1},{"id":2}] status="ready" error=null stale=false done=true total=null loadingMore=false capped=false
+refresh-done-stale: eval=1 fuel=31 revision=Some(19) loading=Some(false) rejected=[]
+page p 42:9 cursor=None limit=200
+Arm(Timeout(Epoch { instance: 42, request: 9 }), Decimal(30))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[{"id":1},{"id":2}] status="loading" error=null stale=true done=false total=null loadingMore=false capped=false
+empty-first-replaces: eval=1 fuel=31 revision=Some(20) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 9 }))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="ready" error=null stale=false done=true total=null loadingMore=false capped=false
+invalid-cursor: eval=1 fuel=31 revision=Some(22) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 10 }))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="error" error="invalid_page" stale=true done=false total=null loadingMore=false capped=false
+invalid-requires-refresh: eval=1 fuel=31 revision=Some(23) loading=Some(false) rejected=[]
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="error" error="invalid_page" stale=true done=false total=null loadingMore=false capped=false
+cap-without-partial-append: eval=1 fuel=31 revision=Some(25) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 11 }))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="ready" error=null stale=true done=false total=null loadingMore=false capped=true
+capped-load-ignored: eval=1 fuel=31 revision=Some(26) loading=Some(false) rejected=[]
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="ready" error=null stale=true done=false total=null loadingMore=false capped=true
+refresh-capped: eval=1 fuel=31 revision=Some(27) loading=Some(false) rejected=[]
+page p 42:12 cursor=None limit=200
+Arm(Timeout(Epoch { instance: 42, request: 12 }), Decimal(30))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="loading" error=null stale=true done=false total=null loadingMore=false capped=false
+page-cap fixture: twenty empty pages with next=1..20, explicit LoadMore between each
+reached-page-cap: eval=1 fuel=31 revision=Some(66) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 31 }))
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="ready" error=null stale=false done=false total=null loadingMore=false capped=true
+hidden-capped: eval=1 fuel=31 revision=Some(67) loading=Some(false) rejected=[]
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="ready" error=null stale=true done=false total=null loadingMore=false capped=true
+visible-capped-no-pending: eval=1 fuel=31 revision=Some(68) loading=Some(false) rejected=[]
+tree-sha256=dc080dbd4cfa86270c8d7d869957a859680dcac758157d633ebb8b15224a7526
+items=[] status="ready" error=null stale=true done=false total=null loadingMore=false capped=true
+identity fixture source="export const p = PagedList(\"pages\", {n: now})\n\n{now < 2 ? p.status : \"hidden\"}"
+new-identity-clears: eval=1 fuel=14 revision=Some(3) loading=Some(false) rejected=[]
+page p 42:2 cursor=None limit=50
+Arm(Timeout(Epoch { instance: 42, request: 2 }), Decimal(30))
+tree-definition=582a3a1b92e9220cde095f9d2ae3486857f9f16d43d88e43c1d5174b0afac30d Tree { blocks: [Markdown { kind: Paragraph, children: [Text(DisplayText("loading"))] }] }
+tree-sha256=582a3a1b92e9220cde095f9d2ae3486857f9f16d43d88e43c1d5174b0afac30d
+items=[] status="loading" error=null stale=false done=false total=null loadingMore=false capped=false
+undemand-forgets: eval=1 fuel=8 revision=Some(4) loading=Some(false) rejected=[]
+cancel p 42:2
+Stop(Timeout(Epoch { instance: 42, request: 2 }))
+tree-definition=2e7de50c724c69cd79ebcd3a1af8643c21b6680ab0086f824f0a258db4f9a805 Tree { blocks: [Markdown { kind: Paragraph, children: [Text(DisplayText("hidden"))] }] }
+tree-sha256=2e7de50c724c69cd79ebcd3a1af8643c21b6680ab0086f824f0a258db4f9a805
+redemand-first: eval=1 fuel=14 revision=Some(5) loading=Some(false) rejected=[]
+page p 42:3 cursor=None limit=50
+Arm(Timeout(Epoch { instance: 42, request: 3 }), Decimal(30))
+tree-sha256=582a3a1b92e9220cde095f9d2ae3486857f9f16d43d88e43c1d5174b0afac30d
+items=[] status="loading" error=null stale=false done=false total=null loadingMore=false capped=false

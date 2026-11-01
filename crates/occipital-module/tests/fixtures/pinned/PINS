@@ -1,0 +1,18 @@
+# Contract fixtures copied byte for byte from the producers Occipital builds against.
+# Each line: <sha256>  <fixture path>  <source>
+# The source names the producer, its version or commit, the file and, for a source
+# excerpt, the lines copied. A fixture is never edited: a newer producer version is a
+# new fixture with a line of its own.
+902624ce5d4ae77258de4d4142e0ad21931867cda0e23774c0da4ce2c924066c  subc-protocol-0.33.1/module_hello_ack_body.json  subc-protocol 0.33.1, tests/golden/module_hello_ack_body.json, whole file (tagged sample of HELLO_ACK)
+d3c2d773d8b8d35e0216463ba2408e35d5d83e9dc2c7d1d60ef112103648ecd8  cortexkit-store-types-0.2.2/storage_vectors.json  cortexkit-store-types 0.2.2, tests/golden/storage_vectors.json, whole file (tagged sample of the descriptor HELLO_ACK.storage carries)
+36f4ce9203240f028b0a9df05cda5f2e02975f5a33341b9144c12d0a284db735  subc-os-0.1.19/launch_nonce.rs.L99-L138.excerpt  subc-os 0.1.19, src/launch_nonce.rs, lines 99-138 (LaunchNonceError)
+a8043f72a9bc13fb6b7f3842b7a288c7a02786d02db1e1c59d5b4da64b6af380  subc-os-0.1.19/launch_nonce.rs.L223-L280.excerpt  subc-os 0.1.19, src/launch_nonce.rs, lines 223-280 (launch_nonce and its read order)
+cda5e104fbeaaa46800486325065b4fb311115d31d109462dcc72e20e699507b  subconscious-7a6be091/launch-nonce.md.L66-L99.excerpt  subconscious 7a6be09113a0b861e5ff23fac11e8fddda16fb5a, docs/launch-nonce.md, lines 66-99 (module side of the descriptor contract)
+dc9cc254c5bc47faf408a8d8799e6fccf259d8308d51518a1964679724fbe342  subconscious-7a6be091/place-module.sh.L368-L431.excerpt  subconscious 7a6be09113a0b861e5ff23fac11e8fddda16fb5a, scripts/fleet/place-module.sh, lines 368-431 (the --manifest probe and its JSON parse)
+9366fb4f8a907a228ed330c816e4b5d8cb2cf28950f62e10d9335f4f413921b7  subconscious-7a6be091/place-module.sh.L882-L906.excerpt  subconscious 7a6be09113a0b861e5ff23fac11e8fddda16fb5a, scripts/fleet/place-module.sh, lines 882-906 (the provenance line read from --manifest)
+228244b7fcc92dc1b60644ad8fe14ff4a08fbb8f0951219d319b3337744dcbc8  subc-protocol-0.33.1/tool_call_request_with_output_refs.json  subc-protocol 0.33.1, tests/golden/tool_call_request_with_output_refs.json, whole file (tagged contract sample)
+981238868880eefbc9d874287c8cfc1025228f435e70452ecf29444880bf1acc  subc-protocol-0.33.1/module_control_request_route_bind_with_scope.json  subc-protocol 0.33.1, tests/golden/module_control_request_route_bind_with_scope.json, whole file (tagged contract sample)
+3c80244247dd770b27b1af6567862eb6824965ea1c8463c34e54a0446bda5c58  cortexkit-role-tool-provider-0.13.0/tool-result-v1.json  cortexkit-role-tool-provider 0.13.0, test-vectors/tool-provider-v1/tool-result-v1.json, whole file (tagged contract sample)
+ff66b258d0682498e48e62d0dfe0acf1e7025bd48dbcc427e51739dc4064e344  cortexkit-role-tool-provider-0.13.0/role-describe.json  cortexkit-role-tool-provider 0.13.0, test-vectors/tool-provider-v1/role-describe.json, whole file (tagged contract sample)
+9701f88dd4ced9b2447f10a019186c671ca618c2a1c762fd652a97c1e5ee25d3  cortexkit-role-tool-provider-0.13.0/catalog-answers.json  cortexkit-role-tool-provider 0.13.0, test-vectors/tool-provider-v1/catalog-answers.json, whole file (tagged contract sample)
+f5c1d9b00933d18a0d62091168a5df163be30567f251dbe7abbf2cbd01409cd3  commons-d75cf9966453/output-refs.json  commons d75cf9966453ae6d8f8ff1c42060a458204ccaac, crates/cortexkit-role-llm-runner/test-vectors/llm-runner-v1/output-refs.json, whole file (descriptor on receipt; records only on later reads)

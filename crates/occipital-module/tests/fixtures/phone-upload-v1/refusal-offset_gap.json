@@ -1,0 +1,16 @@
+{
+  "op": "upload.chunk",
+  "refusal": {
+    "code": "offset_gap",
+    "detail": {
+      "committed": 0
+    },
+    "message": "the piece starts at 10, past the 0 bytes held"
+  },
+  "request": {
+    "offset": 10,
+    "payload_hex": "61642073616d706c650a",
+    "upload_id": "00000000000a11ce0000000000000003"
+  },
+  "tag": "offset_gap"
+}

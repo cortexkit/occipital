@@ -1,0 +1,20 @@
+{
+  "op": "upload.begin",
+  "refusal": {
+    "code": "disk_floor",
+    "detail": {
+      "available": 21474836490,
+      "needed": 21474836500,
+      "volume": "project"
+    },
+    "message": "the project volume would keep less than 21474836480 bytes free"
+  },
+  "request": {
+    "mime": "application/octet-stream",
+    "name": "clip.mov",
+    "session": "phone-target",
+    "sha256": "c3127154644798d03d535bed5682032cb3602e1c426b438b9f809e0f3cd0f863",
+    "size": 20
+  },
+  "tag": "disk_floor"
+}

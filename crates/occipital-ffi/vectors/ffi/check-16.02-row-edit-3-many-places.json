@@ -1,0 +1,9 @@
+{
+  "entry": "occ_program_check",
+  "request": {
+    "ctx_json": "{\"context\":{\"execution_dialect\":\"1.0\",\"handles\":[],\"profile\":\"tool_row\",\"references\":{},\"registry\":{},\"show_ui\":{\"data_columns\":{},\"data_format\":null,\"summary\":\"\",\"title\":\"\"},\"tool\":{\"input\":{\"schema\":{\"properties\":{\"path\":{\"type\":\"string\"}},\"required\":[\"path\"],\"type\":\"object\"},\"value\":{\"path\":\"src/main.rs\"}},\"truncated\":false,\"truncated_fields\":[],\"view\":{\"schema\":{\"properties\":{\"added\":{\"nullable\":true,\"type\":\"number\"},\"hunks\":{\"nullable\":true,\"type\":\"number\"},\"phase\":{\"type\":\"string\"},\"removed\":{\"nullable\":true,\"type\":\"number\"}},\"required\":[\"phase\",\"added\",\"removed\",\"hunks\"],\"type\":\"object\"},\"value\":{\"added\":3,\"hunks\":4,\"phase\":\"finished\",\"removed\":0}}}}}",
+    "src": "ZXhwb3J0IGNvbnN0IGNoYW5nZXMgPSB2aWV3LmFkZGVkID09IG51bGwgfHwgdmlldy5yZW1vdmVkID09IG51bGwgPyAiQ291bnRzIHVuYXZhaWxhYmxlIiA6ICIrIiArIEZvcm1hdE51bWJlcih2aWV3LmFkZGVkKSArICIg4oiSIiArIEZvcm1hdE51bWJlcih2aWV3LnJlbW92ZWQpCmV4cG9ydCBjb25zdCBwbGFjZXMgPSB2aWV3Lmh1bmtzID09IG51bGwgPyAiQ2hhbmdlZCBwbGFjZXMgdW5hdmFpbGFibGUiIDogKHZpZXcuaHVua3MgPT0gMSA/ICIxIGNoYW5nZWQgcGxhY2UiIDogRm9ybWF0TnVtYmVyKHZpZXcuaHVua3MpICsgIiBjaGFuZ2VkIHBsYWNlcyIpCgo8SW5saW5lQ29kZSBjb2RlPXtpbnB1dC5wYXRofSAvPiB7dmlldy5waGFzZSA9PSAicnVubmluZyIgPyAiRWRpdGluZ+KApiIgOiBjaGFuZ2VzICsgIiDCtyAiICsgcGxhY2VzfQ=="
+  },
+  "status": 0,
+  "response": "{\"ok\":true,\"language\":\"1.0\",\"executionDialect\":\"1.0\",\"approvalChecked\":false,\"requires\":\"1.0\",\"diagnostics\":[],\"omitted\":0,\"trial\":{\"fuel\":0,\"nodes\":0,\"outcome\":\"not_run\"}}"
+}

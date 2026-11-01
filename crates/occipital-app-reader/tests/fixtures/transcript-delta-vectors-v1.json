@@ -1,0 +1,867 @@
+{
+ "$comment": "Transcript delta claim protocol vectors v1.19 - channel rm_toolu_01XKQwq2GJobsiCgyTE6kPSC. Pinned rules: (1) heldFloorMessageId = the oldest turn of the CONTIGUOUS run containing the newest held turn - anything older is disclaimed even when held. (2) VOUCH SCOPE IS A PROPERTY, NOT AN ARM: vouchedFromMessageId (oldest message the server can speak for) may ride ANY verdict and since v1.19 is REQUIRED on every matched reply (absence is a decode failure, never a whole-range vouch; diverged keeps it optional); a below-window floor with a resumable claim is MATCHED with a bounded vouch, never cursor_expired. (3) cursor_expired means the claim is UNRESUMABLE (heldVersion from a dead generation, or a sinceMessageId outside recoverable history) - it is about resumability, never about window coverage. (4) diverged's validThroughMessageId is a staleness CEILING (last still-valid held message, EXCLUSIVE boundary, absent when the floor itself is first affected). (5) resync is an INLINE canonical page (ruled: atomic - a fetch directive would race further mutation between verdict and remedy, and costs a second RPC on the expensive arm), byte-shaped as HostSessionTranscriptPage. (6) newTurns rows are the CANONICAL HostTranscriptPageMessage shape (ordinal + role + text + blockSummaries required; toolCalls/files/model/times/messageId optional) - no second slimmer turn schema; ordinals remain response data and are never claim anchors. (7) diagnostics presence is decided by REFUSAL TIMING relative to session resolution: PRE-RESOLUTION refusals (request invalid on its face - the exclusion errors) and FAILED resolution (session_unknown) carry no diagnostics, absence structural; refusals AT OR AFTER successful resolution (harness_mismatch - the arm's identity is quoted in the error itself; identity_unsupported) carry diagnostics, because the arm is known and declares what it can do. A decoder reads absent diagnostics on a post-resolution error as a producer defect, on a pre-resolution error as correct. ABSENT deltaRead on a success reply never means native (consumer default: activity-gated full page). (8) version tokens are OPAQUE (echoed, never parsed; the bootnonce-seq shape in fixtures is for human readers). (9) REQUESTS ARE EXECUTABLE WIRE SHAPES: mode is required (the caller's genuine choice); harness is OPTIONAL and resolved from the session's durable substrate when absent - omission is the normal case, asserted-and-agrees serves, asserted-and-disagrees is a typed error naming both values (both pinned as vectors). (10) claim is MUTUALLY EXCLUSIVE with activityToken and with beforeOrdinal - distinct typed invalid-request codes, never silent precedence (two change-probes disagreeing vs opposite directions of travel are different caller mistakes and keep different names). (11) The invalidation event body carries session without harness BECAUSE the subscription plane is already (harness, session)-scoped - the event inherits scope from the route it rides; if that plane ever widens to multi-session subscriptions, the body needs the full key. One-shot-then-resubscribe hold semantics are BEHAVIOR: pinned by an integration test on the wire arm, not representable as JSON bytes here. (12) ORDINAL STABILITY DIFFERS BY ARM: opencode ordinals come from the plugin's per-session cursor cache: older turns keep their ordinals across appends while that cache entry lives, but the numbering restarts without notice when the host process restarts, the session leaves the 128-session cache, or the anchor message disappears (outlawed as claim anchors BECAUSE they shift); runner ordinals are durable append-only lineage positions (identity is DERIVED from them). messageId is opaque on BOTH arms regardless of spelling - no consumer parses it, ever. (13) RUNNER ARM PREMISE, LOAD-BEARING: mid (m<ordinal>) identity is positional and sound ONLY because broca's durable transcript is append-only by construction; the prefix-merge==full-replay durability gate holds the claim up (BROCA cites it at the mid() site, 853a37b - session forking is a banked backlog item, so a lineage-rewriting feature must change capabilities and tests BEFORE shipping). mid is valid only from session.read pages (ordinal is None until prompt finalization). (14) Runner diverged is STRUCTURALLY UNREACHABLE today (no mutation path); deletion/truncation/recreation surfaces as cursor_expired under a new generation - consumers still handle every verdict on every arm (an unreachable declaration is a statement about today's substrate, never a licence to skip the branch). (15) HARNESS WIRE VALUES PIN WHAT SHIPS (chair ruling seq 101): the vocabulary is opencode|broca - the canonicalization slice landed in the SAME merge commit as this fixture flip (one product name per harness, operator ruling; legacy runner/llm_runner/llm-runner spellings get a typed refusal naming 'broca'). This is the coordinated one-change window rule 15 promised. (16) ONE ENVELOPE, EVERY ARM (F5, chair ruling seq 104): runner and opencode replies use IDENTICAL discriminators and field names - claim/version/newTurns/resync, never per-substrate aliases; cursor expiry is a POSITIVE claim arm carrying the CURRENT version and an inline resync page (the device's copy is precious, not wrong - it needs somewhere to resync FROM), and nothing is vouched under a generation that no longer exists. No new direction words without a ruling defining them: validThroughMessageId is a validity ceiling, vouchedFromMessageId a vouch floor, and those are the only two. (17) CLAIM FAST PATH AND OBSERVATION DISCIPLINE (chair seq 123 + OC seq 124): heldVersion equality with the current version token answers matched/newTurns:[] in O(1) with NO provider read (the 274-of-357 cheap polls stay free; provider call count is a tested invariant); only a changed token performs one scan+classification, so a scan-mode claim costs exactly the page assembly the change already committed. Positive arms (matched/diverged/cursor_expired) may only be emitted from a STABLE observation - version captured before and after the provider read, equal; one bounded retry on instability, then the typed retryable observation_unstable error with no page or version claim. (18) THE PINNED INVALIDATION EVENT IS SEAM-SECOND: generic activity bumps cannot distinguish append-safe change from mutation of held material, so emitting invalidation on version movement would fire falsely on ordinary appends and defeat delta; validThroughMessageId derivation requires typed affected-message data from the EventV2 provider seam, and the scan-first ship does NOT claim the subscription event is implemented. (19) FINGERPRINT TOTALITY: a snapshot row's fingerprint hashes the canonical serialized reader-visible row minus ordering metadata - role, text, blockSummaries, toolCalls, files, messageId, completedAtMs value and presence, and every future canonical optional field - never an informal claim-relevant subset; the global memory budget is an explicit real byte cap accounting for ids, hashes, and container overhead. (20) INVALIDATION IS A DECLARED CAPABILITY, NEVER AN INFERENCE FROM SILENCE (CKIOS blocker seq 125, OC shape seq 126): diagnostics carries a third member invalidation:'one_shot'|'none' on every arm - one_shot pins the settled subscribe-once-then-resubscribe semantic (an arm capability, not connection state); scan-first OpenCode, append-only broca, and the synthetic no-identity arm all declare 'none'; a future EventV2-backed arm earns 'one_shot'. Missing or unknown values FAIL CLOSED to none. An arm declaring none must refuse a direct subscription attempt with typed invalidation_unsupported rather than accept-and-silence (that refusal lives on the subscription plane's op, outside this fixture's request scope - recorded here as its obligation). A subscription that succeeds and never emits is the absence-reads-as-two-things defect, fifth instance. (21) FAST-PATH BASELINE GUARD (OC seq 126): token equality answers matched ONLY when the exact held baseline still exists and contains sinceMessageId; an evicted or missing baseline scans and answers cursor_expired with an inline resync - matched is never inferred from token equality alone. (22) SCAN-FIRST CORRECTION (builder-caught contradiction): the OpenCode arm's diagnostics declare deltaRead:'scan' in every vector until the EventV2 seam earns 'native' - the pre-revert fixture bytes declared the aspiration, which is exactly the hardcoded-native defect (B1) relocated into the contract itself. Runner arm vectors keep 'native' (the after-ordinal read is native today). A future seam ship flips the OpenCode declarations with implementation and fixture in one change, the canonicalization-window precedent. (23) RUNNER LINEAGE CLAIMS: lineage_id is an opaque equality token (no parsing, ordering, or UUID semantics). Equal heldVersion/current lineage_id is matched; absent lineage_id (the common unmigrated case) or unequal lineage_id is cursor_expired, never diverged. Runner diagnostics declare deltaRead:native only when lineage_id is present; absent declares none. (21) UNIFIED TRANSCRIPT PROJECTION PROVENANCE (operator sequencing ruling, 2026-08-25): every canonical row now requires parts tagged only text|reasoning|tool|file|injected; reasoning is intentionally on-wire, and deprecated request.mode examples remain solely to prove compatibility while absent mode is equally valid. CKIOS consumer field ping: #11334. (24) TOOL ROWS CARRY NO RESULT BODIES (v1.18, Broca arm brought to the OpenCode shape): blockSummaries holds one tool name per call and nothing else (no ok:N bytes or error result chips); each call is one {type:'tool', tool, arguments, argumentsTruncated, outputBytes?, isError?} part plus one toolCalls entry; a call's result contributes only outputBytes and, when it failed, isError:true on the call part - the result body never rides the page. The Broca-arm page vector beside this file is transcript-page/broca-tool-calls-v1.json.",
+ "vectors": [
+  {
+   "name": "matched_with_new_turns",
+   "request": {
+    "session": "ses_a1",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_tail09",
+     "heldVersion": "b7e2c4a1-000000000041"
+    }
+   },
+   "reply": {
+    "claim": "matched",
+    "vouchedFromMessageId": "msg_floor01",
+    "version": "b7e2c4a1-000000000057",
+    "newTurns": [
+     {
+      "ordinal": 42,
+      "role": "user",
+      "text": "ship it",
+      "blockSummaries": [],
+      "messageId": "msg_new10",
+      "createdAtMs": 1787410000000,
+      "files": [
+       {
+        "mime": "image/jpeg",
+        "filename": "IMG_4021.jpeg",
+        "byteCount": 184320,
+        "attachmentId": "att_9c1f22ab",
+        "partIndex": 0
+       },
+       {
+        "byteCount": 2048,
+        "attachmentId": "att_nameless_02",
+        "partIndex": 1
+       }
+      ],
+      "parts": [
+       {
+        "type": "text",
+        "text": "ship it"
+       },
+       {
+        "type": "file",
+        "mime": "image/jpeg",
+        "filename": "IMG_4021.jpeg",
+        "byteCount": 184320,
+        "attachmentId": "att_9c1f22ab",
+        "partIndex": 0
+       },
+       {
+        "type": "file",
+        "byteCount": 2048,
+        "attachmentId": "att_nameless_02",
+        "partIndex": 1
+       }
+      ]
+     },
+     {
+      "ordinal": 43,
+      "role": "assistant",
+      "text": "Shipped.",
+      "blockSummaries": [
+       "bash: git push (exit 0)"
+      ],
+      "toolCalls": [
+       {
+        "name": "bash",
+        "arguments": "{\"command\":\"git push\"}",
+        "argumentsTruncated": false
+       }
+      ],
+      "messageId": "msg_new11",
+      "model": {
+       "providerID": "anthropic",
+       "modelID": "claude-opus-5"
+      },
+      "createdAtMs": 1787410004000,
+      "completedAtMs": 1787410009000,
+      "parts": [
+       {
+        "type": "text",
+        "text": "Shipped."
+       },
+       {
+        "type": "tool",
+        "tool": "bash",
+        "arguments": "{\"command\":\"git push\"}",
+        "argumentsTruncated": false
+       }
+      ]
+     }
+    ],
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "matched_empty_is_positive_not_transport_noise",
+   "$comment": "Structurally distinct from a transport failure: the claim matched and there is nothing new. A consumer treats this as fresh, never as an error.",
+   "request": {
+    "session": "ses_a1",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_new11",
+     "heldVersion": "b7e2c4a1-000000000057"
+    }
+   },
+   "reply": {
+    "claim": "matched",
+    "vouchedFromMessageId": "msg_floor01",
+    "version": "b7e2c4a1-000000000057",
+    "newTurns": [],
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "matched_below_window_floor_bounds_the_vouch",
+   "$comment": "The device's floor predates the server window but the claim's tail and version RESUME fine: verdict is matched, and vouchedFromMessageId bounds what the server can speak for. Below-window coverage is a vouch limit, never an expiry. The device keeps its below-window copy rendered as held-but-unverified.",
+   "request": {
+    "session": "ses_a1",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_ancient",
+     "sinceMessageId": "msg_new11",
+     "heldVersion": "b7e2c4a1-000000000057"
+    }
+   },
+   "reply": {
+    "claim": "matched",
+    "version": "b7e2c4a1-000000000057",
+    "newTurns": [],
+    "vouchedFromMessageId": "msg_window_floor",
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "diverged_held_material_changed",
+   "$comment": "A mutation touched held material inside [floor, tail]. validThroughMessageId = last still-valid held message (exclusive ceiling). resync is an INLINE canonical page starting at the boundary - verdict and remedy in one atomic observation.",
+   "request": {
+    "session": "ses_a1",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_new11",
+     "heldVersion": "b7e2c4a1-000000000057"
+    }
+   },
+   "reply": {
+    "claim": "diverged",
+    "version": "b7e2c4a1-000000000071",
+    "validThroughMessageId": "msg_new10",
+    "resync": {
+     "messages": [
+      {
+       "ordinal": 43,
+       "role": "assistant",
+       "text": "Shipped. (edited: force-push was required)",
+       "blockSummaries": [
+        "bash: git push --force-with-lease (exit 0)"
+       ],
+       "messageId": "msg_new11",
+       "createdAtMs": 1787410004000,
+       "completedAtMs": 1787410020000,
+       "parts": [
+        {
+         "type": "text",
+         "text": "Shipped. (edited: force-push was required)"
+        }
+       ]
+      }
+     ],
+     "reportsCompletion": true,
+     "nextBeforeOrdinal": null
+    },
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "diverged_first_affected_is_floor",
+   "$comment": "The first affected message IS the held floor: validThroughMessageId is ABSENT (never null, never fabricated) and the inline resync page re-serves from the newest end (nextBeforeOrdinal pages older history on demand).",
+   "request": {
+    "session": "ses_a1",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_new11",
+     "heldVersion": "b7e2c4a1-000000000071"
+    }
+   },
+   "reply": {
+    "claim": "diverged",
+    "version": "b7e2c4a1-000000000078",
+    "resync": {
+     "messages": [
+      {
+       "ordinal": 43,
+       "role": "assistant",
+       "text": "Shipped. (edited: force-push was required)",
+       "blockSummaries": [],
+       "messageId": "msg_new11",
+       "createdAtMs": 1787410004000,
+       "parts": [
+        {
+         "type": "text",
+         "text": "Shipped. (edited: force-push was required)"
+        }
+       ]
+      }
+     ],
+     "reportsCompletion": true,
+     "nextBeforeOrdinal": 43
+    },
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "cursor_expired_unresumable_version",
+   "$comment": "EXPIRY IS ABOUT RESUMABILITY: the heldVersion names a dead generation (module restarted; the b7e2 nonce no longer exists), so matched-vs-diverged cannot be evaluated for this claim at all. Reply carries the CURRENT version, an inline newest page, no validThroughMessageId (nothing can be vouched about held material under an unevaluable claim), and the device treats its copy as held-but-unverified, never as wrong.",
+   "request": {
+    "session": "ses_a1",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_new11",
+     "heldVersion": "deadbeef-000000000993"
+    }
+   },
+   "reply": {
+    "claim": "cursor_expired",
+    "version": "b7e2c4a1-000000000079",
+    "resync": {
+     "messages": [
+      {
+       "ordinal": 44,
+       "role": "user",
+       "text": "next task",
+       "blockSummaries": [],
+       "messageId": "msg_new12",
+       "createdAtMs": 1787410100000,
+       "parts": [
+        {
+         "type": "text",
+         "text": "next task"
+        }
+       ]
+      }
+     ],
+     "reportsCompletion": true,
+     "nextBeforeOrdinal": 44
+    },
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "asserted_harness_matches_serves",
+   "$comment": "harness stays supported as an optional ASSERTION: asserted and agreeing with the session's resolved substrate serves normally. The omission vectors elsewhere pin the normal case.",
+   "request": {
+    "session": "ses_a1",
+    "harness": "opencode",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_new12",
+     "heldVersion": "b7e2c4a1-000000000084"
+    }
+   },
+   "reply": {
+    "claim": "matched",
+    "vouchedFromMessageId": "msg_floor01",
+    "version": "b7e2c4a1-000000000084",
+    "newTurns": [],
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "asserted_harness_disagrees_refuses",
+   "$comment": "Asserted harness disagreeing with the session's resolved substrate is a LOUD typed error naming BOTH values - never a silent override in either direction. The message is already the fix. Resolution SUCCEEDED here (the arm's identity is in the error string), so diagnostics rides per rule 7.",
+   "request": {
+    "session": "ses_a1",
+    "harness": "broca",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_new12",
+     "heldVersion": "b7e2c4a1-000000000084"
+    }
+   },
+   "reply": {
+    "error": {
+     "code": "harness_mismatch",
+     "message": "request asserted harness 'broca' but session 'ses_a1' resolves to 'opencode'",
+     "terminal": true
+    },
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "claim_with_activity_token_refuses",
+   "$comment": "Two change-probes on one request answering the same question: heldVersion IS the activity token functionally, and the moment they can disagree a server needs a precedence rule nobody would remember. Typed invalid request, distinct code from the cursor conflict. PRE-RESOLUTION refusal: the request is incoherent before any session lookup, so no diagnostics - structural absence per rule 7.",
+   "request": {
+    "session": "ses_a1",
+    "mode": "full",
+    "activityToken": "activity-b7e2c4a1-000000000084",
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_new12",
+     "heldVersion": "b7e2c4a1-000000000084"
+    }
+   },
+   "expectInvalid": true,
+   "reply": {
+    "error": {
+     "code": "claim_conflicts_with_activity_token",
+     "message": "a claim carries its own change probe (heldVersion); send claim or activityToken, never both",
+     "terminal": true
+    }
+   }
+  },
+  {
+   "name": "claim_with_before_ordinal_refuses",
+   "$comment": "Opposite directions of travel: a claim speaks about the newest end of held material, beforeOrdinal walks backwards into history not held. Typed invalid request, distinct code from the token conflict so the caller learns WHICH mistake they made. PRE-RESOLUTION refusal: no session lookup happened, no diagnostics - structural absence per rule 7.",
+   "request": {
+    "session": "ses_a1",
+    "mode": "full",
+    "beforeOrdinal": 40,
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_new12",
+     "heldVersion": "b7e2c4a1-000000000084"
+    }
+   },
+   "expectInvalid": true,
+   "reply": {
+    "error": {
+     "code": "claim_conflicts_with_history_cursor",
+     "message": "a claim addresses the newest end of held material; page history with beforeOrdinal separately",
+     "terminal": true
+    }
+   }
+  },
+  {
+   "name": "classifier_mutation_below_floor_is_matched",
+   "$comment": "Classifier case (OC blocker 4a): a routine mutation STRICTLY BELOW the held floor - compaction pruning an uncached part of disclaimed history, which arrives as PartUpdated whose owning message sits below the floor - projects NO divergence for this claim. The claim's verdict is matched; phones must not reset on routine below-floor compaction. Part ownership decides position: the same PartUpdated kind with a held owner is the diverged case two vectors down.",
+   "stimulus": {
+    "heldFloorMessageId": "msg_floor01",
+    "event": {
+     "kind": "PartUpdated",
+     "partId": "prt_pruned_body",
+     "messageId": "msg_ancient",
+     "position": "below_held_floor"
+    }
+   },
+   "request": {
+    "session": "ses_a1",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_new12",
+     "heldVersion": "b7e2c4a1-000000000079"
+    }
+   },
+   "reply": {
+    "claim": "matched",
+    "vouchedFromMessageId": "msg_floor01",
+    "version": "b7e2c4a1-000000000083",
+    "newTurns": [],
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "classifier_new_part_on_held_message_is_diverged",
+   "$comment": "Classifier case (OC blocker 4b): a NEW part id whose owning messageID is HELD is a mutation of held material, not an append - verdict diverged, boundary = the held message's predecessor.",
+   "stimulus": {
+    "heldFloorMessageId": "msg_floor01",
+    "event": {
+     "kind": "PartUpdated",
+     "partId": "prt_brand_new",
+     "messageId": "msg_new11",
+     "position": "inside_held_range"
+    }
+   },
+   "request": {
+    "session": "ses_a1",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_new12",
+     "heldVersion": "b7e2c4a1-000000000083"
+    }
+   },
+   "reply": {
+    "claim": "diverged",
+    "version": "b7e2c4a1-000000000084",
+    "validThroughMessageId": "msg_new10",
+    "resync": {
+     "messages": [
+      {
+       "ordinal": 43,
+       "role": "assistant",
+       "text": "Shipped. (edited: force-push was required)",
+       "blockSummaries": [
+        "bash: git push --force-with-lease (exit 0)",
+        "late tool output summary"
+       ],
+       "messageId": "msg_new11",
+       "createdAtMs": 1787410004000,
+       "parts": [
+        {
+         "type": "text",
+         "text": "Shipped. (edited: force-push was required)"
+        }
+       ]
+      },
+      {
+       "ordinal": 44,
+       "role": "user",
+       "text": "next task",
+       "blockSummaries": [],
+       "messageId": "msg_new12",
+       "createdAtMs": 1787410100000,
+       "parts": [
+        {
+         "type": "text",
+         "text": "next task"
+        }
+       ]
+      }
+     ],
+     "reportsCompletion": true,
+     "nextBeforeOrdinal": null
+    },
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "invalidation_event_on_subscription_plane",
+   "$comment": "Pushed on the existing session.subscribe plane when held material mutates. One-shot-then-resubscribe (declared hold semantics; pinned by integration test, not these bytes). The pull reply remains authoritative: an offline device that missed this event learns the same boundary from its next claim.",
+   "event": {
+    "op": "transcript.invalidation",
+    "body": {
+     "session": "ses_a1",
+     "version": "b7e2c4a1-000000000071",
+     "validThroughMessageId": "msg_new10"
+    }
+   }
+  },
+  {
+   "name": "invalidation_event_first_affected_is_floor",
+   "$comment": "The invalidation twin of the absent-boundary arm: the floor itself is first affected, so validThroughMessageId is ABSENT from the event body too - the two surfaces never disagree about how absence is spelled.",
+   "event": {
+    "op": "transcript.invalidation",
+    "body": {
+     "session": "ses_a1",
+     "version": "b7e2c4a1-000000000078"
+    }
+   }
+  },
+  {
+   "name": "omitted_capability_fails_closed",
+   "$comment": "Producer omits the diagnostics capability pair (older producer, malformed reply). ABSENT NEVER MEANS NATIVE: the documented consumer default is activity-token-gated full-page behavior, identical to deltaRead none. This vector pins the absence case so a consumer branch cannot default optimistic.",
+   "request": {
+    "session": "ses_b2",
+    "mode": "lean",
+    "claim": {
+     "heldFloorMessageId": "msg_f1",
+     "sinceMessageId": "msg_t3",
+     "heldVersion": "0a0a0a0a-000000000009"
+    }
+   },
+   "reply": {
+    "claim": "matched",
+    "vouchedFromMessageId": "msg_f1",
+    "version": "0a0a0a0a-000000000009",
+    "newTurns": []
+   },
+   "consumerDefault": "activity_gated_full_page"
+  },
+  {
+   "name": "unknown_session_refuses_typed",
+   "$comment": "A claim naming a session the daemon does not know: the existing session refusal, pinned so no consumer invents its own handling. Distinct from cursor_expired (session exists, claim unresumable) and from identity_unsupported (session exists, arm cannot claim).",
+   "request": {
+    "session": "ses_never_existed",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_a",
+     "sinceMessageId": "msg_b",
+     "heldVersion": "cccccccc-000000000002"
+    }
+   },
+   "reply": {
+    "error": {
+     "code": "session_unknown",
+     "message": "no session 'ses_never_existed' is known to this daemon",
+     "terminal": true
+    }
+   }
+  },
+  {
+   "name": "no_identity_arm_serves_no_claim_path",
+   "$comment": "RESERVED FUTURE CAPABILITY ARM - SYNTHETIC, not a live substrate. Both live arms (opencode, broca-runner) declare identity:durable today; this vector exists so decoders keep the identity_unsupported branch alive for a future arm that genuinely cannot mint identity. The session id is deliberately synthetic.",
+   "request": {
+    "session": "ses_synthetic_no_identity_arm",
+    "mode": "full",
+    "claim": {
+     "heldFloorMessageId": "msg_x",
+     "sinceMessageId": "msg_y",
+     "heldVersion": "ffffffff-000000000001"
+    }
+   },
+   "reply": {
+    "error": {
+     "code": "identity_unsupported",
+     "message": "session's transcript arm declares identity: none; claims require durable identity - fetch full pages",
+     "terminal": true
+    },
+    "diagnostics": {
+     "identity": "none",
+     "deltaRead": "none",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "runner_arm_lineage_equal_claim_matched_native",
+   "$comment": "MUTATION PROOF equal arm: BROCA supplied lineage_id and it equals heldVersion byte-for-byte, so the append-only runner honors the claim and serves the after-ordinal delta. lineage_id is opaque: equality only, with no UUID parsing or ordering.",
+   "request": {
+    "session": "ses_runner_b1",
+    "mode": "lean",
+    "claim": {
+     "heldFloorMessageId": "m0",
+     "sinceMessageId": "m1",
+     "heldVersion": "fad58b29-b40e-4b83-b803-c0028b5a8859"
+    }
+   },
+   "reply": {
+    "claim": "matched",
+    "vouchedFromMessageId": "m0",
+    "newTurns": [
+     {
+      "ordinal": 2,
+      "role": "assistant",
+      "text": "Applied the retry cap and reran the suite: 214 green.",
+      "blockSummaries": [
+       "text"
+      ],
+      "messageId": "m2",
+      "createdAtMs": 1787412001000,
+      "completedAtMs": 1787412034000,
+      "parts": [
+       {
+        "type": "text",
+        "text": "Applied the retry cap and reran the suite: 214 green."
+       }
+      ]
+     }
+    ],
+    "version": "fad58b29-b40e-4b83-b803-c0028b5a8859",
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "native",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "runner_arm_lineage_absent_claim_cursor_expired_non_native",
+   "$comment": "MUTATION PROOF absent arm: the unmigrated producer omitted lineage_id entirely (the common rollout case), so the claim is cursor_expired, never diverged. Durable mids remain available, but deltaRead honestly stays none until a lineage generation can be compared.",
+   "request": {
+    "session": "ses_runner_unmigrated",
+    "mode": "lean",
+    "claim": {
+     "heldFloorMessageId": "m0",
+     "sinceMessageId": "m1",
+     "heldVersion": "legacy-held-lineage"
+    }
+   },
+   "reply": {
+    "claim": "cursor_expired",
+    "version": "activity-unmigrated-000000000042",
+    "resync": {
+     "messages": [
+      {
+       "ordinal": 0,
+       "role": "user",
+       "text": "hello",
+       "blockSummaries": [],
+       "messageId": "m0",
+       "parts": [
+        {
+         "type": "text",
+         "text": "hello"
+        }
+       ]
+      },
+      {
+       "ordinal": 1,
+       "role": "assistant",
+       "text": "world",
+       "blockSummaries": [],
+       "messageId": "m1",
+       "parts": [
+        {
+         "type": "text",
+         "text": "world"
+        }
+       ]
+      }
+     ],
+     "nextBeforeOrdinal": null
+    },
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "none",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "runner_arm_lineage_unequal_claim_cursor_expired_native",
+   "$comment": "MUTATION PROOF unequal arm: current lineage_id differs from heldVersion, proving recreation. The runner answer is cursor_expired with an inline resync and never diverged; capability remains native because the producer supplied a comparable lineage id.",
+   "request": {
+    "session": "ses_runner_b1",
+    "mode": "lean",
+    "claim": {
+     "heldFloorMessageId": "m38",
+     "sinceMessageId": "m41",
+     "heldVersion": "11111111-1111-4111-8111-111111111111"
+    }
+   },
+   "reply": {
+    "claim": "cursor_expired",
+    "version": "22222222-2222-4222-8222-222222222222",
+    "resync": {
+     "messages": [
+      {
+       "ordinal": 6,
+       "role": "user",
+       "text": "Fresh lineage after recreation: pick up the retry-cap thread.",
+       "blockSummaries": [
+        "text"
+       ],
+       "messageId": "m6",
+       "parts": [
+        {
+         "type": "text",
+         "text": "Fresh lineage after recreation: pick up the retry-cap thread."
+        }
+       ]
+      },
+      {
+       "ordinal": 7,
+       "role": "assistant",
+       "text": "Recovered context; continuing from the durable summary.",
+       "blockSummaries": [
+        "text"
+       ],
+       "messageId": "m7",
+       "parts": [
+        {
+         "type": "text",
+         "text": "Recovered context; continuing from the durable summary."
+        }
+       ]
+      }
+     ],
+     "nextBeforeOrdinal": 6
+    },
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "native",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "claim_limit_zero_refuses",
+   "$comment": "D5: a claim exists to fetch content - limit:0 with a claim is refused pre-resolution (typed, no diagnostics per rule 7) rather than answered with an empty-resync cursor_expired, which is a lie shaped like an answer.",
+   "expectInvalid": true,
+   "request": {
+    "session": "ses_a1",
+    "mode": "lean",
+    "limit": 0,
+    "claim": {
+     "heldFloorMessageId": "msg_h10",
+     "sinceMessageId": "msg_h14",
+     "heldVersion": "at_77"
+    }
+   },
+   "reply": {
+    "error": {
+     "code": "claim_limit_zero",
+     "message": "a claim requires a usable page: limit must be at least 1",
+     "terminal": true
+    }
+   }
+  },
+  {
+   "name": "observation_unstable_is_typed_retryable",
+   "$comment": "Rule 17's honest failure arm: the version moved across BOTH observation attempts, so no page is known to belong to any version and no positive arm may be emitted - a typed RETRYABLE error with no page and no version claim. Post-resolution refusal: the arm was resolved and read twice, so diagnostics rides per rule 7. The strict retry cap is part of the must-not-cost invariant.",
+   "request": {
+    "session": "ses_a1",
+    "mode": "lean",
+    "claim": {
+     "heldFloorMessageId": "msg_h10",
+     "sinceMessageId": "msg_h14",
+     "heldVersion": "at_77"
+    }
+   },
+   "reply": {
+    "error": {
+     "code": "observation_unstable",
+     "message": "session changed during both observation attempts; retry the claim",
+     "terminal": false
+    },
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+  },
+  {
+   "name": "unified_projection_all_typed_parts_absent_mode",
+   "$comment": "PROVENANCE: synthetic cross-harness wire specimen added with the 2026-08-25 single-projection ruling. The request deliberately omits deprecated mode. The row pins every closed part tag; since v1.18 its tool call carries its result folded in (outputBytes, no isError because it succeeded) and no result part or result chip, which is the Broca arm's real output for this row (pinned by the Rust test unified_projection_delta_vector_row_is_the_broca_arms_real_output; text is synthetic and still omits the injected reminder). CKIOS field-name delivery is tracked in #11334.",
+   "request": {
+    "session": "ses_a1",
+    "claim": {
+     "heldFloorMessageId": "msg_floor01",
+     "sinceMessageId": "msg_new12",
+     "heldVersion": "b7e2c4a1-000000000084"
+    }
+   },
+   "reply": {
+    "claim": "matched",
+    "vouchedFromMessageId": "msg_floor01",
+    "version": "b7e2c4a1-000000000084",
+    "newTurns": [
+     {
+      "ordinal": 45,
+      "role": "assistant",
+      "text": "Done.",
+       "blockSummaries": [
+        "read"
+       ],
+      "toolCalls": [
+       {
+        "name": "read",
+        "arguments": "{\"filePath\":\"proof.png\"}",
+        "argumentsTruncated": false,
+        "outputBytes": 2
+       }
+      ],
+      "files": [
+       {
+        "partIndex": 4,
+        "mime": "image/png",
+        "filename": "proof.png",
+        "byteCount": 12,
+        "attachmentId": "att_proof",
+        "width": 3,
+        "height": 2
+       }
+      ],
+      "parts": [
+       {
+        "type": "text",
+        "text": "Done."
+       },
+       {
+        "type": "reasoning",
+        "text": "The proof passed."
+       },
+       {
+        "type": "tool",
+        "tool": "read",
+        "arguments": "{\"filePath\":\"proof.png\"}",
+        "argumentsTruncated": false,
+        "outputBytes": 2
+       },
+       {
+        "type": "file",
+        "partIndex": 4,
+        "mime": "image/png",
+        "filename": "proof.png",
+        "byteCount": 12,
+        "attachmentId": "att_proof",
+        "width": 3,
+        "height": 2
+       },
+       {
+        "type": "injected",
+        "text": "<system-reminder>Wake delivered.</system-reminder>"
+       }
+      ],
+      "messageId": "msg_new13",
+      "createdAtMs": 1787410104000,
+      "completedAtMs": 1787410109000
+     }
+    ],
+    "diagnostics": {
+     "identity": "durable",
+     "deltaRead": "scan",
+     "invalidation": "none"
+    }
+   }
+   },
+   {
+    "name": "attachment_capability_unknown_is_explicit",
+    "$comment": "A transcript page whose exact provider/model fact is unavailable states unknown. CKIOS treats it as offer-nothing, exactly like legacy absence, while false remains a verified refusal.",
+    "request": {
+     "session": "ses_model_not_catalogued",
+     "mode": "full"
+    },
+    "reply": {
+     "messages": [],
+     "reportsCompletion": true,
+     "nextBeforeOrdinal": null,
+     "acceptsAttachments": "unknown",
+     "acceptedMimeTypes": []
+    }
+   }
+  ]
+}

@@ -1,0 +1,46 @@
+source="export const w = Watch(\"events\", {})\n\n{w.status}\n\n<Button label=\"Refresh\" action={Refresh(w)} />"
+registry: events resume=true replay=false item=any
+empty-loading: eval=2 fuel=36 revision=Some(1) loading=Some(true) rejected=[]
+Arm(FirstAnswer(42), Decimal(5))
+subscribe w 42:1 after=None
+Credit { epoch: Epoch { instance: 42, request: 1 }, notices: 16, bytes: 524288 }
+Arm(Timeout(Epoch { instance: 42, request: 1 }), Decimal(30))
+tree-definition=cb98d421b95cf64ba672c7a98d4083b6c3db4f4cc9264ed98fe3940026d95e65 Tree { blocks: [Component { name: DisplayText("LoadingRoot"), props: [], children: [] }] }
+tree-sha256=cb98d421b95cf64ba672c7a98d4083b6c3db4f4cc9264ed98fe3940026d95e65
+value=[] status="loading" error=null stale=false dropped=0
+empty-live: eval=1 fuel=18 revision=Some(2) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 1 }))
+Stop(FirstAnswer(42))
+tree-definition=e32d65a7f261fbf76b5308e1e4be84664ed96f03bfc92658dfca4b653734d919 Tree { blocks: [Markdown { kind: Paragraph, children: [Text(DisplayText("live"))] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("w"))] }]))], children: [] }] }
+tree-sha256=e32d65a7f261fbf76b5308e1e4be84664ed96f03bfc92658dfca4b653734d919
+value=[] status="live" error=null stale=false dropped=0
+reserved-not-applied: eval=0 fuel=0 revision=None loading=None rejected=[]
+Arm(WatchApply(Epoch { instance: 42, request: 1 }, 1), Decimal(0.25))
+value=[] status="live" error=null stale=false dropped=0
+live-gap: eval=1 fuel=18 revision=Some(3) loading=Some(false) rejected=[]
+Credit { epoch: Epoch { instance: 42, request: 1 }, notices: 2, bytes: 80 }
+tree-sha256=e32d65a7f261fbf76b5308e1e4be84664ed96f03bfc92658dfca4b653734d919
+value=[1,2,5] status="live" error=null stale=false dropped=2
+ended: eval=1 fuel=18 revision=Some(4) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 1 }))
+tree-definition=cf83196c053fbf0b90cd7db850d8a1a2098c11abffe585022d256b8929ce6e7e Tree { blocks: [Markdown { kind: Paragraph, children: [Text(DisplayText("ended"))] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("w"))] }]))], children: [] }] }
+tree-sha256=cf83196c053fbf0b90cd7db850d8a1a2098c11abffe585022d256b8929ce6e7e
+value=[1,2,5] status="ended" error=null stale=false dropped=2
+refresh: eval=1 fuel=18 revision=Some(5) loading=Some(false) rejected=[]
+subscribe w 42:2 after=None
+Credit { epoch: Epoch { instance: 42, request: 2 }, notices: 16, bytes: 524288 }
+Arm(Timeout(Epoch { instance: 42, request: 2 }), Decimal(30))
+tree-definition=c9c43e644cb22b8e6d26084ff36bef28ff294de7bfab99922bcb4cf791f84e51 Tree { blocks: [Markdown { kind: Paragraph, children: [Text(DisplayText("loading"))] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("w"))] }]))], children: [] }] }
+tree-sha256=c9c43e644cb22b8e6d26084ff36bef28ff294de7bfab99922bcb4cf791f84e51
+value=[] status="loading" error=null stale=false dropped=0
+empty-ended-without-ack: eval=1 fuel=18 revision=Some(6) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 2 }))
+tree-sha256=cf83196c053fbf0b90cd7db850d8a1a2098c11abffe585022d256b8929ce6e7e
+value=[] status="ended" error=null stale=false dropped=0
+overflow fixture: five notices, sixteen 1746-scalar ASCII strings each, first=1, tokens=1..5
+byte-credit-overflow: eval=1 fuel=18 revision=Some(9) loading=Some(false) rejected=[]
+Stop(Timeout(Epoch { instance: 42, request: 3 }))
+cancel w 42:3
+tree-definition=8650422cf47a774256378223be6300b173e97053867117ce5196fbbde9842e03 Tree { blocks: [Markdown { kind: Paragraph, children: [Text(DisplayText("error"))] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("w"))] }]))], children: [] }] }
+tree-sha256=8650422cf47a774256378223be6300b173e97053867117ce5196fbbde9842e03
+value=logical:112016 status="error" error="too_large" stale=true dropped=0

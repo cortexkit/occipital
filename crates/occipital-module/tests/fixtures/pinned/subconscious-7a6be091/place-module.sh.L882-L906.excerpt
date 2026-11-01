@@ -1,0 +1,25 @@
+# The sidecar and the currency declaration prove the bytes are the staged file
+# the owner named; they do not prove those bytes were built from the commit the
+# owner named. A module's `--manifest` reports its build provenance: the commit
+# it was built from, or why it stamped none (a dirty tree declines to stamp).
+# Entorhinal 0.1.22 and 0.1.23 were both placed from dirty trees, attesting no
+# commit, and nothing here noticed. So: refuse an unstamped build, and refuse a
+# stamped commit that disagrees with the declared revision, unless
+# --allow-unstamped is given on purpose.
+#
+# The probe runs the staged binary with only `--manifest`, under a throwaway
+# XDG home and a 5 s alarm, so a binary that does not know the flag cannot touch
+# real stores or hang the gate. A binary that does not answer is reported as
+# unchecked rather than refused: not every module serves `--manifest` yet.
+probe_cli_faces "$STAGED"
+prov_json="$FACE_PROBE_JSON"
+prov_line=$(printf '%s' "$prov_json" | python3 -c '
+import json, sys
+try:
+    p = json.load(sys.stdin).get("provenance") or {}
+except Exception:
+    print("unreported"); sys.exit(0)
+sha = p.get("build_git_sha") or ""
+why = p.get("build_git_sha_absence_reason") or ""
+print("stamped " + sha if sha else ("unstamped " + why if why else "unreported"))
+' 2>/dev/null || echo unreported)

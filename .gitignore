@@ -1,0 +1,10 @@
+/target/
+.DS_Store
+
+# Under .cortexkit/, git tracks only these; internal docs and private scripts
+# stay local.
+.cortexkit/*
+!.cortexkit/release-notes/
+!.cortexkit/skills/
+!.cortexkit/rules/
+!.cortexkit/WORKER.md

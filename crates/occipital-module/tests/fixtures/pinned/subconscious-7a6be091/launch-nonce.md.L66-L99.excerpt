@@ -1,0 +1,34 @@
+## 3. Module side: one accessor
+
+`subc_os::launch_nonce() -> Result<Option<LaunchNonce>, LaunchNonceError>`, exported for every
+module whatever its connection layer (subc-client-rs, or its own frame loop as in Broca, AFT and
+Cerebellum; Thalamus and Plexus use both):
+- On first call, if `SUBC_LAUNCH_NONCE_FD` is set, `fstat` the named descriptor and take it only
+  if it is a FIFO with the named inode; then read it to end of file and close it. A descriptor that
+  is not open, not a pipe, or a different pipe is refused by name (`NotOpen`, `NotAPipe`,
+  `WrongPipe`) and left untouched. Otherwise read `SUBC_LAUNCH_NONCE` (the rollout fallback).
+- On Windows, if `SUBC_LAUNCH_NONCE_PIPE` is set, connect to that named pipe and read it to the
+  end. It uses `SUBC_LAUNCH_NONCE` instead only when `SUBC_LAUNCH_NONCE_PIPE_FALLBACK=env`
+  permits it, as section 2 describes; otherwise a failed pipe read is an error.
+- Cache the value and its source (`fd`, `pipe` or `env`) for the process's life, and return the cached
+  value on every later call. **Every reader in a process must go through this one accessor**,
+  including the SDK's route-open path. A second, independent read would not just find the
+  descriptor closed: numbers are reused lowest-first, so after the close the next socket or file
+  the process opens is usually descriptor 3, and an unchecked reader would read and close it.
+- **It never modifies the process environment.** Removing variables would break any reader still
+  on the environment during the rollout (a module whose HELLO moved to the accessor while six
+  other readers had not would open those routes without identity), and changing the environment
+  of a multi-threaded process is unsound in Rust anyway. The environment copy disappears for
+  everyone at rollout step 4, when the daemon stops setting it.
+- **Call it first.** In the module, descriptor 3 is inheritable until the first read (it cannot be
+  close-on-exec, or exec would have closed it), and std does not close inherited descriptors, so a
+  child spawned before the first read inherits the pipe. The module calls the accessor before it
+  spawns anything: first thing in `main`, or in the SDK's init path. Lint checks it.
+- **A grandchild gets nothing.** A process the module spawns inherits `SUBC_LAUNCH_NONCE_FD` (the
+  accessor never clears the environment) but not the pipe, so its accessor answers `NotOpen` or
+  `WrongPipe`. That is the intended isolation, and a behaviour change: today a tool a module runs
+  (for example `ck`) inherits `SUBC_LAUNCH_NONCE` and silently acts as the module.
+- A descriptor that is named but unreadable or empty is an error with its own message, never a
+  silent fallback to the environment.
+- `subc-os` stays light: the accessor pulls nothing heavier than `subc-protocol` does, and no
+  daemon-only dependency.

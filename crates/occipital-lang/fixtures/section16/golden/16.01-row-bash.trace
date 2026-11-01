@@ -1,0 +1,44 @@
+example=16.01-row-bash case=1-running profile=tool_row
+check={"ok":true,"language":"1.0","executionDialect":"1.0","approvalChecked":false,"requires":"1.0","diagnostics":[],"omitted":0,"trial":{"fuel":0,"nodes":0,"outcome":"not_run"}}
+load: evaluations=1 fuel=60 rejected=[] abort=None
+  Arm(FirstAnswer(42), Decimal(5))
+  Stop(FirstAnswer(42))
+  candidate revision=1 loading=false controls=0 bindings=[]
+tree-definition=e006fd29ef565119517b9e35a87d4b6f3a089e29d4b7cde1924bcdf6435e4c01 Tree { blocks: [Component { name: DisplayText("Card"), props: [(DisplayText("appearance"), String(DisplayText("clear"))), (DisplayText("direction"), String(DisplayText("row"))), (DisplayText("gap"), String(DisplayText("s"))), (DisplayText("align"), String(DisplayText("center"))), (DisplayText("wrap"), Boolean(true))], children: [Component { name: DisplayText("InlineCode"), props: [(DisplayText("code"), String(DisplayText("cargo test --workspace")))], children: [] }, Component { name: DisplayText("Badge"), props: [(DisplayText("text"), String(DisplayText("Running"))), (DisplayText("tone"), String(DisplayText("info")))], children: [] }, Component { name: DisplayText("TextContent"), props: [(DisplayText("text"), String(DisplayText("Duration unavailable"))), (DisplayText("size"), String(DisplayText("small")))], children: [] }] }] }
+tree-sha256=e006fd29ef565119517b9e35a87d4b6f3a089e29d4b7cde1924bcdf6435e4c01
+  | <Card appearance="clear" direction="row" gap="s" align="center" wrap=true><InlineCode code="cargo test --workspace" /><Badge text="Running" tone="info" /><TextContent text="Duration unavailable" size="small" /></Card>
+load/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=1 fallback=false
+example=16.01-row-bash case=2-succeeded profile=tool_row
+check={"ok":true,"language":"1.0","executionDialect":"1.0","approvalChecked":false,"requires":"1.0","diagnostics":[],"omitted":0,"trial":{"fuel":0,"nodes":0,"outcome":"not_run"}}
+load: evaluations=1 fuel=99 rejected=[] abort=None
+  Arm(FirstAnswer(42), Decimal(5))
+  Stop(FirstAnswer(42))
+  candidate revision=1 loading=false controls=0 bindings=[]
+tree-definition=347924223cde31d419325f295889a99912745f9163447836d4960319a52f2eca Tree { blocks: [Component { name: DisplayText("Card"), props: [(DisplayText("appearance"), String(DisplayText("clear"))), (DisplayText("direction"), String(DisplayText("row"))), (DisplayText("gap"), String(DisplayText("s"))), (DisplayText("align"), String(DisplayText("center"))), (DisplayText("wrap"), Boolean(true))], children: [Component { name: DisplayText("InlineCode"), props: [(DisplayText("code"), String(DisplayText("cargo test --workspace")))], children: [] }, Component { name: DisplayText("Badge"), props: [(DisplayText("text"), String(DisplayText("Succeeded"))), (DisplayText("tone"), String(DisplayText("success")))], children: [] }, Component { name: DisplayText("TextContent"), props: [(DisplayText("text"), String(DisplayText("4.2 s"))), (DisplayText("size"), String(DisplayText("small")))], children: [] }] }] }
+tree-sha256=347924223cde31d419325f295889a99912745f9163447836d4960319a52f2eca
+  | <Card appearance="clear" direction="row" gap="s" align="center" wrap=true><InlineCode code="cargo test --workspace" /><Badge text="Succeeded" tone="success" /><TextContent text="4.2 s" size="small" /></Card>
+load/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=1 fallback=false
+example=16.01-row-bash case=3-failed profile=tool_row
+check={"ok":true,"language":"1.0","executionDialect":"1.0","approvalChecked":false,"requires":"1.0","diagnostics":[],"omitted":0,"trial":{"fuel":0,"nodes":0,"outcome":"not_run"}}
+load: evaluations=1 fuel=85 rejected=[] abort=None
+  Arm(FirstAnswer(42), Decimal(5))
+  Stop(FirstAnswer(42))
+  candidate revision=1 loading=false controls=0 bindings=[]
+tree-definition=171672b3f1ccc10137fc7561395c105b3a06f48e5c79821c2eb91051e3f97c9e Tree { blocks: [Component { name: DisplayText("Card"), props: [(DisplayText("appearance"), String(DisplayText("clear"))), (DisplayText("direction"), String(DisplayText("row"))), (DisplayText("gap"), String(DisplayText("s"))), (DisplayText("align"), String(DisplayText("center"))), (DisplayText("wrap"), Boolean(true))], children: [Component { name: DisplayText("InlineCode"), props: [(DisplayText("code"), String(DisplayText("cargo test --workspace")))], children: [] }, Component { name: DisplayText("Badge"), props: [(DisplayText("text"), String(DisplayText("Failed, exit 2"))), (DisplayText("tone"), String(DisplayText("danger")))], children: [] }, Component { name: DisplayText("TextContent"), props: [(DisplayText("text"), String(DisplayText("Duration unavailable"))), (DisplayText("size"), String(DisplayText("small")))], children: [] }] }] }
+tree-sha256=171672b3f1ccc10137fc7561395c105b3a06f48e5c79821c2eb91051e3f97c9e
+  | <Card appearance="clear" direction="row" gap="s" align="center" wrap=true><InlineCode code="cargo test --workspace" /><Badge text="Failed, exit 2" tone="danger" /><TextContent text="Duration unavailable" size="small" /></Card>
+load/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=1 fallback=false
+example=16.01-row-bash case=4-exit-unavailable profile=tool_row
+check={"ok":true,"language":"1.0","executionDialect":"1.0","approvalChecked":false,"requires":"1.0","diagnostics":[],"omitted":0,"trial":{"fuel":0,"nodes":0,"outcome":"not_run"}}
+load: evaluations=1 fuel=89 rejected=[] abort=None
+  Arm(FirstAnswer(42), Decimal(5))
+  Stop(FirstAnswer(42))
+  candidate revision=1 loading=false controls=0 bindings=[]
+tree-definition=7e2da1a869bc7213fdba4ce5a36efab74034353c4779fe2f787d43e026fbe041 Tree { blocks: [Component { name: DisplayText("Card"), props: [(DisplayText("appearance"), String(DisplayText("clear"))), (DisplayText("direction"), String(DisplayText("row"))), (DisplayText("gap"), String(DisplayText("s"))), (DisplayText("align"), String(DisplayText("center"))), (DisplayText("wrap"), Boolean(true))], children: [Component { name: DisplayText("InlineCode"), props: [(DisplayText("code"), String(DisplayText("cargo test --workspace")))], children: [] }, Component { name: DisplayText("Badge"), props: [(DisplayText("text"), String(DisplayText("Finished, exit unavailable"))), (DisplayText("tone"), String(DisplayText("neutral")))], children: [] }, Component { name: DisplayText("TextContent"), props: [(DisplayText("text"), String(DisplayText("61.1 s"))), (DisplayText("size"), String(DisplayText("small")))], children: [] }] }] }
+tree-sha256=7e2da1a869bc7213fdba4ce5a36efab74034353c4779fe2f787d43e026fbe041
+  | <Card appearance="clear" direction="row" gap="s" align="center" wrap=true><InlineCode code="cargo test --workspace" /><Badge text="Finished, exit unavailable" tone="neutral" /><TextContent text="61.1 s" size="small" /></Card>
+load/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=1 fallback=false

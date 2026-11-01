@@ -1,0 +1,64 @@
+# Probe an image's manifest once, validate its CLI face declaration, and expose
+# the raw JSON for the provenance check that normal placement also performs.
+probe_cli_faces() {
+  local image="$1" probe_home face_probe_result
+  FACE_NAMES=()
+  FACE_STATE="not_checked"
+  FACE_PROBE_JSON=""
+  probe_home=$(mktemp -d)
+  FACE_PROBE_JSON=$(XDG_DATA_HOME="$probe_home/data" XDG_RUNTIME_DIR="$probe_home/run" XDG_CONFIG_HOME="$probe_home/config" \
+    perl -e 'alarm 5; exec @ARGV' "$image" --manifest 2>/dev/null </dev/null) || FACE_PROBE_JSON=""
+  rm -rf "$probe_home"
+  face_probe_result=$(printf '%s' "$FACE_PROBE_JSON" | python3 -c '
+import json, os, re, sys
+
+class DuplicateKeyError(ValueError):
+    pass
+
+def unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise DuplicateKeyError(f"duplicate JSON object key {key}")
+        result[key] = value
+    return result
+
+raw = sys.stdin.read()
+try:
+    manifest = json.loads(raw, object_pairs_hook=unique_object)
+except DuplicateKeyError as error:
+    print(f"invalid: {error}")
+    raise SystemExit(0)
+except Exception:
+    print("not_checked")
+    raise SystemExit(0)
+if not isinstance(manifest, dict):
+    print("not_checked")
+    raise SystemExit(0)
+if "cli_faces" not in manifest:
+    print("absent")
+    raise SystemExit(0)
+faces = manifest["cli_faces"]
+if not isinstance(faces, list):
+    print("invalid: cli_faces must be an array")
+    raise SystemExit(0)
+seen = set()
+for index, face in enumerate(faces):
+    if not isinstance(face, dict) or set(face) != {"name", "binary"}:
+        print(f"invalid: cli_faces[{index}] must contain exactly name and binary")
+        raise SystemExit(0)
+    name, binary = face["name"], face["binary"]
+    if not isinstance(name, str) or name.startswith("ck-") or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name, re.ASCII):
+        print(f"invalid: cli_faces[{index}].name is not a lowercase command name")
+        raise SystemExit(0)
+    if name in seen:
+        print(f"invalid: duplicate cli face name {name}")
+        raise SystemExit(0)
+    seen.add(name)
+    if not isinstance(binary, str) or binary != os.path.basename(sys.argv[1]):
+        print(f"invalid: cli_faces[{index}].binary must equal {os.path.basename(sys.argv[1])}")
+        raise SystemExit(0)
+print("present")
+for name in sorted(seen):
+    print(name)
+' "$DEST") || face_probe_result="not_checked"

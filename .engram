@@ -1,0 +1,8 @@
+# Ignored files engram backs up (one path per line, relative to this root).
+# The language spec, catalog and registry designs live only here: git doesn't keep them.
+.cortexkit/internal-docs/
+# Maintainer scripts.
+.cortexkit/scripts/
+# Spec campaign drafts and specs.
+.cortexkit/prefrontal/drafts/
+.cortexkit/prefrontal/specs/

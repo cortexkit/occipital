@@ -1,0 +1,24 @@
+{
+  "op": "session.enqueue_user_message",
+  "refusal": {
+    "code": "client_message_id_conflict",
+    "message": "clientMessageId was already used for different text or attachments"
+  },
+  "request": {
+    "callerDeviceClass": "phone",
+    "callerPairedPhone": true,
+    "callerSession": "paired-phone",
+    "clientMessageId": "65df5907-5718-4e4e-96a6-dce74c50cffe",
+    "parts": [
+      {
+        "attachment_id": "<attachment-id-changed>",
+        "filename": "photo.jpg",
+        "mime": "image/jpeg",
+        "type": "file"
+      }
+    ],
+    "session": "phone-target",
+    "text": "describe this photo"
+  },
+  "tag": "attachment-conflict"
+}

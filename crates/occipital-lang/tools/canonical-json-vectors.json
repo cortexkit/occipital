@@ -1,0 +1,32 @@
+[
+  {
+    "name": "catalog numbers and exponent expansion",
+    "source": "[0.5625,16777216,2.50,1e3,-0.0,5.625e-1,1.6777216E+7]",
+    "canonical": "[0.5625,16777216,2.5,1000,0,0.5625,16777216]"
+  },
+  {
+    "name": "exact decimal boundaries and adjacent integer ids",
+    "source": "[99999999999999999999.999999999999999999,-99999999999999999999.999999999999999999,1e-18,18446744073709551615,9007199254740992,9007199254740993,0.100000000000000001]",
+    "canonical": "[99999999999999999999.999999999999999999,-99999999999999999999.999999999999999999,0.000000000000000001,18446744073709551615,9007199254740992,9007199254740993,0.100000000000000001]"
+  },
+  {
+    "name": "recursive key sorting without reordering lists",
+    "source": "{\"z\":[{\"b\":2,\"a\":1},null,false,true],\"a\":{\"d\":4,\"c\":3}}",
+    "canonical": "{\"a\":{\"c\":3,\"d\":4},\"z\":[{\"a\":1,\"b\":2},null,false,true]}"
+  },
+  {
+    "name": "scalar order rather than UTF-16 order",
+    "source": "{\"\ud800\udc00\":1,\"\ue000\":2,\"é\":3,\"a\":4}",
+    "canonical": "{\"a\":4,\"é\":3,\"\ue000\":2,\"\ud800\udc00\":1}"
+  },
+  {
+    "name": "minimal string and key escaping",
+    "source": "{\"\\u0061\\/\\\"\":\"\\u00e9\\/\\u2028\\u2029\\b\\t\\n\\f\\r\\u0000\\u001f\\u007f\\\"\\\\\"}",
+    "canonical": "{\"a/\\\"\":\"é/\u2028\u2029\\b\\t\\n\\f\\r\\u0000\\u001f\u007f\\\"\\\\\"}"
+  },
+  {
+    "name": "empty containers and present null fields",
+    "source": "{\"z\":null,\"b\":{},\"a\":[]}",
+    "canonical": "{\"a\":[],\"b\":{},\"z\":null}"
+  }
+]

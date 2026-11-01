@@ -1,0 +1,22 @@
+export let $region = "North"
+
+export const rows = Sort(Filter(data.rows, "region", "==", $region), "month")
+export const total = Sum(rows.sales)
+export const best = First(Sort(rows, "sales", "desc"))
+
+<CardHeader title="Monthly sales, 2025" subtitle={"Region: " + $region} />
+
+<FormControl label="Region" input={<Select value={$region} items={[
+  <SelectItem value="North" label="North" />,
+  <SelectItem value="South" label="South" />,
+  <SelectItem value="East" label="East" />,
+  <SelectItem value="West" label="West" />
+]} />} />
+
+**Total for the year:** {FormatNumber(total)}
+
+**Best month:** {Count(rows) > 0 ? best.month + ", " + FormatNumber(best.sales) : "no data"}
+
+<Chart kind="line" labels={rows.month} series={[<Series category={$region} values={rows.sales} />]} xLabel="Month" yLabel="Sales" />
+
+<Table columns={[<Col label="Month" data={rows.month} />, <Col label="Sales" type="number" data={rows.sales} />]} />

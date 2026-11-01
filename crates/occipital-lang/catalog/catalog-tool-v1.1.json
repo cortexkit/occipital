@@ -1,0 +1,114 @@
+{
+  "catalog": {
+    "id": "occipital.tool.catalog",
+    "version": "1.1",
+    "status": "accepted by the apps; not yet shipped",
+    "date": "2026-11-01",
+    "owner": "occipital",
+    "companion": "2026-10-31-tool-templates.md"
+  },
+  "components": {
+    "Slot": {
+      "sum": "A fixed box in a tool row for a part that depends on data arriving after the row is drawn: the call's phase and times, its record or completion, or the time.",
+      "in": ["tool_row", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "block"},
+      "props": {
+        "width": {"t": "enum", "enum": ["short", "medium", "long", "fill"], "req": true, "lit": true},
+        "lines": {"t": "number", "int": true, "range": [1, 3], "def": 1, "lit": true},
+        "needs": {"t": "string|number|boolean|record"}
+      },
+      "tree": "While needs is given and absent, the content is not evaluated: the evaluated node carries waiting: true and no children, and the app draws the box in the loading look, or in the not-kept look once the loading window since the call's answer has passed. needs itself is never in the tree. Without needs, the content always shows.",
+      "geo": {
+        "kind": "fixed",
+        "h": "lines * L(body)",
+        "w": "short: min(TW(12 zeros, body), W); medium: min(TW(24 zeros, body), W); long: min(TW(40 zeros, body), W); fill: W",
+        "hIn": ["metrics", "props:lines"],
+        "note": "The width counts the digit zero in the row's body style, the way a CSS ch unit does. In a Card row without wrap, Slots take their widths before the row's other fixed children, so a long code or label beside a Slot is cut to what the Slots leave, wherever the Slot sits in the row. The content is laid out in a column at the box's width, drawn top-aligned and clipped to the box; text that doesn't fit ends its last visible line with an ellipsis. The box never grows, so a row's height never depends on what arrives later."
+      },
+      "states": {
+        "loading": "a moving skeleton filling the box, still when the person asks for reduced motion",
+        "unavailable": "the box still and muted: the record was pruned or never written",
+        "text": "the content's text form, or nothing while loading"
+      },
+      "work": {"visits": "1"}
+    },
+    "Elapsed": {
+      "sum": "How long a call ran, or has been running: a clock the app keeps ticking itself.",
+      "in": ["tool_row", "tool_page"],
+      "flow": "inline",
+      "kids": {"kind": "none"},
+      "props": {
+        "start": {"t": "number", "req": true},
+        "end": {"t": "number"}
+      },
+      "geo": {
+        "kind": "inline",
+        "h": "L(body)",
+        "w": "min(TW('0:00:00', body), W)",
+        "hIn": ["metrics"],
+        "note": "start and end are Unix milliseconds. It shows (end, or now while end is absent) minus start as m:ss under an hour and h:mm:ss from an hour, capped at 9:59:59, in tabular digits aligned to the box's trailing edge. While end is absent the app ticks it once a second without evaluating the template again."
+      },
+      "states": {"text": "the same m:ss or h:mm:ss string"},
+      "work": {"visits": "1"}
+    },
+    "Agent": {
+      "sum": "An agent, drawn by the app from its own list of agents as a creature and a name.",
+      "in": ["tool_row", "tool_page"],
+      "flow": "inline",
+      "kids": {"kind": "none"},
+      "props": {
+        "id": {"t": "string", "req": true}
+      },
+      "geo": {
+        "kind": "inline",
+        "h": "L(body)",
+        "w": "min(L(body) + k.gap.s + TW(16 zeros, body), W)",
+        "hIn": ["metrics"],
+        "note": "The creature fills an L(body) square, then the name, cut with an ellipsis. While a creature loads, the square holds a plain disc. An id the app doesn't know shows the raw id from the box's leading edge, cut the same way, with no creature and no empty square; the box keeps its width."
+      },
+      "states": {"text": "the agent's name, or the id"},
+      "work": {"visits": "1"}
+    },
+    "Model": {
+      "sum": "A model, drawn in words from the app's own model names, such as Opus 5.5 \u00b7 Anthropic.",
+      "in": ["tool_row", "tool_page"],
+      "flow": "inline",
+      "kids": {"kind": "none"},
+      "props": {
+        "id": {"t": "string", "req": true}
+      },
+      "geo": {
+        "kind": "inline",
+        "h": "L(body)",
+        "w": "min(TW(24 zeros, body), W)",
+        "hIn": ["metrics"],
+        "note": "The model's name, cut with an ellipsis. An id the app doesn't know shows the raw id."
+      },
+      "states": {"text": "the model's name, or the id"},
+      "work": {"visits": "1"}
+    },
+    "OpenItem": {
+      "sum": "A link in a tool page to an ask, an artifact or a work item, which opens the app's own card for it.",
+      "in": ["tool_page"],
+      "flow": "inline",
+      "kids": {"kind": "none"},
+      "props": {
+        "id": {"t": "string", "req": true},
+        "label": {"t": "string", "req": true}
+      },
+      "geo": {
+        "kind": "text",
+        "h": "T(label, body, W)",
+        "hIn": ["metrics", "W"],
+        "note": "The label is body text in the page's prose, measured by the app. It is a link when the id starts with ask_, art_ or wi_ and the app can read the item on the computer that ran the call, and plain text otherwise, never a disabled control."
+      },
+      "states": {"text": "{label}"},
+      "work": {"visits": "1"}
+    }
+  },
+  "profilesAllow": {
+    "tool_row": ["Slot", "Elapsed", "Agent", "Model"],
+    "tool_page": ["Slot", "Elapsed", "Agent", "Model", "OpenItem"]
+  }
+}

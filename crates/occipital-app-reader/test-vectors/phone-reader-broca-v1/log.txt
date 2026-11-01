@@ -1,0 +1,13 @@
+2026-10-23T14:12:49Z session alfonso:bg_0e46af454901d03e
+2026-10-23T14:12:49Z 01-page-newest: 4186 bytes
+2026-10-23T14:12:49Z newest: 4 messages, version history:0:lineage:b1e99ee9-edce-4f82-9b7d-0f8d60beb737, next Optional(6)
+2026-10-23T14:12:49Z 02-page-older: 2963 bytes
+2026-10-23T14:12:49Z 03-claim-current: 312 bytes
+2026-10-23T14:12:49Z 04-claim-behind: 417 bytes
+2026-10-23T14:12:49Z 05-watch-current: subscribed
+2026-10-23T14:12:49Z 05-watch-current: notice 1, 432 bytes
+2026-10-23T14:13:09Z 05-watch-current: ended unsubscribed
+2026-10-23T14:13:09Z 06-watch-behind: subscribed
+2026-10-23T14:13:09Z 06-watch-behind: notice 1, 537 bytes
+2026-10-23T14:13:30Z 06-watch-behind: ended unsubscribed
+2026-10-23T14:13:30Z done

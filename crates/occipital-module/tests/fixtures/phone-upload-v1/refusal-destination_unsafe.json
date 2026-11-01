@@ -1,0 +1,11 @@
+{
+  "op": "upload.finish",
+  "refusal": {
+    "code": "destination_unsafe",
+    "message": "/path/to/project/.cortexkit/uploads is not a folder"
+  },
+  "request": {
+    "upload_id": "00000000000a11ce0000000000000001"
+  },
+  "tag": "destination_unsafe"
+}

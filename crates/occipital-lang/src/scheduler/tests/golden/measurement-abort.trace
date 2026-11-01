@@ -1,0 +1,10 @@
+step4 query.issue q {"n":1} 42:4
+measure_complete E_FUEL
+commit fallback "the caller's fallback"
+cancel w 42:2
+stop Timeout(Epoch { instance: 42, request: 2 })
+cancel p 42:3
+stop Timeout(Epoch { instance: 42, request: 3 })
+cancel q 42:4
+stop Timeout(Epoch { instance: 42, request: 4 })
+reset load state n=0 label=declared

@@ -1,0 +1,4 @@
+export const changes = view.added == null || view.removed == null ? "Counts unavailable" : "+" + FormatNumber(view.added) + " −" + FormatNumber(view.removed)
+export const places = view.hunks == null ? "Changed places unavailable" : (view.hunks == 1 ? "1 changed place" : FormatNumber(view.hunks) + " changed places")
+
+<InlineCode code={input.path} /> {view.phase == "running" ? "Editing…" : changes + " · " + places}

@@ -1,0 +1,19 @@
+export const finished = view.phase == "finished"
+export const exitText = view.exitCode == null ? "" : " · exit " + Text(view.exitCode)
+export const status = (
+  !finished ? <Badge text="Running" tone="info" />
+  : view.endReason == "timed_out" ? <Badge text="Timed out" tone="warning" />
+  : view.endReason == "killed" ? <Badge text="Stopped" tone="neutral" />
+  : view.endReason == "fate_unknown" ? <Badge text="Result unknown" tone="neutral" />
+  : view.exitCode == 0 || (view.exitCode == null && view.endReason == "completed") ? <Badge text="Succeeded" tone="success" />
+  : <Badge text={"Failed" + exitText} tone="danger" />
+)
+export const duration = view.durationMs == null ? "" : FormatDuration(view.durationMs)
+export const size = view.outputBytes == null || view.outputBytes == 0 ? "" : FormatBytes(view.outputBytes) + " of output"
+export const facts = duration == "" ? size : (size == "" ? duration : duration + " · " + size)
+
+<Card appearance="clear" direction="row" gap="s" align="center" wrap>
+{input.description == null ? <InlineCode code={input.command} /> : <TextContent text={input.description} maxLines={1} />}
+{status}
+{facts == "" ? null : <TextContent text={facts} size="small" maxLines={1} />}
+</Card>

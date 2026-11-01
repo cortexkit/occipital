@@ -1,0 +1,3 @@
+# The xcframework's static libraries are build output committed as binaries:
+# git must never diff, merge or convert their line endings.
+ports/swift/OccipitalCore.xcframework/**/*.a binary

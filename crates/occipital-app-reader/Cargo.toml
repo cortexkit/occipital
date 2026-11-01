@@ -1,0 +1,24 @@
+[package]
+name = "occipital-app-reader"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Transport-independent transcript claims, app page reads and live display for the phone and desktop apps"
+
+# Moved whole from Thalamus's crates/thalamus-app-reader when Occipital took over
+# the apps' chat reader. The copy is of Thalamus commit 75d564ea3, the reader the
+# apps were using at the time, so a later change on either side can be compared
+# against that point. The phone and the desktop pin the sample sets under
+# test-vectors/ by their bytes, so those files must not change.
+[dependencies]
+async-trait = "0.1"
+cortexkit-role-llm-runner = "=0.7.43"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+# Warnings go to whatever logger the serving module installs.
+tracing = "0.1"
+
+[dev-dependencies]
+sha2 = "0.10"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "test-util"] }

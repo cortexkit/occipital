@@ -1,0 +1,680 @@
+//! The session facts the apps' replies take from Broca's `session.head`: the next
+//! send's model, whether the app may send, the log incarnation that claims bind,
+//! and `session.details`. Every reply here goes through the module's own handlers
+//! over a fake Broca route.
+
+use super::*;
+use crate::app_reader::{resolve::Entorhinal, AppReader, DETAILS, TRANSCRIPT_PAGE};
+use cortexkit_role_llm_runner::capabilities::HEAD_SENDER;
+use occipital_app_reader::source::SENDER_UNKNOWN;
+
+const SAMPLES: &str = "../occipital-app-reader/test-vectors/phone-session-facts-v2";
+
+fn last_run() -> Value {
+    json!({"runId":"r1", "state":"active"})
+}
+
+#[tokio::test]
+async fn last_run_facts_are_codes_only_on_pages_claims_details_and_watches() {
+    let route = FakeRoute::new();
+    *route.run_state.lock().unwrap() = Value::Null;
+    let app = sending(&route);
+    let without = page(&app, params()).await;
+    for reply in [
+        without.clone(),
+        details(&app).await,
+        page(&app, claim(&without, "m20", "m21")).await,
+    ] {
+        assert!(reply.get("lastRun").is_none(), "{reply}");
+    }
+    for (state, reason) in [
+        ("error", Some("provider_error")),
+        ("future_state", Some("future_reason")),
+        ("completed", None),
+    ] {
+        *route.run_state.lock().unwrap() = json!({"run_id":"failed-run", "state":state, "reason":reason,
+            "message":"PRIVATE MESSAGE", "provider_body":"PRIVATE BODY",
+            "error":{"class":"permanent", "retry_after_secs":10, "message":"PRIVATE ERROR"}});
+        let mut expected = json!({"runId":"failed-run", "state":state});
+        if let Some(reason) = reason {
+            expected["reason"] = json!(reason);
+        }
+        let newest = page(&app, params()).await;
+        let request = claim(&newest, "m20", "m21");
+        let watch: Value = serde_json::from_slice(
+            &crate::app_reader::tests::serve(&app, crate::app_reader::TRANSCRIPT_WATCH, &request)
+                .await,
+        )
+        .unwrap();
+        for reply in [
+            newest,
+            page(&app, request).await,
+            details(&app).await,
+            watch,
+        ] {
+            let reply = reply.get("result").unwrap_or(&reply);
+            assert_eq!(reply["lastRun"], expected, "{reply}");
+            assert!(!reply.to_string().contains("PRIVATE"), "{reply}");
+        }
+    }
+}
+
+async fn assert_last_run_phone_bytes(state: Value, error: Option<Value>, expected: &str) {
+    let route = FakeRoute::new();
+    *route.run_state.lock().unwrap() = state;
+    if let Some(error) = error {
+        set_head(&route, "last_run_error", error);
+    }
+    let app = sending(&route);
+    let newest = page(&app, params()).await;
+    let request = claim(&newest, "m20", "m21");
+    for (method, params) in [
+        (TRANSCRIPT_PAGE, params()),
+        (TRANSCRIPT_PAGE, request.clone()),
+        (DETAILS, json!({"session":"alfonso:s1", "harness":"broca"})),
+        (crate::app_reader::TRANSCRIPT_WATCH, request),
+    ] {
+        let bytes = crate::app_reader::tests::serve(&app, method, &params).await;
+        let body = std::str::from_utf8(&bytes).unwrap();
+        let reply: Value = serde_json::from_slice(&bytes).unwrap();
+        let reply = reply.get("result").unwrap_or(&reply);
+        assert_eq!(
+            reply["lastRun"],
+            serde_json::from_str::<Value>(expected).unwrap(),
+            "{method}: {body}"
+        );
+        assert!(
+            body.contains(&format!("\"lastRun\":{expected}")),
+            "{method}: {body}"
+        );
+        assert!(!body.contains("PRIVATE"), "{method}: {body}");
+    }
+}
+
+#[tokio::test]
+async fn reported_last_run_error_reaches_the_phone_bytes_without_diagnostics() {
+    assert_last_run_phone_bytes(
+        json!({"run_id":"r-error", "state":"error", "reason":"provider_error"}),
+        Some(json!({"class":"transient", "retry_after_secs":0.125,
+            "resets_at_ms":18446744073709551615_u64,
+            "message":"PRIVATE MESSAGE", "provider_code":"PRIVATE CODE", "account":"PRIVATE ACCOUNT"})),
+        r#"{"error":{"class":"transient","resetsAtMs":18446744073709551615,"retryAfterSecs":0.125},"reason":"provider_error","runId":"r-error","state":"error"}"#,
+    ).await;
+    assert_last_run_phone_bytes(
+        json!({"run_id":"r-error", "state":"error", "reason":"provider_error"}),
+        Some(json!({"class":"future_provider_class"})),
+        r#"{"error":{"class":"future_provider_class"},"reason":"provider_error","runId":"r-error","state":"error"}"#,
+    ).await;
+}
+
+#[tokio::test]
+async fn unreported_last_run_error_stays_absent_from_the_phone_bytes() {
+    assert_last_run_phone_bytes(
+        json!({"run_id":"r-error", "state":"error", "reason":"provider_error"}),
+        None,
+        r#"{"reason":"provider_error","runId":"r-error","state":"error"}"#,
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn completed_last_run_has_no_error_in_the_phone_bytes() {
+    assert_last_run_phone_bytes(
+        json!({"run_id":"r-completed", "state":"completed"}),
+        None,
+        r#"{"runId":"r-completed","state":"completed"}"#,
+    )
+    .await;
+}
+
+fn model() -> Value {
+    json!({"provider":"anthropic", "model":"claude-opus-4-1", "variant":"thinking"})
+}
+
+fn grant() -> Value {
+    json!({"modes":["tool_result", "turn_system", "steer", "idle_start"], "interrupt":true})
+}
+
+fn usage() -> Value {
+    json!({"since":"run-first", "steps":3, "unreported_steps":0, "input_tokens":5120,
+        "cached_input_tokens":4096, "output_tokens":812, "by_model":[
+        {"provider":"anthropic", "model":"claude-opus-4-1", "variant":"thinking", "steps":3,
+         "unreported_steps":0, "input_tokens":5120, "cached_input_tokens":4096, "output_tokens":812}]})
+}
+
+fn set_head(route: &FakeRoute, key: &str, value: Value) {
+    route.head_extra.lock().unwrap().insert(key.into(), value);
+}
+
+fn clear_head(route: &FakeRoute, key: &str) {
+    route.head_extra.lock().unwrap().remove(key);
+}
+
+/// A send path that exists but is never used: these tests only read.
+struct Unused(SessionRef);
+
+#[async_trait]
+impl SendTarget for Unused {
+    fn reference(&self) -> &SessionRef {
+        &self.0
+    }
+    async fn call(&self, method: &'static str, _: Value) -> Result<Value, RunnerError> {
+        panic!("a read called {method} on the send path")
+    }
+}
+
+/// Routes whose session this module can also send to, as the daemon's routes are.
+struct SendingRoutes(Arc<FakeRoute>);
+
+#[async_trait]
+impl BrocaRoutes for SendingRoutes {
+    async fn open(&self, _: &Resolved) -> Result<Arc<dyn BrocaRoute>, ReadError> {
+        Ok(self.0.clone())
+    }
+    fn sender(&self, resolved: &Resolved) -> Option<Arc<dyn SendTarget>> {
+        Some(Arc::new(Unused(resolved.reference.clone())))
+    }
+}
+
+/// An Entorhinal answer whose network policy changes from yes at 700 to no at 710.
+struct ChangingNetwork;
+
+#[async_trait]
+impl Entorhinal for ChangingNetwork {
+    async fn request(&self, method: &str, _: Value) -> Result<Value, ReadError> {
+        // A session named under another harness: Entorhinal knows none here.
+        if method == "agent.session_for_harness" {
+            return Ok(json!({"code":"not_found", "detail":null, "message":"no agent session"}));
+        }
+        Ok(
+            json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref", "incarnation":"entorhinal-test", "ended_at_ms":null,
+            "runner":"broca", "session":"alfonso:s1", "harness":"broca", "project_root":"/workspace/resolved-project",
+            "network":"no", "network_history":[{"network":"yes", "since_ms":700}, {"network":"no", "since_ms":710}]}}),
+        )
+    }
+}
+
+fn app(routes: Arc<dyn BrocaRoutes>, lookup: Arc<dyn Entorhinal>) -> Arc<AppReader> {
+    Arc::new(AppReader::new(Arc::new(BrocaSources::new(
+        Arc::new(Resolver::new(lookup)),
+        routes,
+    ))))
+}
+
+fn sending(route: &Arc<FakeRoute>) -> Arc<AppReader> {
+    app(
+        Arc::new(SendingRoutes(route.clone())),
+        Arc::new(ChangingNetwork),
+    )
+}
+
+/// The module's own routes in these tests have no send path, so this module refuses
+/// the app's sends to the session.
+fn read_only(route: &Arc<FakeRoute>) -> Arc<AppReader> {
+    app(Arc::new(Routes(route.clone())), Arc::new(Lookup))
+}
+
+async fn page(app: &AppReader, params: Value) -> Value {
+    app.read(TRANSCRIPT_PAGE, params).await.unwrap()
+}
+
+async fn details(app: &AppReader) -> Value {
+    app.read(DETAILS, json!({"session":"alfonso:s1", "harness":"broca"}))
+        .await
+        .unwrap()
+}
+
+fn calls(route: &FakeRoute, method: &str) -> usize {
+    route
+        .calls
+        .lock()
+        .unwrap()
+        .iter()
+        .filter(|call| call["method"] == method)
+        .count()
+}
+
+fn claim(page: &Value, floor: &str, since: &str) -> Value {
+    let mut request = params();
+    request["claim"] =
+        json!({"heldFloorMessageId":floor, "sinceMessageId":since, "heldVersion":page["version"]});
+    request
+}
+
+/// Neither member is ever `null`, and a reply never carries both.
+fn assert_send_members(name: &str, reply: &Value) {
+    if let Some(sender) = reply.get("sender") {
+        assert!(sender.is_object(), "{name}: sender is an object: {reply}");
+        assert!(
+            reply.get(SENDER_UNKNOWN).is_none(),
+            "{name}: sender and {SENDER_UNKNOWN} together: {reply}"
+        );
+    }
+    if let Some(flag) = reply.get(SENDER_UNKNOWN) {
+        assert_eq!(flag, &json!(true), "{name}: {reply}");
+    }
+}
+
+#[tokio::test]
+async fn model_rides_on_the_newest_page_and_turn_carrying_claims_only() {
+    let route = FakeRoute::new();
+    let app = sending(&route);
+    let unmodelled = calls(&route, "session.head");
+    let without = page(&app, params()).await;
+    assert!(without.get("model").is_none(), "absent means unknown");
+    let heads_without = calls(&route, "session.head") - unmodelled;
+
+    set_head(&route, "model", model());
+    let before = calls(&route, "session.head");
+    let newest = page(&app, params()).await;
+    assert_eq!(newest["model"], model());
+    // The model comes from the head the page already reads, not another call.
+    assert_eq!(calls(&route, "session.head") - before, heads_without);
+
+    let mut cached = params();
+    cached["activityToken"] = newest["activityToken"].clone();
+    let unchanged = page(&app, cached).await;
+    assert_eq!(unchanged["unchanged"], true);
+    for member in ["model", "sender", SENDER_UNKNOWN] {
+        assert!(unchanged.get(member).is_none(), "{member}: {unchanged}");
+    }
+
+    let mut older = params();
+    older["beforeCursor"] = newest["nextBeforeCursor"].clone();
+    let older = page(&app, older).await;
+    assert!(older.get("model").is_none(), "{older}");
+
+    let matched = page(&app, claim(&newest, "m20", "m21")).await;
+    assert_eq!(matched["claim"], "matched");
+    assert_eq!(matched["model"], model());
+
+    route.history.store(8, Ordering::Relaxed);
+    let expired = page(&app, claim(&newest, "m20", "m21")).await;
+    assert_eq!(expired["claim"], "cursor_expired");
+    assert_eq!(expired["model"], model());
+    assert!(expired["resync"].get("model").is_none());
+}
+
+#[tokio::test]
+async fn session_details_reads_one_head_and_no_messages() {
+    let route = FakeRoute::new();
+    for (key, value) in [
+        ("model", model()),
+        ("usage", usage()),
+        ("sender", grant()),
+        ("incarnation", json!("log-7f3a")),
+    ] {
+        set_head(&route, key, value);
+    }
+    let app = sending(&route);
+    let reply = details(&app).await;
+    assert_eq!(
+        reply,
+        json!({"model":model(), "usage":usage(), "sender":grant(), "incarnation":"log-7f3a", "lastRun":last_run()})
+    );
+    let methods: Vec<_> = route
+        .calls
+        .lock()
+        .unwrap()
+        .iter()
+        .map(|call| call["method"].clone())
+        .collect();
+    assert_eq!(methods, ["session.head"]);
+    assert_eq!(route.attaches.load(Ordering::Relaxed), 0);
+
+    for key in ["model", "usage", "sender", "incarnation"] {
+        clear_head(&route, key);
+    }
+    let heads = calls(&route, "session.head");
+    assert_eq!(
+        details(&app).await,
+        json!({SENDER_UNKNOWN: true, "lastRun":last_run()})
+    );
+    assert_eq!(calls(&route, "session.head"), heads + 1);
+    assert_eq!(calls(&route, "session.read"), 0);
+
+    // Counts a phone can't hold exactly, and an identity outside 1 to 128 bytes,
+    // are left out as unknown.
+    let mut huge = usage();
+    huge["steps"] = json!(1_u64 << 53);
+    set_head(&route, "usage", huge);
+    set_head(&route, "incarnation", json!("x".repeat(129)));
+    assert_eq!(
+        details(&app).await,
+        json!({SENDER_UNKNOWN: true, "lastRun":last_run()})
+    );
+
+    let refused = |params: Value| {
+        let app = app.clone();
+        async move { app.read(DETAILS, params).await.unwrap_err().code }
+    };
+    assert_eq!(
+        refused(json!({"session":"alfonso:s1", "harness":"opencode"})).await,
+        "session_unknown"
+    );
+    assert_eq!(refused(json!({"session":" "})).await, "invalid_request");
+    assert_eq!(refused(json!({"harness":"broca"})).await, "invalid_request");
+    assert_eq!(calls(&route, "session.read"), 0);
+}
+
+#[tokio::test]
+async fn the_send_grant_is_the_runners_sender_unknown_without_one_and_absent_when_refused() {
+    let route = FakeRoute::new();
+    let app = sending(&route);
+    set_head(&route, "sender", grant());
+    let newest = page(&app, params()).await;
+    let matched = page(&app, claim(&newest, "m20", "m21")).await;
+    for (name, reply) in [
+        ("newest", &newest),
+        ("matched", &matched),
+        ("details", &details(&app).await),
+    ] {
+        assert_send_members(name, reply);
+        assert_eq!(reply["sender"], grant(), "{name}");
+    }
+
+    // A runner that leaves `sender` out without declaring `head_sender` may
+    // predate the member, so its silence is unknown, never "may not send".
+    clear_head(&route, "sender");
+    let newest = page(&app, params()).await;
+    let matched = page(&app, claim(&newest, "m20", "m21")).await;
+    for (name, reply) in [
+        ("newest", &newest),
+        ("matched", &matched),
+        ("details", &details(&app).await),
+    ] {
+        assert_send_members(name, reply);
+        assert!(reply.get("sender").is_none(), "{name}");
+        assert_eq!(reply[SENDER_UNKNOWN], true, "{name}");
+    }
+
+    // A runner declaring `head_sender` that reports no `sender` grants nothing.
+    *route.describe.lock().unwrap() = Some(describe_with(&[HEAD_SENDER]));
+    let app = sending(&route);
+    let newest = page(&app, params()).await;
+    let matched = page(&app, claim(&newest, "m20", "m21")).await;
+    for (name, reply) in [
+        ("newest", &newest),
+        ("matched", &matched),
+        ("details", &details(&app).await),
+    ] {
+        assert_send_members(name, reply);
+        assert!(reply.get("sender").is_none(), "{name}: {reply}");
+        assert!(reply.get(SENDER_UNKNOWN).is_none(), "{name}: {reply}");
+    }
+
+    // An unreadable describe leaves no group to read, so the silence is unknown.
+    *route.describe.lock().unwrap() = None;
+    let app = sending(&route);
+    let reply = details(&app).await;
+    assert_eq!(reply[SENDER_UNKNOWN], true, "{reply}");
+    let newest = page(&app, params()).await;
+    assert_eq!(newest[SENDER_UNKNOWN], true, "{newest}");
+
+    // This module has no send path to the session: the app may not send, whatever
+    // the runner grants.
+    set_head(&route, "sender", grant());
+    let app = read_only(&route);
+    let newest = page(&app, params()).await;
+    for (name, reply) in [("newest", &newest), ("details", &details(&app).await)] {
+        assert!(reply.get("sender").is_none(), "{name}: {reply}");
+        assert!(reply.get(SENDER_UNKNOWN).is_none(), "{name}: {reply}");
+    }
+}
+
+#[tokio::test]
+async fn role_describe_is_read_once_per_session_and_again_after_its_route_is_lost() {
+    let route = FakeRoute::new();
+    let sources = Arc::new(BrocaSources::new(
+        Arc::new(Resolver::new(Arc::new(ChangingNetwork))),
+        Arc::new(SendingRoutes(route.clone())),
+    ));
+    let app = AppReader::new(sources.clone());
+    for _ in 0..3 {
+        page(&app, params()).await;
+        details(&app).await;
+    }
+    assert_eq!(calls(&route, "role.describe"), 1);
+    // A head that names the grant needs no describe at all.
+    set_head(&route, "sender", grant());
+    details(&app).await;
+    assert_eq!(calls(&route, "role.describe"), 1);
+    clear_head(&route, "sender");
+    let reference = SessionRef {
+        runner: "broca".into(),
+        session: "alfonso:s1".into(),
+    };
+    sources.source(&reference).await.unwrap().lost();
+    details(&app).await;
+    page(&app, params()).await;
+    assert_eq!(calls(&route, "role.describe"), 2);
+}
+
+/// A transcript-page cursor that wraps Broca's own cursor: the newest page's cursor
+/// lands on the unnumbered rows older than numbered history, and reading those one
+/// row at a time hands out Broca's cursor for the next one.
+async fn history_cursor(app: &AppReader) -> Value {
+    let newest = page(app, params()).await;
+    let older = follow(app, &newest["nextBeforeCursor"]).await.unwrap();
+    assert_eq!(older["messages"].as_array().unwrap().len(), 1, "{older}");
+    older["nextBeforeCursor"].clone()
+}
+
+async fn follow(app: &AppReader, cursor: &Value) -> Result<Value, ReadError> {
+    let mut request = params();
+    request["limit"] = json!(1);
+    request["beforeCursor"] = cursor.clone();
+    app.read(TRANSCRIPT_PAGE, request).await
+}
+
+#[tokio::test]
+async fn a_compaction_cut_keeps_a_claim_and_cursor_when_the_head_carries_an_incarnation() {
+    let route = FakeRoute::new();
+    set_head(&route, "incarnation", json!("log-1"));
+    let app = sending(&route);
+    let newest = page(&app, params()).await;
+    let cursor = history_cursor(&app).await;
+    // The cut starts a new lineage over the same stored messages and history counter.
+    *route.lineage.lock().unwrap() = "cut-b".into();
+    let matched = page(&app, claim(&newest, "m20", "m22")).await;
+    assert_eq!(matched["claim"], "matched", "{matched}");
+    assert_eq!(matched["version"], newest["version"]);
+    route
+        .entries
+        .lock()
+        .unwrap()
+        .push(entry("m23", Some(23), 740));
+    let matched = page(&app, claim(&newest, "m20", "m22")).await;
+    assert_eq!(matched["claim"], "matched", "{matched}");
+    assert_eq!(matched["newTurns"][0]["messageId"], "m23");
+    let older = follow(&app, &cursor).await.unwrap();
+    assert_eq!(older["messages"][0]["messageId"], "old-a", "{older}");
+}
+
+#[tokio::test]
+async fn a_recreated_log_expires_claims_and_cursors_even_at_history_zero() {
+    let route = FakeRoute::new();
+    route.history.store(0, Ordering::Relaxed);
+    *route.entries.lock().unwrap() = vec![
+        entry("old-a", None, 690),
+        entry("old-b", None, 695),
+        entry("m1", Some(1), 700),
+        entry("m2", Some(2), 710),
+        entry("m3", Some(3), 720),
+    ];
+    set_head(&route, "first_ordinal", json!(1));
+    set_head(&route, "incarnation", json!("log-1"));
+    let app = sending(&route);
+    let old = page(&app, params()).await;
+    let cursor = history_cursor(&app).await;
+    // The log is created again under the same key: the same counter and recycled
+    // mids, with different content.
+    set_head(&route, "incarnation", json!("log-2"));
+    *route.lineage.lock().unwrap() = "fresh".into();
+    route.entries.lock().unwrap()[2]["message"]["content"][0]["text"] =
+        json!("unrelated replacement");
+    let reply = page(&app, claim(&old, "m1", "m2")).await;
+    assert_eq!(reply["claim"], "cursor_expired", "{reply}");
+    assert_ne!(reply["version"], old["version"]);
+    assert_eq!(
+        follow(&app, &cursor).await.unwrap_err().code,
+        "cursor_expired"
+    );
+}
+
+#[tokio::test]
+async fn without_an_incarnation_a_cut_still_expires_claims_and_cursors() {
+    let route = FakeRoute::new();
+    let app = sending(&route);
+    let newest = page(&app, params()).await;
+    let cursor = history_cursor(&app).await;
+    *route.lineage.lock().unwrap() = "cut-b".into();
+    let reply = page(&app, claim(&newest, "m20", "m22")).await;
+    assert_eq!(reply["claim"], "cursor_expired", "{reply}");
+    assert_eq!(
+        follow(&app, &cursor).await.unwrap_err().code,
+        "cursor_expired"
+    );
+}
+
+/// A Broca entry stamped with the runner's per-entry `written_at`, or with no write
+/// time at all.
+fn written(mid: &str, ordinal: u64, at: Option<i64>) -> Value {
+    let mut entry = json!({"mid":mid, "ordinal":ordinal,
+        "message":{"role":"assistant", "content":[{"type":"text", "text":format!("reply {mid}")}]}});
+    if let Some(at) = at {
+        entry["written_at"] = json!(at);
+    }
+    entry
+}
+
+fn sample_route() -> Arc<FakeRoute> {
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = vec![
+        written("m20", 20, Some(705)),
+        written("m21", 21, Some(706)),
+        written("m22", 22, Some(708)),
+    ];
+    route
+}
+
+/// Each sample, by file name, as the module's handlers answer it now.
+async fn samples() -> Vec<(&'static str, Value)> {
+    let mut samples = Vec::new();
+
+    let route = sample_route();
+    set_head(&route, "model", model());
+    set_head(&route, "sender", grant());
+    let app = sending(&route);
+    let newest = page(&app, params()).await;
+    route
+        .entries
+        .lock()
+        .unwrap()
+        .push(written("m23", 23, Some(709)));
+    let matched = page(&app, claim(&newest, "m20", "m22")).await;
+    assert_eq!(matched["claim"], "matched");
+    samples.push(("newest-page-model.json", newest));
+    samples.push(("matched-claim-model.json", matched));
+
+    let route = sample_route();
+    for (key, value) in [
+        ("model", model()),
+        ("usage", usage()),
+        ("sender", grant()),
+        ("incarnation", json!("6a6ce2eb-b065-4df0-806e-44bcf531e128")),
+    ] {
+        set_head(&route, key, value);
+    }
+    samples.push(("details-usage.json", details(&sending(&route)).await));
+    clear_head(&route, "usage");
+    clear_head(&route, "sender");
+    samples.push(("details-no-usage.json", details(&sending(&route)).await));
+    *route.describe.lock().unwrap() = Some(describe_with(&[HEAD_SENDER]));
+    samples.push(("details-no-grant.json", details(&sending(&route)).await));
+    set_head(&route, "sender", grant());
+    samples.push((
+        "details-sender-refused.json",
+        details(&read_only(&route)).await,
+    ));
+
+    // The network policy is yes from 700 and no from 710.
+    let route = sample_route();
+    *route.entries.lock().unwrap() = vec![
+        written("m20", 20, Some(705)),
+        written("m21", 21, Some(715)),
+        written("m22", 22, None),
+    ];
+    let network = page(&sending(&route), params()).await;
+    let values: Vec<_> = network["messages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| row["network"].clone())
+        .collect();
+    assert_eq!(values, ["yes", "no", "unknown"]);
+    samples.push(("newest-page-network.json", network));
+    samples
+}
+
+/// Compare the phone's published samples rather than letting an inherited
+/// recording flag replace the expected bytes and bypass the comparison.
+#[tokio::test]
+async fn the_session_fact_samples_are_what_the_handlers_answer() {
+    assert!(
+        std::env::var_os("THALAMUS_RECORD_SESSION_SAMPLES").is_none(),
+        "unset THALAMUS_RECORD_SESSION_SAMPLES: correctness tests must compare the published samples"
+    );
+    // The set predates part identities and completion metadata. Remove part
+    // identities and enrich the recorded completion expectation below; the
+    // `phone-reader-broca-v2-keys` set pins part identities themselves.
+    let mut samples = samples().await;
+    for (_, reply) in &mut samples {
+        occipital_app_reader::broca_entries::without_part_identity(reply);
+    }
+    for (name, reply) in &samples {
+        assert_send_members(name, reply);
+    }
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(SAMPLES);
+    let mut recorded_sums = String::new();
+    for (name, reply) in &samples {
+        let recorded = std::fs::read(root.join(name)).unwrap();
+        recorded_sums.push_str(&format!("{:x}  {name}\n", Sha256::digest(&recorded)));
+        let mut expected: Value = serde_json::from_slice(&recorded).unwrap();
+        super::part_keys::add_recorded_completion(&mut expected);
+        // May-not-send replies carry neither sender member, so handler paths name these samples.
+        let session_fact_replies = [
+            "newest-page-model.json",
+            "matched-claim-model.json",
+            "details-usage.json",
+            "details-no-usage.json",
+            "details-no-grant.json",
+            "details-sender-refused.json",
+            "newest-page-network.json",
+        ];
+        if session_fact_replies.contains(name) {
+            super::part_keys::add_recorded_last_run(
+                &mut expected,
+                &json!({"run_id":"r1", "state":"active"}),
+            );
+        }
+        assert_eq!(
+            serde_json::to_string(&expected).unwrap(),
+            serde_json::to_string(reply).unwrap(),
+            "{name}"
+        );
+    }
+    assert_eq!(
+        std::fs::read_to_string(root.join("SHA256SUMS")).unwrap(),
+        recorded_sums
+    );
+    let mut listed: Vec<_> = std::fs::read_dir(&root)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .filter(|name| name.ends_with(".json"))
+        .collect();
+    listed.sort();
+    let mut named: Vec<_> = samples.iter().map(|(name, _)| name.to_string()).collect();
+    named.sort();
+    assert_eq!(listed, named, "every sample file is recorded here");
+}

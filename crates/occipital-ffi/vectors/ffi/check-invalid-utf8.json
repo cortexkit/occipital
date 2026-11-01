@@ -1,0 +1,9 @@
+{
+  "entry": "occ_program_check",
+  "request": {
+    "ctx_json": "{\"context\":{\"execution_dialect\":\"1.0\",\"handles\":[],\"profile\":\"show_ui\",\"references\":{},\"registry\":{},\"show_ui\":{\"data_columns\":{},\"data_format\":null,\"summary\":\"\",\"title\":\"\"},\"tool\":null}}",
+    "src": "PENhcmRIZWFkZXIgdGl0bGU9ImNhZsMg/yIgc3VidGl0bGU9IngiIC8+"
+  },
+  "status": 0,
+  "response": "{\"ok\":true,\"language\":\"1.0\",\"executionDialect\":\"1.0\",\"approvalChecked\":false,\"requires\":\"1.0\",\"diagnostics\":[{\"code\":\"W_ENCODING\",\"severity\":\"warning\",\"phase\":\"check\",\"span\":{\"line\":1,\"column\":1,\"endLine\":1,\"endColumn\":43},\"message\":\"Invalid UTF-8 in the source was replaced.\"}],\"omitted\":0,\"trial\":{\"fuel\":18,\"nodes\":1,\"outcome\":\"ok\"}}"
+}

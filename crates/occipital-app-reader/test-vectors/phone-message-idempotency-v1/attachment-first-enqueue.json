@@ -1,0 +1,30 @@
+{
+  "op": "session.enqueue_user_message",
+  "reply": {
+    "artifact_id": "<artifactId>",
+    "artifact_ids": [
+      "<artifactId>"
+    ],
+    "clientMessageId": "65df5907-5718-4e4e-96a6-dce74c50cffe",
+    "duplicate": false,
+    "effectId": "<effectId>",
+    "ok": true
+  },
+  "request": {
+    "callerDeviceClass": "phone",
+    "callerPairedPhone": true,
+    "callerSession": "paired-phone",
+    "clientMessageId": "65df5907-5718-4e4e-96a6-dce74c50cffe",
+    "parts": [
+      {
+        "attachment_id": "<attachment-id-first>",
+        "filename": "photo.jpg",
+        "mime": "image/jpeg",
+        "type": "file"
+      }
+    ],
+    "session": "phone-target",
+    "text": "describe this photo"
+  },
+  "tag": "attachment-first-enqueue"
+}

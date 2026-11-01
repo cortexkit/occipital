@@ -1,0 +1,891 @@
+{
+  "$schema": "occipital.catalog/1",
+  "catalog": {
+    "id": "occipital.catalog",
+    "version": "1.0",
+    "layoutVersion": "1",
+    "dialect": "1.0",
+    "status": "shipped",
+    "date": "2026-10-22",
+    "owner": "occipital",
+    "companion": "2026-10-22-rich-ui-catalog-v1.md",
+    "digest": null,
+    "digestRule": "SHA-256 of the canonical JSON (spec §14.3) of this document with catalog.digest set to null; filled in at publication and stored with every reply and program that names this catalog"
+  },
+
+  "vocabulary": {
+    "tone": ["neutral", "info", "success", "warning", "danger"],
+    "toneText": ["neutral", "info", "success", "warning", "danger", "muted"],
+    "appearance": {"Button": ["primary", "secondary"], "Card": ["card", "clear"]},
+    "aspect": {"1:1": 1, "4:3": 0.75, "16:9": 0.5625},
+    "gap": {"none": 0, "xs": 2, "s": 4, "m": 8, "l": 16},
+    "rule": "tone is semantic color and nothing else; appearance is visual style and nothing else; kind picks a chart type; size picks a text size. No prop is named variant, color or style, and no component has an alias.",
+    "retired": {
+      "variant": "tone for color, appearance for style",
+      "Tag": "Badge",
+      "Alert": "Callout",
+      "TextCallout": "Callout",
+      "Separator": "Divider",
+      "Heading": "a Markdown heading",
+      "LineChart": "Chart kind=\"line\"",
+      "BarChart": "Chart kind=\"bar\"",
+      "ImageBlock": "Image",
+      "ImageGallery": "ImageGroup",
+      "SwitchItem": "Toggle",
+      "TextArea": "Input lines={3}",
+      "rules": "min, max, step or maxLength on the input itself",
+      "src": "image={Artifact(\"…\")} or image={$$tc(N)}",
+      "name": "value={$state}"
+    },
+    "retiredUse": "checker hints only (E_UNKNOWN_COMPONENT, E_UNKNOWN_PROP); never taught, never accepted"
+  },
+
+  "profiles": ["reply", "show_ui", "tool_row", "tool_page"],
+
+  "capabilities": {
+    "refs": "The runner records $$tc(N) at store time (llm-runner output_refs). Without it every reference is unresolved, so inputs typed snapshot are not taught.",
+    "handles": "The runner (replies) or the show_ui provider (programs) records Artifact/File handles at store time. Without it inputs typed handle are not taught.",
+    "network": "The store-time network value: yes, no or unknown; missing reads unknown. It is part of every measurement key.",
+    "maps": "A computer-side maker produces the Map record at store time: a static raster and each place's position in it. No runner or provider has it in v1, so Map always draws unavailable and is never taught until a provider produces the record."
+  },
+
+  "types": {
+    "string": "text; a number is not converted (E_PROP_TYPE)",
+    "number": "exact decimal (spec §4.2); int: true requires an integer",
+    "boolean": "true or false; a bare prop name means true",
+    "enum": "one of the listed string literals",
+    "tone": "enum vocabulary.tone",
+    "toneText": "enum vocabulary.toneText",
+    "aspect": "enum of the keys of vocabulary.aspect",
+    "gap": "enum of the keys of vocabulary.gap",
+    "list<T>": "a list whose elements have type T; items [a, b] bounds its length",
+    "rows": "a list of records, written or computed",
+    "node<C>": "one component of the named kinds",
+    "action": "an action value (spec §7); only v1 steps",
+    "binding<T>": "a bare $state of type T (spec §4.10)",
+    "snapshot": {"means": "$$tc(N), Parse($$tc(N), …) or data", "needs": ["refs"], "late": true},
+    "handle<K>": {"means": "Artifact(\"id\") or File(\"path\") with a literal argument", "needs": ["handles"], "late": true},
+    "address": "an absolute http or https URL (spec §3.11); opened only on a tap, never fetched",
+    "paged": {"means": "the name of a PagedList site", "late": true},
+    "watch": {"means": "the name of a Watch site", "late": true},
+    "a|b": "a union of the listed types; the value must have one of them",
+    "query": "not a prop type: a program reads q.value, q.status, q.error and q.stale (spec §8.3) and passes plain values, which are part of the committed tree; no component renders a Query envelope itself"
+  },
+
+  "textStyles": {
+    "body": "UIFont.TextStyle.body",
+    "subheadline": "UIFont.TextStyle.subheadline",
+    "footnote": "UIFont.TextStyle.footnote",
+    "caption1": "UIFont.TextStyle.caption1",
+    "headline": "UIFont.TextStyle.headline",
+    "title2": "UIFont.TextStyle.title2",
+    "title3": "UIFont.TextStyle.title3",
+    "mono": "monospaced, body size",
+    "monoFootnote": "monospaced, footnote size",
+    "metrics": "L(style) is the line height of the style at the person's content size category, read from the platform once per measurement key; desktop maps the same names to its own fonts; a terminal layout maps every style to one row"
+  },
+
+  "layouts": {
+    "1": {
+      "unit": "pt",
+      "k": {
+        "gap": {"none": 0, "xs": 2, "s": 4, "m": 8, "l": 16},
+        "cardPad": 12,
+        "calloutPad": 12,
+        "calloutIcon": 28,
+        "badgePadV": 2,
+        "badgePadH": 6,
+        "chipPadV": 2,
+        "chipPadH": 4,
+        "cellPadV": 6,
+        "cellPadH": 8,
+        "colMin": 64,
+        "codePad": 10,
+        "fieldPadV": 10,
+        "tap": 44,
+        "switchW": 51,
+        "buttonPadH": 16,
+        "tabBar": 44,
+        "itemPadV": 8,
+        "progressBar": 6,
+        "chartMin": 120,
+        "flexMin": 80,
+        "rowCapMin": 480,
+        "hairline": 1
+      },
+      "clip": {"badge": 64, "chip": 24, "cell": 256, "button": 64, "tab": 40, "inlineCode": 256, "title": 200, "body": 300}
+    }
+  },
+
+  "geometry": {
+    "rule": "A component's height is a pure function of W, the text metrics, the stored network value, its own prop and child values in the committed tree, and, for a Citation, its index. It never reads a late input: snapshot contents, handle records, media bytes, map rasters or the envelope of a site the component renders itself. hIn lists everything the height reads; a prop whose type is late never appears in hIn.",
+    "inputs": {
+      "W": "width offered by the parent, in layout units",
+      "metrics": "L(style) for the text styles",
+      "network": "store-time network value (LinkCard only)",
+      "props:p": "the value of prop p in the committed tree",
+      "tree:p": "the text of prop p in the committed tree, measured by T or TW",
+      "count:p": "the length of the list literal written for prop p",
+      "children": "the measured heights of the children in the same revision",
+      "index": "the citation's 1-based position among distinct sources in its reply or tree",
+      "placement": "row (drawn in a transcript row) or page (a tool page or an opened show_ui page); fixed before measurement"
+    },
+    "grammar": "h := number | k.name | k.gap.name | W | CW | L(style) | T(x, style, width, maxLines) | TW(x, style) | has(p) | n(p) | ar(p) | lines(x) | H(child) | p | h op h | min(h, h) | max(h, h) | ceil(h) | sum(...) | (h); op is + - * /; maxLines may be inf",
+    "functions": {
+      "T": "height of the sanitized text x in style s wrapped at width w, at most n lines with a trailing ellipsis; 0 when x is absent",
+      "TW": "width of x on one line in style s",
+      "has": "1 when prop p is given (not absent), else 0",
+      "n": "length of the list literal of prop p",
+      "ar": "height/width ratio of the aspect value of p (vocabulary.aspect)",
+      "lines": "Lines(x) count (spec §6.3)",
+      "H": "the measured height of a child in the same revision"
+    },
+    "rounding": "Each block component's height is rounded up to a whole layout unit before its parent adds it, so measured and drawn sums agree exactly; inline components round their box the same way before the paragraph measures them",
+    "clip": "Every state of a component draws inside its measured box and clips; nothing draws outside the box or changes it",
+    "revision": "A committed revision's heights never change. A reply's tags never change height after the final parse. On a page (a tool page or an opened show_ui page) a program takes the measured height of each new evaluate-measure-commit revision (spec §8.2). In the transcript a show_ui row never changes height after insertion: see rowFrame",
+    "rowFrame": {
+      "rule": "A show_ui row in the transcript keeps the height of its first committed revision, capped, plus an app-owned Open bar. Every later revision, the first-answer LoadingRoot included, draws inside that frame, top-aligned and clipped. Open shows the same instance on its page, where each revision takes its own measured height. Reason: a site answer arriving while the reader is elsewhere in the chat must never move the rows above them.",
+      "first": "the load evaluation with every site at its default and the stored snapshot, the tree the checker's trial evaluation produced (spec §5.7); it needs no site answer, so a row from an old chat is measured before insertion without waiting",
+      "h": "min(H(first), cap) + k.tap",
+      "cap": "max(k.rowCapMin, 16*L(body))",
+      "hIn": ["W", "metrics", "network", "first revision"],
+      "clipped": "when a revision is taller than the frame, the Open bar says 'Open to see all'; otherwise 'Open'",
+      "toolRows": "tool_row revisions (running to finished) are measured per revision as spec §2.3 says; whether they should freeze too is an open question"
+    },
+    "evaluator": "The shared crate evaluates every geometry formula, for every app. Each platform supplies only the text-metric callbacks L, T and TW, implemented with the text system its views draw with and safe off the main thread. The terminal app's layout table in cells is left to the terminal app's maintainer.",
+    "cacheKey": ["tree or source revision", "state hash", "W", "content size category", "catalog digest", "layoutVersion", "network", "placement"]
+  },
+
+  "states": {
+    "ready": "data drawn",
+    "loading": "the input is not resolved yet (snapshot fetch, store-time record, decode); placeholder shapes inside the box",
+    "held": "the snapshot is held (spec §4.8): pending look and the words 'Waiting for the tool'; it never fills in",
+    "unavailable": "no record, unresolved, too_large, revoked, expired scope, evicted from the cache or an unsupported media type; an icon and 'Unavailable' inside the box",
+    "error": "a failed Parse, an error value in a data prop, data of the wrong shape or a render cap exceeded; 'Couldn't show this' and the code inside the box",
+    "over": "the reply, chat or app account (spec §9.1) has no room; 'Not shown' inside the box; drawn again when the account frees, through a new measured revision of the same height",
+    "text": "the plain-text form (spec §11.3) used for copy, previews and notifications, and drawn clipped inside the box when the renderer cannot draw the component at all",
+    "sameBox": "Every state above draws in the box geo.h gives; none has a height of its own",
+    "propError": "An error value or a missing required prop (spec §5.6): when the prop is not in hIn the component draws its own error state in its normal box; otherwise it draws host.ErrorCell. Catalog failures known at the final parse of a reply are not states: the tag is literal text (spec §2.1)"
+  },
+
+  "accounts": {
+    "spec": "language spec §9.1 and §9.2; every number here repeats the spec and changes only with it",
+    "perRevision": {"visits": 100000, "decodedBytes": 33554432},
+    "reply": {"prepFuel": 6000000, "expanded": 16777216, "retained": 25165824},
+    "interface": {"prepFuel": 8000000, "expanded": 33554432, "retained": 50331648},
+    "chatWindow": {"prepFuel": 24000000, "expanded": 67108864, "retained": 100663296},
+    "app": {"retained": 134217728},
+    "raster": {"maxPixels": 4000000, "maxDecodedBytes": 16777216, "formats": ["image/png", "image/jpeg", "image/webp (static)"], "animated": "a computer-produced static poster only", "decodeTo": "the frame's pixel size; decode cost charged before allocation; decompression bombs refused from the header"},
+    "visitRule": "1 per component node and 1 per text run laid out, plus each component's work.visits; reserved before layout against perRevision.visits",
+    "decodeRule": "work.decoded is reserved against perRevision.decodedBytes and the retained accounts before decoding",
+    "overflow": "a component whose reservation fails draws its over state; a reply keeps every other tag; a program whose tree needs more than perRevision aborts (spec §9.6)"
+  },
+
+  "teaching": {
+    "reply": {
+      "budgetTokens": 1500,
+      "rules": [
+        {"text": "Display tags: write Markdown and add a tag where a visual helps. Tags draw in the apps.", "needs": []},
+        {"text": "Form: <Name prop=\"text\" prop={value} /> or <Name …>content</Name>. A tag alone on its line is a block; inside a sentence it is inline. Never leave a blank line inside a tag.", "needs": []},
+        {"text": "A {value} may only be a number, \"string\", true, false, null, or a list [ … ] or record {key: …} of those.", "needs": []},
+        {"text": "It may also be $$tc(N), the output of tool call N, or Parse($$tc(N), \"json\" or \"csv\", {columns: {name: \"number\", other: \"text\"}}) to read it as rows. Declare number columns or charts can't plot them.", "needs": ["refs"]},
+        {"text": "Pictures and files come by handle: Artifact(\"id\") or File(\"relative/path\").", "needs": ["handles"]},
+        {"text": "Pictures and charts take data only by $$tc(N) or a handle, never by an address.", "needs": ["refs|handles"]},
+        {"text": "Replies have no state, variables, {expressions} in text, buttons or inputs; use show_ui for those.", "needs": []},
+        {"text": "tone is the color: neutral, info, success, warning or danger.", "needs": []},
+        {"text": "A tag that breaks a rule shows as its plain text and is reported to you on your next turn.", "needs": []},
+        {"text": "Each tag's size is fixed before data arrives: choose aspect and displayRows up front; more rows open on their own page.", "needs": []}
+      ],
+      "order": ["Badge", "Styled", "Callout", "Table", "LinkCard", "Citation", "Image", "ImageGroup", "Map", "Chart"],
+      "perComponent": "signature line, then sum, then the examples whose needs the runner meets",
+      "signature": "<Name req: type, opt?: type = default>children</Name>; an enum of a shared vocabulary prints its name (tone, aspect); props allowed only in other profiles are omitted",
+      "filter": "Teach a reply component only if it is in the reply profile, the runner meets the component's own needs (Map needs maps) and at least one of its forms can be written with the runner's capabilities; drop props whose every allowed type needs a missing capability or is a tag (node<…>), since tags are not reply values; drop examples whose needs are not met. When the store-time network is known to be no, omit LinkCard and add: 'Links show as plain text in this session.'",
+      "estimate": "about 1,100 tokens with refs and handles (Map withheld: no v1 runner has maps) and about 560 without (3,350 and 1,950 characters; heuristic counts, no tokenizer was available; method in the companion)"
+    },
+    "show_ui": {
+      "from": ["the language's machine-readable rules: the language crate will export its function table and profile rules as JSON generated from the crate itself; the shape is left to the crate", "this catalog filtered to the show_ui profile", "the approved operation schemas for the calling session"],
+      "rule": "Same signature format; every example compiled against the exact dialect, catalog digest and registry before it is published; operations the session cannot use are not taught"
+    },
+    "toolTemplates": "Provider authors read this catalog and the tool_row/tool_page profiles directly; nothing is generated into model prompts for them"
+  },
+
+  "components": {
+    "Badge": {
+      "sum": "A short status label inside a sentence, heading or table cell.",
+      "in": ["reply", "show_ui", "tool_row", "tool_page"],
+      "flow": "inline",
+      "kids": {"kind": "inline", "only": ["text"]},
+      "props": {
+        "tone": {"t": "tone", "def": "neutral"},
+        "text": {"t": "string"}
+      },
+      "one": [["text", "children"]],
+      "geo": {"kind": "inline", "h": "L(caption1) + 2*k.badgePadV", "w": "min(TW(label, caption1) + 2*k.badgePadH, W)", "hIn": ["metrics"], "note": "label is text or the children's text on one line, cut with an ellipsis after clip.badge scalars or at W"},
+      "states": {"text": "[{label}]"},
+      "work": {"visits": "2"},
+      "teach": {"ex": [{"src": "Tests finished. <Badge tone=\"success\">17 passed</Badge> <Badge tone=\"danger\">1 failed</Badge>", "needs": []}]}
+    },
+
+    "Styled": {
+      "sum": "Colored inline text; muted by default.",
+      "in": ["reply", "show_ui", "tool_row", "tool_page"],
+      "flow": "inline",
+      "kids": {"kind": "inline", "only": ["text", "emphasis", "code"]},
+      "props": {
+        "tone": {"t": "toneText", "def": "muted"}
+      },
+      "geo": {"kind": "run", "h": "part of the surrounding paragraph's text layout", "hIn": ["metrics"], "note": "color does not change metrics, so the paragraph measures the same with or without the tag"},
+      "states": {"text": "{children}"},
+      "work": {"visits": "1"},
+      "teach": {"ex": [{"src": "<Styled>Sizes come from a scan two minutes ago.</Styled>", "needs": []}]}
+    },
+
+    "Callout": {
+      "sum": "A highlighted note with an optional title.",
+      "in": ["reply", "show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "block", "only": ["markdown", "Badge", "Styled", "Citation"]},
+      "props": {
+        "tone": {"t": "tone", "def": "info"},
+        "title": {"t": "string", "clip": "title"},
+        "description": {"t": "string"}
+      },
+      "atMostOne": [["description", "children"]],
+      "anyOf": [["title", "description", "children"]],
+      "geo": {"kind": "text", "h": "2*k.calloutPad + has(title)*(T(title, headline, CW, 3) + k.gap.s) + T(body, body, CW, inf)", "CW": "W - 2*k.calloutPad - k.calloutIcon", "hIn": ["W", "metrics", "tree:title", "tree:description", "children"], "note": "body is description, or the children measured by the prose measurer at CW; both come from the bounded source or the committed tree"},
+      "states": {"text": "{title}: {body}"},
+      "work": {"visits": "2 + runs(body)"},
+      "teach": {"ex": [{"src": "<Callout tone=\"warning\" title=\"testPaging failed\">\nThe second page came back empty. The fix is in `PageLoader.swift`.\n</Callout>", "needs": []}]}
+    },
+
+    "Table": {
+      "sum": "Rows in a fixed viewport of displayRows rows; the person opens the rest.",
+      "in": ["reply", "show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "data": {"t": "rows|snapshot"},
+        "columns": {"t": "list<string|record>|list<node<Col>>", "items": [1, 8], "record": "{key: string, label: string}", "d": "each entry is a record key, or {key, label} to show a different header"},
+        "displayRows": {"t": "number", "int": true, "range": [1, 10], "rangeIn": {"show_ui": [1, 50], "tool_page": [1, 50]}, "rowClamp": 10, "def": 6},
+        "more": {"t": "paged", "in": ["show_ui", "tool_page"]}
+      },
+      "forms": [
+        {"id": "rows", "need": ["data"], "types": {"columns": "list<string|record>"}, "note": "the only form in replies; columns lists the record keys to show, in order, each as a key string or {key, label}; absent means the first row's keys, at most 8"},
+        {"id": "cols", "need": ["columns"], "types": {"columns": "list<node<Col>>"}, "deny": ["data"], "note": "program only: Col is a tag and tags are not reply values (spec §3.5)"}
+      ],
+      "data": {
+        "data": {"shape": "a list of records; a snapshot needs a format hint (Parse or show_ui data_format) and a list root", "caps": {"columns": 8, "visibleCellsRow": 80, "visibleCellsPage": 400, "cellScalars": 256}},
+        "cells": "string as written; number by FormatNumber (grouped, canonical decimals) and right-aligned; boolean true or false; null or missing empty; list or record …; an error value shows its code",
+        "more": "when given, the open page drives LoadMore and auto_load_more for that PagedList (spec §8.6); the row itself never loads"
+      },
+      "geo": {"kind": "viewport", "h": "(rows + 1)*rowH + footH", "rows": "placement == row ? min(displayRows, 10) : displayRows", "rowH": "L(subheadline) + 2*k.cellPadV", "footH": "L(footnote) + 2*k.cellPadV", "hIn": ["metrics", "placement", "props:displayRows"], "widths": "each column gets max(k.colMin, TW(header, subheadline) + 2*k.cellPadH), where header is the entry's label or else its key; then the columns share what is left of W equally; wider than W scrolls sideways; cell text never widens a column", "note": "one header row, exactly rows single-line rows, one footer; cells cut with an ellipsis, never wrap; a transcript row shows at most 10 rows, a page up to 50"},
+      "states": {
+        "loading": "header (when column entries are literal), placeholder rows, footer 'Loading…'",
+        "ready": "the first rows rows; footer 'N rows · Open' when there are more, else 'N rows'",
+        "empty": "'No rows' in the first slot; the other slots stay empty",
+        "error": "header kept; message in the row slots; footer shows the code",
+        "text": "[table: {N} rows]"
+      },
+      "openPage": "an app-owned page with every row (within the data caps), its own bounded lazy layout and measurement; it is never part of the row's height",
+      "work": {"visits": "2 + columns*(rows + 1)", "caps": "accounts.perRevision; cells beyond the viewport are not laid out"},
+      "teach": {"ex": [
+        {"src": "<Table data={[{service: \"api\", state: \"up\"}, {service: \"db\", state: \"down\"}]} columns={[\"service\", \"state\"]} />", "needs": []},
+        {"src": "<Table data={Parse($$tc(22), \"json\", {columns: {path: \"text\", bytes: \"number\"}})} columns={[\"path\", {key: \"bytes\", label: \"Size in bytes\"}]} displayRows={6} />", "needs": ["refs"]}
+      ]}
+    },
+
+    "Col": {
+      "sum": "One Table column: its label and its values.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "descriptor",
+      "parent": ["Table.columns"],
+      "kids": {"kind": "none"},
+      "props": {
+        "label": {"t": "string", "req": true, "clip": "cell"},
+        "data": {"t": "list<string|number|boolean>", "req": true},
+        "type": {"t": "enum", "enum": ["text", "number"], "def": "text"}
+      },
+      "geo": {"kind": "none", "hIn": [], "note": "drawn by its Table; the row count is the longest column's length"},
+      "states": {"text": "{label}"}
+    },
+
+    "LinkCard": {
+      "sum": "A card for a web page; a tap shows the full address before anything opens.",
+      "in": ["reply", "show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "href": {"t": "address", "req": true},
+        "title": {"t": "string", "req": true, "clip": "title"},
+        "description": {"t": "string", "clip": "body"}
+      },
+      "geo": {"kind": "text", "h": {"yes|unknown": "2*k.cardPad + T(title, headline, CW, 2) + has(description)*(k.gap.xs + T(description, subheadline, CW, 2)) + k.gap.xs + L(caption1)", "no": "T(textForm, body, W, inf)"}, "CW": "W - 2*k.cardPad", "hIn": ["W", "metrics", "network", "tree:title", "tree:description", "tree:href"], "note": "the last line is the canonical host in punycode; nothing is fetched to draw the card"},
+      "net": "yes or unknown: a card whose tap opens the address sheet (spec §3.11); no: its text form as a paragraph, with no activation",
+      "states": {"text": "{title} ({href})"},
+      "work": {"visits": "4"},
+      "teach": {"ex": [{"src": "<LinkCard href=\"https://limankahvesi.example/menu\" title=\"Liman Kahvesi menu\" />", "needs": []}]}
+    },
+
+    "Citation": {
+      "sum": "A numbered source marker after a sentence; a tap shows the source.",
+      "in": ["reply", "show_ui"],
+      "flow": "inline",
+      "kids": {"kind": "none"},
+      "props": {
+        "source": {"t": "snapshot|handle<Artifact|File>", "req": true}
+      },
+      "data": {"source": {"shape": "any snapshot state, or a handle record; opened in the app's viewer through the broker (spec §7.5)"}},
+      "geo": {"kind": "inline", "h": "L(caption1) + 2*k.chipPadV", "w": "TW(index, caption1) + 2*k.chipPadH", "hIn": ["metrics", "index"], "note": "index counts distinct sources in order of first appearance, so two citations of one source share a number"},
+      "states": {"held": "the same chip, pending tint", "unavailable": "the same chip, dimmed; the tap explains", "text": "[{index}]"},
+      "work": {"visits": "1"},
+      "teach": {"ex": [{"src": "It opens at 7.<Citation source={$$tc(12)} />", "needs": ["refs"]}]}
+    },
+
+    "Image": {
+      "sum": "One picture in a fixed frame.",
+      "in": ["reply", "show_ui"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "image": {"t": "handle<Artifact|File>|snapshot", "req": true},
+        "aspect": {"t": "aspect", "def": "4:3"},
+        "alt": {"t": "string", "clip": "body"},
+        "caption": {"t": "string", "clip": "body"}
+      },
+      "data": {"image": {"shape": "a handle record or a media snapshot whose MIME type is in accounts.raster.formats; resolved and flattened on the computer", "caps": "accounts.raster"}},
+      "geo": {"kind": "aspect", "h": "W*ar(aspect) + has(caption)*(k.gap.s + T(caption, footnote, W, 2))", "hIn": ["W", "metrics", "props:aspect", "tree:caption"], "note": "the picture fits inside the frame, letterboxed; the frame never follows the picture's size"},
+      "states": {"text": "[image: {alt}]"},
+      "work": {"visits": "2", "decoded": "frame pixels*4, at most accounts.raster.maxDecodedBytes"},
+      "teach": {"ex": [{"src": "<Image image={Artifact(\"art_7f3a\")} aspect=\"16:9\" alt=\"The new login screen\" />", "needs": ["handles"]}]}
+    },
+
+    "ImageGroup": {
+      "sum": "Up to four pictures in a grid of fixed frames.",
+      "in": ["reply", "show_ui"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "images": {"t": "list<handle<Artifact|File>|snapshot>", "req": true, "lit": true, "items": [1, 4]},
+        "aspect": {"t": "aspect", "def": "4:3"},
+        "caption": {"t": "string", "clip": "body"}
+      },
+      "data": {"images": {"shape": "as Image, per element; each slot resolves independently", "caps": "accounts.raster per image, at most 4"}},
+      "geo": {"kind": "aspect", "h": "rows*cw*ar(aspect) + (rows - 1)*k.gap.xs + has(caption)*(k.gap.s + T(caption, footnote, W, 2))", "cols": "min(n(images), 2)", "rows": "ceil(n(images) / 2)", "cw": "(W - k.gap.xs*(cols - 1)) / cols", "hIn": ["W", "metrics", "count:images", "props:aspect", "tree:caption"], "note": "lit: the list must be written as a list literal, so the slot count is known from the source; a third picture leaves the fourth slot empty"},
+      "states": {"text": "[{n} images: {caption}]", "unavailable": "per slot"},
+      "work": {"visits": "1 + n(images)", "decoded": "sum of slot frame pixels*4"},
+      "teach": {"ex": [{"src": "<ImageGroup images={[Artifact(\"art_k1\"), Artifact(\"art_k2\")]} aspect=\"4:3\" caption=\"Inside and out\" />", "needs": ["handles"]}]}
+    },
+
+    "Map": {
+      "sum": "A static map of places from a tool output; no live tiles, no location.",
+      "in": ["reply", "show_ui"],
+      "needs": ["maps"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "places": {"t": "snapshot", "req": true},
+        "aspect": {"t": "aspect", "def": "16:9"},
+        "caption": {"t": "string", "clip": "body"}
+      },
+      "data": {"places": {"shape": "Parse of a JSON list of {name: string, lat: number, lon: number, note?: string}, plus the map record a computer-side maker prepares at store time: a static raster (accounts.raster) and each place's position in it", "caps": {"markers": 100}, "overCap": "the error state with E_RENDER_LIMIT", "noRecord": "unavailable; never a live tile or geocoding request from the phone"}},
+      "v1": "No runner or provider produces the map record in v1 (capabilities.maps), so every Map draws unavailable at its fixed size and no teaching names it. The tag stays valid so stored replies keep their geometry once a provider exists.",
+      "geo": {"kind": "aspect", "h": "W*ar(aspect) + has(caption)*(k.gap.s + T(caption, footnote, W, 2))", "hIn": ["W", "metrics", "props:aspect", "tree:caption"]},
+      "draw": "the raster with numbered pins at the recorded positions; a tap opens an app-owned list of the places as text",
+      "states": {"text": "[map: {n} places]"},
+      "work": {"visits": "1 + markers", "decoded": "frame pixels*4"},
+      "teach": {"ex": [{"src": "<Map places={Parse($$tc(14), \"json\")} aspect=\"16:9\" />", "needs": ["refs"]}]}
+    },
+
+    "Chart": {
+      "sum": "A line or bar chart in a fixed frame.",
+      "in": ["reply", "show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "kind": {"t": "enum", "enum": ["line", "bar"], "req": true},
+        "data": {"t": "rows|snapshot", "tIn": {"reply": "snapshot"}, "d": "in a reply only a reference: a chart's numbers come from a tool, never retyped"},
+        "x": {"t": "string"},
+        "y": {"t": "string|list<string>"},
+        "labels": {"t": "list<string|number>", "in": ["show_ui", "tool_page"]},
+        "series": {"t": "list<node<Series>>", "in": ["show_ui", "tool_page"], "items": [1, 8]},
+        "xLabel": {"t": "string", "clip": "tab"},
+        "yLabel": {"t": "string", "clip": "tab"},
+        "aspect": {"t": "aspect", "def": "16:9"}
+      },
+      "forms": [
+        {"id": "rows", "need": ["data", "x", "y"], "deny": ["labels", "series"], "note": "x names the label column; y names one number column or a list of up to 8"},
+        {"id": "series", "need": ["labels", "series"], "deny": ["data", "x", "y"], "note": "program only"}
+      ],
+      "data": {
+        "data": {"shape": "a list of records; x values are labels (text conversion); y values must be numbers, absent values leave gaps", "caps": {"points": 2048, "series": 8}},
+        "wrongShape": "a y value that is not a number or absent (E_TYPE), Series lengths that differ from labels (E_ARG), or more points or series than the caps (E_RENDER_LIMIT): the error state, never a partial chart"
+      },
+      "geo": {"kind": "aspect", "h": "max(k.chartMin, W*ar(aspect))", "hIn": ["W", "props:aspect"], "note": "axes, axis labels and a one-line legend draw inside the frame"},
+      "states": {"text": "[chart: {kind}, {n} points]"},
+      "work": {"visits": "16 + points + series", "caps": {"points": 2048}},
+      "teach": {"ex": [{"src": "<Chart kind=\"bar\" data={Parse($$tc(7), \"csv\", {columns: {seconds: \"number\"}})} x=\"suite\" y=\"seconds\" />", "needs": ["refs"]}]}
+    },
+
+    "Series": {
+      "sum": "One named series of numbers for a Chart.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "descriptor",
+      "parent": ["Chart.series"],
+      "kids": {"kind": "none"},
+      "props": {
+        "category": {"t": "string", "req": true, "clip": "tab"},
+        "values": {"t": "list<number>", "req": true}
+      },
+      "geo": {"kind": "none", "hIn": []},
+      "states": {"text": "{category}"}
+    },
+
+    "Card": {
+      "sum": "A container that stacks its content in a column or a row.",
+      "in": ["show_ui", "tool_row", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "block"},
+      "props": {
+        "appearance": {"t": "enum", "enum": ["card", "clear"], "def": "card"},
+        "direction": {"t": "enum", "enum": ["column", "row"], "def": "column"},
+        "gap": {"t": "gap", "def": "m"},
+        "align": {"t": "enum", "enum": ["start", "center", "end", "stretch"], "def": "stretch"},
+        "justify": {"t": "enum", "enum": ["start", "center", "end", "between"], "def": "start"},
+        "wrap": {"t": "boolean", "def": false}
+      },
+      "geo": {
+        "kind": "stack",
+        "h": {"column": "2*pad + sum(H(c)) + g*(n - 1)", "row": "2*pad + max(H(c))", "row+wrap": "2*pad + sum(lineH) + g*(lines - 1)"},
+        "pad": "appearance == \"card\" ? k.cardPad : 0",
+        "g": "k.gap[gap]",
+        "widths": "In a row, fixed children (inline components, Button, Buttons, InlineCode, Toggle) take min(their own width, the line); flexible children (Markdown blocks, TextContent, Card, Stat, Progress, LiveOutput, Table, Chart and the rest) share what is left equally, each at least k.flexMin. With wrap, children fill lines greedily in order; a flexible child ends its line. Without wrap, overflowing fixed children are cut from the end.",
+        "hIn": ["W", "metrics", "props:appearance", "props:direction", "props:gap", "props:wrap", "children"],
+        "note": "align and justify move children inside the box; they never change its height"
+      },
+      "states": {"text": "the children's text forms, one per line"},
+      "work": {"visits": "1"}
+    },
+
+    "CardHeader": {
+      "sum": "A title and optional subtitle at the top of a view.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "title": {"t": "string", "req": true, "clip": "title"},
+        "subtitle": {"t": "string", "clip": "body"}
+      },
+      "geo": {"kind": "text", "h": "T(title, title3, W, 2) + has(subtitle)*(k.gap.xs + T(subtitle, subheadline, W, 2))", "hIn": ["W", "metrics", "tree:title", "tree:subtitle"]},
+      "states": {"text": "{title}\n{subtitle}"},
+      "work": {"visits": "3"}
+    },
+
+    "TextContent": {
+      "sum": "A block of plain text (not parsed as Markdown).",
+      "in": ["show_ui", "tool_row", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "text": {"t": "string", "req": true},
+        "size": {"t": "enum", "enum": ["small", "default", "large"], "def": "default"},
+        "maxLines": {"t": "number", "int": true, "range": [1, 100], "def": 24}
+      },
+      "geo": {"kind": "text", "h": "T(text, style, W, maxLines)", "style": "small: footnote, default: body, large: title3", "hIn": ["W", "metrics", "tree:text", "props:size", "props:maxLines"]},
+      "states": {"text": "{text}"},
+      "work": {"visits": "1 + ceil(scalars(text) / 256)"}
+    },
+
+    "InlineCode": {
+      "sum": "A short piece of code or a command on one line.",
+      "in": ["show_ui", "tool_row", "tool_page"],
+      "flow": "inline",
+      "kids": {"kind": "none"},
+      "props": {
+        "code": {"t": "string", "req": true, "clip": "inlineCode"}
+      },
+      "geo": {"kind": "inline", "h": "L(monoFootnote) + 2*k.chipPadV", "w": "min(TW(code, monoFootnote) + 2*k.chipPadH, W)", "hIn": ["metrics"]},
+      "states": {"text": "`{code}`"},
+      "work": {"visits": "1"},
+      "note": "Replies use Markdown code spans instead"
+    },
+
+    "CodeBlock": {
+      "sum": "Code in a box that scrolls sideways; at most maxLines lines show.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "codeString": {"t": "string", "req": true},
+        "language": {"t": "string", "clip": "tab"},
+        "maxLines": {"t": "number", "int": true, "range": [1, 40], "def": 12}
+      },
+      "geo": {"kind": "text", "h": "2*k.codePad + has(language)*(L(caption1) + k.gap.xs) + min(lines(codeString), maxLines)*L(mono) + (lines(codeString) > maxLines ? k.gap.xs + L(footnote) : 0)", "hIn": ["metrics", "tree:codeString", "props:maxLines", "props:language"], "note": "no wrapping, so W never changes the height; the last line says how many more lines the open page shows"},
+      "states": {"text": "```{language}\n{codeString}\n```"},
+      "work": {"visits": "2 + min(lines(codeString), maxLines)"}
+    },
+
+    "FormControl": {
+      "sum": "A label, one input and an optional hint.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "label": {"t": "string", "req": true, "clip": "title"},
+        "input": {"t": "node<Input|Select|Slider|Toggle>", "req": true},
+        "hint": {"t": "string", "clip": "body"}
+      },
+      "geo": {"kind": "stack", "h": "T(label, subheadline, W, 2) + k.gap.xs + H(input) + has(hint)*(k.gap.xs + T(hint, footnote, W, 2))", "hIn": ["W", "metrics", "tree:label", "tree:hint", "children"]},
+      "states": {"text": "{label}: {input}"},
+      "work": {"visits": "3"}
+    },
+
+    "Input": {
+      "sum": "A text or number field bound to a state of the same type.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "type": {"t": "enum", "enum": ["text", "number"], "def": "text", "lit": true},
+        "value": {"t": "binding", "req": true, "bind": {"by": "type", "text": "string", "number": "number"}},
+        "placeholder": {"t": "string", "clip": "title"},
+        "min": {"t": "number", "with": {"type": "number"}},
+        "max": {"t": "number", "with": {"type": "number"}},
+        "step": {"t": "number", "with": {"type": "number"}},
+        "lines": {"t": "number", "int": true, "range": [1, 6], "def": 1, "with": {"type": "text"}},
+        "maxLength": {"t": "number", "int": true, "range": [1, 8192], "def": 1024, "with": {"type": "text"}}
+      },
+      "input": "writes only values of the state's type; an emptied number field writes null (spec §4.10); text longer than maxLength is refused at the keyboard; a number outside min..max is kept but drawn with the warning tone",
+      "geo": {"kind": "fixed", "h": "max(k.tap, lines*L(body) + 2*k.fieldPadV)", "hIn": ["metrics", "props:lines"], "note": "a number field has lines 1"},
+      "states": {"text": "{value}"},
+      "work": {"visits": "2"},
+      "teach": {"ex": [{"src": "export let $doors = 1\n\n<Input type=\"number\" min={0} step={1} value={$doors} />", "profile": "show_ui"}]}
+    },
+
+    "Select": {
+      "sum": "A menu of choices bound to a string state (a list state when multiple).",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "value": {"t": "binding", "req": true, "bind": {"by": "multiple", "false": "string", "true": "list"}},
+        "items": {"t": "list<node<SelectItem>>", "req": true, "items": [1, 100]},
+        "multiple": {"t": "boolean", "def": false, "lit": true},
+        "placeholder": {"t": "string", "clip": "title"}
+      },
+      "input": "writes the chosen item's value; with multiple, the list of chosen values in item order",
+      "geo": {"kind": "fixed", "h": "k.tap", "hIn": [], "note": "the menu opens in an app-owned popover outside the row"},
+      "states": {"text": "{label of the chosen item}"},
+      "work": {"visits": "2 + items"},
+      "teach": {"ex": [{"src": "export let $region = \"North\"\n\n<Select value={$region} items={[<SelectItem value=\"North\" label=\"North\" />, <SelectItem value=\"South\" label=\"South\" />]} />", "profile": "show_ui"}]}
+    },
+
+    "SelectItem": {
+      "sum": "One choice of a Select.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "descriptor",
+      "parent": ["Select.items"],
+      "kids": {"kind": "none"},
+      "props": {
+        "value": {"t": "string", "req": true},
+        "label": {"t": "string", "req": true, "clip": "title"}
+      },
+      "geo": {"kind": "none", "hIn": []},
+      "states": {"text": "{label}"}
+    },
+
+    "Slider": {
+      "sum": "A slider bound to a number state.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "value": {"t": "binding<number>", "req": true},
+        "min": {"t": "number", "req": true},
+        "max": {"t": "number", "req": true},
+        "step": {"t": "number", "def": 1}
+      },
+      "input": "writes min + step*k for the nearest whole k, clamped to max; a drag is coalesced to its latest value per frame (spec §8.2)",
+      "propRules": "min < max and step > 0, else the error state (E_ARG) in the same box",
+      "geo": {"kind": "fixed", "h": "k.tap", "hIn": []},
+      "states": {"text": "{value}"},
+      "work": {"visits": "2"},
+      "teach": {"ex": [{"src": "export let $width = 4\n\n<Slider min={2} max={10} step={0.1} value={$width} />", "profile": "show_ui"}]}
+    },
+
+    "Toggle": {
+      "sum": "An on/off switch with a label, bound to a boolean state.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "value": {"t": "binding<boolean>", "req": true},
+        "label": {"t": "string", "req": true, "clip": "title"}
+      },
+      "geo": {"kind": "text", "h": "max(k.tap, T(label, body, W - k.switchW - k.gap.m, 2) + 2*k.fieldPadV)", "hIn": ["W", "metrics", "tree:label"]},
+      "states": {"text": "{label}: {value ? \"on\" : \"off\"}"},
+      "work": {"visits": "2"},
+      "teach": {"ex": [{"src": "export let $failedOnly = false\n\n<Toggle label=\"Failed runs only\" value={$failedOnly} />", "profile": "show_ui"}]}
+    },
+
+    "Button": {
+      "sum": "A button that runs its action on a tap; it never sends anything by itself.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "label": {"t": "string", "req": true, "clip": "button"},
+        "action": {"t": "action", "req": true},
+        "appearance": {"t": "enum", "enum": ["primary", "secondary"], "def": "primary"},
+        "disabled": {"t": "boolean", "def": false}
+      },
+      "act": {"props": ["action"], "steps": ["Set", "Reset", "Refresh", "LoadMore", "Compose", "Open"], "reserved": {"Mutation": "E_WRITE_NOT_ALLOWED", "Run": "E_WRITE_NOT_ALLOWED"}, "absentOrError": "drawn disabled (spec §7.1)", "busy": "from activation until local steps and host handoffs finish (spec §7.3)"},
+      "geo": {"kind": "fixed", "h": "k.tap", "w": "min(TW(label, headline) + 2*k.buttonPadH, W)", "hIn": []},
+      "states": {"text": "[{label}]"},
+      "work": {"visits": "2"},
+      "teach": {"ex": [{"src": "export let $page = 1\n\n<Button label=\"Next\" appearance=\"secondary\" action={Set($page, $page + 1)} />", "profile": "show_ui"}]}
+    },
+
+    "Buttons": {
+      "sum": "A row or column of Buttons.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "buttons": {"t": "list<node<Button>>", "req": true, "items": [1, 8]},
+        "direction": {"t": "enum", "enum": ["row", "column"], "def": "row"}
+      },
+      "geo": {"kind": "stack", "h": {"row": "lines*k.tap + (lines - 1)*k.gap.s", "column": "n*k.tap + (n - 1)*k.gap.s"}, "lines": "greedy wrap of the buttons' widths at W with k.gap.s between", "hIn": ["W", "metrics", "props:direction", "children"]},
+      "states": {"text": "the buttons' text forms on one line"},
+      "work": {"visits": "1"}
+    },
+
+    "Tabs": {
+      "sum": "Tabs that show one TabItem at a time; the height is the tallest tab's.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "block", "only": ["TabItem"], "items": [2, 8]},
+      "props": {
+        "value": {"t": "binding<string>"}
+      },
+      "input": "a tap selects a tab; when value is bound it writes that TabItem's value, otherwise the selection is view state that is not saved",
+      "geo": {"kind": "stack", "h": "k.tabBar + k.gap.s + max(H(panel))", "hIn": ["W", "metrics", "children"], "note": "every panel is measured, so switching tabs never changes the height"},
+      "states": {"text": "each tab's label and text form in order"},
+      "work": {"visits": "1 + tabs + the visits of every panel", "note": "every panel is measured and laid out for its height, so every panel's visits are charged to accounts.perRevision and its nodes to the output node limit (spec §9.4)"},
+      "teach": {"ex": [{"src": "<Tabs>\n<TabItem label=\"Summary\">\nAll checks passed.\n</TabItem>\n<TabItem label=\"Details\">\nNo warnings.\n</TabItem>\n</Tabs>", "profile": "show_ui"}]}
+    },
+
+    "TabItem": {
+      "sum": "One tab: a label and its content.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "parent": ["Tabs"],
+      "kids": {"kind": "block"},
+      "props": {
+        "label": {"t": "string", "req": true, "clip": "tab"},
+        "value": {"t": "string", "d": "defaults to label"}
+      },
+      "geo": {"kind": "stack", "h": "sum(H(c)) + k.gap.m*(n - 1)", "hIn": ["W", "metrics", "children"]},
+      "states": {"text": "{label}"},
+      "work": {"visits": "1"}
+    },
+
+    "List": {
+      "sum": "ListItems in a fixed viewport of displayRows items; Each builds them; more pages through a PagedList.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "block", "only": ["ListItem"]},
+      "props": {
+        "displayRows": {"t": "number", "int": true, "range": [1, 50], "rowClamp": 10, "def": 6},
+        "more": {"t": "paged"},
+        "empty": {"t": "string", "def": "Nothing to show", "clip": "title"}
+      },
+      "data": {"more": "the open page drives LoadMore and auto_load_more for that PagedList (spec §8.6); the footer shows its status, done or capped"},
+      "geo": {"kind": "viewport", "h": "rows*itemH + footH", "rows": "placement == row ? min(displayRows, 10) : displayRows", "itemH": "2*k.itemPadV + L(body) + L(footnote)", "footH": "L(footnote) + 2*k.cellPadV", "hIn": ["metrics", "placement", "props:displayRows"], "note": "items beyond the viewport are on the open page, never in the row; a transcript row shows at most 10, a page up to 50"},
+      "states": {"loading": "placeholder items; footer 'Loading…'", "empty": "the empty text in the first slot", "error": "the error in the first slot; footer shows the code", "text": "the first displayRows items' titles, one per line"},
+      "openPage": "an app-owned scrolling page of every item, with its own end sentinel for auto_load_more",
+      "work": {"visits": "2 + 3*rows"},
+      "teach": {"ex": [{"src": "export const history = PagedList(\"bash_lines\", {}, 50)\n\n<List more={history}>\n{Each(history.items, \"line\", <ListItem title={line} />)}\n</List>", "profile": "tool_page", "registry": ["bash_lines (page)"]}]}
+    },
+
+    "ListItem": {
+      "sum": "One List row: a title, an optional subtitle and trailing text.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "parent": ["List"],
+      "kids": {"kind": "none"},
+      "props": {
+        "title": {"t": "string", "req": true, "clip": "title"},
+        "subtitle": {"t": "string", "clip": "title"},
+        "trailing": {"t": "string", "clip": "tab"},
+        "tone": {"t": "tone"}
+      },
+      "geo": {"kind": "fixed", "h": "List itemH", "hIn": ["metrics"], "note": "the subtitle line is reserved whether or not it is given; each line is cut, never wrapped; tone draws a leading dot"},
+      "states": {"text": "{title} {trailing}"},
+      "work": {"visits": "3"}
+    },
+
+    "LiveOutput": {
+      "sum": "The last lines of a Watch, in a fixed box with its live, ended or error status.",
+      "in": ["show_ui", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "source": {"t": "watch", "req": true},
+        "field": {"t": "string"},
+        "displayRows": {"t": "number", "int": true, "range": [1, 50], "rowClamp": 10, "def": 8}
+      },
+      "data": {"source": {"shape": "watch items; each item is a string, or a record whose field member is a string; anything else draws …", "caps": "the watch buffer (spec §8.5): 1,000 items, 256 KiB"}},
+      "geo": {"kind": "viewport", "h": "2*k.codePad + rows*L(monoFootnote) + footH", "rows": "placement == row ? min(displayRows, 10) : displayRows", "footH": "L(footnote) + 2*k.cellPadV", "hIn": ["metrics", "placement", "props:displayRows"], "note": "lines are cut, never wrapped; new lines replace old ones inside the box"},
+      "states": {"loading": "'Connecting…' in the footer", "ready": "footer 'Live', 'Ended' or the error, and '{dropped} earlier lines not shown' when dropped > 0", "text": "[live output]"},
+      "work": {"visits": "2 + rows"},
+      "teach": {"ex": [{"src": "export const live = Watch(\"bash_watch\", {})\n\n<LiveOutput source={live} displayRows={12} />", "profile": "tool_page", "registry": ["bash_watch (watch)"]}]}
+    },
+
+    "Stat": {
+      "sum": "One labelled figure, with an optional caption.",
+      "in": ["show_ui", "tool_row", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "label": {"t": "string", "req": true, "clip": "tab"},
+        "value": {"t": "string|number", "req": true},
+        "caption": {"t": "string", "clip": "title"},
+        "tone": {"t": "tone", "def": "neutral"}
+      },
+      "geo": {"kind": "fixed", "h": "L(footnote) + k.gap.xs + L(title2) + has(caption)*(k.gap.xs + L(caption1))", "hIn": ["metrics", "tree:caption"], "note": "each line is cut, never wrapped; a number value shows in canonical form, so format it with FormatNumber first"},
+      "states": {"text": "{label}: {value}"},
+      "work": {"visits": "3"},
+      "teach": {"ex": [{"src": "export const total = 1250\n\n<Stat label=\"Total\" value={FormatNumber(total)} caption=\"All regions\" />", "profile": "show_ui"}]}
+    },
+
+    "Progress": {
+      "sum": "A bar from 0 to 100 with an optional label; an absent value draws an empty bar.",
+      "in": ["show_ui", "tool_row", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "value": {"t": "number", "range": [0, 100], "rangeRule": "clamped, not an error"},
+        "label": {"t": "string", "clip": "title"},
+        "tone": {"t": "tone", "def": "info"}
+      },
+      "geo": {"kind": "fixed", "h": "has(label)*(L(footnote) + k.gap.xs) + k.progressBar", "hIn": ["metrics", "tree:label"]},
+      "states": {"text": "{label} {value}%"},
+      "work": {"visits": "2"}
+    },
+
+    "Divider": {
+      "sum": "A thin horizontal line.",
+      "in": ["show_ui", "tool_row", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {},
+      "geo": {"kind": "fixed", "h": "2*k.gap.m + k.hairline", "hIn": []},
+      "states": {"text": "---"},
+      "work": {"visits": "1"}
+    }
+  },
+
+  "host": {
+    "note": "Drawn by the app, never written as tags. Their geometry is pinned here because rows that contain them are measured like any other.",
+    "ReferenceChip": {
+      "sum": "$$tc(N) in Markdown text: a chip that opens the snapshot.",
+      "flow": "inline",
+      "geo": {"kind": "inline", "h": "L(caption1) + 2*k.chipPadV", "w": "min(TW(label, caption1) + 2*k.chipPadH, W)", "hIn": ["metrics"], "note": "label is 'output of {tool}', the tool name cut at clip.chip scalars; before the reply is stored it is 'tool output' (spec §3.10)"},
+      "states": {"held": "pending tint", "unavailable": "dimmed", "text": "[output of {tool}]"}
+    },
+    "ErrorMarker": {
+      "sum": "An error value in text (spec §3.12, §5.6).",
+      "flow": "inline",
+      "geo": {"kind": "inline", "h": "L(caption1) + 2*k.chipPadV", "w": "TW(code, caption1) + 2*k.chipPadH", "hIn": ["metrics"]},
+      "states": {"text": "[{code}]"}
+    },
+    "ErrorCell": {
+      "sum": "A component whose height-deciding prop is an error or missing (states.propError).",
+      "flow": "block",
+      "geo": {"kind": "fixed", "h": "2*k.gap.m + L(footnote) + L(caption1)", "hIn": ["metrics"], "note": "first line 'Couldn't show {Component}', second line the code"},
+      "states": {"text": "[{Component}: {code}]"}
+    },
+    "TaskCheckbox": {
+      "sum": "A GFM task list box, read-only (spec §3.4).",
+      "flow": "inline",
+      "geo": {"kind": "inline", "h": "L(body)", "w": "L(body)", "hIn": ["metrics"]},
+      "states": {"text": "[ ] or [x]"}
+    },
+    "LoadingRoot": {
+      "sum": "The program's root during the first-answer wait (spec §8.3).",
+      "flow": "block",
+      "geo": {"kind": "fixed", "h": "2*k.cardPad + L(headline) + k.gap.s + L(subheadline)", "hIn": ["metrics"], "note": "the show_ui title on one line, then 'Loading…'; on a page the first real tree commits as a new measured revision; in a transcript row it draws inside the RowFrame"},
+      "states": {"text": "{title}"}
+    },
+    "RowFrame": {
+      "sum": "The fixed frame of a show_ui row in the transcript, with its app-owned Open bar (geometry.rowFrame).",
+      "flow": "block",
+      "geo": {"kind": "fixed", "h": "min(H(first), max(k.rowCapMin, 16*L(body))) + k.tap", "hIn": ["W", "metrics", "network", "first revision"], "note": "later revisions draw top-aligned inside it and clip; the Open bar reads 'Open to see all' when the current revision is taller than the frame"},
+      "states": {"text": "the program's fallback text"}
+    },
+    "ProgramFallback": {
+      "sum": "A program that failed its check or aborted (spec §9.6, §11.1).",
+      "flow": "block",
+      "geo": {"kind": "text", "h": "2*k.cardPad + T(fallback, body, W - 2*k.cardPad, inf) + k.gap.m + k.tap", "hIn": ["W", "metrics", "tree:fallback"], "note": "the stored fallback text (at most 4,096 scalars) and the app-owned Reset button"},
+      "states": {"text": "{fallback}"}
+    },
+    "GenericToolRow": {
+      "sum": "Today's tool row, used when a tool view is missing, older, unapproved or failed (spec §11.2).",
+      "flow": "block",
+      "geo": {"kind": "fixed", "h": "the existing ToolRunChipsView/ToolChipFlowView measurement", "hIn": ["W", "metrics"]},
+      "states": {"text": "{tool} {status}"}
+    },
+    "ArgumentsShortened": {
+      "sum": "The host's label on a row whose input projection was cut (spec §2.3).",
+      "flow": "block",
+      "geo": {"kind": "fixed", "h": "L(caption1) + k.gap.xs", "hIn": ["metrics"]},
+      "states": {"text": "(arguments shortened)"}
+    },
+    "ReplyShortened": {
+      "sum": "The marker after the first 256 KiB of a reply (spec §3.1).",
+      "flow": "block",
+      "geo": {"kind": "fixed", "h": "L(footnote) + 2*k.gap.s", "hIn": ["metrics"]},
+      "states": {"text": "(reply shortened)"}
+    },
+    "Markdown": {
+      "sum": "Paragraphs, headings, lists, quotes, code fences and GFM tables (spec §3.4).",
+      "flow": "block",
+      "geo": {"kind": "text", "h": "the prose measurer's height at W (AgentTurnBodyView rules), with inline components as fixed-size attachments", "hIn": ["W", "metrics", "tree:text", "network"], "note": "network decides whether links are styled as links or as text; it does not change metrics"}
+    }
+  },
+
+  "profilesAllow": {
+    "reply": ["Badge", "Styled", "Callout", "Table", "LinkCard", "Citation", "Image", "ImageGroup", "Map", "Chart"],
+    "replyReduced": {"needs": "neither refs nor handles", "tags": ["Badge", "Styled", "Callout", "Table", "LinkCard"], "note": "Table only with written data; derived by teaching.reply.filter, listed here so a test can compare"},
+    "replyTaught": {"needs": "refs and handles, no maps (every v1 runner)", "tags": ["Badge", "Styled", "Callout", "Table", "LinkCard", "Citation", "Image", "ImageGroup", "Chart"], "note": "Map is valid in replies but taught to nobody until a provider produces map records"},
+    "show_ui": ["Badge", "Styled", "Callout", "Table", "Col", "LinkCard", "Citation", "Image", "ImageGroup", "Map", "Chart", "Series", "Card", "CardHeader", "TextContent", "InlineCode", "CodeBlock", "FormControl", "Input", "Select", "SelectItem", "Slider", "Toggle", "Button", "Buttons", "Tabs", "TabItem", "List", "ListItem", "LiveOutput", "Stat", "Progress", "Divider"],
+    "tool_row": ["Badge", "Styled", "Card", "TextContent", "InlineCode", "Stat", "Progress", "Divider"],
+    "tool_page": ["Badge", "Styled", "Callout", "Table", "Col", "LinkCard", "Chart", "Series", "Card", "CardHeader", "TextContent", "InlineCode", "CodeBlock", "FormControl", "Input", "Select", "SelectItem", "Slider", "Toggle", "Button", "Buttons", "Tabs", "TabItem", "List", "ListItem", "LiveOutput", "Stat", "Progress", "Divider"],
+    "rule": "derived from each component's in; listed for review and tests. tool_row holds no control, site, media, table or code block: a row shows counts and codes and opens its page on a tap. tool_row and tool_page hold no Citation, Image, ImageGroup or Map: templates have no references, and no operation returns scoped media in v1."
+  },
+
+  "open": [
+    {"item": "the terminal app's layout table in cells", "owner": "the terminal app's maintainer"},
+    {"item": "a computer-side maker of Map records (static raster and place positions) at store time, and the maps capability that advertises it", "owner": "a provider not yet named; depends on the output_refs contract (design-note open question 3)"},
+    {"item": "the language crate's machine-readable export of its function table and profile rules, generated from the crate, for show_ui teaching", "owner": "occipital; shape left to the crate"},
+    {"item": "whether tool_row revisions (running to finished) should keep their insertion height like show_ui rows", "owner": "the apps"}
+  ],
+
+  "deferred": ["Diagram", "math rendering", "video", "dynamic galleries (computed handles)", "Accordion", "Steps", "Carousel", "DatePicker", "RadioGroup", "CheckBoxGroup", "Form with name-managed values", "FollowUpBlock (Compose in a Button covers it)", "pie, area, radar and scatter charts", "Avatar", "sub-minute timers"],
+
+  "admission": {
+    "minor": "A new component, a new optional prop or a new enum value is a minor catalog version (1.1). It ships in apps before any teaching names it; an app that predates it shows the tag as text, and its reports are suppressed (spec §12.3).",
+    "major": "Removing or renaming anything, changing a default, a range, a geometry formula's meaning or a state's look that changes height is a major version, or for geometry alone a new layoutVersion.",
+    "layoutVersion": "Changing a constant in layouts or a formula without changing what is valid bumps layoutVersion; every cached height is keyed by it.",
+    "required": [
+      "a complete entry: sum, in, flow, kids, props with types/defaults/ranges, data shapes, geo with hIn, every state, text form and work",
+      "hIn names no late type (geometry.rule)",
+      "renderer conformance fixtures: measured equals drawn for every state at the fixture widths and text sizes, on every app",
+      "a device benchmark of background measurement and decode on the oldest supported phone",
+      "an effect review for any action prop: which steps it may carry; v1 admits no write",
+      "a media review for any prop that loads pixels: handle or snapshot only, decode caps, no nested resources",
+      "teaching examples that compile against the exact dialect, catalog digest and registry"
+    ],
+    "replay": "Replies and programs store the catalog digest they were checked against; an app draws them with that catalog or shows their text form, never with a newer one (spec §13.2)."
+  }
+}

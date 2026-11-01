@@ -1,0 +1,47 @@
+{
+  "entry": "occ_reply_new",
+  "request": {
+    "app": 1,
+    "chat": 0,
+    "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+    "stamp_json": "{\"dialect\":\"1.0\"}"
+  },
+  "status": 0,
+  "response": [
+    {
+      "entry": "occ_reply_finish",
+      "request": {
+        "records_json": "{\"handles\":[],\"references\":{\"7\":{\"bytes\":20,\"call_key\":\"call\",\"reason\":null,\"state\":\"resolved\",\"tool\":\"bash\"}}}",
+        "tail": "VGhlIHRlc3QgcnVuIGZpbmlzaGVkIHdpdGggb25lIGZhaWx1cmUuIDxCYWRnZSB0b25lPSJkYW5nZXIiPjEgZmFpbGVkPC9CYWRnZT4gPEJhZGdlIHRvbmU9InN1Y2Nlc3MiPjE3IHBhc3NlZDwvQmFkZ2U+Cgo8Q2FsbG91dCB0b25lPSJ3YXJuaW5nIiB0aXRsZT0idGVzdFBhZ2luZyBmYWlsZWQiPgpUaGUgc2Vjb25kIHBhZ2UgY2FtZSBiYWNrIGVtcHR5IGFmdGVyIGl0cyBjdXJzb3IgZXhwaXJlZC4gVGhlIGZpeCBpcyBpbiBgUGFnZUxvYWRlci5zd2lmdGA6IHRoZSBjdXJzb3IgaXMgbm93IHJlZnJlc2hlZCBiZWZvcmUgdGhlIHJlcXVlc3QuCjwvQ2FsbG91dD4KCkhvdyBsb25nIGVhY2ggc3VpdGUgdG9vazoKCjxDaGFydCBraW5kPSJiYXIiIGRhdGE9e1BhcnNlKCQkdGMoNyksICJjc3YiLCB7Y29sdW1uczoge3NlY29uZHM6ICJudW1iZXIifX0pfSB4PSJzdWl0ZSIgeT0ic2Vjb25kcyIgYXNwZWN0PSIxNjo5IiAvPg=="
+      },
+      "status": 0,
+      "response": "{\"id\":1,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"The test run finished with one failure. \"},{\"c\":\"Badge\",\"p\":{\"tone\":\"danger\"},\"k\":[{\"t\":\"1 failed\"}]},{\"t\":\" \"},{\"c\":\"Badge\",\"p\":{\"tone\":\"success\"},\"k\":[{\"t\":\"17 passed\"}]}]},{\"c\":\"Callout\",\"p\":{\"tone\":\"warning\",\"title\":\"testPaging failed\"},\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"The second page came back empty after its cursor expired. The fix is in \"},{\"m\":\"code\",\"text\":\"PageLoader.swift\",\"k\":[]},{\"t\":\": the cursor is now refreshed before the request.\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"How long each suite took:\"}]},{\"c\":\"Chart\",\"p\":{\"kind\":\"bar\",\"data\":{\"snapshot\":{\"record_id\":\"7\",\"state\":\"loading\"}},\"x\":\"suite\",\"y\":\"seconds\",\"aspect\":\"16:9\"},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"The test run finished with one failure. [1 failed] [17 passed]\\n\\ntestPaging failed: The second page came back empty after its cursor expired. The fix is in PageLoader.swift: the cursor is now refreshed before the request.\\n\\nHow long each suite took:\\n\\n[chart: bar, 0 points]\"}"
+    },
+    {
+      "entry": "occ_reply_measure",
+      "request": {
+        "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+        "metrics": "fixed"
+      },
+      "status": 0,
+      "response": "{\"height\":\"prose_deferred\",\"key\":{\"instance_epoch\":0,\"revision\":1,\"state_hash\":\"b9cedb1d6b1233563e1684192367c9fa695724f34746b98123a9e3134adad694\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":23,\"reservation\":\"deferred\",\"boxes\":[],\"row_frame\":null}"
+    },
+    {
+      "entry": "occ_reply_event",
+      "request": {
+        "event_json": "{\"kind\":\"snapshot\",\"reference\":7,\"result\":{\"ok\":\"c3VpdGUsc2Vjb25kcwpQYWdlTG9hZGVyVGVzdHMsMS41CkNhY2hlVGVzdHMsMC4yNQo=\"}}"
+      },
+      "status": 0,
+      "response": "{\"id\":2,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"The test run finished with one failure. \"},{\"c\":\"Badge\",\"p\":{\"tone\":\"danger\"},\"k\":[{\"t\":\"1 failed\"}]},{\"t\":\" \"},{\"c\":\"Badge\",\"p\":{\"tone\":\"success\"},\"k\":[{\"t\":\"17 passed\"}]}]},{\"c\":\"Callout\",\"p\":{\"tone\":\"warning\",\"title\":\"testPaging failed\"},\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"The second page came back empty after its cursor expired. The fix is in \"},{\"m\":\"code\",\"text\":\"PageLoader.swift\",\"k\":[]},{\"t\":\": the cursor is now refreshed before the request.\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"How long each suite took:\"}]},{\"c\":\"Chart\",\"p\":{\"kind\":\"bar\",\"data\":{\"snapshot\":{\"record_id\":\"7\",\"state\":\"resolved\",\"value\":[{\"record\":{\"suite\":\"PageLoaderTests\",\"seconds\":{\"number\":\"1.5\"}}},{\"record\":{\"suite\":\"CacheTests\",\"seconds\":{\"number\":\"0.25\"}}}]}},\"x\":\"suite\",\"y\":\"seconds\",\"aspect\":\"16:9\"},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"The test run finished with one failure. [1 failed] [17 passed]\\n\\ntestPaging failed: The second page came back empty after its cursor expired. The fix is in PageLoader.swift: the cursor is now refreshed before the request.\\n\\nHow long each suite took:\\n\\n[chart: bar, 2 points]\"}"
+    },
+    {
+      "entry": "occ_reply_measure",
+      "request": {
+        "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+        "metrics": "fixed"
+      },
+      "status": 0,
+      "response": "{\"height\":\"prose_deferred\",\"key\":{\"instance_epoch\":0,\"revision\":2,\"state_hash\":\"195cedc28fe70049aba415ed82bc9b9062474425cb85500c4df08784643835c5\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":25,\"reservation\":\"deferred\",\"boxes\":[],\"row_frame\":null}"
+    }
+  ]
+}

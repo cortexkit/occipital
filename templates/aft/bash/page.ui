@@ -1,0 +1,54 @@
+export const job = Query("bash_status", {}, {running: null, exitCode: null}, 2)
+export const output = PagedList("bash_output", {}, 200)
+
+export const finished = view.phase == "finished"
+export const running = !finished && job.value.running == true
+export const exitText = view.exitCode == null ? "" : " · exit " + Text(view.exitCode)
+export const status = (
+  finished ? (
+    view.endReason == "timed_out" ? <Badge text="Timed out" tone="warning" />
+    : view.endReason == "killed" ? <Badge text="Stopped" tone="neutral" />
+    : view.endReason == "fate_unknown" ? <Badge text="Result unknown" tone="neutral" />
+    : view.exitCode == 0 || (view.exitCode == null && view.endReason == "completed") ? <Badge text="Succeeded" tone="success" />
+    : <Badge text={"Failed" + exitText} tone="danger" />
+  )
+  : job.value.running == null ? (job.status == "error" ? <Badge text="Status unavailable" tone="warning" /> : <Badge text="Checking…" tone="neutral" />)
+  : running ? <Badge text="Running" tone="info" />
+  : job.value.exitCode == 0 ? <Badge text="Succeeded" tone="success" />
+  : job.value.exitCode == null ? <Badge text="Finished" tone="neutral" />
+  : <Badge text={"Failed · exit " + Text(job.value.exitCode)} tone="danger" />
+)
+export const facts = Join(Filter([
+  view.durationMs == null ? null : FormatDuration(view.durationMs),
+  view.outputBytes == null ? null : FormatBytes(view.outputBytes) + " of output",
+], null, "!=", null), " · ")
+
+export const errors = Filter(output.items, "stream", "==", "stderr")
+export const lines = Filter(output.items, "stream", "!=", "stderr")
+export const trimmed = Count(Filter(output.items, "prefixDropped", "==", true)) > 0
+export const empty = output.status == "ready" && Count(output.items) == 0
+
+<CardHeader title={input.description ?? "Shell command"} subtitle={input.workdir} />
+
+<CodeBlock language="bash" codeString={input.command} maxLines={12} />
+
+<Card appearance="clear" direction="row" gap="s" align="center" wrap>
+{status}
+{input.runon == null ? null : <Badge text={"Remote · " + input.runon} tone="neutral" />}
+{facts == "" ? null : <TextContent text={facts} size="small" maxLines={1} />}
+</Card>
+
+### Output
+
+{output.status == "loading" && Count(output.items) == 0 ? "Loading the output…" : null}
+{output.status == "error" ? <Callout tone="warning" description="The output couldn't be read." /> : null}
+{empty ? (output.done ? "No output." : "No output yet.") : null}
+{trimmed ? <Callout tone="info" description="Only the end of a long output is kept, so this starts partway through." /> : null}
+{Count(lines) > 0 ? <Table columns={[<Col label="Output" data={lines.text} />]} displayRows={50} more={output} /> : null}
+{Count(errors) > 0 ? <Table columns={[<Col label="Errors" data={errors.text} />]} displayRows={20} /> : null}
+{output.capped ? "This page holds the first 2,000 lines of output." : null}
+
+<Card appearance="clear" direction="row" gap="s" wrap>
+{output.done || output.capped || output.status == "loading" ? null : <Button label={running ? "Show newer output" : "Load more output"} appearance="secondary" action={LoadMore(output)} />}
+{output.status == "error" || output.capped ? <Button label="Reload output" appearance="secondary" action={Refresh(output)} /> : null}
+</Card>

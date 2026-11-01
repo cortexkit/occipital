@@ -1,0 +1,11 @@
+{
+  "op": "upload.finish",
+  "refusal": {
+    "code": "upload_expired",
+    "message": "the upload was not finished within its 24 hours"
+  },
+  "request": {
+    "upload_id": "00000000000a11ce0000000000000006"
+  },
+  "tag": "upload_expired"
+}

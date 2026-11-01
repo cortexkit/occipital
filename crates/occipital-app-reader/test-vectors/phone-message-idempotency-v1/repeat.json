@@ -1,0 +1,18 @@
+{
+  "op": "session.enqueue_user_message",
+  "reply": {
+    "clientMessageId": "81da9e96-3e61-4e48-92d4-fbf1d7075710",
+    "duplicate": true,
+    "effectId": "<effectId>",
+    "ok": true
+  },
+  "request": {
+    "callerDeviceClass": "phone",
+    "callerPairedPhone": true,
+    "callerSession": "paired-phone",
+    "clientMessageId": "81da9e96-3e61-4e48-92d4-fbf1d7075710",
+    "session": "phone-target",
+    "text": "hello"
+  },
+  "tag": "repeat"
+}

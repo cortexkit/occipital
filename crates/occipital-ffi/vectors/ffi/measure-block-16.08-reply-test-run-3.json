@@ -1,0 +1,11 @@
+{
+  "entry": "occ_measure_block",
+  "request": {
+    "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+    "metrics": "fixed",
+    "path_json": "[3]",
+    "tree_json": "{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"The test run finished with one failure. \"},{\"c\":\"Badge\",\"p\":{\"tone\":\"danger\"},\"k\":[{\"t\":\"1 failed\"}]},{\"t\":\" \"},{\"c\":\"Badge\",\"p\":{\"tone\":\"success\"},\"k\":[{\"t\":\"17 passed\"}]}]},{\"c\":\"Callout\",\"p\":{\"tone\":\"warning\",\"title\":\"testPaging failed\"},\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"The second page came back empty after its cursor expired. The fix is in \"},{\"m\":\"code\",\"text\":\"PageLoader.swift\",\"k\":[]},{\"t\":\": the cursor is now refreshed before the request.\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"How long each suite took:\"}]},{\"c\":\"Chart\",\"p\":{\"kind\":\"bar\",\"data\":{\"snapshot\":{\"record_id\":\"7\",\"state\":\"resolved\",\"value\":[{\"record\":{\"suite\":\"PageLoaderTests\",\"seconds\":{\"number\":\"1.5\"}}},{\"record\":{\"suite\":\"CacheTests\",\"seconds\":{\"number\":\"0.25\"}}}]}},\"x\":\"suite\",\"y\":\"seconds\",\"aspect\":\"16:9\"},\"k\":[]}]}"
+  },
+  "status": 0,
+  "response": "{\"height\":{\"known\":\"180\"},\"key\":{\"instance_epoch\":0,\"revision\":0,\"state_hash\":\"\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":19,\"reservation\":\"deferred\",\"boxes\":[{\"path\":\"/0\",\"height\":\"180\",\"width\":\"320\",\"state\":\"ready\"}],\"row_frame\":null}"
+}

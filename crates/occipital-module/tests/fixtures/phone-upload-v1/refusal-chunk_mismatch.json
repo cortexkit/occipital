@@ -1,0 +1,16 @@
+{
+  "op": "upload.chunk",
+  "refusal": {
+    "code": "chunk_mismatch",
+    "detail": {
+      "committed": 20
+    },
+    "message": "the piece at 0 differs from the bytes already held"
+  },
+  "request": {
+    "offset": 0,
+    "payload_hex": "50484f4e45",
+    "upload_id": "00000000000a11ce0000000000000004"
+  },
+  "tag": "chunk_mismatch"
+}

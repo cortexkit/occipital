@@ -1,0 +1,75 @@
+{
+  "bash_lines": {
+    "kind": "paged",
+    "arguments": {"type": "object"},
+    "page": {
+      "type": "object",
+      "properties": {
+        "items": {"type": "array", "items": {"type": "string"}},
+        "next": {"type": "string", "nullable": true},
+        "total": {"type": "number"}
+      },
+      "required": ["items", "next"]
+    }
+  },
+  "bash_output": {
+    "kind": "query",
+    "arguments": {
+      "type": "object",
+      "properties": {"page": {"type": "number"}},
+      "required": ["page"]
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "lines": {"type": "array", "items": {"type": "string"}},
+        "page": {"type": "number"},
+        "pages": {"type": "number"}
+      },
+      "required": ["lines", "page", "pages"]
+    }
+  },
+  "bash_status": {
+    "kind": "query",
+    "arguments": {"type": "object"},
+    "result": {
+      "type": "object",
+      "properties": {
+        "running": {"type": "boolean", "nullable": true},
+        "exitCode": {"type": "number", "nullable": true}
+      },
+      "required": ["running", "exitCode"]
+    }
+  },
+  "bash_watch": {
+    "kind": "watch",
+    "arguments": {"type": "object"},
+    "item": {"type": "string"},
+    "resume": true,
+    "replay": false
+  },
+  "work_get": {
+    "kind": "query",
+    "arguments": {"type": "object"},
+    "result": {
+      "type": "object",
+      "properties": {
+        "state": {"type": "string", "nullable": true},
+        "model": {"type": "string", "nullable": true},
+        "variant": {"type": "string", "nullable": true},
+        "tokens": {
+          "type": "object",
+          "properties": {
+            "input": {"type": "number"},
+            "output": {"type": "number"},
+            "cacheRead": {"type": "number"},
+            "cacheWrite": {"type": "number"}
+          },
+          "required": ["input", "output", "cacheRead", "cacheWrite"]
+        },
+        "lastLines": {"type": "array", "items": {"type": "string"}}
+      },
+      "required": ["state", "model", "variant", "tokens", "lastLines"]
+    }
+  }
+}

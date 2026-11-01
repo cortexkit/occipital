@@ -1,0 +1,30 @@
+[package]
+name = "occipital-ffi"
+version = "0.1.0"
+edition = "2021"
+description = "The C ABI that embeds occipital-lang in apps as a static library"
+publish = false
+
+[lib]
+# `staticlib` is the archive apps link. `rlib` lets this crate's integration
+# tests and other Rust code call the same entry points.
+crate-type = ["staticlib", "rlib"]
+
+# occipital-lang's `traces` feature is deliberately not enabled: the golden
+# traces and their fixtures must stay out of the shipped archive.
+[dependencies]
+occipital-lang = { package = "cortexkit-occipital-lang", path = "../occipital-lang" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+# Compiles the test-only entry points (`occ_test_force_panic` and
+# `occ_test_decode_layout`) into the library so a host can exercise the panic
+# boundary and argument decoding. Off by default, so the shipped archive never
+# carries them.
+test-hooks = []
+
+[dev-dependencies]
+# SHA-256 for the SHA256SUMS of the FFI round-trip vectors. The workspace
+# already locks it through occipital-lang.
+hmac-sha256 = { version = "1", default-features = false }

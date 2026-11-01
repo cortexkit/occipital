@@ -1,0 +1,11 @@
+{
+  "op": "upload.status",
+  "refusal": {
+    "code": "upload_not_yours",
+    "message": "the upload was opened by another device"
+  },
+  "request": {
+    "upload_id": "00000000000a11ce0000000000000004"
+  },
+  "tag": "upload_not_yours"
+}

@@ -1,0 +1,10 @@
+{
+  "parse": "subconscious 7a6be09113a0b861e5ff23fac11e8fddda16fb5a, scripts/fleet/place-module.sh: lines 376-377 run the binary with only --manifest, stdin closed and a throwaway XDG home; lines 379-431 parse stdout as one JSON object with unique keys and read cli_faces; lines 895-906 read provenance.build_git_sha or provenance.build_git_sha_absence_reason into one line",
+  "face_probe_result": "absent",
+  "provenance_line": {
+    "clean": "stamped {build_git_sha}",
+    "dirty": "unstamped declined_dirty",
+    "no_git_dir": "unstamped no_git_dir",
+    "never_derived": "unstamped never_derived"
+  }
+}

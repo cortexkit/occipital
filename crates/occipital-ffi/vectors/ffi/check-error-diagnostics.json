@@ -1,0 +1,9 @@
+{
+  "entry": "occ_program_check",
+  "request": {
+    "ctx_json": "{\"context\":{\"execution_dialect\":\"1.0\",\"handles\":[],\"profile\":\"show_ui\",\"references\":{},\"registry\":{},\"show_ui\":{\"data_columns\":{},\"data_format\":null,\"summary\":\"\",\"title\":\"\"},\"tool\":null}}",
+    "src": "PENhcmRIZWFkZXIgdGl0bGU9e21pc3NpbmdOYW1lfSAvPg=="
+  },
+  "status": 0,
+  "response": "{\"ok\":false,\"language\":\"1.0\",\"executionDialect\":\"1.0\",\"approvalChecked\":false,\"requires\":\"1.0\",\"diagnostics\":[{\"code\":\"E_UNKNOWN_NAME\",\"severity\":\"error\",\"phase\":\"check\",\"span\":{\"line\":1,\"column\":20,\"endLine\":1,\"endColumn\":31},\"subject\":\"missingName\",\"message\":\"A name is not declared or available in this scope.\"}],\"omitted\":0,\"trial\":{\"fuel\":0,\"nodes\":0,\"outcome\":\"not_run\"}}"
+}

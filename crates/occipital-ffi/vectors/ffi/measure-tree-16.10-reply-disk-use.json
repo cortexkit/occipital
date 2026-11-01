@@ -1,0 +1,10 @@
+{
+  "entry": "occ_measure_tree",
+  "request": {
+    "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+    "metrics": "fixed",
+    "tree_json": "{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{\"tone\":\"muted\"},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{\"data\":{\"snapshot\":{\"record_id\":\"22\",\"state\":\"resolved\",\"value\":[{\"record\":{\"path\":\"~/Library/Caches\",\"bytes\":{\"number\":\"5368709120\"}}},{\"record\":{\"path\":\"~/Work\",\"bytes\":{\"number\":\"2147483648\"}}},{\"record\":{\"path\":\"~/Downloads\",\"bytes\":{\"number\":\"1073741824\"}}}]}},\"columns\":[\"path\",\"bytes\"],\"displayRows\":{\"number\":\"6\"}},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"success\"},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"danger\"},\"k\":[{\"t\":\"No\"}]}]}]}]}]}"
+  },
+  "status": 0,
+  "response": "{\"height\":\"prose_deferred\",\"key\":{\"instance_epoch\":0,\"revision\":0,\"state_hash\":\"\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":21,\"reservation\":\"deferred\",\"boxes\":[],\"row_frame\":null}"
+}

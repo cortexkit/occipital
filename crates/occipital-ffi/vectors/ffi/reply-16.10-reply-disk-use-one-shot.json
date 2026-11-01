@@ -1,0 +1,47 @@
+{
+  "entry": "occ_reply_new",
+  "request": {
+    "app": 1,
+    "chat": 0,
+    "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+    "stamp_json": "{\"dialect\":\"1.0\"}"
+  },
+  "status": 0,
+  "response": [
+    {
+      "entry": "occ_reply_finish",
+      "request": {
+        "records_json": "{\"handles\":[],\"references\":{\"22\":{\"bytes\":20,\"call_key\":\"call\",\"reason\":null,\"state\":\"resolved\",\"tool\":\"bash\"}}}",
+        "tail": "WW91ciB0aHJlZSBsYXJnZXN0IGZvbGRlcnMgYXJlIGJlbG93LiA8U3R5bGVkIHRvbmU9Im11dGVkIj5TaXplcyBjb21lIGZyb20gYSBzY2FuIHR3byBtaW51dGVzIGFnby48L1N0eWxlZD4KCjxUYWJsZSBkYXRhPXtQYXJzZSgkJHRjKDIyKSwgImpzb24iLCB7Y29sdW1uczoge3BhdGg6ICJ0ZXh0IiwgYnl0ZXM6ICJudW1iZXIifX0pfSBjb2x1bW5zPXtbInBhdGgiLCAiYnl0ZXMiXX0gZGlzcGxheVJvd3M9ezZ9IC8+Cgp8IEZvbGRlciB8IFNhZmUgdG8gY2xlYXI/IHwKfC0tLXwtLS18CnwgYH4vTGlicmFyeS9DYWNoZXNgIHwgPEJhZGdlIHRvbmU9InN1Y2Nlc3MiPlllczwvQmFkZ2U+IHwKfCBgfi9Xb3JrYCB8IDxCYWRnZSB0b25lPSJkYW5nZXIiPk5vPC9CYWRnZT4gfA=="
+      },
+      "status": 0,
+      "response": "{\"id\":1,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{\"tone\":\"muted\"},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{\"data\":{\"snapshot\":{\"record_id\":\"22\",\"state\":\"loading\"}},\"columns\":[\"path\",\"bytes\"],\"displayRows\":{\"number\":\"6\"}},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"success\"},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"danger\"},\"k\":[{\"t\":\"No\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n\\n[table: 0 rows]\\n\\n| Folder | Safe to clear? |\\n|---|---|\\n| `~/Library/Caches` | [Yes] |\\n| `~/Work` | [No] |\"}"
+    },
+    {
+      "entry": "occ_reply_measure",
+      "request": {
+        "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+        "metrics": "fixed"
+      },
+      "status": 0,
+      "response": "{\"height\":\"prose_deferred\",\"key\":{\"instance_epoch\":0,\"revision\":1,\"state_hash\":\"6b5c47e2d4536736643db9da072d0fa1e4c080e690689df2224daee9a804fcb5\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":21,\"reservation\":\"deferred\",\"boxes\":[],\"row_frame\":null}"
+    },
+    {
+      "entry": "occ_reply_event",
+      "request": {
+        "event_json": "{\"kind\":\"snapshot\",\"reference\":22,\"result\":{\"ok\":\"W3sicGF0aCI6In4vTGlicmFyeS9DYWNoZXMiLCJieXRlcyI6NTM2ODcwOTEyMH0seyJwYXRoIjoifi9Xb3JrIiwiYnl0ZXMiOjIxNDc0ODM2NDh9LHsicGF0aCI6In4vRG93bmxvYWRzIiwiYnl0ZXMiOjEwNzM3NDE4MjR9XQ==\"}}"
+      },
+      "status": 0,
+      "response": "{\"id\":2,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{\"tone\":\"muted\"},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{\"data\":{\"snapshot\":{\"record_id\":\"22\",\"state\":\"resolved\",\"value\":[{\"record\":{\"path\":\"~/Library/Caches\",\"bytes\":{\"number\":\"5368709120\"}}},{\"record\":{\"path\":\"~/Work\",\"bytes\":{\"number\":\"2147483648\"}}},{\"record\":{\"path\":\"~/Downloads\",\"bytes\":{\"number\":\"1073741824\"}}}]}},\"columns\":[\"path\",\"bytes\"],\"displayRows\":{\"number\":\"6\"}},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"success\"},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"danger\"},\"k\":[{\"t\":\"No\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n\\n[table: 3 rows]\\n\\n| Folder | Safe to clear? |\\n|---|---|\\n| `~/Library/Caches` | [Yes] |\\n| `~/Work` | [No] |\"}"
+    },
+    {
+      "entry": "occ_reply_measure",
+      "request": {
+        "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+        "metrics": "fixed"
+      },
+      "status": 0,
+      "response": "{\"height\":\"prose_deferred\",\"key\":{\"instance_epoch\":0,\"revision\":2,\"state_hash\":\"20b24466f5eb3e90247d6c773b21f5bdbe4ad2e1179cd63322351d376deb76f4\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":21,\"reservation\":\"deferred\",\"boxes\":[],\"row_frame\":null}"
+    }
+  ]
+}

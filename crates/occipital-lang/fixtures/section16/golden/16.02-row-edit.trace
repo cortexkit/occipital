@@ -1,0 +1,44 @@
+example=16.02-row-edit case=1-running profile=tool_row
+check={"ok":true,"language":"1.0","executionDialect":"1.0","approvalChecked":false,"requires":"1.0","diagnostics":[],"omitted":0,"trial":{"fuel":0,"nodes":0,"outcome":"not_run"}}
+load: evaluations=1 fuel=20 rejected=[] abort=None
+  Arm(FirstAnswer(42), Decimal(5))
+  Stop(FirstAnswer(42))
+  candidate revision=1 loading=false controls=0 bindings=[]
+tree-definition=62e9040f7aa14dbb156832a793766a2702ebae5ed5c921ca3726e7b1c548dc80 Tree { blocks: [Markdown { kind: Paragraph, children: [Component { name: DisplayText("InlineCode"), props: [(DisplayText("code"), String(DisplayText("src/main.rs")))], children: [] }, Text(DisplayText(" ")), Text(DisplayText("Editing…"))] }] }
+tree-sha256=62e9040f7aa14dbb156832a793766a2702ebae5ed5c921ca3726e7b1c548dc80
+  | <InlineCode code="src/main.rs" /> Editing…
+load/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=1 fallback=false
+example=16.02-row-edit case=2-one-place profile=tool_row
+check={"ok":true,"language":"1.0","executionDialect":"1.0","approvalChecked":false,"requires":"1.0","diagnostics":[],"omitted":0,"trial":{"fuel":0,"nodes":0,"outcome":"not_run"}}
+load: evaluations=1 fuel=91 rejected=[] abort=None
+  Arm(FirstAnswer(42), Decimal(5))
+  Stop(FirstAnswer(42))
+  candidate revision=1 loading=false controls=0 bindings=[]
+tree-definition=eecf75f5deff8fccd513baba5ffdf8d78e01cb88bf7689d39f896c93d2ca890a Tree { blocks: [Markdown { kind: Paragraph, children: [Component { name: DisplayText("InlineCode"), props: [(DisplayText("code"), String(DisplayText("src/main.rs")))], children: [] }, Text(DisplayText(" ")), Text(DisplayText("+1,234 −5 · 1 changed place"))] }] }
+tree-sha256=eecf75f5deff8fccd513baba5ffdf8d78e01cb88bf7689d39f896c93d2ca890a
+  | <InlineCode code="src/main.rs" /> +1,234 −5 · 1 changed place
+load/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=1 fallback=false
+example=16.02-row-edit case=3-many-places profile=tool_row
+check={"ok":true,"language":"1.0","executionDialect":"1.0","approvalChecked":false,"requires":"1.0","diagnostics":[],"omitted":0,"trial":{"fuel":0,"nodes":0,"outcome":"not_run"}}
+load: evaluations=1 fuel=104 rejected=[] abort=None
+  Arm(FirstAnswer(42), Decimal(5))
+  Stop(FirstAnswer(42))
+  candidate revision=1 loading=false controls=0 bindings=[]
+tree-definition=4cc18d21384ff4d9de33cc3c8deb6919c1f215c69d3dae8af08b5068823424ef Tree { blocks: [Markdown { kind: Paragraph, children: [Component { name: DisplayText("InlineCode"), props: [(DisplayText("code"), String(DisplayText("src/main.rs")))], children: [] }, Text(DisplayText(" ")), Text(DisplayText("+3 −0 · 4 changed places"))] }] }
+tree-sha256=4cc18d21384ff4d9de33cc3c8deb6919c1f215c69d3dae8af08b5068823424ef
+  | <InlineCode code="src/main.rs" /> +3 −0 · 4 changed places
+load/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=1 fallback=false
+example=16.02-row-edit case=4-counts-unavailable profile=tool_row
+check={"ok":true,"language":"1.0","executionDialect":"1.0","approvalChecked":false,"requires":"1.0","diagnostics":[],"omitted":0,"trial":{"fuel":0,"nodes":0,"outcome":"not_run"}}
+load: evaluations=1 fuel=51 rejected=[] abort=None
+  Arm(FirstAnswer(42), Decimal(5))
+  Stop(FirstAnswer(42))
+  candidate revision=1 loading=false controls=0 bindings=[]
+tree-definition=275e8d34b39ae516bc1d34aad3f549c880146310bbf56265c14cc0656a0de685 Tree { blocks: [Markdown { kind: Paragraph, children: [Component { name: DisplayText("InlineCode"), props: [(DisplayText("code"), String(DisplayText("src/main.rs")))], children: [] }, Text(DisplayText(" ")), Text(DisplayText("Counts unavailable · Changed places unavailable"))] }] }
+tree-sha256=275e8d34b39ae516bc1d34aad3f549c880146310bbf56265c14cc0656a0de685
+  | <InlineCode code="src/main.rs" /> Counts unavailable · Changed places unavailable
+load/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=1 fallback=false

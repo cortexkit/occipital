@@ -1,0 +1,78 @@
+{
+ "bash_status": {
+  "kind": "query",
+  "arguments": {
+   "type": "object"
+  },
+  "result": {
+   "type": "object",
+   "properties": {
+    "running": {
+     "type": "boolean"
+    },
+    "exitCode": {
+     "type": "number",
+     "nullable": true
+    }
+   },
+   "required": [
+    "running",
+    "exitCode"
+   ]
+  }
+ },
+ "bash_output": {
+  "kind": "paged",
+  "arguments": {
+   "type": "object"
+  },
+  "page": {
+   "type": "object",
+   "properties": {
+    "items": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "stream": {
+        "type": "string"
+       },
+       "text": {
+        "type": "string"
+       },
+       "bytes": {
+        "type": "number"
+       },
+       "continued": {
+        "type": "boolean"
+       },
+       "firstAvailableOffset": {
+        "type": "number",
+        "nullable": true
+       },
+       "prefixDropped": {
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "stream",
+       "text",
+       "bytes",
+       "continued",
+       "firstAvailableOffset",
+       "prefixDropped"
+      ]
+     }
+    },
+    "next": {
+     "type": "string",
+     "nullable": true
+    }
+   },
+   "required": [
+    "items",
+    "next"
+   ]
+  }
+ }
+}

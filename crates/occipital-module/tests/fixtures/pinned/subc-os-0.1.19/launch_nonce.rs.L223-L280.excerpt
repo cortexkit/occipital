@@ -1,0 +1,58 @@
+/// This process's launch nonce and where it came from.
+///
+/// The first call decides, and every later call returns the same answer
+/// without touching the descriptor or the environment again. So every reader
+/// in a process must come through here: after the first read closes the
+/// descriptor, its number is the next one the process hands out, and a second
+/// independent reader would read and close some unrelated socket or file.
+///
+/// - When [`LAUNCH_NONCE_FD_ENV`] is set (macOS and Linux), the descriptor it
+///   names is taken only if it is a pipe with the named inode and holds
+///   bytes; it is then read to end of file and closed. Anything else is a
+///   [`LaunchNonceError`] that leaves the descriptor as it was and never
+///   falls back to the environment.
+/// - On Windows, when [`LAUNCH_NONCE_PIPE_ENV`] is set, the named pipe is opened
+///   read-only at identification impersonation level and read to EOF with a
+///   bounded deadline. Without explicit fallback permission, errors are cached
+///   and never fall back. When [`LAUNCH_NONCE_PIPE_FALLBACK_ENV`] is `env` and
+///   a nonempty environment copy exists, failed or incomplete delivery instead
+///   caches that copy and its `env` source. A matching complete read stays `pipe`.
+/// - Otherwise the value of [`LAUNCH_NONCE_ENV`] is used.
+/// - `Ok(None)` means no handoff is named (or the environment copy is empty): the
+///   process was not started by the daemon.
+///
+/// It never changes the environment. Removing either variable would break
+/// any other reader in the process still on the environment copy, and
+/// changing the environment of a multi-threaded process can race readers in
+/// libraries whose environment access cannot be synchronized by this accessor.
+///
+/// Call it before the process spawns anything. Until the first read the
+/// descriptor is inheritable (it has to be, to survive the daemon's exec),
+/// so a child spawned earlier could inherit and consume the module's secret.
+pub fn launch_nonce() -> Result<Option<LaunchNonce>, LaunchNonceError> {
+    PROCESS_NONCE.get(|key| std::env::var_os(key))
+}
+
+fn read_launch_nonce(
+    mut lookup: impl FnMut(&str) -> Option<OsString>,
+    descriptor_reads: &AtomicUsize,
+) -> Cached {
+    #[cfg(windows)]
+    if let Some(value) = lookup(LAUNCH_NONCE_PIPE_ENV) {
+        let fallback = if lookup(LAUNCH_NONCE_PIPE_FALLBACK_ENV).as_deref()
+            == Some(std::ffi::OsStr::new("env"))
+        {
+            environment_nonce(lookup(LAUNCH_NONCE_ENV))
+        } else {
+            None
+        };
+        return pipe_or_permitted_env(windows::read_pipe(&value), fallback);
+    }
+    #[cfg(unix)]
+    if let Some(value) = lookup(LAUNCH_NONCE_FD_ENV) {
+        return unix::read_descriptor(&value, descriptor_reads);
+    }
+    #[cfg(not(unix))]
+    let _ = descriptor_reads;
+    Ok(environment_nonce(lookup(LAUNCH_NONCE_ENV)))
+}

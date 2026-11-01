@@ -1,0 +1,11 @@
+{
+  "op": "upload.finish",
+  "reply": {
+    "path": "/path/to/project/.cortexkit/uploads/2026-01-01/clip.mov",
+    "size": 20
+  },
+  "request": {
+    "upload_id": "00000000000a11ce0000000000000001"
+  },
+  "tag": "finish"
+}

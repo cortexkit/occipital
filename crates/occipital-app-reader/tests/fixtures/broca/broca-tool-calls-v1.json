@@ -1,0 +1,181 @@
+{
+  "$comment": "Broca arm of session.transcript_page, tool calls. brocaSessionRead is a Broca management-surface session.read reply in the shape of broca-session-read-tool-blocks-live.json (synthetic content); reply is the exact page the core serves for it, before the version/diagnostics/attachment fields the dispatcher adds. Pinned rules: (1) blockSummaries holds one tool name per call and nothing else. (2) each call is one {type:'tool', tool, arguments, argumentsTruncated, outputBytes?, isError?} part plus one toolCalls entry {name, arguments, argumentsTruncated, outputBytes?}, the OpenCode arm's shape. (3) results pair with calls by tool_call_id (here they arrive in reverse order) and contribute only outputBytes (UTF-8 bytes of the result body; a non-string body counts as compact JSON) and isError (present only when true). (4) result bodies never appear anywhere in the reply; the tool-role row that held them keeps its ordinal with empty parts. (5) arguments are compact JSON text cut at 2048 UTF-8 bytes on a character boundary, argumentsTruncated always present. Pinned by manager_runtime::runner_transcript_page_tests::broca_tool_call_page_vector_matches_opencode_shape_without_result_bodies.",
+  "resultBodiesThatMustNotAppear": [
+    "RESULT-BODY-read: # Prefrontal\nCore daemon and modules.\n",
+    "RESULT-BODY-bash: ls: cannot access 'café': No such file or directory\n"
+  ],
+  "brocaSessionRead": {
+    "messages": [
+      {
+        "ordinal": 20,
+        "mid": "m20",
+        "message": {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "check the tree"
+            }
+          ]
+        }
+      },
+      {
+        "ordinal": 21,
+        "mid": "m21",
+        "message": {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "Looking."
+            },
+            {
+              "type": "tool_call",
+              "tool_call_id": "call_read_1",
+              "tool_name": "read",
+              "input": {
+                "filePath": "README.md"
+              }
+            },
+            {
+              "type": "tool_call",
+              "tool_call_id": "call_bash_2",
+              "tool_name": "bash",
+              "input": {
+                "command": "ls -la café"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "ordinal": 22,
+        "mid": "m22",
+        "message": {
+          "role": "tool",
+          "content": [
+            {
+              "type": "tool_result",
+              "tool_call_id": "call_bash_2",
+              "output": "RESULT-BODY-bash: ls: cannot access 'café': No such file or directory\n",
+              "is_error": true
+            },
+            {
+              "type": "tool_result",
+              "tool_call_id": "call_read_1",
+              "output": "RESULT-BODY-read: # Prefrontal\nCore daemon and modules.\n",
+              "is_error": false
+            }
+          ]
+        }
+      },
+      {
+        "ordinal": 23,
+        "mid": "m23",
+        "message": {
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "Done."
+            }
+          ]
+        }
+      }
+    ],
+    "head": {
+      "wal_seq": 40,
+      "sub_index": 0
+    },
+    "lineage_state": {
+      "state": "completed"
+    }
+  },
+  "reply": {
+    "messages": [
+      {
+        "ordinal": 20,
+        "role": "user",
+        "text": "check the tree",
+        "blockSummaries": [],
+        "parts": [
+          {
+            "type": "text",
+            "text": "check the tree"
+          }
+        ],
+        "messageId": "m20"
+      },
+      {
+        "ordinal": 21,
+        "role": "assistant",
+        "text": "Looking.",
+        "blockSummaries": [
+          "read",
+          "bash"
+        ],
+        "parts": [
+          {
+            "type": "text",
+            "text": "Looking."
+          },
+          {
+            "type": "tool",
+            "tool": "read",
+            "arguments": "{\"filePath\":\"README.md\"}",
+            "argumentsTruncated": false,
+            "outputBytes": 56
+          },
+          {
+            "type": "tool",
+            "tool": "bash",
+            "arguments": "{\"command\":\"ls -la café\"}",
+            "argumentsTruncated": false,
+            "outputBytes": 71,
+            "isError": true
+          }
+        ],
+        "toolCalls": [
+          {
+            "name": "read",
+            "arguments": "{\"filePath\":\"README.md\"}",
+            "argumentsTruncated": false,
+            "outputBytes": 56
+          },
+          {
+            "name": "bash",
+            "arguments": "{\"command\":\"ls -la café\"}",
+            "argumentsTruncated": false,
+            "outputBytes": 71
+          }
+        ],
+        "messageId": "m21"
+      },
+      {
+        "ordinal": 22,
+        "role": "tool",
+        "text": "",
+        "blockSummaries": [],
+        "parts": [],
+        "messageId": "m22"
+      },
+      {
+        "ordinal": 23,
+        "role": "assistant",
+        "text": "Done.",
+        "blockSummaries": [],
+        "parts": [
+          {
+            "type": "text",
+            "text": "Done."
+          }
+        ],
+        "messageId": "m23"
+      }
+    ],
+    "nextBeforeOrdinal": null,
+    "lastRun": {
+      "state": "completed"
+    }
+  }
+}

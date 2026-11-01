@@ -1,0 +1,12 @@
+[package]
+name = "occipital-files"
+version = "0.1.0"
+edition = "2021"
+description = "A no-replace move, a file's volume identity and the space free to the caller, on Windows, Linux and macOS"
+publish = false
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+tempfile = "3"

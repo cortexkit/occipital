@@ -1,0 +1,67 @@
+example=16.04-detail-work case=1-page profile=tool_page
+check={"ok":true,"language":"1.0","executionDialect":"1.0","approvalChecked":false,"requires":"1.0","diagnostics":[],"omitted":0,"trial":{"fuel":0,"nodes":0,"outcome":"not_run"}}
+load: evaluations=1 fuel=233 rejected=[] abort=None
+  Arm(FirstAnswer(42), Decimal(5))
+  issue work work_get {} epoch=42:1 refresh=Some("5")
+  Arm(Timeout(Epoch { instance: 42, request: 1 }), Decimal(30))
+  candidate revision=1 loading=true controls=0 bindings=[]
+tree-definition=cb98d421b95cf64ba672c7a98d4083b6c3db4f4cc9264ed98fe3940026d95e65 Tree { blocks: [Component { name: DisplayText("LoadingRoot"), props: [], children: [] }] }
+tree-sha256=cb98d421b95cf64ba672c7a98d4083b6c3db4f4cc9264ed98fe3940026d95e65
+  | <LoadingRoot />
+load/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=1 fallback=false
+answer: evaluations=1 fuel=230 rejected=[] abort=None
+  Stop(Timeout(Epoch { instance: 42, request: 1 }))
+  Arm(Refresh(Identity { authority: Authority { computer: "computer", session: "session", scope_epoch: "scope-1", provider: "provider", entity: "validated-command", serving_computer: "computer", verified_holder: "computer" }, operation: "work_get", version: ReadVersion { operation: "work_get-v1", schema: "work_get-schema-1" }, kind: "query", arguments: "{}", default_digest: [99, 84, 219, 21, 67, 219, 254, 38, 240, 134, 163, 42, 171, 189, 23, 31, 244, 59, 187, 228, 183, 163, 30, 183, 10, 19, 19, 208, 105, 136, 175, 237], refresh: Some(Decimal(5)), page_size: None }, Epoch { instance: 42, request: 1 }), Decimal(5))
+  Stop(FirstAnswer(42))
+  candidate revision=2 loading=false controls=1 bindings=[]
+tree-definition=9f416c34a8d8f329693f16cef7bc5d7c24c1a41fb7660ae0a42bb7544d2617ea Tree { blocks: [Component { name: DisplayText("CardHeader"), props: [(DisplayText("title"), String(DisplayText("Fix the paging cursor")))], children: [] }, Markdown { kind: Paragraph, children: [Component { name: DisplayText("Badge"), props: [(DisplayText("text"), String(DisplayText("running"))), (DisplayText("tone"), String(DisplayText("info")))], children: [] }] }, Markdown { kind: Paragraph, children: [Markdown { kind: Strong, children: [Text(DisplayText("Model:"))] }, Text(DisplayText(" ")), Text(DisplayText("opus")), Text(DisplayText(" · ")), Markdown { kind: Strong, children: [Text(DisplayText("Variant:"))] }, Text(DisplayText(" ")), Text(DisplayText("high"))] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Token use"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Token type"))), (DisplayText("data"), List([String(DisplayText("Input")), String(DisplayText("Output")), String(DisplayText("Cache read")), String(DisplayText("Cache write"))]))], children: [] }), Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Tokens"))), (DisplayText("type"), String(DisplayText("number"))), (DisplayText("data"), List([Number(Decimal(100)), Number(Decimal(50)), Number(Decimal(300)), Number(Decimal(100))]))], children: [] })]))], children: [] }, Component { name: DisplayText("Progress"), props: [(DisplayText("value"), Number(Decimal(60))), (DisplayText("label"), String(DisplayText("Cache hit ratio 60.0%")))], children: [] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Latest transcript lines"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Transcript"))), (DisplayText("data"), List([String(DisplayText("reading the cursor")), String(DisplayText("writing the fix"))]))], children: [] })]))], children: [] }, Markdown { kind: Paragraph, children: [Text(DisplayText("Refreshes every 5 seconds."))] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("work"))] }]))], children: [] }] }
+tree-sha256=9f416c34a8d8f329693f16cef7bc5d7c24c1a41fb7660ae0a42bb7544d2617ea
+  | <CardHeader title="Fix the paging cursor" />
+  | <Badge text="running" tone="info" />
+  | **Model:** opus · **Variant:** high
+  | ### Token use
+  | <Table columns=[<Col label="Token type" data=["Input", "Output", "Cache read", "Cache write"] />, <Col label="Tokens" type="number" data=[100, 50, 300, 100] />] />
+  | <Progress value=60 label="Cache hit ratio 60.0%" />
+  | ### Latest transcript lines
+  | <Table columns=[<Col label="Transcript" data=["reading the cursor", "writing the fix"] />] />
+  | Refreshes every 5 seconds.
+  | <Button label="Refresh" appearance="secondary" action=action(Refresh) />
+answer/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=2 fallback=false
+refresh: evaluations=1 fuel=230 rejected=[] abort=None
+  Stop(Refresh(Identity { authority: Authority { computer: "computer", session: "session", scope_epoch: "scope-1", provider: "provider", entity: "validated-command", serving_computer: "computer", verified_holder: "computer" }, operation: "work_get", version: ReadVersion { operation: "work_get-v1", schema: "work_get-schema-1" }, kind: "query", arguments: "{}", default_digest: [99, 84, 219, 21, 67, 219, 254, 38, 240, 134, 163, 42, 171, 189, 23, 31, 244, 59, 187, 228, 183, 163, 30, 183, 10, 19, 19, 208, 105, 136, 175, 237], refresh: Some(Decimal(5)), page_size: None }, Epoch { instance: 42, request: 1 }))
+  issue work work_get {} epoch=42:2 refresh=Some("5")
+  Arm(Timeout(Epoch { instance: 42, request: 2 }), Decimal(30))
+  candidate revision=3 loading=false controls=1 bindings=[]
+tree-sha256=9f416c34a8d8f329693f16cef7bc5d7c24c1a41fb7660ae0a42bb7544d2617ea
+  | <CardHeader title="Fix the paging cursor" />
+  | <Badge text="running" tone="info" />
+  | **Model:** opus · **Variant:** high
+  | ### Token use
+  | <Table columns=[<Col label="Token type" data=["Input", "Output", "Cache read", "Cache write"] />, <Col label="Tokens" type="number" data=[100, 50, 300, 100] />] />
+  | <Progress value=60 label="Cache hit ratio 60.0%" />
+  | ### Latest transcript lines
+  | <Table columns=[<Col label="Transcript" data=["reading the cursor", "writing the fix"] />] />
+  | Refreshes every 5 seconds.
+  | <Button label="Refresh" appearance="secondary" action=action(Refresh) />
+refresh/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=3 fallback=false
+error: evaluations=1 fuel=227 rejected=[] abort=None
+  Stop(Timeout(Epoch { instance: 42, request: 2 }))
+  Arm(Refresh(Identity { authority: Authority { computer: "computer", session: "session", scope_epoch: "scope-1", provider: "provider", entity: "validated-command", serving_computer: "computer", verified_holder: "computer" }, operation: "work_get", version: ReadVersion { operation: "work_get-v1", schema: "work_get-schema-1" }, kind: "query", arguments: "{}", default_digest: [99, 84, 219, 21, 67, 219, 254, 38, 240, 134, 163, 42, 171, 189, 23, 31, 244, 59, 187, 228, 183, 163, 30, 183, 10, 19, 19, 208, 105, 136, 175, 237], refresh: Some(Decimal(5)), page_size: None }, Epoch { instance: 42, request: 2 }), Decimal(10))
+  candidate revision=4 loading=false controls=1 bindings=[]
+tree-definition=a87b0106934928a745ba3cbe832aa9a32a6b2628bc53d6893d4ffd84c4600e55 Tree { blocks: [Component { name: DisplayText("CardHeader"), props: [(DisplayText("title"), String(DisplayText("Fix the paging cursor")))], children: [] }, Markdown { kind: Paragraph, children: [Component { name: DisplayText("Badge"), props: [(DisplayText("text"), String(DisplayText("Unavailable"))), (DisplayText("tone"), String(DisplayText("info")))], children: [] }] }, Markdown { kind: Paragraph, children: [Markdown { kind: Strong, children: [Text(DisplayText("Model:"))] }, Text(DisplayText(" ")), Text(DisplayText("opus")), Text(DisplayText(" · ")), Markdown { kind: Strong, children: [Text(DisplayText("Variant:"))] }, Text(DisplayText(" ")), Text(DisplayText("high"))] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Token use"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Token type"))), (DisplayText("data"), List([String(DisplayText("Input")), String(DisplayText("Output")), String(DisplayText("Cache read")), String(DisplayText("Cache write"))]))], children: [] }), Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Tokens"))), (DisplayText("type"), String(DisplayText("number"))), (DisplayText("data"), List([Number(Decimal(100)), Number(Decimal(50)), Number(Decimal(300)), Number(Decimal(100))]))], children: [] })]))], children: [] }, Component { name: DisplayText("Progress"), props: [(DisplayText("value"), Number(Decimal(60))), (DisplayText("label"), String(DisplayText("Cache hit ratio 60.0%")))], children: [] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Latest transcript lines"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Transcript"))), (DisplayText("data"), List([String(DisplayText("reading the cursor")), String(DisplayText("writing the fix"))]))], children: [] })]))], children: [] }, Markdown { kind: Paragraph, children: [Text(DisplayText("Refreshes every 5 seconds."))] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Refresh"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: Refresh, arguments: [Site(DisplayText("work"))] }]))], children: [] }] }
+tree-sha256=a87b0106934928a745ba3cbe832aa9a32a6b2628bc53d6893d4ffd84c4600e55
+  | <CardHeader title="Fix the paging cursor" />
+  | <Badge text="Unavailable" tone="info" />
+  | **Model:** opus · **Variant:** high
+  | ### Token use
+  | <Table columns=[<Col label="Token type" data=["Input", "Output", "Cache read", "Cache write"] />, <Col label="Tokens" type="number" data=[100, 50, 300, 100] />] />
+  | <Progress value=60 label="Cache hit ratio 60.0%" />
+  | ### Latest transcript lines
+  | <Table columns=[<Col label="Transcript" data=["reading the cursor", "writing the fix"] />] />
+  | Refreshes every 5 seconds.
+  | <Button label="Refresh" appearance="secondary" action=action(Refresh) />
+error/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=4 fallback=false

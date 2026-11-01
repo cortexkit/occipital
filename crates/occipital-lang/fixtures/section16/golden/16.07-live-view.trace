@@ -1,0 +1,82 @@
+example=16.07-live-view case=1-page profile=tool_page
+check={"ok":true,"language":"1.0","executionDialect":"1.0","approvalChecked":false,"requires":"1.0","diagnostics":[],"omitted":0,"trial":{"fuel":0,"nodes":0,"outcome":"not_run"}}
+load: evaluations=1 fuel=86 rejected=[] abort=None
+  Arm(FirstAnswer(42), Decimal(5))
+  subscribe live bash_watch {} epoch=42:1 after=None
+  Credit { epoch: Epoch { instance: 42, request: 1 }, notices: 16, bytes: 524288 }
+  Arm(Timeout(Epoch { instance: 42, request: 1 }), Decimal(30))
+  page history bash_lines {} epoch=42:2 cursor=None limit=200
+  Arm(Timeout(Epoch { instance: 42, request: 2 }), Decimal(30))
+  candidate revision=1 loading=true controls=0 bindings=[]
+tree-definition=cb98d421b95cf64ba672c7a98d4083b6c3db4f4cc9264ed98fe3940026d95e65 Tree { blocks: [Component { name: DisplayText("LoadingRoot"), props: [], children: [] }] }
+tree-sha256=cb98d421b95cf64ba672c7a98d4083b6c3db4f4cc9264ed98fe3940026d95e65
+  | <LoadingRoot />
+load/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=1 fallback=false
+ack-and-first-page: evaluations=1 fuel=86 rejected=[] abort=None
+  Stop(Timeout(Epoch { instance: 42, request: 1 }))
+  Stop(Timeout(Epoch { instance: 42, request: 2 }))
+  Stop(FirstAnswer(42))
+  candidate revision=2 loading=false controls=1 bindings=[]
+tree-definition=77d460351a1f96d61a8336196fc649a70d71f9460b76316a184b36ce9416be29 Tree { blocks: [Markdown { kind: Heading(3), children: [Text(DisplayText("Live output"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Latest lines"))), (DisplayText("data"), List([]))], children: [] })]))], children: [] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Full output"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Line"))), (DisplayText("data"), List([String(DisplayText("line 1")), String(DisplayText("line 2"))]))], children: [] })]))], children: [] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Load more"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: LoadMore, arguments: [Site(DisplayText("history"))] }]))], children: [] }] }
+tree-sha256=77d460351a1f96d61a8336196fc649a70d71f9460b76316a184b36ce9416be29
+  | ### Live output
+  | <Table columns=[<Col label="Latest lines" data=[] />] />
+  | ### Full output
+  | <Table columns=[<Col label="Line" data=["line 1", "line 2"] />] />
+  | <Button label="Load more" appearance="secondary" action=action(LoadMore) />
+ack-and-first-page/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=2 fallback=false
+notices: evaluations=0 fuel=0 rejected=[] abort=None
+  Arm(WatchApply(Epoch { instance: 42, request: 1 }, 1), Decimal(0.25))
+apply: evaluations=1 fuel=114 rejected=[] abort=None
+  Credit { epoch: Epoch { instance: 42, request: 1 }, notices: 2, bytes: 140 }
+  candidate revision=3 loading=false controls=1 bindings=[]
+tree-definition=27d9d1c36c0ce6877970d770edb52f5de81bf8d266a95e764779d413985d96b0 Tree { blocks: [Markdown { kind: Heading(3), children: [Text(DisplayText("Live output"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Latest lines"))), (DisplayText("data"), List([String(DisplayText("out 1")), String(DisplayText("out 2")), String(DisplayText("out 5"))]))], children: [] })]))], children: [] }, Markdown { kind: Paragraph, children: [Text(DisplayText("2 earlier lines are not shown."))] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Full output"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Line"))), (DisplayText("data"), List([String(DisplayText("line 1")), String(DisplayText("line 2"))]))], children: [] })]))], children: [] }, Component { name: DisplayText("Button"), props: [(DisplayText("label"), String(DisplayText("Load more"))), (DisplayText("appearance"), String(DisplayText("secondary"))), (DisplayText("action"), Action([TreeStep { operation: LoadMore, arguments: [Site(DisplayText("history"))] }]))], children: [] }] }
+tree-sha256=27d9d1c36c0ce6877970d770edb52f5de81bf8d266a95e764779d413985d96b0
+  | ### Live output
+  | <Table columns=[<Col label="Latest lines" data=["out 1", "out 2", "out 5"] />] />
+  | 2 earlier lines are not shown.
+  | ### Full output
+  | <Table columns=[<Col label="Line" data=["line 1", "line 2"] />] />
+  | <Button label="Load more" appearance="secondary" action=action(LoadMore) />
+apply/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=3 fallback=false
+load-more: evaluations=1 fuel=114 rejected=[] abort=None
+  page history bash_lines {} epoch=42:3 cursor=Some("c2") limit=200
+  Arm(Timeout(Epoch { instance: 42, request: 3 }), Decimal(30))
+  candidate revision=4 loading=false controls=1 bindings=[]
+tree-sha256=27d9d1c36c0ce6877970d770edb52f5de81bf8d266a95e764779d413985d96b0
+  | ### Live output
+  | <Table columns=[<Col label="Latest lines" data=["out 1", "out 2", "out 5"] />] />
+  | 2 earlier lines are not shown.
+  | ### Full output
+  | <Table columns=[<Col label="Line" data=["line 1", "line 2"] />] />
+  | <Button label="Load more" appearance="secondary" action=action(LoadMore) />
+load-more/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=4 fallback=false
+last-page: evaluations=1 fuel=103 rejected=[] abort=None
+  Stop(Timeout(Epoch { instance: 42, request: 3 }))
+  candidate revision=5 loading=false controls=0 bindings=[]
+tree-definition=9b4e2bcd508d07ac8cd64bc6b742367f56f1a582943932579d2f762e3c771ef6 Tree { blocks: [Markdown { kind: Heading(3), children: [Text(DisplayText("Live output"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Latest lines"))), (DisplayText("data"), List([String(DisplayText("out 1")), String(DisplayText("out 2")), String(DisplayText("out 5"))]))], children: [] })]))], children: [] }, Markdown { kind: Paragraph, children: [Text(DisplayText("2 earlier lines are not shown."))] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Full output"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Line"))), (DisplayText("data"), List([String(DisplayText("line 1")), String(DisplayText("line 2")), String(DisplayText("line 3")), String(DisplayText("line 4")), String(DisplayText("line 5"))]))], children: [] })]))], children: [] }] }
+tree-sha256=9b4e2bcd508d07ac8cd64bc6b742367f56f1a582943932579d2f762e3c771ef6
+  | ### Live output
+  | <Table columns=[<Col label="Latest lines" data=["out 1", "out 2", "out 5"] />] />
+  | 2 earlier lines are not shown.
+  | ### Full output
+  | <Table columns=[<Col label="Line" data=["line 1", "line 2", "line 3", "line 4", "line 5"] />] />
+last-page/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=5 fallback=false
+end: evaluations=1 fuel=109 rejected=[] abort=None
+  Stop(Timeout(Epoch { instance: 42, request: 1 }))
+  candidate revision=6 loading=false controls=0 bindings=[]
+tree-definition=8c9d3aa7c55daa6b8310e5e0fa475825ca04e62718b102055e590d155ccb3f76 Tree { blocks: [Markdown { kind: Heading(3), children: [Text(DisplayText("Live output"))] }, Markdown { kind: Paragraph, children: [Text(DisplayText("The command has finished."))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Latest lines"))), (DisplayText("data"), List([String(DisplayText("out 1")), String(DisplayText("out 2")), String(DisplayText("out 5"))]))], children: [] })]))], children: [] }, Markdown { kind: Paragraph, children: [Text(DisplayText("2 earlier lines are not shown."))] }, Markdown { kind: Heading(3), children: [Text(DisplayText("Full output"))] }, Component { name: DisplayText("Table"), props: [(DisplayText("columns"), List([Node(Component { name: DisplayText("Col"), props: [(DisplayText("label"), String(DisplayText("Line"))), (DisplayText("data"), List([String(DisplayText("line 1")), String(DisplayText("line 2")), String(DisplayText("line 3")), String(DisplayText("line 4")), String(DisplayText("line 5"))]))], children: [] })]))], children: [] }] }
+tree-sha256=8c9d3aa7c55daa6b8310e5e0fa475825ca04e62718b102055e590d155ccb3f76
+  | ### Live output
+  | The command has finished.
+  | <Table columns=[<Col label="Latest lines" data=["out 1", "out 2", "out 5"] />] />
+  | 2 earlier lines are not shown.
+  | ### Full output
+  | <Table columns=[<Col label="Line" data=["line 1", "line 2", "line 3", "line 4", "line 5"] />] />
+end/measure: evaluations=0 fuel=0 rejected=[] abort=None
+  committed revision=6 fallback=false

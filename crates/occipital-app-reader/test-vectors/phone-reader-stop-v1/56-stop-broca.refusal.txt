@@ -1,0 +1,1 @@
+this session's runner doesn't let a sender stop its run

@@ -1,0 +1,74 @@
+[package]
+name = "occipital-module"
+version = "0.1.0"
+edition = "2021"
+description = "The module the phone and desktop apps use for a chat: transcript reads, live text, sends, uploads and stop, plus the rich-UI reply teaching"
+publish = false
+
+[[bin]]
+name = "ck-occipital"
+path = "src/main.rs"
+
+[features]
+default = []
+show-ui = ["dep:getrandom"]
+
+[[example]]
+name = "show_ui_samples"
+required-features = ["show-ui"]
+
+# The SDK versions are pinned exactly because the module's pinned contract
+# fixtures (tool calls, route stamps, tool results, launch nonces, store
+# behaviour) were taken from these releases.
+[dependencies]
+occipital-app-reader = { path = "../occipital-app-reader" }
+occipital-files = { path = "../occipital-files" }
+occipital-lang = { package = "cortexkit-occipital-lang", path = "../occipital-lang" }
+# Checks providers' tool templates before the apps are told to draw them.
+occipital-registry = { package = "cortexkit-occipital-registry", path = "../occipital-registry" }
+async-trait = "0.1"
+cortexkit-agent-identity = "=0.1.2"
+# The fleet log: one file a day in the module's data folder, filtered by CK_LOG.
+cortexkit-log = "0.3.6"
+cortexkit-project-identity = "=0.1.4"
+cortexkit-role-llm-runner = "=0.7.43"
+cortexkit-role-tool-display = "=0.1.1"
+cortexkit-role-tool-provider = "=0.14.2"
+cortexkit-store = "=0.4.1"
+cortexkit-store-types = "0.2.2"
+futures-util = "0.3"
+# Record ids come from 128 OS-random bits.
+getrandom = { version = "0.3", optional = true }
+# Pure-Rust SHA-256 for stored source hashes, shared with the other crates.
+hmac-sha256 = { version = "1", default-features = false }
+# Opens an upload's partial file without following a link (O_NOFOLLOW).
+libc = "0.2"
+rand = "0.8"
+rusqlite = "0.32"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+# RFC 8785 canonical JSON, the form display writes are keyed and compared in.
+serde_jcs = "0.2"
+sha2 = "0.10"
+subc-client-rs = "=0.33.1"
+subc-os = "0.1.25"
+subc-protocol = "=0.34.1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time", "fs", "io-util"] }
+# The SDK hands each request's cancellation as a tokio-util token.
+tokio-util = "0.7"
+tracing = "0.1"
+uuid = { version = "1", features = ["v4"] }
+
+# Uploads are placed relative to an open directory handle, so a link swapped into
+# the project folder mid-upload cannot redirect the write.
+[target.'cfg(any(target_os = "linux", target_os = "macos"))'.dependencies]
+rustix = { version = "1", features = ["fs"] }
+
+[dev-dependencies]
+# Scratch directories for store tests.
+cortexkit-test-support = "0.1.6"
+# The in-memory daemon stand-in that drives the real handler. Enabled only
+# here, so the harness never reaches a production build.
+subc-client-rs = { version = "=0.33.1", features = ["test-support"] }
+tempfile = "3"
+tokio = { version = "1", features = ["test-util"] }

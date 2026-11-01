@@ -1,0 +1,11 @@
+{
+  "op": "upload.status",
+  "refusal": {
+    "code": "upload_unknown",
+    "message": "no such upload"
+  },
+  "request": {
+    "upload_id": "00000000000000000000000000000000"
+  },
+  "tag": "upload_unknown"
+}

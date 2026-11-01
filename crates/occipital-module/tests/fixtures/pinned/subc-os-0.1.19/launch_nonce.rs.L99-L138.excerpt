@@ -1,0 +1,40 @@
+/// Why a named launch-nonce handoff gave no nonce.
+///
+/// These errors never fall back unless a Windows daemon explicitly permits
+/// an environment copy via [`LAUNCH_NONCE_PIPE_FALLBACK_ENV`].
+/// A named descriptor or pipe
+/// that cannot be read means the handoff went wrong, or that this process
+/// inherited the variable from a module without inheriting the pipe; reading
+/// the environment instead would hide a failed handoff or admit a descendant
+/// using its parent's environment credential.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum LaunchNonceError {
+    /// The variable is not `<fd>:<inode>`.
+    Malformed { value: String },
+    /// Nothing is open at that number: the variable was inherited without
+    /// the descriptor, which is what a process spawned by a module sees.
+    NotOpen { fd: i32, errno: i32 },
+    /// The descriptor is open but is not a pipe. It was left alone.
+    NotAPipe { fd: i32 },
+    /// The descriptor is a pipe, but not the one named. It was left alone.
+    WrongPipe {
+        fd: i32,
+        expected_inode: u64,
+        found_inode: u64,
+    },
+    /// The named pipe holds no bytes. It was left open and unread.
+    Empty { fd: i32 },
+    /// Reading the named pipe failed.
+    Unreadable { fd: i32, errno: Option<i32> },
+    /// The named pipe held bytes that are not UTF-8.
+    NotUtf8 { fd: i32 },
+    /// The named Windows pipe could not be opened within the busy retry window.
+    PipeNotOpen { errno: i32 },
+    /// The named Windows pipe held no bytes.
+    PipeEmpty,
+    /// Reading the Windows pipe failed or exceeded its deadline.
+    PipeUnreadable { errno: Option<i32> },
+    /// The Windows pipe held bytes that are not UTF-8.
+    PipeNotUtf8,
+}

@@ -1,0 +1,9 @@
+export const running = view.phase == "running"
+export const status = running ? "Running" : (view.exitCode == null ? "Finished, exit unavailable" : (view.exitCode == 0 ? "Succeeded" : "Failed, exit " + view.exitCode))
+export const tone = running ? "info" : (view.exitCode == null ? "neutral" : (view.exitCode == 0 ? "success" : "danger"))
+
+<Card appearance="clear" direction="row" gap="s" align="center" wrap>
+<InlineCode code={input.command} />
+<Badge text={status} tone={tone} />
+<TextContent text={view.durationMs == null ? "Duration unavailable" : FormatNumber(view.durationMs / 1000, 1) + " s"} size="small" />
+</Card>

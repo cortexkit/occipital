@@ -1,0 +1,30 @@
+{
+  "entry": "occ_reply_new",
+  "request": {
+    "app": 1,
+    "chat": 0,
+    "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+    "stamp_json": "{\"dialect\":\"1.0\"}"
+  },
+  "status": 0,
+  "response": [
+    {
+      "entry": "occ_reply_finish",
+      "request": {
+        "records_json": "{\"handles\":[],\"references\":{}}",
+        "tail": "SGVyZSBpcyB0aGUgc3VtbWFyeS4gPEJhZGdlIHRvbmU9ImluZm8iPkRyYWZ0PC9CYWRnZT4KCmV4cG9ydCBjb25zdCB0b3RhbCA9IFN1bShkYXRhLnJvd3Muc2FsZXMpCgpUaGUgdG90YWwgaXMge3RvdGFsfS4gPEdhdWdlIHZhbHVlPXswLjR9IC8+IDxCYWRnZSB0b25lPSJpbmZvIiB0ZXh0PXt0b3RhbH0gLz4="
+      },
+      "status": 0,
+      "response": "{\"id\":1,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{\"tone\":\"info\"},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"t\":\"<Gauge value={0.4} />\"},{\"t\":\" \"},{\"t\":\"<Badge tone=\\\"info\\\" text={total} />\"}]}]},\"literals\":[{\"line\":3,\"column\":1,\"endLine\":3,\"endColumn\":42},{\"line\":5,\"column\":14,\"endLine\":5,\"endColumn\":21},{\"line\":5,\"column\":23,\"endLine\":5,\"endColumn\":44},{\"line\":5,\"column\":45,\"endLine\":5,\"endColumn\":79}],\"diagnostics\":[{\"code\":\"E_REPLY_FORBIDDEN\",\"severity\":\"error\",\"phase\":\"check\",\"span\":{\"line\":5,\"column\":45,\"endLine\":5,\"endColumn\":79},\"message\":\"This tag or prop value is not allowed in replies.\"},{\"code\":\"E_UNKNOWN_COMPONENT\",\"severity\":\"error\",\"phase\":\"check\",\"span\":{\"line\":5,\"column\":23,\"endLine\":5,\"endColumn\":44},\"subject\":\"Gauge\",\"message\":\"The catalog has no component with this name.\"}],\"plain_text\":\"Here is the summary. [Draft]\\n\\nexport const total = Sum(data.rows.sales)\\n\\nThe total is {total}. <Gauge value={0.4} /> <Badge tone=\\\"info\\\" text={total} />\"}"
+    },
+    {
+      "entry": "occ_reply_measure",
+      "request": {
+        "layout_json": "{\"width\":\"320\",\"content_size_category\":\"normal\",\"network\":\"yes\",\"placement\":\"page\"}",
+        "metrics": "fixed"
+      },
+      "status": 0,
+      "response": "{\"height\":\"prose_deferred\",\"key\":{\"instance_epoch\":0,\"revision\":1,\"state_hash\":\"be77056e3152bd8d4d94dbaf6eafd161034b5c4b2e0de9993638f3d1a22d6c9a\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":2,\"reservation\":\"deferred\",\"boxes\":[],\"row_frame\":null}"
+    }
+  ]
+}
