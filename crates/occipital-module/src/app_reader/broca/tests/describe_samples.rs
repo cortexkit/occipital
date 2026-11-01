@@ -96,6 +96,73 @@ fn the_service_tier_describe_decodes_on_both_paths() {
     }
 }
 
+/// Broca's turn-scoped system messages (0.3.300) add `turn_system` to
+/// `role.describe`'s `delivery_order_modes` and to a head's `sender.modes`.
+/// These are Broca's serve-path replies before and after, for one describe and
+/// seven heads that differ in who asks and what the plan grants. Every decoder
+/// here accepts them: the reader's and the send path's head decode, and both
+/// describe decoders. A head's grant, which the apps receive as is, comes out
+/// as before with only the new mode added.
+#[test]
+fn turn_system_describe_and_heads_decode_as_before() {
+    use cortexkit_role_llm_runner::read::HeadMeta;
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/broca-turn-system-0.3.300");
+    let sums = std::fs::read_to_string(root.join("SHA256SUMS")).unwrap();
+    assert_eq!(sums.lines().count(), 16);
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(root.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+    let load = |side: &str, name: &str| -> Value {
+        let bytes = std::fs::read(root.join(side).join(name)).unwrap();
+        serde_json::from_slice::<Value>(&bytes).unwrap()["result"].clone()
+    };
+    let describe = |side: &str| {
+        let value = load(side, "role-describe.response.json");
+        let checked = check_describe(&value).unwrap_or_else(|error| panic!("{side}: {error:?}"));
+        let plain: RoleDescribe = serde_json::from_value(value).unwrap();
+        assert!(checked.declares("head_sender") && plain.declares("head_sender"));
+        (checked, plain)
+    };
+    let (before_describe, _) = describe("before");
+    let (checked, plain) = describe("after");
+
+    let mut heads: Vec<String> = std::fs::read_dir(root.join("before"))
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .filter(|name| name.starts_with("session-head-"))
+        .collect();
+    heads.sort();
+    assert_eq!(heads.len(), 7);
+    for name in &heads {
+        let before: HeadMeta = serde_json::from_value(load("before", name)).unwrap();
+        let after: HeadMeta = serde_json::from_value(load("after", name))
+            .unwrap_or_else(|error| panic!("{name}: {error}"));
+        assert_eq!(
+            after.lineage_consistent(),
+            before.lineage_consistent(),
+            "{name}"
+        );
+        let was = send_grant(&before, Some(&before_describe), false);
+        for describe in [&checked, &plain] {
+            match (&was, send_grant(&after, Some(describe), false)) {
+                (SendGrant::Granted(was), SendGrant::Granted(now)) => {
+                    let mut expected = was.clone();
+                    let modes = expected
+                        .get_mut("modes")
+                        .and_then(Value::as_array_mut)
+                        .unwrap();
+                    let at = modes.iter().position(|mode| mode == "tool_result").unwrap() + 1;
+                    modes.insert(at, json!("turn_system"));
+                    assert_eq!(now, expected, "{name}");
+                }
+                (was, now) => assert_eq!(&now, was, "{name}"),
+            }
+        }
+    }
+}
+
 #[test]
 fn broca_0_7_describes_preserve_sender_grants_on_both_decoders() {
     for file in ["role.describe.before.json", "role.describe.after.json"] {
