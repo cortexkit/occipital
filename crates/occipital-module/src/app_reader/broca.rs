@@ -3763,6 +3763,7 @@ mod tests {
     mod bounded_reads;
     mod call_pins;
     mod client_message_ids;
+    mod contract_0748_samples;
     mod contract_goldens;
     mod describe_samples;
     mod empty_claim_samples;
