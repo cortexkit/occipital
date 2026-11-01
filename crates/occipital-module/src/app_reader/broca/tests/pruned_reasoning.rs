@@ -24,8 +24,8 @@ impl BrocaRoute for PrunedRoute {
         Ok(page)
     }
 
-    async fn subscribe(&self) -> Result<Box<dyn EventStream>, ReadError> {
-        self.inner.subscribe().await
+    async fn subscribe(&self, live_ids: bool) -> Result<Box<dyn EventStream>, ReadError> {
+        self.inner.subscribe(live_ids).await
     }
 }
 

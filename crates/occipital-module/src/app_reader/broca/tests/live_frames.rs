@@ -38,7 +38,7 @@ impl BrocaRoute for WireRoute {
         self.durable.read(op, params).await
     }
 
-    async fn subscribe(&self) -> Result<Box<dyn EventStream>, ReadError> {
+    async fn subscribe(&self, _live_ids: bool) -> Result<Box<dyn EventStream>, ReadError> {
         let (sender, receiver) = mpsc::channel(32);
         *self.sender.lock().unwrap() = Some(sender);
         Ok(Box::new(WireEvents {

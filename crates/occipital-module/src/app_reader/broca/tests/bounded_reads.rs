@@ -206,7 +206,7 @@ impl BrocaRoute for StrictRoute {
         }
     }
 
-    async fn subscribe(&self) -> Result<Box<dyn EventStream>, ReadError> {
+    async fn subscribe(&self, _live_ids: bool) -> Result<Box<dyn EventStream>, ReadError> {
         self.calls
             .lock()
             .unwrap()
@@ -247,7 +247,7 @@ impl BrocaRoute for ReplayRoute {
             _ => panic!("unexpected replay op"),
         })
     }
-    async fn subscribe(&self) -> Result<Box<dyn EventStream>, ReadError> {
+    async fn subscribe(&self, _live_ids: bool) -> Result<Box<dyn EventStream>, ReadError> {
         panic!("plain page subscribed")
     }
 }

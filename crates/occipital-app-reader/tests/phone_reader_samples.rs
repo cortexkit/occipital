@@ -1116,6 +1116,13 @@ fn the_tool_frame_samples_are_complete_and_their_checksums_verify() {
     verify_published_set("test-vectors/phone-reader-tool-frames-v1", 8);
 }
 
+/// A message streamed under a `live_id` until its host stores it. Its README lists
+/// what each file shows.
+#[test]
+fn the_live_id_samples_are_complete_and_their_checksums_verify() {
+    verify_published_set("test-vectors/phone-reader-live-ids-v1", 8);
+}
+
 /// One OpenCode head run's live display with two messages. Its README lists what each
 /// notice shows.
 #[test]

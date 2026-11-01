@@ -509,7 +509,25 @@ struct DisplayProjectionState {
     rich_ui: Option<Value>,
     /// The message whose words are the live footer: the last one text was shown for
     /// and not yet ended.
-    live_mid: Option<String>,
+    live: Option<LiveMessage>,
+}
+
+/// The message whose words are the live footer.
+struct LiveMessage {
+    /// The key its frames carry as `messageID`: the runner's `mid`, or the
+    /// `live_id` a runner gives a message its host names only when storing it.
+    key: String,
+    /// The `mid` the runner stored a `live_id`-keyed message under. Its frames
+    /// keep the `live_id` until its end, because an app hands live words over
+    /// to the stored copy by matching the words under one unchanging key.
+    stored_as: Option<String>,
+}
+
+impl LiveMessage {
+    /// Whether `mid` names this message, by its key or the `mid` it was stored as.
+    fn is(&self, mid: &str) -> bool {
+        self.key == mid || self.stored_as.as_deref() == Some(mid)
+    }
 }
 
 /// Per-session display state, independent of the runner's durable event stream.
@@ -536,7 +554,7 @@ impl DisplayProjection {
                 display_turn_open: false,
                 display_end_emitted: false,
                 rich_ui: None,
-                live_mid: None,
+                live: None,
             }),
             display_changed: watch::channel(0).0,
         }
@@ -573,7 +591,16 @@ impl DisplayProjection {
             return;
         }
         state.display_turn_open = true;
-        state.live_mid = Some(chunk.message_id.clone());
+        if state
+            .live
+            .as_ref()
+            .is_none_or(|live| live.key != chunk.message_id)
+        {
+            state.live = Some(LiveMessage {
+                key: chunk.message_id.clone(),
+                stored_as: None,
+            });
+        }
         let mut frame = DisplayStreamFrame::from(chunk);
         if let DisplayStreamFrame::Display { rich_ui, .. } = &mut frame {
             rich_ui.clone_from(&state.rich_ui);
@@ -592,7 +619,7 @@ impl DisplayProjection {
             return;
         }
         state.display_turn_open = true;
-        state.live_mid = None;
+        state.live = None;
         state.display_ring.push(DisplayStreamFrame::DisplayGap);
         if state.tool_ring.push(DisplayStreamFrame::DisplayGap) {
             for call in state.running.clone() {
@@ -646,13 +673,40 @@ impl DisplayProjection {
     /// message when the next one's text starts, and an end now would end the new one.
     pub fn end_message(&self, mid: &str) {
         let mut state = self.state.lock().expect("display projection poisoned");
-        if state.display_end_emitted || state.live_mid.as_deref() != Some(mid) {
+        if state.display_end_emitted || !state.live.as_ref().is_some_and(|live| live.is(mid)) {
             return;
         }
-        state.live_mid = None;
+        state.live = None;
         state.push_both(DisplayStreamFrame::DisplayEnd);
         drop(state);
         self.signal_display_changed();
+    }
+
+    /// The runner stored the message it streamed under `live_id` as `mid`. When
+    /// that message's words are the live footer, `mid` becomes another name for
+    /// it: [`DisplayProjection::message_key`] turns later words under `mid` back
+    /// into the `live_id`, and [`DisplayProjection::end_message`] ends it by
+    /// either. Otherwise, as for a replayed store of a message never shown, it
+    /// does nothing.
+    pub fn store_message(&self, mid: &str, live_id: &str) {
+        let mut state = self.state.lock().expect("display projection poisoned");
+        if state.display_end_emitted {
+            return;
+        }
+        if let Some(live) = state.live.as_mut().filter(|live| live.key == live_id) {
+            live.stored_as = Some(mid.to_owned());
+        }
+    }
+
+    /// The key words under `mid` are shown with: the live message's `live_id`
+    /// when it was stored as `mid`, so its frames keep one key to its end;
+    /// otherwise `mid` itself.
+    pub fn message_key(&self, mid: &str) -> String {
+        let state = self.state.lock().expect("display projection poisoned");
+        match &state.live {
+            Some(live) if live.stored_as.as_deref() == Some(mid) => live.key.clone(),
+            _ => mid.to_owned(),
+        }
     }
 
     /// The run ended or paused. A call still running gets an `unanswered`
@@ -685,7 +739,7 @@ impl DisplayProjection {
         }
         state.display_turn_open = false;
         state.display_end_emitted = true;
-        state.live_mid = None;
+        state.live = None;
         state.push_both(DisplayStreamFrame::DisplayEnd);
         drop(state);
         self.signal_display_changed();
@@ -698,7 +752,7 @@ impl DisplayProjection {
         let mut state = self.state.lock().expect("display projection poisoned");
         state.display_turn_open = true;
         state.display_end_emitted = false;
-        state.live_mid = None;
+        state.live = None;
         state.running.clear();
         state.push_both(DisplayStreamFrame::DisplayGap);
         drop(state);

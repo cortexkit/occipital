@@ -180,7 +180,7 @@ impl BrocaRoute for TagRoute {
         result(serde_json::from_slice(&serde_json::to_vec(&reply).unwrap()).unwrap())
     }
 
-    async fn subscribe(&self) -> Result<Box<dyn EventStream>, ReadError> {
+    async fn subscribe(&self, _live_ids: bool) -> Result<Box<dyn EventStream>, ReadError> {
         Ok(Box::new(QuietEvents))
     }
 }

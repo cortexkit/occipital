@@ -293,25 +293,8 @@ fn input_follows_the_stored_parts_rules() {
 /// `OCCIPITAL_WRITE_SAMPLES` set to a folder it writes the set there instead.
 #[test]
 fn the_tool_frame_samples_are_what_the_reader_serves() {
-    use sha2::{Digest, Sha256};
-    use std::path::PathBuf;
-
     let session = FakeSession::new("ses_head", 64);
-    let read = |since: Option<u64>, tools: bool| {
-        let mut params = json!({"session": "ses_head"});
-        if let Some(since) = since {
-            params["sinceSeq"] = json!(since);
-        }
-        if tools {
-            params["acceptToolFrames"] = json!(true);
-        }
-        let request = crate::display::DisplayReadRequest::parse(&params).unwrap();
-        let reply = request.read_at(Some(&session.projection), NOW);
-        (
-            json!({"method": "session.display_read", "params": params}),
-            json!({"result": reply}),
-        )
-    };
+    let read = |since: Option<u64>, tools: bool| session.read(since, tools, NOW);
     let mut files: Vec<(String, Value)> = Vec::new();
     let mut keep = |name: &str, (request, reply): (Value, Value)| {
         files.push((format!("{name}.request.json"), request));
@@ -359,37 +342,5 @@ fn the_tool_frame_samples_are_what_the_reader_serves() {
     );
     keep("03-run-end-ends-running-call", read(Some(seq), true));
     keep("04-same-run-without-tool-frames", read(Some(0), false));
-
-    let mut sums = String::new();
-    let mut bytes_of = Vec::new();
-    for (name, value) in &files {
-        let bytes = serde_json::to_vec(value).unwrap();
-        sums.push_str(&format!("{:x}  {name}\n", Sha256::digest(&bytes)));
-        bytes_of.push((name.clone(), bytes));
-    }
-    let set = "phone-reader-tool-frames-v1";
-    if let Ok(folder) = std::env::var("OCCIPITAL_WRITE_SAMPLES") {
-        let root = PathBuf::from(folder).join(set);
-        std::fs::create_dir_all(&root).unwrap();
-        for (name, bytes) in &bytes_of {
-            std::fs::write(root.join(name), bytes).unwrap();
-        }
-        std::fs::write(root.join("SHA256SUMS"), &sums).unwrap();
-        return;
-    }
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("test-vectors")
-        .join(set);
-    for (name, bytes) in &bytes_of {
-        let committed = std::fs::read(root.join(name)).unwrap();
-        assert_eq!(
-            String::from_utf8_lossy(&committed),
-            String::from_utf8_lossy(bytes),
-            "{name}"
-        );
-    }
-    assert_eq!(
-        std::fs::read_to_string(root.join("SHA256SUMS")).unwrap(),
-        sums
-    );
+    super::keep_sample_set("phone-reader-tool-frames-v1", &files);
 }

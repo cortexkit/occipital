@@ -264,7 +264,9 @@ pub trait EventStream: Send {
 pub trait BrocaRoute: Send + Sync {
     async fn read(&self, op: ReadOp, params: Value) -> Result<Value, ReadError>;
     /// Dropping the returned stream cancels only the subscription, never the run.
-    async fn subscribe(&self) -> Result<Box<dyn EventStream>, ReadError>;
+    /// With `live_ids`, a message its host names only when storing it streams
+    /// under a `live_id` until then; ask for it only from a runner declaring it.
+    async fn subscribe(&self, live_ids: bool) -> Result<Box<dyn EventStream>, ReadError>;
 }
 
 #[async_trait]
@@ -454,13 +456,13 @@ impl BrocaRoute for DaemonRoute {
         })
     }
 
-    async fn subscribe(&self) -> Result<Box<dyn EventStream>, ReadError> {
+    async fn subscribe(&self, live_ids: bool) -> Result<Box<dyn EventStream>, ReadError> {
         let subscription = self
             .streams
             .subscribe(
                 target(&self.resolved),
                 self.resolved.identity(),
-                json!({"method":"session.subscribe", "params":{"from":"live"}})
+                json!({"method":"session.subscribe", "params":subscribe_params(live_ids)})
                     .to_string()
                     .into_bytes(),
                 SubscribeOptions {
@@ -476,6 +478,15 @@ impl BrocaRoute for DaemonRoute {
             self.resolved.reference.runner.clone(),
         )))
     }
+}
+
+/// `session.subscribe`'s params: from the live edge, and `live_ids` only when asked.
+fn subscribe_params(live_ids: bool) -> Value {
+    let mut params = json!({"from": "live"});
+    if live_ids {
+        params["live_ids"] = json!(true);
+    }
+    params
 }
 
 /// A runner's live event stream, and the runner's module id for its errors.
@@ -901,8 +912,15 @@ impl BrocaSource {
         if let Some(old) = feed.take() {
             old.task.abort();
         }
+        // A runner that names some messages only when storing them streams them
+        // under a `live_id` to a subscriber that asks; one that isn't asked holds
+        // their words until then.
+        let live_ids = self.describe().await.is_some_and(|describe| {
+            describe.declares(cortexkit_role_llm_runner::capabilities::LIVE_IDS)
+        });
         let stream =
-            super::observe::remote("broca", "session.subscribe", self.route.subscribe()).await?;
+            super::observe::remote("broca", "session.subscribe", self.route.subscribe(live_ids))
+                .await?;
         // Attach before reading so control events committed during the cold read
         // stay queued, rather than disappearing between the snapshot and attach.
         self.newest(SOURCE_PAGE_LIMIT).await?;
@@ -1414,7 +1432,11 @@ impl BrocaSource {
         };
         let event = &mut normalized["event"];
         let name = event["type"].as_str().unwrap_or_default().to_string();
-        if matches!(name.as_str(), "text_delta" | "reasoning_delta") {
+        // A message its host names only when storing it streams under the runner's
+        // `live_id` until then (`live_ids`), which `display_events::map` keys on.
+        let unstored =
+            event.get("mid").is_none() && event.get("live_id").is_some_and(Value::is_string);
+        if matches!(name.as_str(), "text_delta" | "reasoning_delta") && !unstored {
             // An explicit runner mid can precede its durable message, including on
             // attach replay. Only legacy provider ids need the known-transcript check;
             // never infer their mapping from message order or a run id.
@@ -1994,6 +2016,8 @@ mod tests {
         calls: Mutex<Vec<Value>>,
         senders: Mutex<Vec<mpsc::Sender<Result<Value, ReadError>>>>,
         attaches: AtomicUsize,
+        /// Whether each subscribe asked for `live_ids`, in order.
+        live_ids: Mutex<Vec<bool>>,
         detaches: Arc<AtomicUsize>,
         history: AtomicU64,
         lineage: Mutex<String>,
@@ -2017,6 +2041,9 @@ mod tests {
         served.push(ops::SESSION_HEAD.into());
         if groups.contains(&"history_display") {
             served.push(ops::SESSION_HISTORY.into());
+        }
+        if groups.contains(&"live_events") {
+            served.push(ops::SESSION_SUBSCRIBE.into());
         }
         // Both groups add members to `session.read`, so a runner declaring either
         // must serve it.
@@ -2110,6 +2137,7 @@ mod tests {
                 calls: Mutex::new(Vec::new()),
                 senders: Mutex::new(Vec::new()),
                 attaches: AtomicUsize::new(0),
+                live_ids: Mutex::new(Vec::new()),
                 detaches: Arc::new(AtomicUsize::new(0)),
                 history: AtomicU64::new(7),
                 lineage: Mutex::new("cut-a".into()),
@@ -2282,8 +2310,9 @@ mod tests {
                 )),
             }
         }
-        async fn subscribe(&self) -> Result<Box<dyn EventStream>, ReadError> {
+        async fn subscribe(&self, live_ids: bool) -> Result<Box<dyn EventStream>, ReadError> {
             self.attaches.fetch_add(1, Ordering::Relaxed);
+            self.live_ids.lock().unwrap().push(live_ids);
             let (sender, receiver) = mpsc::channel(16);
             self.senders.lock().unwrap().push(sender);
             Ok(Box::new(FakeEvents {
@@ -2586,6 +2615,54 @@ mod tests {
         assert_eq!(route.detaches.load(Ordering::Relaxed), 1);
         let _new = source.acquire().await.unwrap();
         assert_eq!(route.attaches.load(Ordering::Relaxed), 2);
+    }
+
+    /// The feed asks for `live_id` streams only from a runner declaring
+    /// `live_ids`, and passes a delta keyed on one, and the store that names its
+    /// message, to the display.
+    #[tokio::test]
+    async fn live_ids_are_asked_for_only_when_declared() {
+        let plain = FakeRoute::new();
+        let source = BrocaSource::new(resolved(), plain.clone());
+        let _lease = source.acquire().await.unwrap();
+        assert_eq!(*plain.live_ids.lock().unwrap(), [false]);
+
+        let route = FakeRoute::new();
+        *route.describe.lock().unwrap() = Some(describe_with(&["live_events", "live_ids"]));
+        let source = BrocaSource::new(resolved(), route.clone());
+        let mut lease = source.acquire().await.unwrap();
+        assert_eq!(*route.live_ids.lock().unwrap(), [true]);
+        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Reset);
+        route
+            .emit(json!({"kind":"display", "event":{"type":"text_delta", "live_id":"live-1", "delta":"hi"}}))
+            .await;
+        assert_eq!(
+            lease.events.recv().await.unwrap(),
+            DisplayInput::Delta {
+                mid: "live-1".into(),
+                text: "hi".into(),
+                part_type: occipital_app_reader::display::DisplayPartType::Text
+            }
+        );
+        route
+            .emit(json!({"kind":"control", "event":{"type":"message_started", "mid":"m1", "live_id":"live-1"}}))
+            .await;
+        assert_eq!(
+            lease.events.recv().await.unwrap(),
+            DisplayInput::MessageStored {
+                mid: "m1".into(),
+                live_id: "live-1".into()
+            }
+        );
+    }
+
+    #[test]
+    fn subscribe_params_carry_live_ids_only_when_asked() {
+        assert_eq!(subscribe_params(false), json!({"from": "live"}));
+        assert_eq!(
+            subscribe_params(true),
+            json!({"from": "live", "live_ids": true})
+        );
     }
 
     #[tokio::test]

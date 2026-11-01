@@ -84,7 +84,7 @@ impl DisplayHub {
             } => {
                 let pushed = state.batcher.push(DisplayDeltaIngress {
                     session_id: session.into(),
-                    message_id: mid,
+                    message_id: projection.message_key(&mid),
                     delta_text: text,
                     part_type,
                 });
@@ -116,6 +116,14 @@ impl DisplayHub {
                 }
             }
             DisplayInput::TurnStart => projection.start_display(),
+            // Words held for batching are the live message's, so they go out
+            // first and the store finds them.
+            DisplayInput::MessageStored { mid, live_id } => {
+                for chunk in state.batcher.drain_session(session) {
+                    projection.observe_display(chunk);
+                }
+                projection.store_message(&mid, &live_id);
+            }
             DisplayInput::RunStart { rich_ui } => projection.start_run(rich_ui),
             DisplayInput::MessageEnd { mid } => {
                 // Words still held for batching go out first, so they are part of the

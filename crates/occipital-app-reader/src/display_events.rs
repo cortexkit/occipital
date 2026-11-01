@@ -7,6 +7,8 @@ use crate::display::DisplayPartType;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DisplayInput {
     Delta {
+        /// The message's `mid`, or its `live_id` while its host hasn't stored it
+        /// (`live_ids`). A runner never gives a `live_id` that equals a `mid`.
         mid: String,
         text: String,
         part_type: DisplayPartType,
@@ -14,6 +16,12 @@ pub enum DisplayInput {
     Gap,
     Reset,
     TurnStart,
+    /// The runner stored the message it streamed under `live_id` as `mid`
+    /// (`message_started` carrying both).
+    MessageStored {
+        mid: String,
+        live_id: String,
+    },
     /// A run started, with its rich UI stamp in the phone's shape when it carries one.
     RunStart {
         rich_ui: Option<Value>,
@@ -116,7 +124,11 @@ pub fn map(envelope: &Value) -> Option<DisplayInput> {
             if text.is_empty() {
                 return None;
             }
-            let mid = event.get("mid").and_then(Value::as_str)?;
+            // A message its host hasn't stored yet streams under a `live_id`.
+            let mid = event
+                .get("mid")
+                .or_else(|| event.get("live_id"))
+                .and_then(Value::as_str)?;
             Some(DisplayInput::Delta {
                 mid: mid.to_string(),
                 text: text.to_string(),
@@ -130,7 +142,16 @@ pub fn map(envelope: &Value) -> Option<DisplayInput> {
         Effect::Ignore => None,
         Effect::Gap => Some(DisplayInput::Gap),
         Effect::Reset => Some(DisplayInput::Reset),
-        Effect::Start => Some(DisplayInput::TurnStart),
+        Effect::Start => {
+            let text = |name: &str| event.get(name).and_then(Value::as_str);
+            match (text("mid"), text("live_id")) {
+                (Some(mid), Some(live_id)) => Some(DisplayInput::MessageStored {
+                    mid: mid.to_owned(),
+                    live_id: live_id.to_owned(),
+                }),
+                _ => Some(DisplayInput::TurnStart),
+            }
+        }
         // A malformed stamp is dropped, so the text streams unstamped, as a malformed
         // stamp on a stored row is.
         Effect::RunStart => Some(DisplayInput::RunStart {
@@ -207,7 +228,7 @@ pub(crate) mod test_support {
                 } => {
                     let pushed = self.batcher.push(DisplayDeltaIngress {
                         session_id: self.session.clone(),
-                        message_id: mid,
+                        message_id: self.projection.message_key(&mid),
                         delta_text: text,
                         part_type,
                     });
@@ -228,6 +249,11 @@ pub(crate) mod test_support {
                 }
                 DisplayInput::TurnStart => {
                     self.projection.start_display();
+                    None
+                }
+                DisplayInput::MessageStored { mid, live_id } => {
+                    self.flush();
+                    self.projection.store_message(&mid, &live_id);
                     None
                 }
                 DisplayInput::RunStart { rich_ui } => {
@@ -269,6 +295,24 @@ pub(crate) mod test_support {
             }
         }
 
+        /// `session.display_read`'s request and reply for this session at `now`,
+        /// as a served read or a display watch notice makes them.
+        pub fn read(&self, since: Option<u64>, tools: bool, now: u64) -> (Value, Value) {
+            let mut params = serde_json::json!({"session": self.session});
+            if let Some(since) = since {
+                params["sinceSeq"] = serde_json::json!(since);
+            }
+            if tools {
+                params["acceptToolFrames"] = serde_json::json!(true);
+            }
+            let request = crate::display::DisplayReadRequest::parse(&params).unwrap();
+            let reply = request.read_at(Some(&self.projection), now);
+            (
+                serde_json::json!({"method": "session.display_read", "params": params}),
+                serde_json::json!({"result": reply}),
+            )
+        }
+
         pub fn ingest_timed(self: &Arc<Self>, envelope: Value) {
             let Some(timer) = self.ingest(envelope) else {
                 return;
@@ -281,6 +325,51 @@ pub(crate) mod test_support {
         }
     }
 }
+
+/// A published sample set: each file's bytes and a `SHA256SUMS` over them. With
+/// `OCCIPITAL_WRITE_SAMPLES` set to a folder the set is written there; otherwise
+/// each committed file must match byte for byte, so a change to what the reader
+/// serves fails until the set is regenerated and given a new tag.
+#[cfg(test)]
+pub(crate) fn keep_sample_set(set: &str, files: &[(String, Value)]) {
+    use sha2::{Digest, Sha256};
+    use std::path::PathBuf;
+
+    let mut sums = String::new();
+    let mut bytes_of = Vec::new();
+    for (name, value) in files {
+        let bytes = serde_json::to_vec(value).unwrap();
+        sums.push_str(&format!("{:x}  {name}\n", Sha256::digest(&bytes)));
+        bytes_of.push((name.clone(), bytes));
+    }
+    if let Ok(folder) = std::env::var("OCCIPITAL_WRITE_SAMPLES") {
+        let root = PathBuf::from(folder).join(set);
+        std::fs::create_dir_all(&root).unwrap();
+        for (name, bytes) in &bytes_of {
+            std::fs::write(root.join(name), bytes).unwrap();
+        }
+        std::fs::write(root.join("SHA256SUMS"), &sums).unwrap();
+        return;
+    }
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("test-vectors")
+        .join(set);
+    for (name, bytes) in &bytes_of {
+        let committed = std::fs::read(root.join(name)).unwrap();
+        assert_eq!(
+            String::from_utf8_lossy(&committed),
+            String::from_utf8_lossy(bytes),
+            "{name}"
+        );
+    }
+    assert_eq!(
+        std::fs::read_to_string(root.join("SHA256SUMS")).unwrap(),
+        sums
+    );
+}
+
+#[cfg(test)]
+mod live_ids;
 
 #[cfg(test)]
 mod tool_frames;
@@ -507,6 +596,99 @@ mod tests {
             read["frames"].as_array().is_none_or(Vec::is_empty) && read.get("frame").is_none(),
             "a message with no live words sent a frame: {read}"
         );
+    }
+
+    fn live_delta(live_id: &str, text: &str) -> Value {
+        json!({"kind":"display", "event":{"type":"text_delta", "live_id":live_id, "delta":text}})
+    }
+
+    fn frames(session: &FakeSession) -> Vec<(String, String)> {
+        serde_json::to_value(session.projection.display_read(Some(0))).unwrap()["frames"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|frame| {
+                let frame = &frame["frame"];
+                (
+                    frame["kind"].as_str().unwrap().to_owned(),
+                    frame["messageID"].as_str().unwrap_or_default().to_owned(),
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_live_id_keys_deltas_and_a_store_naming_both_is_its_own_input() {
+        assert_eq!(
+            map(&live_delta("live-1", "hi")),
+            Some(DisplayInput::Delta {
+                mid: "live-1".into(),
+                text: "hi".into(),
+                part_type: DisplayPartType::Text
+            })
+        );
+        let both = json!({"kind":"display", "event":{"type":"text_delta", "mid":"m1",
+            "live_id":"live-1", "delta":"hi"}});
+        assert!(matches!(map(&both), Some(DisplayInput::Delta { mid, .. }) if mid == "m1"));
+        assert_eq!(
+            map(
+                &json!({"kind":"control", "event":{"type":"message_started", "mid":"m1",
+                "live_id":"live-1"}})
+            ),
+            Some(DisplayInput::MessageStored {
+                mid: "m1".into(),
+                live_id: "live-1".into()
+            })
+        );
+        assert_eq!(
+            map(&json!({"kind":"control", "event":{"type":"message_started", "mid":"m1"}})),
+            Some(DisplayInput::TurnStart)
+        );
+    }
+
+    /// A message streamed under a `live_id` keeps that key to its end: words
+    /// the runner sends under its `mid` after storing it, as an attach or reset
+    /// replay does, show under the `live_id`, and its `message_finished` ends it.
+    /// Apps hand live words over to the stored copy under one unchanging key.
+    #[test]
+    fn a_live_id_message_keeps_its_key_until_its_end() {
+        let session = FakeSession::new("ses", 32);
+        session.ingest(json!({"kind":"control","event":{"type":"run_started"}}));
+        session.ingest(live_delta("live-1", "Pi "));
+        session.ingest(live_delta("live-1", "answers"));
+        session.ingest(json!({"kind":"control","event":{"type":"message_started",
+            "mid":"m1", "live_id":"live-1"}}));
+        session.ingest(delta("m1", " late"));
+        session.ingest(json!({"kind":"control","event":{"type":"message_finished","mid":"m1"}}));
+        session.flush();
+        assert_eq!(
+            frames(&session),
+            [
+                ("display".to_owned(), "live-1".to_owned()),
+                ("display".to_owned(), "live-1".to_owned()),
+                ("display_end".to_owned(), String::new()),
+            ]
+        );
+        // The next message, named at creation, streams under its own `mid`.
+        session.ingest(delta("m2", "next"));
+        session.flush();
+        assert_eq!(frames(&session)[3], ("display".to_owned(), "m2".to_owned()));
+    }
+
+    /// A store naming a `live_id` whose words weren't shown, as on a replay, does
+    /// nothing: it neither renames a message nor reopens a run that ended.
+    #[test]
+    fn a_store_for_a_live_id_never_shown_does_nothing() {
+        let session = FakeSession::new("ses", 32);
+        session.ingest(json!({"kind":"control","event":{"type":"run_started"}}));
+        session.ingest(delta("m0", "done"));
+        session.ingest(json!({"kind":"control","event":{"type":"run_finished"}}));
+        let ended = frames(&session);
+        assert_eq!(ended.len(), 2);
+        session.ingest(json!({"kind":"control","event":{"type":"message_started",
+            "mid":"m9", "live_id":"live-9"}}));
+        session.ingest(json!({"kind":"control","event":{"type":"run_finished"}}));
+        assert_eq!(frames(&session), ended);
     }
 
     #[tokio::test(start_paused = true)]
