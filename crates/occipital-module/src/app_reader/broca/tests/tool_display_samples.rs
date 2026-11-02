@@ -35,12 +35,19 @@ fn reserved(module: &str) -> Principal {
     }
 }
 
+/// The tool catalog digest the sample templates name: the one the tool catalog
+/// had before the narrow Slot width, now an alias of the current digest. The
+/// set was recorded under it, and a provider's template naming it must keep
+/// passing, so the samples stay as recorded.
+const SAMPLE_TOOL_CATALOG: &str =
+    "sha256:9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf";
+
 fn template(profile: &str, source: &str) -> Value {
     json!({
         "schema": "occipital.template/1",
         "profile": profile,
         "executionDialect": "1.0",
-        "catalog": {"version": "1.1", "digest": occipital_registry::view::tool_catalog_digest()},
+        "catalog": {"version": "1.1", "digest": SAMPLE_TOOL_CATALOG},
         "reads": [],
         "source": source,
     })

@@ -14,7 +14,7 @@
       "flow": "block",
       "kids": {"kind": "block"},
       "props": {
-        "width": {"t": "enum", "enum": ["short", "medium", "long", "fill"], "req": true, "lit": true},
+        "width": {"t": "enum", "enum": ["narrow", "short", "medium", "long", "fill"], "req": true, "lit": true},
         "lines": {"t": "number", "int": true, "range": [1, 3], "def": 1, "lit": true},
         "needs": {"t": "string|number|boolean|record"}
       },
@@ -22,7 +22,7 @@
       "geo": {
         "kind": "fixed",
         "h": "lines * L(body)",
-        "w": "short: min(TW(12 zeros, body), W); medium: min(TW(24 zeros, body), W); long: min(TW(40 zeros, body), W); fill: W",
+        "w": "narrow: min(TW(8 zeros, body), W); short: min(TW(12 zeros, body), W); medium: min(TW(24 zeros, body), W); long: min(TW(40 zeros, body), W); fill: W",
         "hIn": ["metrics", "props:lines"],
         "note": "The width counts the digit zero in the row's body style, the way a CSS ch unit does. In a Card row without wrap, Slots take their widths before the row's other fixed children, so a long code or label beside a Slot is cut to what the Slots leave, wherever the Slot sits in the row. The content is laid out in a column at the box's width, drawn top-aligned and clipped to the box; text that doesn't fit ends its last visible line with an ellipsis. The box never grows, so a row's height never depends on what arrives later."
       },

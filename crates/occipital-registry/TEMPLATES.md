@@ -66,8 +66,9 @@ A row is measured once, before it is drawn, and never changes height. So
 everything that can change while the row is on screen, which is all of `view`
 and `now`, is read only inside a `Slot`, a box of fixed size:
 
-- `width`: `short`, `medium` or `long` (12, 24 or 40 digit widths of the body
-  text), or `fill` for what the row leaves.
+- `width`: `narrow`, `short`, `medium` or `long` (8, 12, 24 or 40 digit widths
+  of the body text), or `fill` for what the row leaves. `narrow` fits a short
+  status or duration, such as "Exit 127" or "12.3 s".
 - `lines`: 1 to 3 lines of body text, 1 by default.
 - `needs`: the value the content waits for, such as `view.record`. While it is
   null the content isn't evaluated, and the app draws the box as loading, or as

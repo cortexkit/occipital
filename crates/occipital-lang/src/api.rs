@@ -77,15 +77,20 @@ impl VersionDescriptor {
 
 impl CatalogDescriptor {
     /// The descriptor of the tool catalog (1.1), the catalog tool templates
-    /// name. It has no aliases. Replies and stored programs never carry it:
-    /// they stay on catalog 1.0, the one [`VersionDescriptor`] names.
+    /// name, with its earlier digests as aliases: a template naming one of
+    /// them is accepted as naming this catalog. Replies and stored programs
+    /// never carry it: they stay on catalog 1.0, the one [`VersionDescriptor`]
+    /// names.
     pub fn tool_templates() -> Self {
         let catalog = Catalog::tool_templates();
         Self {
             version: catalog.version().to_owned(),
             digest: Catalog::tool_templates_digest().to_owned(),
             layout: catalog.layout_version().to_owned(),
-            aliases: Vec::new(),
+            aliases: crate::catalog::TOOL_ALIASES
+                .iter()
+                .map(|alias| (*alias).to_owned())
+                .collect(),
         }
     }
 

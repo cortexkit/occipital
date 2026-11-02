@@ -240,14 +240,17 @@ typedef struct OccMetrics {
  *   {"executionDialect": "1.0",
  *    "catalog": {"version": "...", "digest": "<hex>", "layout": "...",
  *                "aliases": ["<hex>", ...]},
- *    "toolCatalog": {"version": "1.1", "digest": "<hex>", "layout": "..."}}
+ *    "toolCatalog": {"version": "1.1", "digest": "<hex>", "layout": "...",
+ *                    "aliases": ["<hex>", ...]}}
  * `catalog` is the embedded catalog: `digest` is its digest and `layout`
  * its layout version. `aliases` are earlier digests of the same catalog,
  * from before a change to its descriptive text only: a stored reply whose
  * rich UI stamp names `digest` or any alias draws with this catalog.
  * `toolCatalog` is the catalog tool templates name: a template whose
- * `catalog.digest` is "sha256:" followed by its `digest` is for this
- * library; one naming any other digest is not.
+ * `catalog.digest` is "sha256:" followed by its `digest` or one of its
+ * `aliases` is for this library; one naming any other digest is not. Its
+ * aliases are earlier digests of the tool catalog, which it only grew from
+ * (the narrow Slot width), so a template naming one draws as it always did.
  */
 int32_t occ_version(char **out);
 

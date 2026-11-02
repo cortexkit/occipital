@@ -12,9 +12,9 @@ use std::collections::BTreeMap;
 
 use cortexkit_role_tool_display::{schema, FieldKind, RecordSchema};
 use occipital_lang::{
-    Catalog, CatalogVersion, CheckContext, Decimal, Diagnostic, Height, HostProjection, HostValues,
-    LayoutContext, MeasureRevision, Metrics, Network, Placement, Profile, Schema, SchemaType,
-    Severity, TextStyle, ToolInputs, Tree,
+    Catalog, CatalogDescriptor, CatalogVersion, CheckContext, Decimal, Diagnostic, Height,
+    HostProjection, HostValues, LayoutContext, MeasureRevision, Metrics, Network, Placement,
+    Profile, Schema, SchemaType, Severity, TextStyle, ToolInputs, Tree,
 };
 use serde_json::{json, Value as Json};
 
@@ -23,10 +23,21 @@ use crate::Template;
 /// The catalog version every tool template names.
 pub const TOOL_CATALOG_VERSION: &str = "1.1";
 
-/// The digest a tool template's `catalog.digest` must hold: the tool
+/// The digest a new tool template's `catalog.digest` names: the tool
 /// catalog's, as `sha256:` and lowercase hex.
 pub fn tool_catalog_digest() -> String {
     format!("sha256:{}", Catalog::tool_templates_digest())
+}
+
+/// Whether `digest` names the tool catalog: its current digest or one of the
+/// earlier ones it only grew from, each as `sha256:` and lowercase hex. A
+/// template naming an earlier digest keeps checking and drawing as before.
+pub fn names_tool_catalog(digest: &str) -> bool {
+    let Some(hex) = digest.strip_prefix("sha256:") else {
+        return false;
+    };
+    let tool = CatalogDescriptor::tool_templates();
+    hex == tool.digest || tool.aliases.iter().any(|alias| alias == hex)
 }
 
 /// The verdict on one of a view's templates.
@@ -127,7 +138,7 @@ fn check_template(
         ));
     }
     if template.catalog.version != TOOL_CATALOG_VERSION
-        || template.catalog.digest != tool_catalog_digest()
+        || !names_tool_catalog(&template.catalog.digest)
     {
         report.problems.push(format!(
             "it names catalog {} ({}); tool templates name the tool catalog {TOOL_CATALOG_VERSION} ({})",

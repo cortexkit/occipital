@@ -9,12 +9,12 @@ import OccipitalCore
 public enum Occipital {
     /// The version descriptor JSON: `{"executionDialect": "...", "catalog":
     /// {"version", "digest", "layout", "aliases"}, "toolCatalog": {"version",
-    /// "digest", "layout"}}`. The runner stamps each rich UI reply with the
-    /// digest of the catalog it was written for. A reply stamped with
+    /// "digest", "layout", "aliases"}}`. The runner stamps each rich UI reply
+    /// with the digest of the catalog it was written for. A reply stamped with
     /// `catalog.digest`, or with any earlier digest in `aliases`, draws with
     /// this library's catalog; any other draws as plain Markdown. A tool
     /// template is for this library when its `catalog.digest` is `sha256:`
-    /// followed by `toolCatalog.digest`.
+    /// followed by `toolCatalog.digest` or by one of `toolCatalog.aliases`.
     public static func version() throws(OccipitalError) -> String {
         try call { occ_version($0) }.get()
     }

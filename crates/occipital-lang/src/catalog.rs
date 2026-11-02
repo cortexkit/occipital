@@ -48,6 +48,13 @@ pub struct Catalog {
 pub(crate) const V1_ALIASES: &[&str] =
     &["beb0904e8b402916d84d7609a8b06db30ac308f692dcc048db2dc1138cd0c986"];
 
+/// The tool catalog's earlier digests, oldest first. The tool catalog has
+/// only ever grown: each later digest adds to it (the `narrow` Slot width)
+/// without changing what an earlier template means, so a template naming one
+/// of these checks, evaluates and lays out exactly as it did.
+pub(crate) const TOOL_ALIASES: &[&str] =
+    &["9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf"];
+
 impl Catalog {
     /// The embedded component catalog v1, parsed once per process.
     pub fn v1() -> &'static Catalog {

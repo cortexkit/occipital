@@ -770,21 +770,48 @@ fn measure(tree_json: &str, path_json: Option<&str>) -> Vector {
 /// the command, then a short Slot for the outcome.
 const BASH_ROW: &str = "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\n<InlineCode code={input.command} />\n<Slot width=\"short\" needs={view.completion ?? view.record}>\n<Badge text={(view.completion ?? view.record).exitCode == 0 ? \"Done\" : \"Failed\"} />\n</Slot>\n</Card>\n";
 
+/// A one-line bash row: the command, then a narrow Slot for the status and
+/// one for the duration, each 8 zeros wide.
+const BASH_ROW_NARROW: &str = "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\n<InlineCode code={input.command} />\n<Slot width=\"narrow\" needs={view.record}>\n<TextContent text={view.record.exitCode == 0 ? \"Done\" : \"Exit \" + Text(view.record.exitCode)} />\n</Slot>\n<Slot width=\"narrow\" needs={view.record}>\n<TextContent text={FormatDuration(view.record.durationMs, \"compact\")} />\n</Slot>\n</Card>\n";
+
 /// A transcript row 200 wide: narrow enough that the fixed metrics' longest
 /// code (256 characters plus padding) is wider than the row.
 const ROW_LAYOUT: &str =
     r#"{"width":"200","content_size_category":"normal","network":"yes","placement":"row"}"#;
 
-/// The bash row with a command far wider than the row, evaluated while its
+/// Each bash row with a command far wider than the row, evaluated while its
 /// outcome is still to come and once it has arrived, each tree then measured
-/// as a row. Both measure the same, and in both the Slot keeps its short width
-/// (12 zeros) while the command is cut to what the Slot leaves.
+/// as a row. Both measure the same, and in both every Slot keeps its width
+/// (a short one 12 zeros, a narrow one 8; the fixed metrics make a zero 1
+/// wide) while the command is cut to what the Slots and the gaps of 4 leave.
 fn tool_rows(files: &mut Vec<(String, Vector)>) {
+    let short: &[(&str, &str)] = &[("/0/1", "12"), ("/0/0", "184")];
+    let narrow: &[(&str, &str)] = &[("/0/1", "8"), ("/0/2", "8"), ("/0/0", "176")];
+    for (name, source, record, widths) in [
+        ("bash-row", BASH_ROW, json!({"exitCode": 0}), short),
+        (
+            "bash-row-narrow",
+            BASH_ROW_NARROW,
+            json!({"exitCode": 0, "durationMs": 2400}),
+            narrow,
+        ),
+    ] {
+        tool_row(files, name, source, record, widths);
+    }
+}
+
+fn tool_row(
+    files: &mut Vec<(String, Vector)>,
+    name: &str,
+    source: &str,
+    record: serde_json::Value,
+    widths: &[(&str, &str)],
+) {
     let command = format!("ls {}", "-l ".repeat(700));
     let mut heights = vec![];
     for (case, view) in [
         ("waiting", json!({ "record": null })),
-        ("filled", json!({ "record": {"exitCode": 0} })),
+        ("filled", json!({ "record": record })),
     ] {
         let mut ctx = context(
             "tool_row",
@@ -799,17 +826,17 @@ fn tool_rows(files: &mut Vec<(String, Vector)>) {
         ctx["catalog"] = json!("1.1");
         let ctx = json!({ "context": ctx }).to_string();
         let ctx_c = c(&ctx);
-        // SAFETY: `BASH_ROW` is valid for its length and `ctx_c` a live C string.
+        // SAFETY: `source` is valid for its length and `ctx_c` a live C string.
         let result = call(|out| unsafe {
-            occ_template_evaluate(BASH_ROW.as_ptr(), BASH_ROW.len(), ctx_c.as_ptr(), out)
+            occ_template_evaluate(source.as_ptr(), source.len(), ctx_c.as_ptr(), out)
         });
         let evaluated = Vector::call(
             "occ_template_evaluate",
-            json!({ "src": base64::encode(BASH_ROW.as_bytes()), "ctx_json": ctx }),
+            json!({ "src": base64::encode(source.as_bytes()), "ctx_json": ctx }),
             result,
         );
         let tree_json = json(evaluated.ok())["tree"].to_string();
-        files.push((format!("template-bash-row-{case}"), evaluated));
+        files.push((format!("template-{name}-{case}"), evaluated));
 
         let (tree_c, layout) = (c(&tree_json), c(ROW_LAYOUT));
         let mut script = Script::default();
@@ -833,16 +860,15 @@ fn tool_rows(files: &mut Vec<(String, Vector)>) {
                 .unwrap_or_else(|| panic!("{case}: no box at {path}: {response}"))["width"]
                 .clone()
         };
-        // The row is 200 wide with a gap of 4; the fixed metrics make a
-        // short Slot 12 wide.
-        assert_eq!(width("/0/1"), "12", "{case}: the Slot keeps its width");
-        assert_eq!(width("/0/0"), "184", "{case}: the command takes the rest");
+        for (path, expected) in widths {
+            assert_eq!(width(path), *expected, "{name} {case}: {path}");
+        }
         heights.push(response["height"].clone());
-        files.push((format!("measure-tree-bash-row-{case}"), measured));
+        files.push((format!("measure-tree-{name}-{case}"), measured));
     }
     assert_eq!(
         heights[0], heights[1],
-        "the row's height doesn't wait on its record"
+        "{name}: the row's height doesn't wait on its record"
     );
 }
 

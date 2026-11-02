@@ -149,8 +149,13 @@ fn a_slot_keeps_its_fixed_box_whatever_its_content() {
         "the content is laid out at the Slot's width"
     );
     assert!(child.height > d(20), "and clipped by it");
-    // medium and long cap at the offered width; fill takes it.
-    for (width, expected) in [("medium", 144), ("long", 200), ("fill", 200)] {
+    // narrow is 8 zeros; medium and long cap at the offered width; fill takes it.
+    for (width, expected) in [
+        ("narrow", 48),
+        ("medium", 144),
+        ("long", 200),
+        ("fill", 200),
+    ] {
         let measured = run(
             node("Slot", vec![("width", s(width))], vec![]),
             Placement::Page,

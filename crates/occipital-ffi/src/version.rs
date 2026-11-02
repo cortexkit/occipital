@@ -22,12 +22,12 @@ struct VersionJson {
 
 /// The version descriptor as JSON:
 /// `{"executionDialect", "catalog": {"version", "digest", "layout", "aliases"},
-/// "toolCatalog": {"version", "digest", "layout"}}`. `catalog` is the
-/// embedded catalog: a stored reply whose stamp names its `digest` or any of
-/// its `aliases` draws with it. `toolCatalog` is the catalog tool templates
-/// name: a template's `catalog.digest` is `sha256:` followed by its
-/// `digest`, and a template naming another digest is for a catalog this
-/// library doesn't implement.
+/// "toolCatalog": {"version", "digest", "layout", "aliases"}}`. `catalog`
+/// is the embedded catalog: a stored reply whose stamp names its `digest` or
+/// any of its `aliases` draws with it. `toolCatalog` is the catalog tool
+/// templates name: a template whose `catalog.digest` is `sha256:` followed by
+/// its `digest` or one of its `aliases` is for this library, and a template
+/// naming another digest is for a catalog it doesn't implement.
 ///
 /// # Safety
 ///
@@ -91,7 +91,12 @@ mod tests {
         let tool = json["toolCatalog"]["digest"].as_str().unwrap();
         assert_eq!(tool, occipital_lang::Catalog::tool_templates_digest());
         assert_ne!(tool, digest);
-        assert_eq!(json["toolCatalog"].as_object().unwrap().len(), 3);
+        // The digest the tool catalog had before the narrow Slot width.
+        assert_eq!(
+            json["toolCatalog"]["aliases"],
+            serde_json::json!(["9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf"])
+        );
+        assert_eq!(json["toolCatalog"].as_object().unwrap().len(), 4);
     }
 
     #[test]

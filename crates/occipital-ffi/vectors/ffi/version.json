@@ -2,5 +2,5 @@
   "entry": "occ_version",
   "request": {},
   "status": 0,
-  "response": "{\"executionDialect\":\"1.0\",\"catalog\":{\"version\":\"1.0\",\"digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout\":\"1\",\"aliases\":[\"beb0904e8b402916d84d7609a8b06db30ac308f692dcc048db2dc1138cd0c986\"]},\"toolCatalog\":{\"version\":\"1.1\",\"digest\":\"9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf\",\"layout\":\"1\"}}"
+  "response": "{\"executionDialect\":\"1.0\",\"catalog\":{\"version\":\"1.0\",\"digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout\":\"1\",\"aliases\":[\"beb0904e8b402916d84d7609a8b06db30ac308f692dcc048db2dc1138cd0c986\"]},\"toolCatalog\":{\"version\":\"1.1\",\"digest\":\"3f92ca341daef684577fb26016c71449f5532715510a66ecb9677cd93a56cb84\",\"layout\":\"1\",\"aliases\":[\"9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf\"]}}"
 }

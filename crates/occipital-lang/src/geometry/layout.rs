@@ -485,6 +485,7 @@ impl<M: Metrics> Engine<'_, M> {
     /// size; `None` for `fill`, which takes what the row leaves.
     fn slot_width(&mut self, p: &Props, w: Decimal) -> Result<Option<Decimal>, LayoutError> {
         let zeros = match text(p, "width") {
+            Some("narrow") => 8,
             Some("short") => 12,
             Some("medium") => 24,
             Some("long") => 40,
