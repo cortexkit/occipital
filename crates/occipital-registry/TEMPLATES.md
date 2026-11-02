@@ -95,6 +95,14 @@ each time they open, so they have no such rule.
   work item (`wi_`) that opens the app's own card for it. Where the app can't
   open the item, the label shows as plain text.
 
+Numbers read better formatted, with the language's built-ins, which work in
+rows and pages alike:
+
+- `FormatBytes(n, digits?)`: binary units, such as "7.6 MiB" or "512 B".
+- `FormatDuration(ms, "compact")`: "920 ms", "2.4 s", "1m 5s" or "2h 3m";
+  `"clock"` gives "m:ss" or "h:mm:ss".
+- `FormatNumber(n, digits?, grouping?)`: thousands grouped with ",".
+
 The tool catalog lists each component's props, types and defaults, in the
 `cortexkit-occipital-lang` crate's `catalog/catalog-v1.json` and
 `catalog/catalog-tool-v1.1.json`. A block component, such as `Card` or `Slot`,
