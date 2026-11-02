@@ -1,14 +1,15 @@
-//! AFT's Bash tool-view templates (`templates/aft/bash/`) check clean against
-//! the operations AFT froze for them and every call shape the row and page can
-//! be shown for.
+//! A Bash row and page written for Catalog 1.0's site reads
+//! (`fixtures/bash-site-reads/`) check clean against the operations they read
+//! and every call shape the row and page can be shown for.
 //!
-//! The registry and host cases in `templates/aft/bash/check/` restate AFT's
-//! v1 schema freeze (`bash_status`, `bash_output`, the `aft.bash.view` record
-//! and the Bash tool's arguments) in this crate's provisional schema subset.
-//! The view schema also admits the running form the host supplies before any
-//! record exists: `phase: "running"` with every terminal field null. They are
-//! check inputs only: AFT's published manifest is the authority, and a change
-//! there must be copied here before the templates are published again.
+//! These predate tool templates (`occipital.template/1`, which make no reads):
+//! they are fixtures for the language's site-read checks and the FFI program
+//! session, not an example of a tool provider's view. The registry and host
+//! cases in `fixtures/bash-site-reads/check/` describe the two operations the
+//! programs read (`bash_status`, `bash_output`), the `aft.bash.view` record and
+//! the Bash tool's arguments in this crate's schema subset. The view schema also
+//! admits the running form a host supplies before any record exists:
+//! `phase: "running"` with every terminal field null.
 
 use std::collections::BTreeMap;
 
@@ -16,10 +17,10 @@ use occipital_lang::{
     check_program, CheckContext, HostValues, OperationRegistry, Profile, ToolInputs, TrialOutcome,
 };
 
-const ROW: &str = include_str!("../../../templates/aft/bash/row.ui");
-const PAGE: &str = include_str!("../../../templates/aft/bash/page.ui");
-const REGISTRY: &str = include_str!("../../../templates/aft/bash/check/registry.json");
-const HOSTS: &str = include_str!("../../../templates/aft/bash/check/hosts.json");
+const ROW: &str = include_str!("../fixtures/bash-site-reads/row.ui");
+const PAGE: &str = include_str!("../fixtures/bash-site-reads/page.ui");
+const REGISTRY: &str = include_str!("../fixtures/bash-site-reads/check/registry.json");
+const HOSTS: &str = include_str!("../fixtures/bash-site-reads/check/hosts.json");
 
 fn hosts() -> BTreeMap<String, ToolInputs> {
     serde_json::from_str(HOSTS).expect("the host cases parse")

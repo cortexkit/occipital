@@ -10,7 +10,6 @@ It holds:
 - **The `ck-occipital` binary** (`crates/occipital-module`). It runs on the person's computer as the reserved `occipital` module under the CortexKit daemon. It serves the apps' chat operations (transcript pages, live text, sends, Stop and uploads) and the reply teaching, the part of a head's system prompt that teaches the interface tags, which Core adds for runners that stamp replies. See the [module guide](crates/occipital-module/README.md).
 - **The transcript engine** (`crates/occipital-app-reader`). The pages, claims, live-text ring and watches behind the apps' chat reads, independent of the daemon.
 - **File placement helpers** (`crates/occipital-files`). A no-replace move, a file's identity and free space, on Windows, Linux and macOS, for placing uploads.
-- **Templates** (`templates/`). Example row and page templates for a tool provider's views.
 
 ## Where it's going
 

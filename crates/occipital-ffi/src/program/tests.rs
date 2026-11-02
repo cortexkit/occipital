@@ -14,10 +14,14 @@ const DATA_SALES: &str =
     include_str!("../../../occipital-lang/fixtures/section16/sources/16.06-data-sales.ui");
 const DATA_SALES_TRACE: &str =
     include_str!("../../../occipital-lang/fixtures/section16/golden/16.06-data-sales.trace");
-const BASH_ROW: &str = include_str!("../../../../templates/aft/bash/row.ui");
-const BASH_PAGE: &str = include_str!("../../../../templates/aft/bash/page.ui");
-const BASH_REGISTRY: &str = include_str!("../../../../templates/aft/bash/check/registry.json");
-const BASH_HOSTS: &str = include_str!("../../../../templates/aft/bash/check/hosts.json");
+// A Bash row and page written for Catalog 1.0's site reads, before tool
+// templates (`occipital.template/1`) existed; see the language test that checks them.
+const BASH_ROW: &str = include_str!("../../../occipital-lang/fixtures/bash-site-reads/row.ui");
+const BASH_PAGE: &str = include_str!("../../../occipital-lang/fixtures/bash-site-reads/page.ui");
+const BASH_REGISTRY: &str =
+    include_str!("../../../occipital-lang/fixtures/bash-site-reads/check/registry.json");
+const BASH_HOSTS: &str =
+    include_str!("../../../occipital-lang/fixtures/bash-site-reads/check/hosts.json");
 
 /// A `context` member for `profile` with no registry, tool or records.
 fn context(profile: &str) -> Json {
