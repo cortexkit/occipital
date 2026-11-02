@@ -205,8 +205,8 @@ mod tests {
     }
 
     /// Asking an app for views asks the fetcher about each writer with a kept
-    /// view or `unknown` for the pin, so one due again is fetched; a writer
-    /// whose catalog didn't hold the pin is never asked.
+    /// answer for the pin, so one due again is fetched, including a writer
+    /// whose catalog didn't hold the pin, since its view may carry the tool.
     #[tokio::test]
     async fn reading_views_asks_about_each_kept_answer() {
         let dir = cortexkit_test_support::ScratchDir::new("occipital-display-view-wants");
@@ -227,10 +227,12 @@ mod tests {
             hints,
         ));
         display.views(&json!({"pins": [pin]})).await.unwrap();
-        assert_eq!(
-            wanted.try_recv().unwrap(),
-            views::Want::Writer("aft".to_owned(), pin.to_owned())
-        );
+        for writer in ["aft", "core"] {
+            assert_eq!(
+                wanted.try_recv().unwrap(),
+                views::Want::Writer(writer.to_owned(), pin.to_owned())
+            );
+        }
         assert!(wanted.try_recv().is_err());
     }
 }

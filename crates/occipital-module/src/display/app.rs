@@ -117,10 +117,8 @@ impl ToolDisplay {
                 // fetcher decides and never waits; this answers from what is
                 // kept now.
                 if let Some(views) = &this.views {
-                    for (writer, kept) in &kept {
-                        if !matches!(kept.state, ViewState::NotInCatalog) {
-                            views.want(writer, &pin);
-                        }
+                    for (writer, _) in &kept {
+                        views.want(writer, &pin);
                     }
                 }
                 if let Some(answer) = this.answer(&pin, &kept, held.get(&pin).copied()) {

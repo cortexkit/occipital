@@ -1,11 +1,19 @@
 //! Fetching each writer's view for a pin (`tool.views`), off the write path.
 //!
 //! A write's view authorizes the join only when the writer itself serves it for
-//! the pin and the pin belongs to a tool in that writer's `tool.catalog` when
-//! the view is first fetched (tool-display §6). The answer is kept with the
+//! the pin, and the pin is the tool's (tool-display §6): the view's own `tool`
+//! recomputes to the pin, and its input schema is the one kept; or, for a view
+//! without `tool`, the pin belongs to a tool in the writer's current
+//! `tool.catalog`, whose input schema is kept. A `tool` that doesn't recompute
+//! to the pin makes the answer `unknown`. Every wanted pin is asked about, so a
+//! pin that left the catalog still joins when its view carries its tool. When
+//! two writers each have an accepted view for one pin, the apps' `display.views`
+//! answers `unknown` for it, so neither view is drawn: a match proves the
+//! tool's definition, not which writer owns the tool. The answer is kept with the
 //! writer's version (see [`ModuleFacts::version`]), so a call recorded before
 //! its provider changed its catalog still joins. A kept view or `unknown` is
-//! fetched again when that version changes (tool-provider §2.1), and also when
+//! fetched again, as is a pin kept as not in the catalog, when that version
+//! changes (tool-provider §2.1), and also when
 //! it was last asked an hour or more ago, because a provider that declares no
 //! build can serve a revised template under an unchanged `module_version`:
 //! many modules keep one across builds.
@@ -16,9 +24,8 @@
 //!
 //! A pin can also be wanted without a writer, when a page or an app names a
 //! call no provider has written for yet: rows draw from a call's input alone.
-//! Then every module that serves views (`tool-views/v1`) is asked; the one
-//! whose catalog holds the pin answers, and the others keep it as not in
-//! their catalog without being asked again.
+//! Then every module that serves views (`tool-views/v1`) is asked, and each
+//! answer is kept as for a writer's pin.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
@@ -225,13 +232,11 @@ fn versioned(module_version: Option<&str>, build: Option<&str>) -> String {
 }
 
 /// Whether a kept answer is fetched again under the writer's `version` at
-/// `now_ms`: a view or `unknown` kept under another version, or last asked
-/// [`ASK_AGAIN_AFTER_MS`] or more ago. A pin that wasn't in the writer's
-/// catalog at its first fetch never joins, so it isn't asked again.
+/// `now_ms`: one kept under another version, or last asked
+/// [`ASK_AGAIN_AFTER_MS`] or more ago. That includes a pin kept as not in the
+/// catalog, which a later answer carrying the pin's tool can still accept.
 fn is_due(kept: &KeptView, version: &str, now_ms: i64) -> bool {
-    !matches!(kept.state, ViewState::NotInCatalog)
-        && (kept.module_version != version
-            || now_ms.saturating_sub(kept.asked_at_ms) >= ASK_AGAIN_AFTER_MS)
+    kept.module_version != version || now_ms.saturating_sub(kept.asked_at_ms) >= ASK_AGAIN_AFTER_MS
 }
 
 /// Fetch `writer`'s answers for `due`, each pin with what is kept for it, and
@@ -255,35 +260,16 @@ async fn fetch(
         })
         .collect();
     let now = now_ms();
-    // A first fetch of a pin outside the catalog is never asked about.
-    let mut asked = Vec::new();
-    for (pin, kept) in due {
-        if kept.is_none() && !schemas.contains_key(pin) {
-            put(
-                store,
-                writer,
-                pin,
-                Decision::Keep(ViewState::NotInCatalog),
-                version,
-                now,
-            )?;
-        } else {
-            asked.push((pin, kept));
-        }
-    }
     let mut replaced = Vec::new();
-    for chunk in asked.chunks(MAX_PINS) {
-        let request = ViewsRequest::new(chunk.iter().map(|(pin, _)| (*pin).clone()).collect());
+    for chunk in due.chunks(MAX_PINS) {
+        let request = ViewsRequest::new(chunk.iter().map(|(pin, _)| pin.clone()).collect());
         let reply = providers.views(writer, &request).await?;
         reply
             .validate_for(&request)
             .map_err(|refusal| format!("{}: {}", refusal.code, refusal.message))?;
         for (pin, kept) in chunk {
-            let decision = decide(
-                kept.as_ref(),
-                &reply.views[*pin],
-                schemas.get(*pin).copied(),
-            )?;
+            let (view, input_schema) = resolve(pin, &reply.views[pin], schemas.get(pin).copied());
+            let decision = decide(kept.as_ref(), view, input_schema)?;
             if let Decision::Stamp(Some(reason)) = &decision {
                 tracing::warn!(%writer, %pin, %reason, "kept the display view");
             }
@@ -294,6 +280,30 @@ async fn fetch(
         }
     }
     Ok(replaced)
+}
+
+/// The writer's answer for `pin` as [`decide`] reads it: the view, and the input
+/// schema that comes with it. A view whose `tool` recomputes to the pin brings
+/// that tool's input schema; a view without `tool` brings `catalog`, the input
+/// schema of the writer's current catalog tool with the pin, if any. A view
+/// whose `tool` doesn't recompute to the pin is `unknown`, never checked
+/// against the catalog instead (tool-display §6).
+fn resolve<'a>(
+    pin: &str,
+    answer: &'a ViewEntry,
+    catalog: Option<&'a Value>,
+) -> (Option<&'a ViewManifest>, Option<&'a Value>) {
+    match answer {
+        ViewEntry::Manifest(view) => match view.check_pin(pin) {
+            Ok(true) => (
+                Some(view),
+                view.tool.as_ref().map(|tool| &tool.input_schema),
+            ),
+            Ok(false) => (Some(view), catalog),
+            Err(_) => (None, None),
+        },
+        _ => (None, catalog),
+    }
 }
 
 /// What to do with a writer's answer for a pin.
@@ -308,20 +318,17 @@ enum Decision {
     Stamp(Option<String>),
 }
 
-/// Decide on `fetched`, the writer's answer for a pin, given what is `kept`
-/// for it and the input schema of the writer's catalog tool with that pin,
-/// absent when no catalog tool has it any more.
+/// Decide on `fetched`, the view the writer serves for a pin (`None` for
+/// `unknown`), given what is `kept` for it and the input schema [`resolve`]
+/// found, absent when the view carries no tool and no catalog tool has the pin.
 fn decide(
     kept: Option<&ViewState>,
-    fetched: &ViewEntry,
+    fetched: Option<&ViewManifest>,
     input_schema: Option<&Value>,
 ) -> Result<Decision, String> {
-    let fetched_view = match fetched {
-        ViewEntry::Manifest(view) => Some(view),
-        _ => None,
-    };
-    Ok(match (kept, fetched_view) {
-        // A first answer: the pin is in the catalog, or it wasn't asked.
+    Ok(match (kept, fetched) {
+        // A first answer: a view with an input schema joins; one without is
+        // a pin outside the catalog.
         (None, Some(view)) => match input_schema {
             Some(schema) => Decision::Keep(ViewState::View {
                 manifest: canonical(view)?,
@@ -330,8 +337,9 @@ fn decide(
             None => Decision::Keep(ViewState::NotInCatalog),
         },
         (None, None) => Decision::Keep(ViewState::Unknown),
-        // A view where the writer had answered `unknown`. Its input schema
-        // comes only from the catalog; a tool already gone from it can't join.
+        // A view where the writer had answered `unknown`. Without its tool,
+        // its input schema comes only from the catalog, and a tool already
+        // gone from it can't join.
         (Some(ViewState::Unknown), Some(view)) => match input_schema {
             Some(schema) => Decision::Replace(ViewState::View {
                 manifest: canonical(view)?,
@@ -375,8 +383,15 @@ fn decide(
                 _ => Decision::Stamp(None),
             }
         }
-        // Not asked: a pin outside the catalog at its first fetch.
-        (Some(ViewState::NotInCatalog), Some(_)) => Decision::Stamp(None),
+        // A pin kept as outside the catalog now joins if the view carries its
+        // tool or the pin is back in the catalog.
+        (Some(ViewState::NotInCatalog), Some(view)) => match input_schema {
+            Some(schema) => Decision::Replace(ViewState::View {
+                manifest: canonical(view)?,
+                input_schema: canonical(schema)?,
+            }),
+            None => Decision::Stamp(None),
+        },
     })
 }
 
@@ -483,28 +498,39 @@ impl Providers for DaemonProviders {
 mod tests {
     use super::*;
     use cortexkit_role_tool_provider::catalog::schema_digest;
-    use cortexkit_role_tool_provider::views::{RecordSchema, ViewManifest};
+    use cortexkit_role_tool_provider::views::{RecordSchema, ViewManifest, ViewTool};
     use cortexkit_test_support::ScratchDir;
     use std::sync::Mutex;
 
-    /// A writer with two tools, `bash` and `edit`, serving `bash_view` for
-    /// `bash` (`unknown` while it is `None`) and `unknown` for `edit`, at
-    /// module version `version`. It counts its catalog and views calls, and
-    /// fails its catalog while `down` is set.
+    /// A writer with two tools in its catalog, `bash` and `edit`, at module
+    /// version `version`. It serves `bash_view` for `bash` (`unknown` while it
+    /// is `None`), `unknown` for `edit`, and `outside` for pins outside its
+    /// catalog. It counts its catalog and views calls, and fails its catalog
+    /// while `down` is set.
     struct Aft {
         calls: Mutex<Vec<String>>,
         down: Mutex<bool>,
         version: Mutex<String>,
         bash_view: Mutex<Option<ViewManifest>>,
+        outside: Mutex<HashMap<String, ViewManifest>>,
     }
 
     impl Aft {
+        /// Outside its catalog it serves the `old` tool's view carrying that
+        /// tool, a view without `tool` for `legacy`, and for `forged` a view
+        /// whose `tool` is `old`'s, so it recomputes to another pin.
         fn new(down: bool) -> Arc<Self> {
+            let old = manifest().with_tool(ViewTool::from(&tool("old")));
             Arc::new(Self {
                 calls: Mutex::new(vec![]),
                 down: Mutex::new(down),
                 version: Mutex::new("1.0".into()),
                 bash_view: Mutex::new(Some(manifest())),
+                outside: Mutex::new(HashMap::from([
+                    (pin("old"), old.clone()),
+                    (pin("legacy"), manifest()),
+                    (pin("forged"), old),
+                ])),
             })
         }
     }
@@ -569,9 +595,11 @@ mod tests {
                     .pins
                     .iter()
                     .map(|asked| {
-                        let served = (*asked == pin("bash"))
-                            .then(|| self.bash_view.lock().unwrap().clone())
-                            .flatten();
+                        let served = if *asked == pin("bash") {
+                            self.bash_view.lock().unwrap().clone()
+                        } else {
+                            self.outside.lock().unwrap().get(asked).cloned()
+                        };
                         let entry = served.map_or(ViewEntry::Unknown, ViewEntry::Manifest);
                         (asked.clone(), entry)
                     })
@@ -596,35 +624,56 @@ mod tests {
     }
 
     /// One catalog read and one `tool.views` call serve every pin queued for a
-    /// writer. Each answer is kept: the view with the catalog tool's input
-    /// schema, `unknown` as unknown, and a pin no catalog tool has as not in
-    /// the catalog, without asking `tool.views` about it.
+    /// writer, in its catalog or not. Each answer is kept: a catalog pin's view
+    /// with the catalog tool's input schema; a view carrying its tool, outside
+    /// the catalog, with that tool's input schema; `unknown` as unknown, and so
+    /// is a view whose tool recomputes to another pin; and a view without a
+    /// tool for a pin outside the catalog as not in the catalog.
     #[tokio::test(start_paused = true)]
-    async fn each_answer_is_kept_and_a_pin_outside_the_catalog_is_never_asked() {
+    async fn each_answer_is_kept_and_every_pin_is_asked() {
         let dir = ScratchDir::new("occipital-views-kept");
         let store = opened(&dir);
         let aft = Aft::new(false);
         let (fetcher, _task) = start(store.clone(), aft.clone(), None);
         let foreign = "tp1:gone:0000000000000000000000000000000000000000000000000000000000000000:1";
-        for wanted in [pin("bash"), pin("edit"), foreign.into()] {
-            fetcher.want("aft", &wanted);
+        let wanted = [
+            pin("bash"),
+            pin("edit"),
+            foreign.into(),
+            pin("old"),
+            pin("legacy"),
+            pin("forged"),
+        ];
+        for pin in &wanted {
+            fetcher.want("aft", pin);
         }
-        until(|| matches!(store.view("aft", foreign), Ok(Some(_)))).await;
-        until(|| matches!(store.view("aft", &pin("edit")), Ok(Some(_)))).await;
-        assert_eq!(*aft.calls.lock().unwrap(), ["aft catalog", "aft views 2"]);
+        for pin in &wanted {
+            until(|| matches!(store.view("aft", pin), Ok(Some(_)))).await;
+        }
+        assert_eq!(*aft.calls.lock().unwrap(), ["aft catalog", "aft views 6"]);
+        let view = |name: &str, manifest: &ViewManifest| {
+            Some(ViewState::View {
+                manifest: serde_jcs::to_vec(manifest).unwrap(),
+                input_schema: serde_jcs::to_vec(&tool(name).input_schema).unwrap(),
+            })
+        };
         assert_eq!(
             store.view("aft", &pin("bash")).unwrap(),
-            Some(ViewState::View {
-                manifest: serde_jcs::to_vec(&manifest()).unwrap(),
-                input_schema: serde_jcs::to_vec(&tool("bash").input_schema).unwrap(),
-            })
+            view("bash", &manifest())
         );
         assert_eq!(
-            store.view("aft", &pin("edit")).unwrap(),
-            Some(ViewState::Unknown)
+            store.view("aft", &pin("old")).unwrap(),
+            view("old", &manifest().with_tool(ViewTool::from(&tool("old"))))
         );
+        for unknown in [pin("edit"), foreign.into(), pin("forged")] {
+            assert_eq!(
+                store.view("aft", &unknown).unwrap(),
+                Some(ViewState::Unknown),
+                "{unknown}"
+            );
+        }
         assert_eq!(
-            store.view("aft", foreign).unwrap(),
+            store.view("aft", &pin("legacy")).unwrap(),
             Some(ViewState::NotInCatalog)
         );
         // Another writer's view of the same pin is a different question.
@@ -638,7 +687,7 @@ mod tests {
     /// When the writer's version changes, a kept `unknown` and a kept view are
     /// fetched again: a view replaces `unknown`, a higher template revision
     /// replaces the kept view, and a template changed without a higher
-    /// revision is ignored. A pin outside the catalog is never asked again.
+    /// revision is ignored.
     #[tokio::test(start_paused = true)]
     async fn a_new_writer_version_brings_revised_templates_only() {
         let dir = ScratchDir::new("occipital-views-revised");
@@ -647,7 +696,6 @@ mod tests {
         *aft.bash_view.lock().unwrap() = None;
         let (hints, mut announced) = broadcast::channel(8);
         let (fetcher, _task) = start(store.clone(), aft.clone(), Some(hints));
-        let foreign = "tp1:gone:0000000000000000000000000000000000000000000000000000000000000000:1";
         let kept = |pin: &str| store.kept_view("aft", pin).unwrap();
         // Under each version: set what aft serves, want the pins, and wait
         // until the bash pin was checked under that version.
@@ -655,7 +703,6 @@ mod tests {
             *aft.version.lock().unwrap() = version.into();
             *aft.bash_view.lock().unwrap() = served;
             fetcher.want("aft", &pin("bash"));
-            fetcher.want("aft", foreign);
         };
         let bash_at = |version: &str| {
             let version = version.to_owned();
@@ -682,7 +729,6 @@ mod tests {
         step("1.0", None);
         until(bash_at("1.0")).await;
         assert_eq!(kept(&pin("bash")).unwrap().state, ViewState::Unknown);
-        assert_eq!(kept(foreign).unwrap().state, ViewState::NotInCatalog);
 
         // Same version: nothing is asked, even though aft serves a view now.
         step("1.0", Some(manifest()));
@@ -710,18 +756,6 @@ mod tests {
             view(&revised(1, "fixed"))
         );
 
-        // The pin outside the catalog stayed as first kept, never asked again.
-        let foreign_kept = kept(foreign).unwrap();
-        assert_eq!(
-            (foreign_kept.state, foreign_kept.module_version.as_str()),
-            (ViewState::NotInCatalog, "1.0")
-        );
-        assert!(aft
-            .calls
-            .lock()
-            .unwrap()
-            .iter()
-            .all(|call| call != "aft views 2"));
         // Each replacement was announced, the view in place of `unknown` and
         // the fixed template; the ignored change wasn't.
         let mut pins = Vec::new();
@@ -771,8 +805,51 @@ mod tests {
         assert!(!due(&unknown, "1.0", 1_000 + ASK_AGAIN_AFTER_MS - 1));
         assert!(due(&unknown, "1.0", 1_000 + ASK_AGAIN_AFTER_MS));
         assert!(due(&unknown, "1.1", 1_000));
+        // A pin kept as outside the catalog falls due by the same rules: a
+        // later answer can carry its tool.
         let outside = kept(ViewState::NotInCatalog);
-        assert!(!due(&outside, "1.1", 1_000 + ASK_AGAIN_AFTER_MS));
+        assert!(!due(&outside, "1.0", 1_000 + ASK_AGAIN_AFTER_MS - 1));
+        assert!(due(&outside, "1.0", 1_000 + ASK_AGAIN_AFTER_MS));
+        assert!(due(&outside, "1.1", 1_000));
+    }
+
+    /// A pin kept as outside the catalog is asked again under the writer's
+    /// next version, and joins once the writer's view carries its tool.
+    #[tokio::test(start_paused = true)]
+    async fn a_pin_outside_the_catalog_joins_once_its_view_carries_its_tool() {
+        let dir = ScratchDir::new("occipital-views-outside");
+        let store = opened(&dir);
+        let aft = Aft::new(false);
+        let (fetcher, _task) = start(store.clone(), aft.clone(), None);
+        fetcher.want("aft", &pin("legacy"));
+        until(|| matches!(store.view("aft", &pin("legacy")), Ok(Some(_)))).await;
+        assert_eq!(
+            store.view("aft", &pin("legacy")).unwrap(),
+            Some(ViewState::NotInCatalog)
+        );
+
+        let carried = manifest().with_tool(ViewTool::from(&tool("legacy")));
+        aft.outside
+            .lock()
+            .unwrap()
+            .insert(pin("legacy"), carried.clone());
+        *aft.version.lock().unwrap() = "1.1".into();
+        tokio::time::sleep(VERSIONS_FRESH).await;
+        fetcher.want("aft", &pin("legacy"));
+        until(|| {
+            matches!(
+                store.view("aft", &pin("legacy")),
+                Ok(Some(ViewState::View { .. }))
+            )
+        })
+        .await;
+        assert_eq!(
+            store.view("aft", &pin("legacy")).unwrap(),
+            Some(ViewState::View {
+                manifest: serde_jcs::to_vec(&carried).unwrap(),
+                input_schema: serde_jcs::to_vec(&tool("legacy").input_schema).unwrap(),
+            })
+        );
     }
 
     /// Every refetch outcome the integration test doesn't reach: the same view,
@@ -787,37 +864,23 @@ mod tests {
             input_schema: b"{}".to_vec(),
         };
         let schema = json!({});
-        let stamped = |kept: &ViewState, fetched: ViewEntry, schema: Option<&Value>| match decide(
-            Some(kept),
-            &fetched,
-            schema,
-        )
-        .unwrap()
-        {
-            Decision::Stamp(reason) => reason.is_some(),
-            other => panic!("expected the kept answer to stay, got {other:?}"),
-        };
-        assert!(!stamped(
-            &kept,
-            ViewEntry::Manifest(newer.clone()),
-            Some(&schema)
-        ));
-        assert!(!stamped(
-            &kept,
-            ViewEntry::Manifest(manifest()),
-            Some(&schema)
-        ));
-        assert!(stamped(&kept, ViewEntry::Unknown, Some(&schema)));
-        assert!(stamped(
-            &ViewState::Unknown,
-            ViewEntry::Manifest(manifest()),
-            None
-        ));
-        assert!(!stamped(
-            &ViewState::Unknown,
-            ViewEntry::Unknown,
-            Some(&schema)
-        ));
+        let stamped =
+            |kept: &ViewState, fetched: Option<ViewManifest>, schema: Option<&Value>| match decide(
+                Some(kept),
+                fetched.as_ref(),
+                schema,
+            )
+            .unwrap()
+            {
+                Decision::Stamp(reason) => reason.is_some(),
+                other => panic!("expected the kept answer to stay, got {other:?}"),
+            };
+        assert!(!stamped(&kept, Some(newer.clone()), Some(&schema)));
+        assert!(!stamped(&kept, Some(manifest()), Some(&schema)));
+        assert!(stamped(&kept, None, Some(&schema)));
+        assert!(stamped(&ViewState::Unknown, Some(manifest()), None));
+        assert!(!stamped(&ViewState::Unknown, None, Some(&schema)));
+        assert!(!stamped(&ViewState::NotInCatalog, Some(manifest()), None));
     }
 
     /// A failed fetch keeps nothing, and the writer isn't asked again until
@@ -862,11 +925,11 @@ mod tests {
         ));
         assert_eq!(
             store.view("aft", foreign).unwrap(),
-            Some(ViewState::NotInCatalog)
+            Some(ViewState::Unknown)
         );
         // Broca serves no views, so it was never asked and keeps nothing.
         assert_eq!(store.view("broca", &pin("bash")).unwrap(), None);
-        assert_eq!(*aft.calls.lock().unwrap(), ["aft catalog", "aft views 1"]);
+        assert_eq!(*aft.calls.lock().unwrap(), ["aft catalog", "aft views 2"]);
         fetcher.want_pin(&pin("bash"));
         tokio::time::sleep(Duration::from_millis(50)).await;
         assert_eq!(aft.calls.lock().unwrap().len(), 2);
