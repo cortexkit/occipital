@@ -24,7 +24,7 @@
         "h": "lines * L(body)",
         "w": "narrow: min(TW(8 zeros, body), W); short: min(TW(12 zeros, body), W); medium: min(TW(24 zeros, body), W); long: min(TW(40 zeros, body), W); fill: W",
         "hIn": ["metrics", "props:lines"],
-        "note": "The width counts the digit zero in the row's body style, the way a CSS ch unit does. In a Card row without wrap, Slots take their widths before the row's other fixed children, so a long code or label beside a Slot is cut to what the Slots leave, wherever the Slot sits in the row. The content is laid out in a column at the box's width, drawn top-aligned and clipped to the box; text that doesn't fit ends its last visible line with an ellipsis. The box never grows, so a row's height never depends on what arrives later."
+        "note": "The width counts the digit zero in the row's body style, the way a CSS ch unit does. In a Card row without wrap, Slots take their widths before the row's other fixed children, so a long code or label beside a Slot is cut to what the Slots leave, wherever the Slot sits in the row. The content is laid out in a column at the box's width and clipped to the box; text that doesn't fit ends its last visible line with an ellipsis. Content shorter than the box sits in it the way the row places a child: in a Card row, centred for align center and at the bottom for end, and at the top for start, stretch and anywhere outside a Card row. The box never grows, so a row's height never depends on what arrives later."
       },
       "states": {
         "loading": "a moving skeleton filling the box, still when the person asks for reduced motion",

@@ -690,12 +690,20 @@ fn props_are_checked_against_the_catalog_when_placed() {
 
 /// A Slot waiting on absent data draws `waiting: true` with no children, and
 /// its content is never evaluated, so content that would fail on the missing
-/// data costs nothing. Once the data is there the content draws, and `needs`
-/// itself is never in the tree.
+/// data costs nothing. That holds for a missing value too, such as a field
+/// read on a record that hasn't arrived, alone or at the end of a `??` chain.
+/// Once the data is there the content draws, and `needs` itself is never in
+/// the tree.
 #[test]
 fn a_slot_evaluates_its_content_only_once_its_needs_arrive() {
     let row = Inputs::new(Profile::ToolRow);
-    for needs in ["null", "(view ?? null)"] {
+    for needs in [
+        "null",
+        "(view ?? null)",
+        "view.record",
+        "view.record.path",
+        "view.completion.path ?? view.record.path",
+    ] {
         let evaluation = run_with(
             &format!(
                 "<Slot width=\"short\" needs={{{needs}}}><Badge tone={{1 / 0}}>x</Badge></Slot>"

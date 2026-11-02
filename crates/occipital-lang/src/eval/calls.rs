@@ -352,6 +352,15 @@ impl<'a> Evaluator<'a> {
                 .iter()
                 .any(|(key, value)| key.as_str() == "needs" && value.is_absent());
         let children = if waiting {
+            // A missing `needs`, such as a field read on a record that hasn't
+            // arrived, would drop out of the component's props, and the tree
+            // would then see a Slot with no `needs` and no content: neither
+            // waiting nor drawn. Kept as null, it still reads as waiting there.
+            for (key, value) in &mut fields {
+                if key.as_str() == "needs" {
+                    *value = Value::null();
+                }
+            }
             Vec::new()
         } else {
             self.content(&node.children)?

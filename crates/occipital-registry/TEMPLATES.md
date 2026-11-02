@@ -74,7 +74,9 @@ and `now`, is read only inside a `Slot`, a box of fixed size:
   null the content isn't evaluated, and the app draws the box as loading, or as
   not kept once the call is long done.
 
-Content that doesn't fit is clipped, and text ends with "…". A read of `view`
+Content that doesn't fit is clipped, and text ends with "…". Content shorter
+than the box follows the row's `align`: in a `Card` row with `align="center"`
+it is centred in the box, so it lines up with the row's other parts. A read of `view`
 or `now` outside a Slot, directly or through a named value, is refused with
 `E_UNSLOTTED_READ`. `input` and `zone` may be read anywhere. Pages are measured
 each time they open, so they have no such rule.
