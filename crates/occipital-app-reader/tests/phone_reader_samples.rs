@@ -72,6 +72,7 @@ fn the_runner_0_8_samples_are_complete_and_their_checksums_verify() {
         ("phone-reader-pi-v2", 6),
         ("phone-reader-tool-times-v3", 4),
         ("phone-reader-tool-display-v4", 22),
+        ("phone-reader-files-v1", 2),
     ] {
         verify_published_set(&format!("test-vectors/{set}"), files);
     }

@@ -94,6 +94,58 @@ fn every_contract_case_becomes_an_app_row() {
     }
 }
 
+/// A file the person attached reaches the app as a `file` part with its name,
+/// type and size, beside the message's text or on its own. The contract's
+/// display row names the type and size only in the file's media reference.
+#[test]
+fn an_attached_file_carries_its_name_type_and_size() {
+    for (file, profile, name, text, filename) in [
+        (
+            "display-opencode-v2.json",
+            DisplayProfile::OpenCode2,
+            "2.2.3-seq-54",
+            "S0_TAIL_KEEP",
+            Some("pixel.png"),
+        ),
+        (
+            "display-opencode-v2.json",
+            DisplayProfile::OpenCode2,
+            "synthetic-existing-image-ref",
+            "",
+            Some("pixel.png"),
+        ),
+        (
+            "display-pi.json",
+            DisplayProfile::Pi,
+            "recorded-user-image",
+            "HEAD_FIXTURE array user",
+            None,
+        ),
+    ] {
+        let at = cases(file)
+            .iter()
+            .position(|case| case["name"] == name)
+            .unwrap();
+        let entry = &entries(file)[at..=at];
+        let row = &display_rows(entry, false, profile, &[]).unwrap()[0];
+        assert_eq!(row.display["role"], "user", "{name}");
+        assert_eq!(row.display["text"], text, "{name}");
+        let files: Vec<&Value> = row.display["parts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|part| part["type"] == "file")
+            .collect();
+        assert_eq!(files.len(), 1, "{name}: {}", row.display);
+        let mut want = json!({"type": "file", "mime": "image/png", "byteCount": 69,
+            PART_KEY: files[0][PART_KEY], PART_INDEX: files[0][PART_INDEX]});
+        if let Some(filename) = filename {
+            want["filename"] = json!(filename);
+        }
+        assert_eq!(files[0], &want, "{name}");
+    }
+}
+
 /// A tool call and its result become one app tool part, keyed by the call's
 /// part key and id, with the result's length and, on an exact read, its text.
 #[test]

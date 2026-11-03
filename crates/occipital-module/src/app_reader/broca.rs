@@ -3808,11 +3808,12 @@ pub(crate) mod tests {
     mod contract_heads;
     mod describe_samples;
     mod empty_claim_samples;
+    mod files_samples;
     mod model_names_samples;
+    mod opencode2_pages;
     mod outside_window;
     mod part_keys;
     mod pi_display;
-    mod opencode2_pages;
     mod pi_pages;
     mod pi_samples;
     #[path = "../../../../../occipital-app-reader/tests/fixtures/broca_0_7.rs"]

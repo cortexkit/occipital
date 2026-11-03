@@ -390,13 +390,21 @@ fn display_part(part: DisplayPart) -> Option<(String, Part, Option<String>)> {
             },
             call(result.tool_call_id),
         ),
-        DisplayPart::File(file) => (
-            file.part,
-            Part::File {
-                raw: json!({"mime": file.mime, "filename": file.filename}),
-            },
-            None,
-        ),
+        DisplayPart::File(file) => {
+            // A file the runner stores as bytes names its type, size and pixel
+            // size only in its media reference, so the app's descriptor takes
+            // them from there; the part names the file.
+            let media = file
+                .media
+                .as_ref()
+                .and_then(|media| serde_json::to_value(media).ok())
+                .filter(|media| media["type"] == "media_ref")
+                .unwrap_or(Value::Null);
+            let mime = file.mime.map_or_else(|| media["mime"].clone(), Value::from);
+            let raw = json!({"mime": mime, "filename": file.filename,
+                "byteCount": media["byte_size"], "width": media["width"], "height": media["height"]});
+            (file.part, Part::File { raw }, None)
+        }
         DisplayPart::Other(other) => (other.part, Part::Unknown(json!({"type": other.kind})), None),
         _ => return None,
     })
