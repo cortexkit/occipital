@@ -58,6 +58,7 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"
 tokio-util = "0.7"
 tracing = "0.1"
 uuid = { version = "1", features = ["v4"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif"] }
 
 # Uploads are placed relative to an open directory handle, so a link swapped into
 # the project folder mid-upload cannot redirect the write.

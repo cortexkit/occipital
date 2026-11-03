@@ -813,7 +813,7 @@ impl Sender {
         let upload_id = upload_id.to_owned();
         for (index, piece) in bytes.chunks(CHUNK_MAX).enumerate() {
             let offset = (index * CHUNK_MAX) as u64;
-            let appended = json!({"upload_id": upload_id, "offset": offset, "data": base64(piece)});
+            let appended = json!({"upload_id": upload_id, "offset": offset, "data": crate::base64::encode(piece)});
             if let Err(message) = call("session.upload_append", appended).await? {
                 return Ok(Err(message));
             }
@@ -1485,28 +1485,6 @@ fn not_sent(send_id: Option<&str>, request: &SendRequest, message: &str) -> Valu
         receipt["clientMessageId"] = json!(id);
     }
     receipt
-}
-
-/// Standard base64 with padding (RFC 4648 §4), as the runner contract's
-/// `session.upload_append` takes a piece's bytes.
-fn base64(bytes: &[u8]) -> String {
-    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
-    for group in bytes.chunks(3) {
-        let word = (u32::from(group[0]) << 16)
-            | (u32::from(*group.get(1).unwrap_or(&0)) << 8)
-            | u32::from(*group.get(2).unwrap_or(&0));
-        for position in 0..4 {
-            if position <= group.len() {
-                out.push(char::from(
-                    ALPHABET[(word >> (18 - 6 * position) & 63) as usize],
-                ));
-            } else {
-                out.push('=');
-            }
-        }
-    }
-    out
 }
 
 fn conflict() -> SendRefusal {

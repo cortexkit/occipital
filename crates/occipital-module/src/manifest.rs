@@ -255,6 +255,7 @@ mod tests {
                 ("session.display_read", "query"),
                 ("session.display_watch", "query"),
                 ("session.enqueue_user_message", "mutate"),
+                ("session.media", "query"),
                 ("session.stop", "mutate"),
                 ("session.tool_detail", "query"),
                 ("session.tool_records", "query"),

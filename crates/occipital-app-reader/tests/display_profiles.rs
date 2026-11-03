@@ -95,10 +95,11 @@ fn every_contract_case_becomes_an_app_row() {
 }
 
 /// A file the person attached reaches the app as a `file` part with its name,
-/// type and size, beside the message's text or on its own. The contract's
-/// display row names the type and size only in the file's media reference.
+/// type, size and digest, beside the message's text or on its own. The
+/// contract's display row names the type, size and digest only in the file's
+/// media reference.
 #[test]
-fn an_attached_file_carries_its_name_type_and_size() {
+fn an_attached_file_carries_its_name_type_size_and_digest() {
     for (file, profile, name, text, filename) in [
         (
             "display-opencode-v2.json",
@@ -138,6 +139,7 @@ fn an_attached_file_carries_its_name_type_and_size() {
             .collect();
         assert_eq!(files.len(), 1, "{name}: {}", row.display);
         let mut want = json!({"type": "file", "mime": "image/png", "byteCount": 69,
+            "sha256": "b1ff9c8ea3a780bad09b346c423d2d0e46815926879b18e841d928376a946640",
             PART_KEY: files[0][PART_KEY], PART_INDEX: files[0][PART_INDEX]});
         if let Some(filename) = filename {
             want["filename"] = json!(filename);

@@ -87,7 +87,7 @@ The apps reach these operations through Callosum, and the desktop app directly:
 
 | Operation | Kind |
 | --- | --- |
-| `session.transcript_page`, `session.display_read`, `session.details` | read |
+| `session.transcript_page`, `session.display_read`, `session.details`, `session.media` | read |
 | `display.views`, `display.template`, `session.tool_records`, `session.tool_detail` | read |
 | `session.transcript_watch`, `session.display_watch`, `session.tool_records_watch` | watch |
 | `session.enqueue_user_message`, `session.stop` | send |
@@ -99,6 +99,11 @@ session's runner takes uploads and its model accepts the file's type; the send
 that names the file copies it to the runner. Otherwise the file is placed in the
 project, and the app puts its path in the message text. `upload.place` is the
 app's fallback when a send naming a prompt file is refused.
+
+An image a chat references is read with `session.media`: a thumbnail Occipital
+makes from the runner's bytes (at most 1024 pixels on its longest side, upright),
+or the original in pieces. Image file parts on a page carry the image's digest and,
+once Occipital has read its first bytes, its drawn width and height.
 
 Admission reads only what the daemon attests on the route: a Callosum route
 (`reserved:callosum`, with the device label `fed-<class>:<fingerprint>` it

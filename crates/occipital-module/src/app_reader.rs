@@ -42,12 +42,15 @@ pub const TRANSCRIPT_WATCH: &str = "session.transcript_watch";
 pub const DISPLAY_READ: &str = "session.display_read";
 pub const DISPLAY_WATCH: &str = "session.display_watch";
 pub const DETAILS: &str = occipital_app_reader::details::OPERATION;
-pub const METHODS: [&str; 5] = [
+/// An image in the chat: its thumbnail or its original bytes (`crate::media`).
+pub const MEDIA: &str = crate::media::OPERATION;
+pub const METHODS: [&str; 6] = [
     TRANSCRIPT_PAGE,
     TRANSCRIPT_WATCH,
     DISPLAY_READ,
     DISPLAY_WATCH,
     DETAILS,
+    MEDIA,
 ];
 /// The apps' send keeps core's operation name, so the apps change only the module
 /// they address.
@@ -228,6 +231,23 @@ pub trait SourceResolver: Send + Sync {
         ))
     }
 
+    /// The runner's `session.media_read` answer for an image or file `sha256`
+    /// that the session's history references, as the runner contract serves it:
+    /// `{data?, size, mime}`, with up to `length` bytes from `offset` in base64.
+    async fn media_read(
+        &self,
+        _session: &str,
+        _harness: Option<&str>,
+        _sha256: &str,
+        _offset: u64,
+        _length: u64,
+    ) -> Result<Value, ReadError> {
+        Err(ReadError::new(
+            "provider_unavailable",
+            "no runner connection is configured for media reads",
+        ))
+    }
+
     /// Whether a file of type `mime` can go into the session's prompt: its runner
     /// takes uploads (the runner contract's `attachments` group), and its model isn't
     /// known to refuse the type. Without a resolver that can tell, the file goes to
@@ -311,6 +331,8 @@ pub struct AppReader {
     pub sends: Arc<send::Sender>,
     /// Absent when the module's store could not be opened: uploads are then refused.
     pub uploads: Option<Arc<uploads::Uploads>>,
+    /// The thumbnails `session.media` has made.
+    thumbs: crate::media::Thumbs,
     /// The tool display reads, once the display store is open; refused until then.
     tool_display: std::sync::OnceLock<Arc<crate::display::app::ToolDisplay>>,
     /// The model names, once the module can call other modules; refused until
@@ -340,6 +362,7 @@ impl AppReader {
             watches: Arc::default(),
             sends,
             uploads: None,
+            thumbs: crate::media::Thumbs::default(),
             tool_display: std::sync::OnceLock::new(),
             model_names: std::sync::OnceLock::new(),
         }
@@ -503,6 +526,13 @@ impl AppReader {
                     format!("cannot encode the display read: {error}"),
                 )
             });
+        }
+        if method == MEDIA {
+            return observe::step(
+                "media",
+                crate::media::answer(&params, self.resolver.as_ref(), &self.thumbs),
+            )
+            .await;
         }
         if method == DETAILS {
             let request = occipital_app_reader::details::DetailsRequest::parse(&params)?;

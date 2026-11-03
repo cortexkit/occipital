@@ -24,8 +24,10 @@ compile_error!("occipital-module requires panic = \"unwind\": its panic boundary
 
 pub mod app_reader;
 pub mod backup;
+pub mod base64;
 pub mod display;
 pub mod manifest;
+pub mod media;
 #[cfg(feature = "show-ui")]
 pub mod native;
 pub mod serve;

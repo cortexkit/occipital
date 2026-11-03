@@ -209,6 +209,20 @@ impl SourceResolver for LazyBrocaSources {
             .await
     }
 
+    async fn media_read(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+        sha256: &str,
+        offset: u64,
+        length: u64,
+    ) -> Result<Value, ReadError> {
+        self.connected()
+            .await?
+            .media_read(session, harness, sha256, offset, length)
+            .await
+    }
+
     async fn watch(
         &self,
         session: &str,
@@ -261,6 +275,8 @@ pub enum ReadOp {
     /// Learn the runner's capability groups before interpreting optional metadata
     /// or asking for display history.
     Describe,
+    /// Bytes of an image or file the session's history references.
+    MediaRead,
 }
 
 impl ReadOp {
@@ -271,9 +287,14 @@ impl ReadOp {
             Self::History => "session.history",
             Self::Status => "run.status",
             Self::Describe => "role.describe",
+            Self::MediaRead => "session.media_read",
         }
     }
 }
+
+/// The longest a page waits to learn the sizes of the images it shows. Images
+/// still unknown then come without a size, and get one on a later read.
+const SIZE_WAIT: Duration = Duration::from_secs(1);
 
 #[async_trait]
 pub trait EventStream: Send {
@@ -540,6 +561,8 @@ pub struct BrocaSources {
     sources: tokio::sync::Mutex<HashMap<SessionRef, SourceSlot>>,
     describes: Mutex<HashMap<SessionRef, DescribeSlot>>,
     call_pins: CallPinSlot,
+    /// The image sizes every session's pages share.
+    sizes: Arc<crate::media::Sizes>,
 }
 
 type SourceSlot = Arc<tokio::sync::Mutex<Weak<BrocaSource>>>;
@@ -558,6 +581,7 @@ impl BrocaSources {
             sources: tokio::sync::Mutex::new(HashMap::new()),
             describes: Mutex::new(HashMap::new()),
             call_pins: CallPinSlot::default(),
+            sizes: Arc::default(),
         }
     }
 
@@ -662,6 +686,7 @@ impl BrocaSources {
         let source = BrocaSource::with_send_path(resolved, route, sendable, describe);
         *source.resolver.guard() = Some(self.resolver.clone());
         *source.call_pins.guard() = self.call_pins.clone();
+        *source.sizes.guard() = self.sizes.clone();
         *slot = Arc::downgrade(&source);
         Ok(source)
     }
@@ -766,6 +791,21 @@ impl SourceResolver for BrocaSources {
         Ok(source.head().await?.input.accepts(mime) != Some(false))
     }
 
+    async fn media_read(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+        sha256: &str,
+        offset: u64,
+        length: u64,
+    ) -> Result<Value, ReadError> {
+        let reference = self.reference(session, harness).await?;
+        self.source(&reference)
+            .await?
+            .media_read(sha256, offset, length)
+            .await
+    }
+
     async fn watch(
         &self,
         session: &str,
@@ -821,6 +861,8 @@ pub struct BrocaSource {
     describe: DescribeSlot,
     /// Where the pins of the calls this source's pages carry are kept.
     call_pins: Mutex<CallPinSlot>,
+    /// The sizes of images this source's pages show.
+    sizes: Mutex<Arc<crate::media::Sizes>>,
 }
 
 impl BrocaSource {
@@ -852,6 +894,67 @@ impl BrocaSource {
             }
         }
         Ok(rows)
+    }
+
+    /// Bytes of an image or file this session's history references, from its
+    /// runner's `session.media_read`: `{data?, size, mime}`. A runner without the
+    /// contract's `attachments` group serves no media, and the read is refused
+    /// `unsupported` without asking it.
+    pub async fn media_read(
+        &self,
+        sha256: &str,
+        offset: u64,
+        length: u64,
+    ) -> Result<Value, ReadError> {
+        if !self
+            .describe()
+            .await
+            .is_some_and(|describe| describe.declares("attachments"))
+        {
+            return Err(ReadError::new(
+                "unsupported",
+                "this session's runner serves no media",
+            ));
+        }
+        let request =
+            cortexkit_role_llm_runner::attachments::MediaReadRequest::new(sha256, offset, length);
+        self.remote_read(ReadOp::MediaRead, json_of(&request)?)
+            .await
+    }
+
+    /// Give each image on `rows` its drawn size: from the sizes already learned,
+    /// and, for images not yet read, from their first bytes, read one after
+    /// another until [`SIZE_WAIT`] runs out. A read that fails leaves the image
+    /// unknown, to be read again on a later page; bytes that hold no size this
+    /// module reads are remembered as such.
+    async fn size_images(&self, rows: &mut [Row]) {
+        let sizes = self.sizes.guard().clone();
+        let unknown: Vec<String> = rows
+            .iter()
+            .flat_map(|row| sizes.unknown(&row.display))
+            .collect();
+        if !unknown.is_empty() {
+            let deadline = tokio::time::Instant::now() + SIZE_WAIT;
+            for sha256 in unknown {
+                if sizes.get(&sha256).is_some() {
+                    continue;
+                }
+                let read = self.media_read(&sha256, 0, crate::media::HEADER_BYTES);
+                match tokio::time::timeout_at(deadline, read).await {
+                    Err(_) => break,
+                    Ok(Err(error)) if error.code == "unsupported" => break,
+                    Ok(Err(_)) => {}
+                    Ok(Ok(reply)) => {
+                        if let Ok(piece) = crate::media::media_piece(reply) {
+                            sizes.put(&sha256, crate::media::header_size(&piece.bytes));
+                        }
+                    }
+                }
+            }
+        }
+        for row in rows {
+            sizes.apply(&mut row.display);
+        }
     }
 
     /// Construct a session-bound source; route implementations must use this resolved
@@ -886,6 +989,7 @@ impl BrocaSource {
             sendable,
             describe,
             call_pins: Mutex::new(CallPinSlot::default()),
+            sizes: Mutex::default(),
         })
     }
 
@@ -1259,6 +1363,7 @@ impl BrocaSource {
         let mut rows = super::observe::synchronous("projection", || {
             self.rows(&entries, false, &pruned_reasoning)
         })?;
+        self.size_images(&mut rows).await;
         // The apps draw every system row as a prompt card that opens on tap, so
         // one with nothing in it, such as the entry Pi writes when a session
         // starts, is left out of pages. The rows kept keep their ordinals, and
@@ -2025,6 +2130,8 @@ pub(crate) mod tests {
         history_replies: Mutex<HashMap<u64, Result<Value, ReadError>>>,
         anchor_replies: Mutex<HashMap<String, Result<Value, ReadError>>>,
         read_entries: AtomicUsize,
+        /// The files `session.media_read` serves, by digest: type and bytes.
+        media: Mutex<HashMap<String, (String, Vec<u8>)>>,
     }
 
     /// A `role.describe` answer that passes the contract's check, declaring `groups`.
@@ -2044,6 +2151,22 @@ pub(crate) mod tests {
             && !served.iter().any(|op| op == ops::SESSION_READ)
         {
             served.push(ops::SESSION_READ.into());
+        }
+        // A runner taking files serves the upload operations and the media read.
+        if groups.contains(&"attachments") {
+            for op in [
+                "session.upload_begin",
+                "session.upload_append",
+                "session.upload_status",
+                "session.upload_commit",
+                "session.media_read",
+                ops::SESSION_SEND,
+                ops::SESSION_READ,
+            ] {
+                if !served.iter().any(|served| served == op) {
+                    served.push(op.into());
+                }
+            }
         }
         serde_json::to_value(
             RoleDescribe::new(vec![Major::new(PROVIDES, served, "alpha")], "fake-broca")
@@ -2186,7 +2309,18 @@ pub(crate) mod tests {
                 history_replies: Mutex::new(HashMap::new()),
                 anchor_replies: Mutex::new(HashMap::new()),
                 read_entries: AtomicUsize::new(0),
+                media: Mutex::new(HashMap::new()),
             })
+        }
+
+        /// Serve `bytes` of type `mime` from `session.media_read`, under their digest.
+        fn hold_media(&self, mime: &str, bytes: &[u8]) -> String {
+            let sha256 = format!("{:x}", <sha2::Sha256 as sha2::Digest>::digest(bytes));
+            self.media
+                .lock()
+                .unwrap()
+                .insert(sha256.clone(), (mime.into(), bytes.to_vec()));
+            sha256
         }
         async fn emit(&self, value: Value) {
             let sender = self.senders.lock().unwrap().last().unwrap().clone();
@@ -2202,6 +2336,10 @@ pub(crate) mod tests {
             ReadOp::Head => serde_json::from_value::<read::HeadRequest>(params.clone()).map(drop),
             ReadOp::Read => serde_json::from_value::<read::ReadRequest>(params.clone()).map(drop),
             ReadOp::History => serde_json::from_value::<HistoryRequest>(params.clone()).map(drop),
+            ReadOp::MediaRead => serde_json::from_value::<
+                cortexkit_role_llm_runner::attachments::MediaReadRequest,
+            >(params.clone())
+            .map(drop),
             ReadOp::Status | ReadOp::Describe => Ok(()),
         };
         if let Err(error) = decoded {
@@ -2363,6 +2501,23 @@ pub(crate) mod tests {
                             json!({"messages":messages, "history_version":self.history.load(Ordering::Relaxed), "incarnation":*self.incarnation.lock().unwrap()}),
                         )
                     }
+                }
+                "session.media_read" => {
+                    let media = self.media.lock().unwrap();
+                    let Some((mime, bytes)) = params["sha256"]
+                        .as_str()
+                        .and_then(|sha256| media.get(sha256))
+                    else {
+                        return Err(ReadError::new("unknown_media", "no such media"));
+                    };
+                    let offset = params["offset"].as_u64().unwrap() as usize;
+                    let length = params["length"].as_u64().unwrap() as usize;
+                    let mut reply = json!({"size": bytes.len(), "mime": mime});
+                    if length > 0 {
+                        let end = (offset + length).min(bytes.len());
+                        reply["data"] = json!(crate::base64::encode(&bytes[offset..end]));
+                    }
+                    Ok(reply)
                 }
                 method => Err(ReadError::new(
                     "scope_owner_mismatch",

@@ -391,9 +391,10 @@ fn display_part(part: DisplayPart) -> Option<(String, Part, Option<String>)> {
             call(result.tool_call_id),
         ),
         DisplayPart::File(file) => {
-            // A file the runner stores as bytes names its type, size and pixel
-            // size only in its media reference, so the app's descriptor takes
-            // them from there; the part names the file.
+            // A file the runner stores as bytes names its type, size, pixel size
+            // and digest only in its media reference, so the app's descriptor
+            // takes them from there; the part names the file. The digest is what
+            // the app asks for the image's bytes by (`session.media`).
             let media = file
                 .media
                 .as_ref()
@@ -402,7 +403,8 @@ fn display_part(part: DisplayPart) -> Option<(String, Part, Option<String>)> {
                 .unwrap_or(Value::Null);
             let mime = file.mime.map_or_else(|| media["mime"].clone(), Value::from);
             let raw = json!({"mime": mime, "filename": file.filename,
-                "byteCount": media["byte_size"], "width": media["width"], "height": media["height"]});
+                "byteCount": media["byte_size"], "width": media["width"], "height": media["height"],
+                "sha256": media["sha256"]});
             (file.part, Part::File { raw }, None)
         }
         DisplayPart::Other(other) => (other.part, Part::Unknown(json!({"type": other.kind})), None),
@@ -844,6 +846,7 @@ fn file_part(index: usize, raw: &Value) -> Value {
         ("attachmentId", "attachment_id"),
         ("artifactId", "artifact_id"),
         ("title", "title"),
+        ("sha256", "sha256"),
     ] {
         if let Some(value) = pointer
             .get(field)

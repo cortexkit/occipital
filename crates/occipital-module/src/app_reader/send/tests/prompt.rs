@@ -304,41 +304,8 @@ fn with_files(id: &str, text: &str, files: &[&str]) -> Value {
     json!({"session": "s", "text": text, "clientMessageId": id, "parts": parts})
 }
 
-/// RFC 4648's standard alphabet, read back.
 fn decode(text: &str) -> Vec<u8> {
-    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let values: Vec<u32> = text
-        .bytes()
-        .filter(|byte| *byte != b'=')
-        .map(|byte| ALPHABET.iter().position(|known| *known == byte).unwrap() as u32)
-        .collect();
-    let mut out = Vec::new();
-    for group in values.chunks(4) {
-        let word = group
-            .iter()
-            .enumerate()
-            .fold(0, |word, (index, value)| word | value << (18 - 6 * index));
-        out.extend(&word.to_be_bytes()[1..group.len()]);
-    }
-    out
-}
-
-#[test]
-fn pieces_are_encoded_as_rfc_4648_standard_base64() {
-    for (bytes, text) in [
-        (&b""[..], ""),
-        (b"f", "Zg=="),
-        (b"fo", "Zm8="),
-        (b"foo", "Zm9v"),
-        (b"foob", "Zm9vYg=="),
-        (b"fooba", "Zm9vYmE="),
-        (b"foobar", "Zm9vYmFy"),
-    ] {
-        assert_eq!(base64(bytes), text);
-        assert_eq!(decode(text), bytes);
-    }
-    let all: Vec<u8> = (0..=255).collect();
-    assert_eq!(decode(&base64(&all)), all);
+    crate::base64::decode(text).expect("the sender's pieces are canonical base64")
 }
 
 #[tokio::test]

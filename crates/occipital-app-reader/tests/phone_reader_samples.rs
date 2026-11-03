@@ -74,6 +74,7 @@ fn the_runner_0_8_samples_are_complete_and_their_checksums_verify() {
         ("phone-reader-tool-display-v4", 22),
         ("phone-reader-files-v1", 2),
         ("phone-uploads-prompt-v1", 24),
+        ("phone-reader-files-v2", 10),
     ] {
         verify_published_set(&format!("test-vectors/{set}"), files);
     }

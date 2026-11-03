@@ -95,6 +95,23 @@ impl SourceResolver for FakeResolver {
         self.resolutions.fetch_add(1, Ordering::SeqCst);
         Ok((session == "s").then(|| self.source.clone() as Arc<dyn TranscriptSource>))
     }
+
+    /// Session `s` references one three-byte image.
+    async fn media_read(
+        &self,
+        session: &str,
+        _: Option<&str>,
+        _: &str,
+        offset: u64,
+        length: u64,
+    ) -> Result<Value, ReadError> {
+        self.resolutions.fetch_add(1, Ordering::SeqCst);
+        if session != "s" {
+            return Err(ReadError::new("unknown_media", "not in this session"));
+        }
+        let bytes = &b"png"[offset.min(3) as usize..(offset + length).min(3) as usize];
+        Ok(json!({"size": 3, "mime": "image/png", "data": crate::base64::encode(bytes)}))
+    }
 }
 
 /// Serve one request on `method` through the module's own handler, as the device
@@ -584,6 +601,8 @@ fn params(method: &str, session: &str) -> Value {
         json!({"session":session, "text":"hello", "clientMessageId":"m1"})
     } else if method == TRANSCRIPT_WATCH {
         json!({"session":session,"claim":{"heldFloorMessageId":"m1","sinceMessageId":"m1","heldVersion":"history:1"}})
+    } else if method == MEDIA {
+        json!({"session":session, "sha256":"ab".repeat(32), "size":"full"})
     } else {
         json!({"session":session})
     }
