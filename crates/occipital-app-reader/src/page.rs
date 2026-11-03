@@ -187,7 +187,9 @@ fn required_session(params: &Value) -> Result<String, PageRefusal> {
 pub fn optional_transcript_harness(params: &Value) -> Result<Option<&str>, PageRefusal> {
     match params.get("harness") {
         None => Ok(None),
-        Some(Value::String(harness)) if matches!(harness.as_str(), "opencode" | "broca" | "pi") => {
+        Some(Value::String(harness))
+            if matches!(harness.as_str(), "opencode2" | "broca" | "pi") =>
+        {
             Ok(Some(harness))
         }
         Some(Value::String(harness)) => Err(invalid(format!(
@@ -365,7 +367,7 @@ mod tests {
     #[test]
     fn transcript_harness_is_optional_and_assertions_must_match() {
         assert_eq!(optional_transcript_harness(&json!({})).unwrap(), None);
-        for harness in ["opencode", "pi", "broca"] {
+        for harness in ["opencode2", "pi", "broca"] {
             let params = json!({"harness":harness});
             assert_eq!(optional_transcript_harness(&params).unwrap(), Some(harness));
             assert!(assert_transcript_harness(Some(harness), harness).is_ok());

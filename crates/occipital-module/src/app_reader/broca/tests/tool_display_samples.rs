@@ -1,9 +1,10 @@
-//! The tool display samples the apps pin, `phone-reader-tool-display-v2`. Its
-//! README says what each file shows; v1 differs only in the tool catalog digest
-//! its templates name. A test OpenCode session on Thalamus's
+//! The tool display samples the apps pin, `phone-reader-tool-display-v3`. Its
+//! README says what each file shows. A test OpenCode 2 session on Thalamus's
 //! runner serves four calls with their keys and pins; the display store holds
 //! the views and writes a provider would have sent. `served_samples` says how
-//! the set is checked and rewritten.
+//! the set is checked and rewritten. v2 was recorded the same way on the
+//! runner's OpenCode 1 sessions, which no longer exist, and v1 differs from v2
+//! only in the tool catalog digest its templates name.
 
 use super::served_samples::{decoded, Served};
 use super::*;
@@ -14,7 +15,7 @@ use cortexkit_role_tool_provider::views::{RecordSchema, ViewManifest};
 use cortexkit_test_support::ScratchDir;
 use subc_protocol::{FrameType, Principal};
 
-/// Routes to the test session whatever its harness: here, OpenCode.
+/// Routes to the test session whatever its harness: here, OpenCode 2.
 struct AnyHarness(Arc<FakeRoute>);
 
 #[async_trait]
@@ -76,35 +77,35 @@ const BASH_PAGE: &str = "<TextContent text={view.output ?? \"\"} />\n";
 const EDIT_ROW: &str = "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\n<InlineCode code={input.path} />\n<Slot width=\"short\" needs={view.record}>\n<TextContent text={\"+\" + Text(view.record.added) + \" \u{2212}\" + Text(view.record.removed)} />\n</Slot>\n</Card>\n";
 const EDIT_PAGE: &str = "<TextContent text={view.detail.diff ?? \"\"} />\n";
 
-/// An OpenCode answer with four calls, each served with its key and pin: a
+/// An OpenCode 2 answer with four calls, each served with its key and pin: a
 /// command, an edit, a read whose provider has no view, and a call two
 /// modules serve views for.
 fn answer() -> Vec<Value> {
     let call = |id: &str, tool: &str, input: Value| {
-        json!({"id": format!("prt_{id}"), "type": "tool", "tool": tool, "callID": id,
-            "state": {"status": "completed", "input": input, "output": "ok\n"}})
+        json!({"type": "tool", "id": id, "name": tool,
+            "state": {"status": "completed", "input": input,
+                "content": [{"type": "text", "text": "ok\n"}]}})
     };
     let times = |id: &str, key: &str, pin: String, at: u64| {
         json!({"tool_call_id": id, "started_at": at, "finished_at": at + 40,
             "call_key": key, "schema_pin": pin})
     };
-    vec![json!({"mid": "msg_a", "ordinal": 0,
+    vec![json!({"mid": "msg_a", "ordinal": 1,
     "tool_times": [
         times("call_ls", "ck_ls", pin("bash", 'b'), 1_793_500_001_000),
         times("call_edit", "ck_edit", pin("edit", 'e'), 1_793_500_002_000),
         times("call_read", "ck_read", pin("read", 'a'), 1_793_500_003_000),
         times("call_two", "ck_two", pin("twice", 'd'), 1_793_500_004_000)
     ],
-    "message": {
-        "info": {"id": "msg_a", "role": "assistant",
-            "time": {"created": 1_793_500_000_400_u64, "completed": 1_793_500_009_000_u64},
-            "providerID": "anthropic", "modelID": "claude-opus-5-5"},
-        "parts": [
+    "message": {"id": "msg_a", "type": "assistant",
+        "time": {"created": 1_793_500_000_400_u64, "completed": 1_793_500_009_000_u64},
+        "model": {"id": "claude-opus-5-5", "providerID": "anthropic"},
+        "content": [
             call("call_ls", "bash", json!({"command": format!("ls {}", "-l ".repeat(700))})),
             call("call_edit", "edit", json!({"path": "src/main.rs", "old": "a", "new": "b"})),
             call("call_read", "read", json!({"path": "README.md"})),
             call("call_two", "twice", json!({"x": 1})),
-            {"id": "prt_text", "type": "text", "text": "Done."}
+            {"type": "text", "text": "Done."}
         ]}})]
 }
 
@@ -238,8 +239,8 @@ async fn the_tool_display_samples_are_what_the_reader_serves() {
         .with_call_pins(slot),
     )));
     app.set_tool_display(tool);
-    let mut served = Served::new("phone-reader-tool-display-v2", app);
-    let session = json!({"session": "ses_head", "harness": "opencode"});
+    let mut served = Served::new("phone-reader-tool-display-v3", app);
+    let session = json!({"session": "ses_head", "harness": "opencode2"});
     let request = |method: &str, extra: Value| {
         let mut params = session.clone();
         for (name, value) in extra.as_object().unwrap() {

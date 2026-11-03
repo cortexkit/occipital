@@ -982,11 +982,12 @@ fn the_recorded_head_reply_is_stamped_live_and_stored() {
 }
 
 /// Tool calls' start and answer times on a chat's tool parts. Its README lists
-/// what each reply shows; `occipital-module` checks the replies are still what it
-/// serves.
+/// what each reply shows; `occipital-module` checks v2's replies are still what
+/// it serves. v1, recorded from an OpenCode 1 chat, stays published as it was.
 #[test]
 fn the_tool_times_samples_are_complete_and_their_checksums_verify() {
     verify_published_set("test-vectors/phone-reader-tool-times-v1", 4);
+    verify_published_set("test-vectors/phone-reader-tool-times-v2", 4);
 }
 
 /// A chat with no messages, claimed with `heldVersion` alone. Its README lists what
@@ -1102,12 +1103,15 @@ fn the_model_name_samples_are_complete_and_their_checksums_verify() {
 }
 
 /// What tool providers wrote for a chat's calls, as the apps read it. Its README
-/// lists what each file shows. v1, the same set before the tool catalog gained its
-/// Slot row rule, stays published as it was.
+/// lists what each file shows. v3 is served from an OpenCode 2 chat, and
+/// `occipital-module` checks it is still what it serves. v2, the same set from
+/// an OpenCode 1 chat, and v1, an earlier v2 whose templates name an older tool
+/// catalog digest, stay published as they were.
 #[test]
 fn the_tool_display_samples_are_complete_and_their_checksums_verify() {
     verify_published_set("test-vectors/phone-reader-tool-display-v1", 22);
     verify_published_set("test-vectors/phone-reader-tool-display-v2", 22);
+    verify_published_set("test-vectors/phone-reader-tool-display-v3", 22);
 }
 
 /// Tool calls on the live display lane. Its README lists what each file shows.

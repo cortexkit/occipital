@@ -17,7 +17,7 @@ use subc_client_rs::ConsumerIdentity;
 use subc_protocol::{BindIdentity, RouteTarget};
 
 pub const BROCA_RUNNER_MODULE_ID: &str = "broca";
-/// Thalamus's runner, which hosts OpenCode sessions.
+/// Thalamus's runner, which hosts OpenCode 2 sessions.
 pub const OPENCODE_RUNNER_MODULE_ID: &str = "thalamus-harness";
 /// Thalamus's runner for Pi sessions: the same program as the OpenCode one,
 /// registered as its own module.
@@ -28,7 +28,7 @@ pub const PI_RUNNER_MODULE_ID: &str = "thalamus-pi";
 pub fn served_harness(runner: &str) -> Option<&'static str> {
     match runner {
         BROCA_RUNNER_MODULE_ID => Some("broca"),
-        OPENCODE_RUNNER_MODULE_ID => Some("opencode"),
+        OPENCODE_RUNNER_MODULE_ID => Some("opencode2"),
         PI_RUNNER_MODULE_ID => Some("pi"),
         _ => None,
     }

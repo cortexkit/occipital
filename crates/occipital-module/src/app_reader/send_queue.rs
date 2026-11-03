@@ -216,7 +216,7 @@ mod tests {
         Queued {
             session: "ses".into(),
             client_message_id: id.into(),
-            harness: Some("opencode".into()),
+            harness: Some("opencode2".into()),
             send_id: format!("send-{id}"),
             accepted_at: at,
             steer_until: None,
@@ -281,7 +281,7 @@ mod tests {
         let send = |id: &str, effect: &str, at: i64| Queued {
             session: "ses".into(),
             client_message_id: id.into(),
-            harness: Some("opencode".into()),
+            harness: Some("opencode2".into()),
             send_id: effect.into(),
             accepted_at: at,
             steer_until: None,

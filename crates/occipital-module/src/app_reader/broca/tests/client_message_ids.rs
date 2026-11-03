@@ -136,10 +136,10 @@ async fn display_history_echoes_only_matching_user_client_ids() {
     assert!(!requests(&route).is_empty());
 }
 
-/// An OpenCode entry carries its role inside `message.info`, not at the top of
-/// `message`: the echo still finds its user rows and takes the id from display history.
+/// An OpenCode 2 entry names its role in `message.type`, not `message.role`: the
+/// echo still finds its user rows and takes the id from display history.
 #[tokio::test]
-async fn display_history_echoes_onto_opencode_shaped_user_entries() {
+async fn display_history_echoes_onto_opencode_2_shaped_user_entries() {
     let route = FakeRoute::new();
     *route.describe.lock().unwrap() = Some(describe_with(&["history_display"]));
     let row = DisplayRow::new("user", vec![]).with_client_message_id("phone-18");
@@ -155,9 +155,9 @@ async fn display_history_echoes_onto_opencode_shaped_user_entries() {
     let source = sources.source(&resolved().reference).await.unwrap();
     let mut entries = vec![
         json!({"mid":"msg_u", "ordinal":18, "written_at":1,
-            "message":{"info":{"id":"msg_u", "role":"user"}, "parts":[]}}),
+            "message":{"id":"msg_u", "type":"user", "text":"hi", "time":{"created":1}}}),
         json!({"mid":"msg_a", "ordinal":19, "written_at":2,
-            "message":{"info":{"id":"msg_a", "role":"assistant"}, "parts":[]}}),
+            "message":{"id":"msg_a", "type":"assistant", "content":[]}}),
     ];
     source.echo_client_message_ids(&mut entries).await;
     assert_eq!(entries[0]["client_message_id"], "phone-18", "{entries:?}");

@@ -60,7 +60,7 @@ impl Scan {
 #[async_trait]
 impl TranscriptSource for Scan {
     fn harness(&self) -> &'static str {
-        "opencode"
+        "opencode2"
     }
     async fn head(&self) -> Result<Head, ReadError> {
         Ok(self.head.clone())

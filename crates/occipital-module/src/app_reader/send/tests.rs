@@ -403,7 +403,7 @@ async fn a_granted_idle_worker_is_paused_without_a_send() {
 async fn a_worker_on_another_harness_is_refused_before_a_send() {
     let f = granted_fixture(Kind::Worker);
     let mut request = message("w1", "hello");
-    request["harness"] = json!("opencode");
+    request["harness"] = json!("opencode2");
     let refusal = f.sender.send(request).await.unwrap_err();
     assert_eq!(refusal.code, "unsupported");
     assert_eq!(call_counts(&f.runner).1, 0, "nothing was sent");

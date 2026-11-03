@@ -790,10 +790,14 @@ impl BrocaSource {
         full: bool,
         pruned_reasoning: &[cortexkit_role_llm_runner::archive_prunes_reasoning::PrunedReasoning],
     ) -> Result<Vec<Row>, ReadError> {
-        let rows = match self.harness() {
-            "opencode" => occipital_app_reader::opencode_entries::rows(entries, full),
-            "pi" => super::pi::rows(entries, full),
-            _ => broca_entries::rows_with_pruned_reasoning(entries, full, pruned_reasoning),
+        let profile = match self.harness() {
+            "opencode2" => Some(broca_entries::DisplayProfile::OpenCode2),
+            "pi" => Some(broca_entries::DisplayProfile::Pi),
+            _ => None,
+        };
+        let rows = match profile {
+            Some(profile) => broca_entries::display_rows(entries, full, profile, pruned_reasoning),
+            None => broca_entries::rows_with_pruned_reasoning(entries, full, pruned_reasoning),
         }?;
         let call_pins = self.call_pins.guard().clone();
         if let Some(call_pins) = call_pins.get() {
@@ -1131,10 +1135,14 @@ impl BrocaSource {
     }
 
     async fn echo_client_message_ids(&self, entries: &mut [Value]) {
-        // A Broca entry's message carries its role at the top; an OpenCode one, inside
-        // its `info`.
+        // Where each runner's stored message names a person's message: Broca's at
+        // `role`, OpenCode 2's at `type`, and a Pi journal entry's inside its
+        // wrapped `message`.
         let is_user = |entry: &Value| {
-            entry["message"]["role"] == "user" || entry["message"]["info"]["role"] == "user"
+            let message = &entry["message"];
+            message["role"] == "user"
+                || message["type"] == "user"
+                || message["message"]["role"] == "user"
         };
         if !entries.iter().any(is_user)
             // Broca refuses the entire display range if even one write time is missing.
@@ -1637,7 +1645,7 @@ impl Snapshot {
 impl TranscriptSource for BrocaSource {
     fn harness(&self) -> &'static str {
         match self.resolved.guard().harness.as_str() {
-            "opencode" => "opencode",
+            "opencode2" => "opencode2",
             "pi" => "pi",
             _ => "broca",
         }
@@ -3009,7 +3017,7 @@ mod tests {
         fn harness(&self) -> &'static str {
             match self.0 {
                 Some(PI_RUNNER_MODULE_ID) => "pi",
-                _ => "opencode",
+                _ => "opencode2",
             }
         }
     }
@@ -3061,7 +3069,8 @@ mod tests {
                 Arc::new(Resolver::new(Arc::new(ByHarness(recorded)))),
                 Arc::new(Routes(opened.clone())),
             );
-            let read = match SourceResolver::resolve(&sources, "ses_head", Some("opencode")).await {
+            let read = match SourceResolver::resolve(&sources, "ses_head", Some("opencode2")).await
+            {
                 Err(error) => error,
                 Ok(_) => panic!("{recorded:?}: a source was opened"),
             };
@@ -3072,7 +3081,7 @@ mod tests {
             let watch = match sources
                 .watch(
                     "ses_head",
-                    Some("opencode"),
+                    Some("opencode2"),
                     Arc::new(DisplayHub::default()),
                 )
                 .await
@@ -3130,7 +3139,7 @@ mod tests {
             routes.clone(),
         );
         let target = ours
-            .send_target("ses_head", Some("opencode"))
+            .send_target("ses_head", Some("opencode2"))
             .await
             .unwrap();
         assert_eq!(target.reference().runner, OPENCODE_RUNNER_MODULE_ID);
@@ -3148,7 +3157,7 @@ mod tests {
                 Arc::new(Resolver::new(Arc::new(ByHarness(recorded)))),
                 routes.clone(),
             );
-            let error = match sources.send_target("ses_head", Some("opencode")).await {
+            let error = match sources.send_target("ses_head", Some("opencode2")).await {
                 Err(error) => error,
                 Ok(_) => panic!("{recorded:?}: a send path was opened"),
             };
@@ -3379,7 +3388,7 @@ mod tests {
         assert!(app.display.projection("alfonso:s1").is_none());
         // A session named under another harness opens no Broca route either: one
         // Entorhinal doesn't know is refused naming no runner.
-        for harness in ["opencode", "pi"] {
+        for harness in ["opencode2", "pi"] {
             let refused =
                 match SourceResolver::resolve(sources.as_ref(), "not-broca", Some(harness)).await {
                     Err(error) => error,

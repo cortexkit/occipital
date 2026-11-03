@@ -18,7 +18,7 @@ Occipital is becoming the one module the apps use for a chat:
 - **Writing:** it forwards sends, uploads and stop to the runner hosting the session.
 - **Tool views:** it keeps the display data tool providers write for each call, such as a command's exit code or an edit's diff. Runners keep only what the model reads and writes.
 
-Reading and writing are served for Broca sessions and Thalamus's OpenCode sessions. Until the apps switch to Occipital, they read chats through Thalamus. Tool views are not built yet.
+Reading and writing are served for Broca sessions and for Thalamus's OpenCode 2 and Pi sessions, and both apps read their chats through Occipital. Tool views are served for every provider that publishes them.
 
 ## Build
 

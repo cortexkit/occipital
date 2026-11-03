@@ -8,7 +8,6 @@ pub mod details;
 pub mod display;
 pub mod display_events;
 pub mod display_watch;
-pub mod opencode_entries;
 pub mod page;
 pub mod send;
 pub mod signals;

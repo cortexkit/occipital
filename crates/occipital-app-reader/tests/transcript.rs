@@ -448,7 +448,7 @@ async fn malformed_accept_claims_ends_a_watch_as_invalid_claim() {
 
 #[tokio::test]
 async fn history_pages_neither_repeat_nor_skip_across_next_before_ordinal() {
-    for harness in ["opencode", "broca", "pi"] {
+    for harness in ["opencode2", "broca", "pi"] {
         let source = FakeSource::new(harness, 350, 4, true);
         let reader = TranscriptReader::default();
         let mut params = json!({"session": "s", "limit": 100});
@@ -476,7 +476,7 @@ async fn history_pages_neither_repeat_nor_skip_across_next_before_ordinal() {
 
 #[tokio::test]
 async fn pre_adoption_history_uses_restart_safe_cursors_and_never_enters_claims() {
-    let source = FakeSource::new("opencode", 12, 4, true);
+    let source = FakeSource::new("opencode2", 12, 4, true);
     for row in &mut source.state.lock().unwrap().rows[..8] {
         row.ordinal = None;
     }
@@ -572,7 +572,7 @@ async fn lineage_changes_and_history_rewrites_each_expire_claims() {
 
 #[tokio::test]
 async fn a_native_gap_resync_pages_back_without_losing_turns() {
-    for harness in ["opencode", "broca", "pi"] {
+    for harness in ["opencode2", "broca", "pi"] {
         let source = FakeSource::new(harness, 2, 4, true);
         let reader = TranscriptReader::default();
         let page = read(&reader, &source, json!({"session":"s"})).await;
@@ -627,7 +627,7 @@ async fn a_native_gap_resync_pages_back_without_losing_turns() {
 
 #[tokio::test]
 async fn deleted_or_unnumbered_claim_anchors_resync_instead_of_vouching() {
-    let source = FakeSource::new("opencode", 4, 4, true);
+    let source = FakeSource::new("opencode2", 4, 4, true);
     let reader = TranscriptReader::default();
     let page = read(&reader, &source, json!({"session":"s"})).await;
     let held = claim_for(&page);
@@ -639,7 +639,7 @@ async fn deleted_or_unnumbered_claim_anchors_resync_instead_of_vouching() {
 
 #[tokio::test]
 async fn exact_messages_are_full_and_pruned_messages_are_named() {
-    for harness in ["opencode", "broca", "pi"] {
+    for harness in ["opencode2", "broca", "pi"] {
         let source = FakeSource::new(harness, 2, 200_000, true);
         let reader = TranscriptReader::default();
         let page = read(&reader, &source, json!({"session":"s", "messageOrdinal":1})).await;
@@ -666,7 +666,7 @@ async fn exact_messages_are_full_and_pruned_messages_are_named() {
 
 #[tokio::test]
 async fn stable_pages_offer_tokens_but_double_instability_never_vouches() {
-    let source = FakeSource::new("opencode", 3, 4, false);
+    let source = FakeSource::new("opencode2", 3, 4, false);
     let reader = TranscriptReader::default();
     let first = read(&reader, &source, json!({"session":"s"})).await;
     let unchanged = read(
@@ -759,7 +759,7 @@ async fn last_run_changes_emit_even_when_idle_and_survive_oversize_resync() {
 
 #[tokio::test(start_paused = true)]
 async fn transcript_watch_emits_matched_turns_divergence_and_trimmed_pages() {
-    for harness in ["opencode", "broca", "pi"] {
+    for harness in ["opencode2", "broca", "pi"] {
         let source = FakeSource::new(harness, 1, 4, false);
         let reader = Arc::new(TranscriptReader::default());
         let page = read(&reader, &source, json!({"session":"s"})).await;
@@ -852,8 +852,8 @@ async fn transcript_watch_orders_tied_created_at_turns_by_ordinal() {
 
 #[tokio::test(start_paused = true)]
 async fn an_oversize_transcript_reply_is_sent_as_a_trimmed_page_that_later_claims_match() {
-    for harness in ["opencode", "broca", "pi"] {
-        let source = FakeSource::new(harness, 100, 3 * 1024, harness != "opencode");
+    for harness in ["opencode2", "broca", "pi"] {
+        let source = FakeSource::new(harness, 100, 3 * 1024, harness != "opencode2");
         let reader = Arc::new(TranscriptReader::default());
         let held =
             json!({"heldFloorMessageId":"m0", "sinceMessageId":"m99", "heldVersion":"stale"});
@@ -878,7 +878,7 @@ async fn an_oversize_transcript_reply_is_sent_as_a_trimmed_page_that_later_claim
         assert_eq!(matched["answers"], json!(phone));
         assert_eq!(matched["newTurns"][0]["messageId"], "m100");
         assert_eq!(matched["acceptedModalities"], json!(["image"]));
-        if harness != "opencode" {
+        if harness != "opencode2" {
             assert_eq!(trimmed["historyVersion"], 1);
         }
         running.end().await;
@@ -922,7 +922,7 @@ async fn transcript_watch_broca_large_delta_sends_one_trimmed_page_that_reads_ba
 #[tokio::test(start_paused = true)]
 async fn transcript_watch_a_rewrite_between_an_oversize_read_and_its_fallback_still_diverges_for_the_old_version(
 ) {
-    let source = FakeSource::new("opencode", 1, 4, false);
+    let source = FakeSource::new("opencode2", 1, 4, false);
     let reader = Arc::new(TranscriptReader::default());
     let page = read(&reader, &source, json!({"session":"s"})).await;
     let held = claim_for(&page);
@@ -943,7 +943,7 @@ async fn transcript_watch_a_rewrite_between_an_oversize_read_and_its_fallback_st
 
 #[tokio::test(start_paused = true)]
 async fn transcript_watch_deleted_turns_return_the_expired_page_then_a_turn_matches() {
-    let source = FakeSource::new("opencode", 1, 4, false);
+    let source = FakeSource::new("opencode2", 1, 4, false);
     let reader = Arc::new(TranscriptReader::default());
     let held = json!({"heldFloorMessageId":"m0", "sinceMessageId":"m0", "heldVersion":"unknown"});
     let mut running = Running::start(source.clone(), reader, held);
@@ -987,7 +987,7 @@ async fn a_newest_turn_too_large_for_a_notice_expires_without_a_page_and_ends() 
 
 #[tokio::test(start_paused = true)]
 async fn transcript_watch_wakes_on_host_events_and_otherwise_only_on_the_slow_sweep() {
-    let source = FakeSource::new("opencode", 1, 4, true);
+    let source = FakeSource::new("opencode2", 1, 4, true);
     let reader = Arc::new(TranscriptReader::default());
     let page = read(&reader, &source, json!({"session":"s"})).await;
     let mut running = Running::start(source.clone(), reader, claim_for(&page));
@@ -1003,7 +1003,7 @@ async fn transcript_watch_wakes_on_host_events_and_otherwise_only_on_the_slow_sw
 
 #[tokio::test(start_paused = true)]
 async fn a_hundred_events_a_second_cause_at_most_three_evaluations_a_second() {
-    let source = FakeSource::new("opencode", 1, 4, true);
+    let source = FakeSource::new("opencode2", 1, 4, true);
     let reader = Arc::new(TranscriptReader::default());
     let page = read(&reader, &source, json!({"session":"s"})).await;
     let mut running = Running::start(source.clone(), reader, claim_for(&page));

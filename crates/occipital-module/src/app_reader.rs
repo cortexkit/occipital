@@ -3,7 +3,6 @@
 pub mod broca;
 pub mod display_hub;
 mod observe;
-mod pi;
 pub mod resolve;
 mod route;
 pub mod send;

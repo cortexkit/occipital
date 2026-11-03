@@ -42,7 +42,7 @@ impl FakeSource {
 #[async_trait]
 impl TranscriptSource for FakeSource {
     fn harness(&self) -> &'static str {
-        "opencode"
+        "opencode2"
     }
     async fn head(&self) -> Result<Head, ReadError> {
         self.reads.fetch_add(1, Ordering::SeqCst);
@@ -1322,7 +1322,7 @@ async fn a_watch_on_a_refused_session_ends_at_once_and_is_logged() {
     for method in [DISPLAY_WATCH, TRANSCRIPT_WATCH] {
         let (log, _capture) = super::observe::tests::capture();
         let mut request = params(method, "ses_gone");
-        request["harness"] = json!("opencode");
+        request["harness"] = json!("opencode2");
         let frame = serve_frame(&app, method, &request, 1, Duration::from_secs(5)).await;
         assert_eq!(
             frame.header.ty,

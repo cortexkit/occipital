@@ -73,11 +73,12 @@ fn the_pi_pages_are_the_published_sets() {
     }
 }
 
-/// Occipital's rows for the recorded `session.read` are the runner's own
-/// display rows for the same entries, apart from `sender`, which the runner
-/// adds from its send record and Occipital doesn't read.
+/// Occipital's rows for the recorded `session.read` follow the runner's own
+/// display rows for the same entries: the same messages, roles and text, and
+/// each tool call is one app tool part keyed by the runner's part key, with its
+/// result folded in.
 #[test]
-fn pi_rows_are_the_runners_display_rows() {
+fn pi_rows_follow_the_runners_display_rows() {
     let source = BrocaSource::new(pi_binding(), FakeRoute::new());
     assert_eq!(source.harness(), "pi");
     for (set, _) in SETS {
@@ -89,9 +90,30 @@ fn pi_rows_are_the_runners_display_rows() {
         for (row, want) in rows.iter().zip(expected) {
             assert_eq!(row.mid, want["mid"].as_str().unwrap(), "{set}");
             assert_eq!(row.ordinal, want["ordinal"].as_u64(), "{set}");
-            let mut want = want["row"].clone();
-            want.as_object_mut().unwrap().remove("sender");
-            assert_eq!(row.display, want, "{set}: {}", row.mid);
+            let want = &want["row"];
+            let role = match want["role"].as_str().unwrap() {
+                "toolResult" => "tool",
+                role => role,
+            };
+            assert_eq!(row.display["role"], role, "{set}: {}", row.mid);
+            assert_eq!(row.display["text"], want["text"], "{set}: {}", row.mid);
+            for call in want["parts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|part| part["type"] == "tool_call")
+            {
+                let tool = row.display["parts"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|part| part["callId"] == call["tool_call_id"])
+                    .unwrap();
+                assert_eq!(tool["type"], "tool");
+                assert_eq!(tool["tool"], call["name"]);
+                assert_eq!(tool["partKey"], call["part"]);
+                assert!(tool["outputBytes"].is_u64(), "{set}: {tool}");
+            }
         }
     }
 }
@@ -116,7 +138,7 @@ async fn a_pi_page_leaves_out_the_empty_system_entry() {
     prompt["text"] = json!("You are a worker.");
     assert!(!is_empty_system_row(&prompt));
     let mut image = rows[0].display.clone();
-    image["parts"] = json!([{"type": "image", "part": "0"}]);
+    image["parts"] = json!([{"type": "file", "partKey": "0", "partIndex": 0}]);
     assert!(!is_empty_system_row(&image));
 }
 

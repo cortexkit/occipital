@@ -349,7 +349,7 @@ async fn session_details_reads_one_head_and_no_messages() {
         async move { app.read(DETAILS, params).await.unwrap_err().code }
     };
     assert_eq!(
-        refused(json!({"session":"alfonso:s1", "harness":"opencode"})).await,
+        refused(json!({"session":"alfonso:s1", "harness":"opencode2"})).await,
         "session_unknown"
     );
     assert_eq!(refused(json!({"session":" "})).await, "invalid_request");

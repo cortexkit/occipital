@@ -1,50 +1,54 @@
-//! The tool-times samples the apps pin, `phone-reader-tool-times-v1`. Its README
+//! The tool-times samples the apps pin, `phone-reader-tool-times-v2`. Its README
 //! says what each file shows. The replies come from a test session on
-//! Thalamus's OpenCode runner, whose stored tool parts carry the call times, so
-//! the times are fixed and the set is reproducible; `served_samples` says how the
-//! set is checked and rewritten.
+//! Thalamus's OpenCode 2 runner, which serves the call times beside each read
+//! entry, so the times are fixed and the set is reproducible; `served_samples`
+//! says how the set is checked and rewritten. v1 was recorded the same way on
+//! the runner's OpenCode 1 sessions, which no longer exist.
 
 use super::served_samples::{decoded, Served};
 use super::*;
 
-/// Routes to the test session whatever its harness: here, OpenCode.
+/// Routes to the test session whatever its harness: here, OpenCode 2.
 struct AnyHarness(Arc<FakeRoute>);
 
 #[async_trait]
 impl BrocaRoutes for AnyHarness {
     async fn open(&self, resolved: &Resolved) -> Result<Arc<dyn BrocaRoute>, ReadError> {
-        assert_eq!(resolved.harness, "opencode");
+        assert_eq!(resolved.harness, "opencode2");
         Ok(self.0.clone())
     }
 }
 
-/// An OpenCode turn asking for two commands, then the answer that ran them.
+/// An OpenCode 2 turn asking for two commands, then the answer that ran them,
+/// with the times the runner serves beside the answer.
 fn opencode_turn() -> Vec<Value> {
+    let call = |id: &str, tool: &str, state: Value| json!({"type": "tool", "id": id, "name": tool, "state": state});
+    let output = |text: &str| json!([{"type": "text", "text": text}]);
     vec![
-        json!({"mid": "msg_u", "ordinal": 0, "message": {
-            "info": {"id": "msg_u", "role": "user", "time": {"created": 1_793_500_000_000_u64}},
-            "parts": [{"id": "prt_u0", "type": "text", "text": "List the folder, then read the missing file."}]}}),
-        json!({"mid": "msg_a", "ordinal": 1, "message": {
-        "info": {"id": "msg_a", "role": "assistant",
-            "time": {"created": 1_793_500_000_400_u64, "completed": 1_793_500_009_000_u64},
-            "providerID": "anthropic", "modelID": "claude-opus-5-5"},
-        "parts": [
-            {"id": "prt_a0", "type": "step-start"},
+        json!({"mid": "msg_u", "ordinal": 1, "written_at": 1_793_500_000_000_u64, "message": {
+            "id": "msg_u", "type": "user", "time": {"created": 1_793_500_000_000_u64},
+            "text": "List the folder, then read the missing file."}}),
+        json!({"mid": "msg_a", "ordinal": 2, "written_at": 1_793_500_000_400_u64,
+        "completed_at": 1_793_500_009_000_u64,
+        "tool_times": [
             // Ran and answered: both times.
-            {"id": "prt_a1", "type": "tool", "tool": "bash", "callID": "call_ls",
-                "state": {"status": "completed", "input": {"command": "ls"}, "output": "README.md\n",
-                    "time": {"start": 1_793_500_001_000_u64, "end": 1_793_500_001_250_u64}}},
+            {"tool_call_id": "call_ls", "started_at": 1_793_500_001_000_u64, "finished_at": 1_793_500_001_250_u64},
             // Failed: both times, with the error.
-            {"id": "prt_a2", "type": "tool", "tool": "read", "callID": "call_read",
-                "state": {"status": "error", "input": {"path": "missing.txt"},
-                    "error": "file not found: missing.txt",
-                    "time": {"start": 1_793_500_002_000_u64, "end": 1_793_500_002_040_u64}}},
-            // Stored without times: neither member appears.
-            {"id": "prt_a3", "type": "tool", "tool": "bash", "callID": "call_date",
-                "state": {"status": "completed", "input": {"command": "date"}, "output": "Sat\n"}},
-            {"id": "prt_a4", "type": "text", "text": "Done."},
-            {"id": "prt_a5", "type": "step-finish"}
-        ]}}),
+            {"tool_call_id": "call_read", "started_at": 1_793_500_002_000_u64, "finished_at": 1_793_500_002_040_u64}
+            // Served without times: neither member appears.
+        ],
+        "message": {"id": "msg_a", "type": "assistant",
+            "time": {"created": 1_793_500_000_400_u64, "completed": 1_793_500_009_000_u64},
+            "model": {"id": "claude-opus-5-5", "providerID": "anthropic"},
+            "content": [
+                call("call_ls", "bash", json!({"status": "completed", "input": {"command": "ls"},
+                    "content": output("README.md\n")})),
+                call("call_read", "read", json!({"status": "error", "input": {"path": "missing.txt"},
+                    "error": {"type": "unknown", "message": "file not found: missing.txt"}})),
+                call("call_date", "bash", json!({"status": "completed", "input": {"command": "date"},
+                    "content": output("Sat\n")})),
+                {"type": "text", "text": "Done."}
+            ]}}),
     ]
 }
 
@@ -61,8 +65,8 @@ async fn the_tool_times_samples_are_what_the_reader_serves() {
             Arc::new(AnyHarness(route)),
         ),
     )));
-    let mut served = Served::new("phone-reader-tool-times-v1", app);
-    let session = json!({"session": "ses_head", "harness": "opencode"});
+    let mut served = Served::new("phone-reader-tool-times-v2", app);
+    let session = json!({"session": "ses_head", "harness": "opencode2"});
 
     let mut page_request =
         json!({"method": super::super::super::TRANSCRIPT_PAGE, "params": session});
@@ -84,16 +88,16 @@ async fn the_tool_times_samples_are_what_the_reader_serves() {
         (Value::Null, Value::Null),
     ];
     assert_eq!(times(parts), expected, "{parts}");
-    served.keep("01-opencode-newest-page", &page_request, page);
+    served.keep("01-opencode2-newest-page", &page_request, page);
 
     // The exact read of the answer carries the same times beside the whole output.
     let mut exact_request =
         json!({"method": super::super::super::TRANSCRIPT_PAGE, "params": session});
-    exact_request["params"]["messageOrdinal"] = json!(1);
+    exact_request["params"]["messageOrdinal"] = json!(2);
     let exact = served.read(2, &exact_request).await;
     let parts = &decoded(&exact)["result"]["messages"][0]["parts"];
     assert_eq!(times(parts), expected, "{parts}");
-    served.keep("02-opencode-exact-read", &exact_request, exact);
+    served.keep("02-opencode2-exact-read", &exact_request, exact);
 
     served.check();
 }

@@ -32,8 +32,11 @@ fn fixture_entry(entries: &[Value], mid: &str) -> Value {
         .clone()
 }
 
+/// Pi rows reach the apps in the app row shape, with the apps' own bounds:
+/// arguments are cut at 2,048 bytes, and a tool part carries the result's
+/// length rather than its text, except on an exact read, which keeps both whole.
 #[test]
-fn pi_fixtures_use_app_limits_for_arguments_and_success_and_error_results() {
+fn pi_rows_have_the_app_shape_and_app_bounds() {
     let source = pi_source();
     assert_eq!(source.harness(), "pi");
     for fixture in FIXTURES {
@@ -43,23 +46,18 @@ fn pi_fixtures_use_app_limits_for_arguments_and_success_and_error_results() {
         assert_eq!(rows[0].mid, "entry-003");
         assert_eq!(rows[0].ordinal, Some(0));
         assert_eq!(rows[0].written_at, Some(1234));
-        assert_eq!(rows[4].display["parts"][0]["type"], "reasoning");
+        let reply = &rows[4].display;
+        assert_eq!(reply["parts"][0]["type"], "reasoning");
+        assert_eq!(reply["parts"][1]["text"], "Fixture assistant text.");
+        assert_eq!(reply["parts"][2]["type"], "tool");
+        assert_eq!(reply["parts"][2]["tool"], "head_fixture_image");
+        assert_eq!(reply["parts"][2]["callId"], "call_head_fixture");
+        assert_eq!(reply["parts"][2]["partKey"], "2");
         assert_eq!(
-            rows[4].display["parts"][1]["text"],
-            "Fixture assistant text."
+            reply["parts"][2]["outputBytes"],
+            "Fixture tool result.".len()
         );
-        assert_eq!(rows[4].display["parts"][2]["name"], "head_fixture_image");
-        assert_eq!(
-            rows[5].display["parts"][0]["content"],
-            "Fixture tool result."
-        );
-        assert_eq!(
-            rows[5].display["parts"][0]["files"]
-                .as_array()
-                .unwrap()
-                .len(),
-            1
-        );
+        assert_eq!(rows[5].display["role"], "tool");
 
         // Expand cloned recorded payloads, never the checksum-pinned journals.
         for size in [2_047, 2_048, 2_049] {
@@ -69,34 +67,31 @@ fn pi_fixtures_use_app_limits_for_arguments_and_success_and_error_results() {
             let rows = source.rows(&[call.clone()], false, &[]).unwrap();
             let part = &rows[0].display["parts"][2];
             assert_eq!(part["arguments"].as_str().unwrap().len(), size.min(2_048));
-            assert_eq!(
-                part["arguments_truncated"].as_bool().unwrap_or(false),
-                size > 2_048
-            );
-            assert_eq!(part["tool_call_id"], "call_head_fixture");
+            assert_eq!(part["argumentsTruncated"], size > 2_048);
+            assert_eq!(part["callId"], "call_head_fixture");
             let full = source.rows(&[call], true, &[]).unwrap();
             assert_eq!(
-                full[0].display["parts"][2]["arguments"]
+                full[0].display["parts"][2]["arguments"]["text"]
                     .as_str()
                     .unwrap()
                     .len(),
-                size
+                size - 11
             );
         }
-        for (is_error, cap) in [(false, 16_384), (true, 65_536)] {
-            for size in [cap - 1, cap, cap + 1] {
-                let mut result = fixture_entry(&entries, "entry-009");
-                result["message"]["message"]["content"][0]["text"] = json!("x".repeat(size));
-                result["message"]["message"]["isError"] = json!(is_error);
-                let rows = source.rows(&[result.clone()], false, &[]).unwrap();
-                let part = &rows[0].display["parts"][0];
-                assert_eq!(part["content"], "x".repeat(size.min(cap)));
-                assert_eq!(part["truncated"].as_bool().unwrap_or(false), size > cap);
-                assert_eq!(part["is_error"].as_bool().unwrap_or(false), is_error);
-                assert_eq!(part["files"].as_array().unwrap().len(), 1);
-                let full = source.rows(&[result], true, &[]).unwrap();
-                assert_eq!(full[0].display["parts"][0]["content"], "x".repeat(size));
-            }
+        for is_error in [false, true] {
+            let call = fixture_entry(&entries, "entry-008");
+            let mut result = fixture_entry(&entries, "entry-009");
+            let text = "x".repeat(70_000);
+            result["message"]["message"]["content"][0]["text"] = json!(text);
+            result["message"]["message"]["isError"] = json!(is_error);
+            let pair = [call, result];
+            let rows = source.rows(&pair, false, &[]).unwrap();
+            let tool = &rows[0].display["parts"][2];
+            assert_eq!(tool["outputBytes"], 70_000);
+            assert_eq!(tool.get("isError").is_some(), is_error);
+            assert!(tool.get("content").is_none(), "a page shows no result text");
+            let full = source.rows(&pair, true, &[]).unwrap();
+            assert_eq!(full[0].display["parts"][2]["content"], text);
         }
     }
 }
@@ -146,8 +141,10 @@ fn pi_shell_and_custom_messages_are_not_the_persons_turn() {
         .contains("Saved branch summary"));
 }
 
+/// Broca's stored blocks keep their own decoder; an OpenCode 2 session's go
+/// through the contract's display rows, like Pi's.
 #[test]
-fn non_pi_harnesses_keep_their_existing_row_decoders() {
+fn each_harness_uses_its_own_row_builder() {
     let source = BrocaSource::new(resolved(), FakeRoute::new());
     let entries = [entry("broca", Some(1), 1234)];
     assert_eq!(source.harness(), "broca");
@@ -158,14 +155,21 @@ fn non_pi_harnesses_keep_their_existing_row_decoders() {
 
     let mut binding = resolved();
     binding.reference.runner = crate::app_reader::resolve::OPENCODE_RUNNER_MODULE_ID.into();
-    binding.harness = "opencode".into();
+    binding.harness = "opencode2".into();
     let source = BrocaSource::new(binding, FakeRoute::new());
-    let entries = [json!({"mid":"opencode", "message":{
-        "info":{"role":"assistant"}, "parts":[{"type":"text", "text":"OpenCode text"}]
+    let entries = [json!({"mid":"oc2", "ordinal": 1, "message":{
+        "type":"assistant", "id":"msg_1", "data":{"content":[{"type":"text", "text":"OpenCode 2 text"}]}
     }})];
-    assert_eq!(source.harness(), "opencode");
+    assert_eq!(source.harness(), "opencode2");
     assert_eq!(
         source.rows(&entries, false, &[]).unwrap()[0].display,
-        occipital_app_reader::opencode_entries::rows(&entries, false).unwrap()[0].display
+        broca_entries::display_rows(
+            &entries,
+            false,
+            broca_entries::DisplayProfile::OpenCode2,
+            &[]
+        )
+        .unwrap()[0]
+            .display
     );
 }

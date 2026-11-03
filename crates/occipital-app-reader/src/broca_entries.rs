@@ -1,16 +1,21 @@
-//! Temporary Broca `session.read` projection until `session.history` serves display rows.
-//! The llm-runner contract's display form will replace this decoder; its current
-//! Anthropic/OpenCode projections do not cover Broca entries.
-//! Ported from prefrontal-core at a13318fba1581db2776e91f4954744f35dbbbef6
-//! (`llm_runner_consumer::{mod,runtime,full_message}`), without runner dependencies.
+//! The apps' transcript rows, built from runner `session.read` entries in one
+//! shape for every runner:
+//! - Broca's stored blocks are decoded here ([`rows`]), since the llm-runner
+//!   contract's display projections don't cover Broca's own stored format. Ported
+//!   from prefrontal-core at a13318fba1581db2776e91f4954744f35dbbbef6
+//!   (`llm_runner_consumer::{mod,runtime,full_message}`), without runner
+//!   dependencies.
+//! - Runners whose stored format the contract does project (OpenCode 2 and Pi)
+//!   go through the contract's display row first ([`display_rows`]), and its
+//!   parts become the same app parts.
 //!
 //! Every display part built from a stored content block carries that block's
 //! identity, so a consumer such as Magic Context can mark parts on the phone's
 //! transcript without relying on the display order:
-//! - `partKey`: the runner's own key for the block in its `session.read` entries.
-//!   For Broca (and the Claude Code gateway, which Broca serves) that is the
-//!   block's index in the stored message's `content`, written as a decimal string
-//!   so the member has one type across runners (OpenCode's keys are `prt_…` ids).
+//! - `partKey`: the runner's own key for the block. For Broca (and the Claude
+//!   Code gateway, which Broca serves) that is the block's index in the stored
+//!   message's `content`, written as a decimal string so the member has one type
+//!   across runners; for a display-row runner it is the display row's part key.
 //! - `partIndex`: the block's index in the stored message's `content`, counting
 //!   every stored block, including the ones no display part shows.
 //! - `callId`: on tool parts and `toolCalls` entries, the stored block's
@@ -24,6 +29,7 @@
 use std::collections::{HashMap, VecDeque};
 
 use cortexkit_role_llm_runner::archive_prunes_reasoning::{kinds, PrunedReasoning};
+use cortexkit_role_llm_runner::display::{self, DisplayPart, DisplayRow, ProjectionError};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -128,14 +134,23 @@ enum Part {
 struct Decoded {
     /// The block's index in the stored message's `content`.
     stored: usize,
+    /// The part's `partKey`: the stored index as a decimal string for Broca, the
+    /// display row's part key for a runner served through display rows.
+    key: String,
     /// The stored `tool_call_id`, kept for tool calls and results only.
     call_id: Option<String>,
     part: Part,
+    /// A result shown inside its call in the same row (OpenCode 2 keeps both in
+    /// one stored slot), so it has no part of its own.
+    folded: bool,
 }
 
 struct Parsed {
     entry: Entry,
     parts: Vec<Decoded>,
+    /// Whether the runner writes an assistant message only once it has
+    /// finished, so that its `written_at` is when it finished.
+    written_when_finished: bool,
 }
 
 /// Decode a complete observed range before selecting app pages, so a tool result
@@ -159,13 +174,7 @@ pub fn rows_with_pruned_reasoning(
                 let mut parts = Vec::new();
                 for (stored, value) in entry.message.content.iter().cloned().enumerate() {
                     // Match stored positions before filtering, so later parts retain their keys.
-                    if entry.part_key(stored).is_some_and(|key| {
-                        pruned_reasoning.iter().any(|pruned| {
-                            pruned.kind == kinds::REASONING
-                                && pruned.mid == entry.mid
-                                && pruned.part == key
-                        })
-                    }) {
+                    if pruned(&entry, stored, pruned_reasoning) {
                         continue;
                     }
                     let call_id = tool_call_id(&value);
@@ -174,50 +183,308 @@ pub fn rows_with_pruned_reasoning(
                             .filter(|_| matches!(part, Part::Call { .. } | Part::Result { .. }));
                         parts.push(Decoded {
                             stored,
+                            key: stored.to_string(),
                             call_id,
                             part,
+                            folded: false,
                         });
                     }
                 }
-                parsed.push(Some(Parsed { entry, parts }));
+                // Broca writes an assistant message only after its step completes.
+                parsed.push(Some(Parsed {
+                    entry,
+                    parts,
+                    written_when_finished: true,
+                }));
             }
             _ => {
-                // A broken payload must remain visible, but an identity cannot be invented.
-                // Its placeholder part stands for no stored block, so it carries no
-                // `partKey` or `partIndex`.
-                let mid = raw["mid"]
-                    .as_str()
-                    .filter(|mid| !mid.is_empty())
-                    .ok_or_else(|| {
-                        ReadError::new("identity_unsupported", "Broca transcript entry has no mid")
-                    })?;
-                let ordinal = match raw.get("ordinal") {
-                    None | Some(Value::Null) => None,
-                    Some(value) => Some(value.as_u64().ok_or_else(|| {
-                        ReadError::new(
-                            "identity_unsupported",
-                            format!("Broca entry {mid} has invalid ordinal {value}; expected u64"),
-                        )
-                    })?),
-                };
-                failures.insert(index, Row {
-                    mid: mid.into(), ordinal, written_at: timestamp(raw),
-                    display: json!({"role":"unknown", "text":"[Unreadable transcript entry]", "unreadable":true,
-                        "blockSummaries":[], "parts":[{"type":"text", "text":"[Unreadable transcript entry]"}]}),
-                });
+                failures.insert(index, unreadable(raw, "Broca")?);
                 parsed.push(None);
             }
         }
     }
+    Ok(assemble(parsed, failures, full))
+}
+
+/// A runner whose stored message bodies the runner contract turns into display
+/// rows (`display::opencode_v2`, `display::pi`). Its chats reach the apps through
+/// [`display_rows`], in the same app row shape as Broca's.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DisplayProfile {
+    /// OpenCode 2, on Thalamus's runner.
+    OpenCode2,
+    /// Pi, on Thalamus's Pi runner.
+    Pi,
+}
+
+impl DisplayProfile {
+    fn name(self) -> &'static str {
+        match self {
+            Self::OpenCode2 => "OpenCode 2",
+            Self::Pi => "Pi",
+        }
+    }
+
+    /// The contract's display row for one stored body, uncut: the app's own cuts
+    /// apply when the row is built, as for Broca, and an exact read keeps all.
+    fn project(self, body: &Value) -> Result<DisplayRow, ProjectionError> {
+        match self {
+            Self::OpenCode2 => display::opencode_v2(body, None),
+            Self::Pi => display::pi(body, None),
+        }
+    }
+
+    /// Pi writes a message to its journal once, when the message ends, so an
+    /// entry's `written_at` is when it finished. For OpenCode 2 that isn't
+    /// established, so only a served `completed_at` says when a reply finished.
+    fn written_when_finished(self) -> bool {
+        matches!(self, Self::Pi)
+    }
+}
+
+/// A read entry's members beside its message body, for a display-row runner.
+#[derive(Deserialize)]
+struct EntryFacts {
+    #[serde(default)]
+    written_at: Option<i64>,
+    #[serde(default, alias = "completedAtMs", alias = "completed_at")]
+    completed_at_ms: Option<i64>,
+    #[serde(default)]
+    client_message_id: Option<String>,
+    #[serde(default)]
+    rich_ui: Option<Value>,
+    #[serde(default)]
+    tool_times: Option<Value>,
+    #[serde(default)]
+    part_digests: Vec<PartDigest>,
+    #[serde(default)]
+    part_keys: Vec<String>,
+}
+
+/// The apps' rows for the read entries of a runner whose bodies the contract
+/// projects (see [`DisplayProfile`]). Each body becomes the contract's display
+/// row, and the row's parts become the same app parts Broca's stored blocks do,
+/// so a chat reaches the apps in one shape whichever runner hosts it:
+/// - a part's `partKey` is the display row's own part key, and its `partIndex`
+///   the stored slot that key names. OpenCode 2 shows a tool call and its
+///   outcome as two parts of one stored slot, so they share both.
+/// - a tool result folds into its call, and tool times come from the read's
+///   display facts or, without them, from the projected call. A result in the
+///   same row as its call has no part of its own; one in a later row, as Pi
+///   stores them, shows its text on an exact read, as Broca's do.
+/// - Pi's `toolResult` role is the apps' `tool` role, as on Broca. Every other
+///   role is passed on as the runner names it.
+///
+/// An entry whose body doesn't project stays visible as the unreadable
+/// placeholder, as on Broca.
+pub fn display_rows(
+    entries: &[Value],
+    full: bool,
+    profile: DisplayProfile,
+    pruned_reasoning: &[PrunedReasoning],
+) -> Result<Vec<Row>, ReadError> {
+    let mut parsed = Vec::with_capacity(entries.len());
+    let mut failures = HashMap::new();
+    for (index, raw) in entries.iter().enumerate() {
+        let projected = profile.project(&raw["message"]).ok();
+        let facts = serde_json::from_value::<EntryFacts>(raw.clone()).ok();
+        let (Some(row), Some(facts), Some(mid)) = (
+            projected,
+            facts,
+            raw["mid"].as_str().filter(|mid| !mid.is_empty()),
+        ) else {
+            failures.insert(index, unreadable(raw, profile.name())?);
+            parsed.push(None);
+            continue;
+        };
+        let (_, ordinal) = identity(raw, profile.name())?;
+        let tool_times = facts.tool_times.or_else(|| projected_tool_times(&row));
+        let role = match row.role.as_str() {
+            "toolResult" => "tool".to_owned(),
+            role => role.to_owned(),
+        };
+        let entry = Entry {
+            mid: mid.to_owned(),
+            ordinal,
+            message: Message {
+                role,
+                content: Vec::new(),
+                created_at_ms: None,
+                completed_at_ms: None,
+                client_message_id: None,
+            },
+            created_at_ms: None,
+            written_at: facts.written_at,
+            completed_at_ms: facts.completed_at_ms,
+            client_message_id: facts.client_message_id.or(row.client_message_id),
+            rich_ui: facts.rich_ui.or_else(|| {
+                row.rich_ui
+                    .and_then(|stamp| serde_json::to_value(stamp).ok())
+            }),
+            tool_times,
+            part_digests: facts.part_digests,
+            part_keys: facts.part_keys,
+        };
+        let mut parts = Vec::new();
+        for (position, part) in row.parts.into_iter().enumerate() {
+            let Some((key, part, call_id)) = display_part(part) else {
+                continue;
+            };
+            let stored = key.parse::<usize>().unwrap_or(position);
+            if matches!(part, Part::Reasoning(_)) && pruned(&entry, stored, pruned_reasoning) {
+                continue;
+            }
+            parts.push(Decoded {
+                stored,
+                key,
+                call_id,
+                part,
+                folded: false,
+            });
+        }
+        let calls: Vec<String> = parts
+            .iter()
+            .filter(|decoded| matches!(decoded.part, Part::Call { .. }))
+            .filter_map(|decoded| decoded.call_id.clone())
+            .collect();
+        for decoded in &mut parts {
+            decoded.folded = matches!(decoded.part, Part::Result { .. })
+                && decoded
+                    .call_id
+                    .as_ref()
+                    .is_some_and(|id| calls.contains(id));
+        }
+        parsed.push(Some(Parsed {
+            entry,
+            parts,
+            written_when_finished: profile.written_when_finished(),
+        }));
+    }
+    Ok(assemble(parsed, failures, full))
+}
+
+/// A display part as the app part it becomes, with its key and, for tool calls
+/// and results, its call id. A part kind this reader doesn't know is shown the
+/// way an unknown Broca block is: as its kind, in text.
+fn display_part(part: DisplayPart) -> Option<(String, Part, Option<String>)> {
+    let call = |id: String| Some(id).filter(|id| !id.is_empty());
+    Some(match part {
+        DisplayPart::Text(text) => (text.part, text_part(text.text), None),
+        DisplayPart::Reasoning(text) => (text.part, Part::Reasoning(text.text), None),
+        DisplayPart::ToolCall(tool) => {
+            // Arguments are served as JSON text; text that isn't JSON stays text.
+            let input = serde_json::from_str(&tool.arguments)
+                .unwrap_or_else(|_| Value::String(tool.arguments.clone()));
+            let name = tool.name;
+            (
+                tool.part,
+                Part::Call { name, input },
+                call(tool.tool_call_id),
+            )
+        }
+        DisplayPart::ToolResult(result) => (
+            result.part,
+            Part::Result {
+                content: Value::String(result.content),
+                is_error: result.is_error,
+            },
+            call(result.tool_call_id),
+        ),
+        DisplayPart::File(file) => (
+            file.part,
+            Part::File {
+                raw: json!({"mime": file.mime, "filename": file.filename}),
+            },
+            None,
+        ),
+        DisplayPart::Other(other) => (other.part, Part::Unknown(json!({"type": other.kind})), None),
+        _ => return None,
+    })
+}
+
+/// The tool times a display row's calls carry, in the shape a read's display
+/// facts serve them, or `None` when no call has any.
+fn projected_tool_times(row: &DisplayRow) -> Option<Value> {
+    let items: Vec<Value> = row
+        .parts
+        .iter()
+        .filter_map(|part| match part {
+            DisplayPart::ToolCall(call) => Some(json!({
+                "tool_call_id": call.tool_call_id, "started_at": call.started_at,
+                "finished_at": call.finished_at, "unanswered": call.unanswered,
+                "call_key": call.call_key, "schema_pin": call.schema_pin,
+            })),
+            _ => None,
+        })
+        .collect();
+    (!items.is_empty()).then_some(Value::Array(items))
+}
+
+/// Whether the page names the entry's reasoning block at `stored` as pruned, by
+/// the key the runner serves for it.
+fn pruned(entry: &Entry, stored: usize, pruned_reasoning: &[PrunedReasoning]) -> bool {
+    entry.part_key(stored).is_some_and(|key| {
+        pruned_reasoning.iter().any(|pruned| {
+            pruned.kind == kinds::REASONING && pruned.mid == entry.mid && pruned.part == key
+        })
+    })
+}
+
+/// An entry's `mid` and `ordinal`. A row can't be shown without its identity,
+/// so a missing `mid` or an ordinal that isn't a u64 fails the read.
+fn identity(raw: &Value, runner: &str) -> Result<(String, Option<u64>), ReadError> {
+    let mid = raw["mid"]
+        .as_str()
+        .filter(|mid| !mid.is_empty())
+        .ok_or_else(|| {
+            ReadError::new(
+                "identity_unsupported",
+                format!("{runner} transcript entry has no mid"),
+            )
+        })?;
+    let ordinal = match raw.get("ordinal") {
+        None | Some(Value::Null) => None,
+        Some(value) => Some(value.as_u64().ok_or_else(|| {
+            ReadError::new(
+                "identity_unsupported",
+                format!("{runner} entry {mid} has invalid ordinal {value}; expected u64"),
+            )
+        })?),
+    };
+    Ok((mid.to_owned(), ordinal))
+}
+
+/// The placeholder row for an entry whose payload can't be read. A broken
+/// payload must remain visible, but an identity cannot be invented: its
+/// placeholder part stands for no stored block, so it carries no `partKey` or
+/// `partIndex`.
+fn unreadable(raw: &Value, runner: &str) -> Result<Row, ReadError> {
+    let (mid, ordinal) = identity(raw, runner)?;
+    Ok(Row {
+        mid,
+        ordinal,
+        written_at: timestamp(raw),
+        display: json!({"role":"unknown", "text":"[Unreadable transcript entry]", "unreadable":true,
+            "blockSummaries":[], "parts":[{"type":"text", "text":"[Unreadable transcript entry]"}]}),
+    })
+}
+
+/// Build the rows of a decoded range in order, pairing each tool result with its
+/// call first, so a result in a later message still decorates the call.
+fn assemble(
+    parsed: Vec<Option<Parsed>>,
+    mut failures: HashMap<usize, Row>,
+    full: bool,
+) -> Vec<Row> {
     let outcomes = tool_outcomes(&parsed, full);
-    Ok(parsed
+    parsed
         .into_iter()
         .enumerate()
         .map(|(index, message)| match message {
             Some(message) => project(message, index, &outcomes, full),
             None => failures.remove(&index).expect("unreadable row retained"),
         })
-        .collect())
+        .collect()
 }
 
 /// Remove the part identity members (`partKey`, `partIndex`, `callId`) from every
@@ -263,14 +530,16 @@ fn tool_call_id(value: &Value) -> Option<String> {
         .map(str::to_string)
 }
 
+/// A text block, or an injected one when it is a system reminder.
+fn text_part(text: String) -> Part {
+    if text.trim_start().starts_with("<system-reminder>") {
+        Part::Injected(text)
+    } else {
+        Part::Text(text)
+    }
+}
+
 fn decode_part(value: Value) -> Option<Part> {
-    let text_part = |text: String| {
-        if text.trim_start().starts_with("<system-reminder>") {
-            Part::Injected(text)
-        } else {
-            Part::Text(text)
-        }
-    };
     match value {
         Value::String(text) => Some(text_part(text)),
         Value::Object(map) => {
@@ -457,6 +726,7 @@ fn project(
                 summaries.push(name.to_string());
                 value
             }
+            Part::Result { .. } if decoded.folded => continue,
             Part::Result { content, is_error } if full => {
                 json!({"type":"tool", "content":result_text(content), "isError":is_error})
             }
@@ -466,7 +736,7 @@ fn project(
             Part::Unknown(raw) => json!({"type":"text", "text":body(raw)}),
         };
         // The stored block's identity, never the part's position in this row.
-        value[PART_KEY] = json!(stored.to_string());
+        value[PART_KEY] = json!(decoded.key);
         value[PART_INDEX] = json!(stored);
         if let Some(id) = &decoded.call_id {
             value[CALL_ID] = json!(id);
@@ -505,11 +775,15 @@ fn project(
     {
         display["completedAtMs"] = json!(at);
     } else if message.entry.message.role == "assistant" {
-        // Broca writes an assistant message only after its step completes.
-        if let Some(at) = message.entry.written_at {
-            display["completedAtMs"] = json!(at);
-        } else {
-            display["completion"] = json!("unknown");
+        // A runner that writes an assistant message only once it has finished
+        // dates its end by the write; for any other, the end is unknown.
+        match message
+            .entry
+            .written_at
+            .filter(|_| message.written_when_finished)
+        {
+            Some(at) => display["completedAtMs"] = json!(at),
+            None => display["completion"] = json!("unknown"),
         }
     }
     if let Some(id) = message

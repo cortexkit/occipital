@@ -139,9 +139,11 @@ pub fn durable_error_reply(code: &str, message: &str) -> Value {
 }
 
 pub fn harness_mismatch_reply(requested: &str, session_id: &str, actual: &str) -> Value {
-    // Older captures report scan support for OpenCode and Pi, and none for other harnesses.
-    // Keep that refusal shape even though native-lineage replies use runner_claim_reply.
-    let delta_read = if matches!(actual, "opencode" | "pi") {
+    // The recorded refusals report scan support for Thalamus's harnesses (OpenCode
+    // 1, as they name it, OpenCode 2 and Pi), and none for other harnesses. Claims
+    // a runner answers itself are refused by `runner_claim_reply` instead; this
+    // refusal keeps its recorded shape.
+    let delta_read = if matches!(actual, "opencode" | "opencode2" | "pi") {
         "scan"
     } else {
         "none"
@@ -1057,11 +1059,11 @@ mod tests {
 
     #[test]
     fn harness_mismatch_message_names_both_harnesses() {
-        let reply = harness_mismatch_reply("broca", "ses_a1", "opencode");
+        let reply = harness_mismatch_reply("broca", "ses_a1", "opencode2");
         assert_eq!(reply["error"]["code"], json!("harness_mismatch"));
         assert_eq!(
             reply["error"]["message"],
-            json!("request asserted harness 'broca' but session 'ses_a1' resolves to 'opencode'")
+            json!("request asserted harness 'broca' but session 'ses_a1' resolves to 'opencode2'")
         );
         assert_eq!(reply["diagnostics"], diagnostics("durable", "scan"));
     }
@@ -1637,6 +1639,7 @@ mod tests {
                     None,
                 ),
                 "observation_unstable_is_typed_retryable" => observation_unstable_reply("scan"),
+                // Recorded when the session's harness was OpenCode 1's.
                 "asserted_harness_disagrees_refuses" => {
                     harness_mismatch_reply("broca", "ses_a1", "opencode")
                 }

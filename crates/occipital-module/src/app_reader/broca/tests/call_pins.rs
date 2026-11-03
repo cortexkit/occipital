@@ -5,7 +5,7 @@
 use super::*;
 use cortexkit_test_support::ScratchDir;
 
-/// Routes to the test session whatever its harness: here, OpenCode.
+/// Routes to the test session whatever its harness: here, OpenCode 2.
 struct AnyHarness(Arc<FakeRoute>);
 
 #[async_trait]
@@ -17,16 +17,16 @@ impl BrocaRoutes for AnyHarness {
 
 const PIN: &str = "tp1:bash:839469d5e28de1286cbd75382e5329eb7002d401575fc6c02c4aa17694939b3f:1";
 
-/// An OpenCode answer whose one call the runner served with its key and pin,
+/// An OpenCode 2 answer whose one call the runner served with its key and pin,
 /// and whose command is too long for a row.
 fn answered_call(command: &str) -> Vec<Value> {
-    vec![json!({"mid": "msg_a", "ordinal": 0,
+    vec![json!({"mid": "msg_a", "ordinal": 1,
         "tool_times": [{"tool_call_id": "call_ls", "started_at": 10, "finished_at": 20,
             "call_key": "ck_ls", "schema_pin": PIN}],
-        "message": {
-            "info": {"id": "msg_a", "role": "assistant", "time": {"created": 1_u64, "completed": 30_u64}},
-            "parts": [{"id": "prt_a1", "type": "tool", "tool": "bash", "callID": "call_ls",
-                "state": {"status": "completed", "input": {"command": command}, "output": "x\n"}}]}})]
+        "message": {"id": "msg_a", "type": "assistant", "time": {"created": 1_u64, "completed": 30_u64},
+            "content": [{"type": "tool", "id": "call_ls", "name": "bash",
+                "state": {"status": "completed", "input": {"command": command},
+                    "content": [{"type": "text", "text": "x\n"}]}}]}})]
 }
 
 #[tokio::test]
@@ -55,7 +55,7 @@ async fn a_page_names_its_calls_and_keeps_their_pins() {
     let page = app
         .read(
             super::super::super::TRANSCRIPT_PAGE,
-            json!({"session": "ses_head", "harness": "opencode", "limit": 50}),
+            json!({"session": "ses_head", "harness": "opencode2", "limit": 50}),
         )
         .await
         .unwrap();
