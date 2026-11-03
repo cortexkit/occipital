@@ -428,7 +428,7 @@ async fn partially_missing_lineage_heads_remain_malformed_not_empty_sessions() {
         let error = app.read(TRANSCRIPT_PAGE, params()).await.unwrap_err();
         assert_eq!(error.code, "invalid_provider_reply", "{name}");
         assert_eq!(
-            error.message, "Broca session.head has inconsistent lineage metadata",
+            error.message, "Broca session.head has an inconsistent snapshot",
             "{name}"
         );
     }

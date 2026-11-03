@@ -1028,13 +1028,10 @@ impl BrocaSource {
         let value = self.remote_read(ReadOp::Head, json!({})).await?;
         let meta: cortexkit_role_llm_runner::read::HeadMeta =
             serde_json::from_value(value.clone()).map_err(|error| invalid(error.to_string()))?;
-        // A never-written session has no lineage or lineage-dependent metadata.
-        // The contract also rejects partial snapshots, rather than filling in
-        // missing counters or times from a previous read.
-        if !meta.lineage_consistent() {
-            return Err(invalid(
-                "Broca session.head has inconsistent lineage metadata",
-            ));
+        // The contract rejects partial snapshots, rather than filling in missing
+        // counters or times from a previous read.
+        if !head_consistent(&value, &meta) {
+            return Err(invalid("Broca session.head has an inconsistent snapshot"));
         }
         let history_version = value.get("history_version").and_then(Value::as_u64);
         let lineage_id = value
@@ -1985,6 +1982,26 @@ pub(crate) fn send_grant(
         _ => SendGrant::Unknown,
     }
 }
+
+/// Whether a runner's `session.head` is a consistent snapshot, under the runner
+/// contract it was written for. Runners move from contract 0.7 to 0.8 one by one
+/// while this module reads them all, and the two disagree on the same members:
+/// 0.7 binds history to a `lineage_id`, numbers from 0, and requires a head
+/// without a lineage to carry nothing else; 0.8 has no lineage, numbers from 1,
+/// and requires `history_version` and `incarnation` on every head. So a head with
+/// a lineage is held to 0.7's rule. One without is held to 0.8's rule when it
+/// decodes as an 0.8 head, and otherwise to 0.7's rule for a never-written
+/// session.
+fn head_consistent(value: &Value, meta: &cortexkit_role_llm_runner::read::HeadMeta) -> bool {
+    if meta.lineage_id.is_some() {
+        return meta.lineage_consistent();
+    }
+    match serde_json::from_value::<llm_runner_0_8::read::HeadMeta>(value.clone()) {
+        Ok(head) => head.snapshot_consistent(),
+        Err(_) => meta.lineage_consistent(),
+    }
+}
+
 fn activity_for(state: Option<&str>) -> Option<&'static str> {
     match state {
         Some("active" | "running" | "pending" | "queued" | "paused") => Some("busy"),
@@ -2022,6 +2039,7 @@ mod tests {
     mod pruned_reasoning;
     mod rich_ui;
     mod rich_ui_stamp_1028;
+    mod runner_0_8;
     mod session_change_1030;
     mod subscribe_flatten_1028;
     mod tool_outage_1027;
@@ -2043,6 +2061,8 @@ mod tests {
         live_ids: Mutex<Vec<bool>>,
         detaches: Arc<AtomicUsize>,
         history: AtomicU64,
+        /// The `lineage_id` on every head and page. Empty for a runner on contract
+        /// 0.8, which serves none.
         lineage: Mutex<String>,
         unavailable: AtomicBool,
         stuck: AtomicBool,
@@ -2181,15 +2201,36 @@ mod tests {
         }
     }
 
+    /// A runner on contract 0.8 decodes these requests with types that refuse
+    /// unknown members, so every read this module sends must decode under them
+    /// as well as under 0.7: a member only 0.7 knows would be refused by every
+    /// runner that has moved.
+    fn runner_0_8_accepts(op: ReadOp, params: &Value) {
+        use llm_runner_0_8::{history::HistoryRequest, read};
+        let decoded = match op {
+            ReadOp::Head => serde_json::from_value::<read::HeadRequest>(params.clone()).map(drop),
+            ReadOp::Read => serde_json::from_value::<read::ReadRequest>(params.clone()).map(drop),
+            ReadOp::History => serde_json::from_value::<HistoryRequest>(params.clone()).map(drop),
+            ReadOp::Status | ReadOp::Describe => Ok(()),
+        };
+        if let Err(error) = decoded {
+            panic!(
+                "{} {params} is refused by runner contract 0.8: {error}",
+                op.method()
+            );
+        }
+    }
+
     #[async_trait]
     impl BrocaRoute for FakeRoute {
         async fn read(&self, op: ReadOp, params: Value) -> Result<Value, ReadError> {
             let request: Value = serde_json::from_slice(&body(op, params.clone())).unwrap();
+            runner_0_8_accepts(op, &params);
             self.calls.lock().unwrap().push(request.clone());
             if self.unavailable.load(Ordering::Relaxed) {
                 return Err(ReadError::new("provider_unavailable", "Broca route lost"));
             }
-            match request["method"].as_str().unwrap() {
+            let reply = match request["method"].as_str().unwrap() {
                 "session.head" => {
                     let first = self
                         .entries
@@ -2331,7 +2372,18 @@ mod tests {
                     "scope_owner_mismatch",
                     format!("observer cannot call {method}"),
                 )),
+            };
+            // An empty lineage stands for a runner on contract 0.8, which serves
+            // none on its heads or pages.
+            if !self.lineage.lock().unwrap().is_empty() {
+                return reply;
             }
+            reply.map(|mut value| {
+                if let Some(object) = value.as_object_mut() {
+                    object.remove("lineage_id");
+                }
+                value
+            })
         }
         async fn subscribe(&self, live_ids: bool) -> Result<Box<dyn EventStream>, ReadError> {
             self.attaches.fetch_add(1, Ordering::Relaxed);
@@ -3380,7 +3432,7 @@ mod tests {
         assert_eq!(error.code, "invalid_provider_reply");
         assert_eq!(
             error.message,
-            "Broca session.head has inconsistent lineage metadata"
+            "Broca session.head has an inconsistent snapshot"
         );
     }
 

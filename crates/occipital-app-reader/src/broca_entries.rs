@@ -68,6 +68,28 @@ struct Entry {
     /// [`crate::tool_times`] reads it.
     #[serde(default)]
     tool_times: Option<Value>,
+    /// The runner's own key for each stored part, in stored order: from
+    /// `part_digests` when served, else from `part_keys`. A pruned part is named
+    /// by its key, which a reader matches and never builds itself.
+    #[serde(default)]
+    part_digests: Vec<PartDigest>,
+    #[serde(default)]
+    part_keys: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct PartDigest {
+    part: String,
+}
+
+impl Entry {
+    /// The runner's key for the part at `stored`, if it serves one.
+    fn part_key(&self, stored: usize) -> Option<&str> {
+        match self.part_digests.get(stored) {
+            Some(digest) => Some(digest.part.as_str()),
+            None => self.part_keys.get(stored).map(String::as_str),
+        }
+    }
 }
 
 #[derive(Deserialize)]
@@ -137,11 +159,11 @@ pub fn rows_with_pruned_reasoning(
                 let mut parts = Vec::new();
                 for (stored, value) in entry.message.content.iter().cloned().enumerate() {
                     // Match stored positions before filtering, so later parts retain their keys.
-                    if entry.ordinal.is_some_and(|ordinal| {
+                    if entry.part_key(stored).is_some_and(|key| {
                         pruned_reasoning.iter().any(|pruned| {
                             pruned.kind == kinds::REASONING
                                 && pruned.mid == entry.mid
-                                && pruned.part == format!("m{ordinal}#{stored}")
+                                && pruned.part == key
                         })
                     }) {
                         continue;
@@ -626,13 +648,13 @@ mod tests {
         // The runner contract's opaque-reasoning example keeps a summary inside
         // redacted provider data. Pruning must not turn private payloads into display parts.
         let page = json!({
-            "messages":[{"mid":"message-2", "ordinal":2, "message":{"role":"assistant", "content":[{
+            "messages":[{"mid":"message-2", "ordinal":2, "part_keys":["p-0"], "message":{"role":"assistant", "content":[{
                 "type":"redacted_reasoning",
                 "data":"{\"id\":\"item-example\",\"summary\":[{\"text\":\"Consider the blue door.\",\"type\":\"summary_text\"}],\"type\":\"reasoning\"}",
                 "provider_format":"example-item"
             }]}}],
             "pruned_reasoning":[{
-                "mid":"message-2", "part":"m2#0", "kind":"opaque_reasoning", "bytes":245,
+                "mid":"message-2", "part":"p-0", "kind":"opaque_reasoning", "bytes":245,
                 "sha256":"203f324596cf074ace9b366366d9ae49d079a8a62bf3a3fbe35f4fe8f888b53b"
             }]
         });

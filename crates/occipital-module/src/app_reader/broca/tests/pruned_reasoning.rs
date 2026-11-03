@@ -29,10 +29,17 @@ impl BrocaRoute for PrunedRoute {
     }
 }
 
+/// The runner's part keys are its own opaque strings: `m20` serves them in
+/// `part_digests`, `m22` in `part_keys`, the form a pruning runner uses for an
+/// entry without digests. Neither can be derived from a part's position.
 fn route() -> Arc<FakeRoute> {
     let route = FakeRoute::new();
+    let digests: Vec<_> = ["r-a", "r-b", "r-c", "t-d", "c-e", "r-f"]
+        .into_iter()
+        .map(|part| json!({"part":part, "digest":"b".repeat(64)}))
+        .collect();
     *route.entries.lock().unwrap() = vec![
-        json!({"mid":"m20", "ordinal":20, "message":{"role":"assistant", "content":[
+        json!({"mid":"m20", "ordinal":20, "part_digests":digests, "message":{"role":"assistant", "content":[
             {"type":"reasoning", "text":""},
             {"type":"reasoning", "text":""},
             {"type":"reasoning", "text":"Readable summary"},
@@ -41,7 +48,7 @@ fn route() -> Arc<FakeRoute> {
             {"type":"reasoning", "text":"Unchanged reasoning"}]}}),
         json!({"mid":"m21", "ordinal":21, "message":{"role":"tool", "content":[
             {"type":"tool_result", "tool_call_id":"call_date", "output":"2026"}]}}),
-        json!({"mid":"m22", "ordinal":22, "message":{"role":"assistant", "content":[
+        json!({"mid":"m22", "ordinal":22, "part_keys":["s-a", "s-b"], "message":{"role":"assistant", "content":[
             {"type":"reasoning", "text":""}, {"type":"text", "text":"Done."}]}}),
     ];
     route
@@ -49,14 +56,17 @@ fn route() -> Arc<FakeRoute> {
 
 fn pruning() -> Vec<Value> {
     [
-        ("m20", "m20#1", "reasoning"),
-        ("m20", "m20#2", "opaque_reasoning"),
-        ("m20", "m20#3", "signature"),
-        ("m20", "m20#4", "signature"),
-        ("m22", "m22#0", "reasoning"),
-        // Neither a matching mid alone nor a matching part alone names a part.
-        ("m20", "m99#0", "reasoning"),
-        ("another-mid", "m20#0", "reasoning"),
+        ("m20", "r-b", "reasoning"),
+        ("m20", "r-c", "opaque_reasoning"),
+        ("m20", "t-d", "signature"),
+        ("m20", "c-e", "signature"),
+        ("m22", "s-a", "reasoning"),
+        // A key built from the ordinal and position, which the entry doesn't
+        // serve, names nothing.
+        ("m20", "m20#0", "reasoning"),
+        // Neither a matching mid alone nor a served key alone names a part.
+        ("m20", "s-b", "reasoning"),
+        ("another-mid", "r-a", "reasoning"),
     ]
     .into_iter()
     .map(|(mid, part, kind)| {
