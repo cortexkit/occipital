@@ -194,8 +194,16 @@ fn admission_refusal(binding: Option<&RouteBinding>, method: &str) -> ReadError 
 /// Resolution is deliberately separate from authorization: refused callers never reach a source.
 #[async_trait]
 pub trait SourceResolver: Send + Sync {
-    /// Check placement for a cached read without opening a transcript route.
-    async fn validate_session(&self, _session: &str) -> Result<(), ReadError> {
+    /// Check the session's placement, found as [`SourceResolver::resolve`] finds it
+    /// (`harness` names a session of that harness, whatever runner hosts it; without
+    /// it the session is a Broca one), without opening a transcript route: for a
+    /// read served from what Occipital already holds, and before replaying a kept
+    /// send receipt.
+    async fn validate_session(
+        &self,
+        _session: &str,
+        _harness: Option<&str>,
+    ) -> Result<(), ReadError> {
         Ok(())
     }
 
@@ -445,9 +453,11 @@ impl AppReader {
         if method == DISPLAY_READ {
             let request = DisplayReadRequest::parse(&params)
                 .map_err(|e| ReadError::new(e.code, e.message))?;
+            let harness = occipital_app_reader::page::optional_transcript_harness(&params)
+                .map_err(|e| ReadError::new(e.code, e.message))?;
             observe::step(
                 "resolution",
-                self.resolver.validate_session(request.session),
+                self.resolver.validate_session(request.session, harness),
             )
             .await?;
             return serde_json::to_value(

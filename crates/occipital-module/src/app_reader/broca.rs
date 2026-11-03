@@ -169,8 +169,15 @@ impl SourceConnector for Unavailable {
 
 #[async_trait]
 impl SourceResolver for LazyBrocaSources {
-    async fn validate_session(&self, session: &str) -> Result<(), ReadError> {
-        self.connected().await?.validate_session(session).await
+    async fn validate_session(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+    ) -> Result<(), ReadError> {
+        self.connected()
+            .await?
+            .validate_session(session, harness)
+            .await
     }
 
     async fn resolve(
@@ -210,11 +217,10 @@ impl SourceResolver for LazyBrocaSources {
 #[async_trait]
 impl SendTargets for LazyBrocaSources {
     async fn validate(&self, session: &str, harness: Option<&str>) -> Result<(), ReadError> {
-        let sources = self.connected().await?;
-        match harness.filter(|harness| *harness != "broca") {
-            None => sources.validate_session(session).await,
-            Some(_) => sources.reference(session, harness).await.map(|_| ()),
-        }
+        self.connected()
+            .await?
+            .validate_session(session, harness)
+            .await
     }
 
     async fn open(
@@ -685,13 +691,13 @@ impl BrocaSources {
 
 #[async_trait]
 impl SourceResolver for BrocaSources {
-    async fn validate_session(&self, session: &str) -> Result<(), ReadError> {
-        self.resolver
-            .resolve(&SessionRef {
-                runner: BROCA_RUNNER_MODULE_ID.into(),
-                session: session.into(),
-            })
-            .await?;
+    async fn validate_session(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+    ) -> Result<(), ReadError> {
+        let reference = self.reference(session, harness).await?;
+        self.resolver.resolve(&reference).await?;
         Ok(())
     }
 
@@ -3090,11 +3096,45 @@ mod tests {
                 Ok(_) => panic!("{recorded:?}: a watch was opened"),
             };
             assert_eq!(watch.code, read.code);
+            let checked = sources
+                .validate_session("ses_head", Some("opencode2"))
+                .await
+                .unwrap_err();
+            assert_eq!(checked.code, read.code, "{recorded:?}");
+            assert_eq!(checked.detail, read.detail, "{recorded:?}");
         }
         assert!(
             opened.calls.lock().unwrap().is_empty(),
             "no Broca call was made"
         );
+    }
+
+    /// A display read of a session on Thalamus's OpenCode 2 or Pi runner checks the
+    /// session under that runner, as a page read finds it, and opens no route: it is
+    /// answered from what Occipital already holds.
+    #[tokio::test]
+    async fn a_display_read_checks_the_session_under_its_own_runner() {
+        for (runner, harness) in [
+            (OPENCODE_RUNNER_MODULE_ID, "opencode2"),
+            (PI_RUNNER_MODULE_ID, "pi"),
+        ] {
+            let opened = FakeRoute::new();
+            let sources = BrocaSources::new(
+                Arc::new(Resolver::new(Arc::new(ByHarness(Some(runner))))),
+                Arc::new(Routes(opened.clone())),
+            );
+            let app = super::super::AppReader::new(Arc::new(sources));
+            let read = app
+                .read(
+                    super::super::DISPLAY_READ,
+                    json!({"session": "ses_head", "harness": harness}),
+                )
+                .await
+                .unwrap_or_else(|error| panic!("{harness}: {error:?}"));
+            // No watch has attached a display ring for it here.
+            assert!(read.get("absent").is_some(), "{harness}: {read}");
+            assert!(opened.calls.lock().unwrap().is_empty(), "{harness}");
+        }
     }
 
     /// Routes that only count the send paths handed out.
@@ -3833,6 +3873,7 @@ mod tests {
     mod part_keys;
     mod pi_display;
     mod pi_pages;
+    mod pi_samples;
     #[path = "../../../../../occipital-app-reader/tests/fixtures/broca_0_7.rs"]
     pub(crate) mod samples_0_7;
     mod served_samples;

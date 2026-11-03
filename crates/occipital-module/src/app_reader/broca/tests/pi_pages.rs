@@ -17,7 +17,7 @@ use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 
 const V1: &str = "runner-pages-pi-v1";
-const V2: &str = "runner-pages-pi-v2";
+pub(super) const V2: &str = "runner-pages-pi-v2";
 /// Each set's `SHA256SUMS` as Thalamus published it.
 const SETS: [(&str, &str); 2] = [
     (
@@ -40,7 +40,8 @@ fn sample(set: &str, name: &str) -> Value {
     serde_json::from_slice(&std::fs::read(root(set).join(name)).unwrap()).unwrap()
 }
 
-fn messages(set: &str) -> Vec<Value> {
+/// The recorded `session.read` entries of `set`.
+pub(super) fn messages(set: &str) -> Vec<Value> {
     sample(set, "01-session-read.json")["messages"]
         .as_array()
         .unwrap()

@@ -1102,6 +1102,13 @@ fn the_model_name_samples_are_complete_and_their_checksums_verify() {
     verify_published_set("test-vectors/phone-reader-model-names-v1", 4);
 }
 
+/// A Pi chat as the apps read it. Its README lists what each reply shows;
+/// `occipital-module` checks the replies are still what it serves.
+#[test]
+fn the_pi_samples_are_complete_and_their_checksums_verify() {
+    verify_published_set("test-vectors/phone-reader-pi-v1", 6);
+}
+
 /// What tool providers wrote for a chat's calls, as the apps read it. Its README
 /// lists what each file shows. v3 is served from an OpenCode 2 chat, and
 /// `occipital-module` checks it is still what it serves. v2, the same set from
