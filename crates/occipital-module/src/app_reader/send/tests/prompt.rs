@@ -23,6 +23,8 @@ struct Held {
 /// A head on a runner declaring `attachments`, keeping what each upload received.
 struct UploadRunner {
     attachments: AtomicBool,
+    /// Whether it also declares `media_only_send`, storing a message of files alone.
+    media_only: AtomicBool,
     input: Mutex<Option<Value>>,
     /// Each upload by its runner id.
     uploads: Mutex<HashMap<String, Held>>,
@@ -35,6 +37,7 @@ impl UploadRunner {
     fn new() -> Arc<Self> {
         Arc::new(Self {
             attachments: AtomicBool::new(true),
+            media_only: AtomicBool::new(false),
             input: Mutex::default(),
             uploads: Mutex::default(),
             next: AtomicU64::new(1),
@@ -107,6 +110,9 @@ impl SendTarget for UploadTarget {
                 if runner.attachments.load(Ordering::SeqCst) {
                     groups.push("attachments".into());
                 }
+                if runner.media_only.load(Ordering::SeqCst) {
+                    groups.push("media_only_send".into());
+                }
                 Ok(
                     serde_json::to_value(RoleDescribe::default().with_capabilities(groups))
                         .unwrap(),
@@ -176,8 +182,9 @@ impl SendTargets for UploadTargets {
     }
 }
 
-/// Where uploads are placed, and a model that takes images and nothing else.
-struct Project(PathBuf);
+/// Where uploads are placed, and a model that takes images and nothing else,
+/// as the fit says.
+struct Project(PathBuf, Mutex<crate::app_reader::PromptFit>);
 
 #[async_trait]
 impl SourceResolver for Project {
@@ -193,13 +200,15 @@ impl SourceResolver for Project {
         Ok(self.0.clone())
     }
 
-    async fn prompt_accepts(
+    async fn prompt_fit(
         &self,
         _: &str,
         _: Option<&str>,
         mime: &str,
-    ) -> Result<bool, ReadError> {
-        Ok(mime.starts_with("image/"))
+    ) -> Result<Option<crate::app_reader::PromptFit>, ReadError> {
+        Ok(mime
+            .starts_with("image/")
+            .then(|| self.1.lock().unwrap().clone()))
     }
 }
 
@@ -215,6 +224,12 @@ struct Prompt {
 
 impl Prompt {
     fn new() -> Self {
+        Self::with_fit(crate::app_reader::PromptFit::default())
+    }
+
+    /// A session whose prompt takes images as `fit` says, on a runner declaring
+    /// `media_only_send` when `fit` does.
+    fn with_fit(fit: crate::app_reader::PromptFit) -> Self {
         let dir = tempfile::tempdir().unwrap();
         let store = crate::store::tests::shared(&dir.path().join("store.db"));
         let project = dir.path().join("project");
@@ -232,6 +247,7 @@ impl Prompt {
         )
         .unwrap();
         let runner = UploadRunner::new();
+        runner.media_only.store(fit.media_only, Ordering::SeqCst);
         let clock = now.clone();
         let sender = Sender::with_clock(
             Arc::new(UploadTargets(runner.clone())),
@@ -243,7 +259,7 @@ impl Prompt {
             _dir: dir,
             runner,
             uploads,
-            resolver: Arc::new(Project(project)),
+            resolver: Arc::new(Project(project, Mutex::new(fit))),
             sender: Arc::new(sender),
             now,
         }
@@ -556,10 +572,11 @@ async fn the_runners_media_refusal_reaches_the_app_and_keeps_the_file() {
     assert!(p.uploads.prompt_file(PHONE, "s", &id).is_ok());
 }
 
-/// The runner contract stores no message of files alone, and Occipital makes up
-/// no text for one.
+/// Only a runner declaring `media_only_send` stores a message of files alone.
+/// Elsewhere such a message is refused before anything is copied or sent, and
+/// Occipital makes up no text for it.
 #[tokio::test]
-async fn a_message_of_files_alone_is_refused_before_anything_is_sent() {
+async fn a_message_of_files_alone_goes_only_to_a_runner_that_stores_one() {
     let p = Prompt::new();
     let id = p.upload("image/png", b"abc").await;
     let refusal = p
@@ -571,7 +588,53 @@ async fn a_message_of_files_alone_is_refused_before_anything_is_sent() {
         (refusal.code, refusal.message.as_str()),
         ("invalid_request", "a message with files needs text too")
     );
-    assert!(p.runner.methods().is_empty());
+    assert!(!p
+        .runner
+        .methods()
+        .iter()
+        .any(|m| m.starts_with("session.upload") || m == "session.send"));
+
+    p.runner.media_only.store(true, Ordering::SeqCst);
+    let receipt = p
+        .sender
+        .send_from(Some(PHONE), with_files("m2", "", &[&id]))
+        .await
+        .unwrap();
+    assert_eq!(receipt["ok"], true, "{receipt}");
+    let send = p.runner.last_send();
+    assert_eq!(send["prompt"], "");
+    assert_eq!(
+        send["content"],
+        json!([{"type": "upload", "upload_id": "ru-1"}])
+    );
+}
+
+/// The runner's refusal of an image above the model's limit reaches the app by
+/// its own code, with the limit it names, and the file stays sendable or
+/// placeable.
+#[tokio::test]
+async fn the_runners_size_refusal_reaches_the_app_and_keeps_the_file() {
+    let p = Prompt::new();
+    let id = p.upload("image/png", b"abc").await;
+    p.runner
+        .scripted
+        .lock()
+        .unwrap()
+        .push_back(Err(RunnerError::Refused {
+            code: "media_too_large".into(),
+            message: "the image is above the model's limit".into(),
+            detail: Some(json!({"max_image_bytes": 2})),
+        }));
+    let refusal = p
+        .sender
+        .send_from(Some(PHONE), with_files("m1", "look", &[&id]))
+        .await
+        .unwrap_err();
+    assert_eq!(
+        (refusal.code, refusal.detail),
+        (MEDIA_TOO_LARGE, Some(json!({"max_image_bytes": 2})))
+    );
+    assert!(p.uploads.prompt_file(PHONE, "s", &id).is_ok());
 }
 
 #[tokio::test]

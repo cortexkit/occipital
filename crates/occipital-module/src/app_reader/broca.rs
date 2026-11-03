@@ -197,15 +197,15 @@ impl SourceResolver for LazyBrocaSources {
         self.connected().await?.project_root(session, harness).await
     }
 
-    async fn prompt_accepts(
+    async fn prompt_fit(
         &self,
         session: &str,
         harness: Option<&str>,
         mime: &str,
-    ) -> Result<bool, ReadError> {
+    ) -> Result<Option<super::PromptFit>, ReadError> {
         self.connected()
             .await?
-            .prompt_accepts(session, harness, mime)
+            .prompt_fit(session, harness, mime)
             .await
     }
 
@@ -771,24 +771,32 @@ impl SourceResolver for BrocaSources {
         Ok(Some(self.source(&reference).await?))
     }
 
-    async fn prompt_accepts(
+    async fn prompt_fit(
         &self,
         session: &str,
         harness: Option<&str>,
         mime: &str,
-    ) -> Result<bool, ReadError> {
+    ) -> Result<Option<super::PromptFit>, ReadError> {
         let reference = self.reference(session, harness).await?;
         let source = self.source(&reference).await?;
         // A runner without the group would ignore the send's `content` and drop
         // the file silently, so its description must name the group.
-        if !source
+        let Some(describe) = source
             .describe()
             .await
-            .is_some_and(|describe| describe.declares("attachments"))
-        {
-            return Ok(false);
+            .filter(|describe| describe.declares("attachments"))
+        else {
+            return Ok(None);
+        };
+        let input = source.head().await?.input;
+        if input.accepts(mime) == Some(false) {
+            return Ok(None);
         }
-        Ok(source.head().await?.input.accepts(mime) != Some(false))
+        Ok(Some(super::PromptFit {
+            media_only: describe.declares("media_only_send"),
+            max_image_bytes: input.max_image_bytes,
+            max_image_dimension: input.max_image_dimension,
+        }))
     }
 
     async fn media_read(
@@ -1236,6 +1244,8 @@ impl BrocaSource {
                 },
                 mime_types: strings(&value["input"]["mime_types"]),
                 modalities: strings(&value["input"]["modalities"]),
+                max_image_bytes: value["input"]["max_image_bytes"].as_u64(),
+                max_image_dimension: value["input"]["max_image_dimension"].as_u64(),
             },
             model: meta.model.as_ref().map(json_of).transpose()?,
             // Counts past 2^53 - 1 can't reach the phone exactly, so such a total is

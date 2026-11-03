@@ -59,6 +59,11 @@ pub struct InputCapability {
     pub attachments: Attachments,
     pub mime_types: Option<Vec<String>>,
     pub modalities: Option<Vec<String>>,
+    /// The largest image file the model takes, in bytes as uploaded, and the
+    /// longest side of one image in a request, in pixels, when the runner
+    /// reports them (runner contract 0.8.4).
+    pub max_image_bytes: Option<u64>,
+    pub max_image_dimension: Option<u64>,
 }
 
 impl InputCapability {

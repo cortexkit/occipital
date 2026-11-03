@@ -1,0 +1,1 @@
+{"method":"session.enqueue_user_message","params":{"clientMessageId":"8b0e7d52-2b59-4ad5-9a37-0f1c6a3c1d05","parts":[{"attachment_id":"00000000000000000000000000000006","filename":"unfinished.png","mime":"image/png","type":"file"}],"session":"s","text":"Too soon"}}

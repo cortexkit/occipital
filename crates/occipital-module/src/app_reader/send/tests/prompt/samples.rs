@@ -1,7 +1,9 @@
 //! The sample set the apps pin for sending a photo into the model's prompt,
-//! `phone-uploads-prompt-v1`: each request served through the reader's frame
+//! `phone-uploads-prompt-v2`: each request served through the reader's frame
 //! loop on a paired phone's route, with the reply bytes the phone receives. Its
-//! README says what each file shows.
+//! README says what each file shows. `phone-uploads-prompt-v1` is the same flow
+//! before the begin reply carried `media_only` and the image limits; it stays
+//! published unchanged, checked by its checksums only.
 //!
 //! The pieces of each file are sent outside the set, since `upload.chunk` is
 //! sampled in `phone-upload-v1`. The project's temporary folder is written as
@@ -12,7 +14,10 @@ use crate::app_reader::{broca::tests::served_samples::Served, AppReader};
 use std::time::Duration;
 use subc_protocol::{BindIdentity, Principal, RouteTarget};
 
-const SET: &str = "phone-uploads-prompt-v1";
+const SET: &str = "phone-uploads-prompt-v2";
+/// The image limits the test session's model reports.
+const MAX_IMAGE_BYTES: u64 = 5_242_880;
+const MAX_IMAGE_DIMENSION: u64 = 8_000;
 const PROJECT: &str = "/path/to/project";
 const SCREENSHOT: &[u8] = b"a screenshot, as a phone would send its bytes\n";
 const PHOTO: &[u8] = b"a second photo\n";
@@ -70,7 +75,11 @@ fn file_part(id: &str, mime: &str, filename: &str) -> Value {
 
 #[tokio::test]
 async fn the_prompt_upload_samples_are_what_the_reader_serves() {
-    let p = Prompt::new();
+    let p = Prompt::with_fit(crate::app_reader::PromptFit {
+        media_only: false,
+        max_image_bytes: Some(MAX_IMAGE_BYTES),
+        max_image_dimension: Some(MAX_IMAGE_DIMENSION),
+    });
     let app = Arc::new(
         AppReader::with_sender(p.resolver.clone(), p.sender.clone())
             .with_uploads(Some(p.uploads.clone())),
@@ -90,7 +99,20 @@ async fn the_prompt_upload_samples_are_what_the_reader_serves() {
             begin_params("screenshot.png", "image/png", SCREENSHOT),
         )
         .await;
-    assert_eq!(begun["destination"], "prompt");
+    assert_eq!(
+        (
+            &begun["destination"],
+            &begun["media_only"],
+            &begun["max_image_bytes"],
+            &begun["max_image_dimension"]
+        ),
+        (
+            &json!("prompt"),
+            &json!(false),
+            &json!(MAX_IMAGE_BYTES),
+            &json!(MAX_IMAGE_DIMENSION)
+        )
+    );
     let screenshot = begun["upload_id"].as_str().unwrap().to_owned();
     p.chunk(&screenshot, SCREENSHOT).await;
     let finished = r
@@ -109,6 +131,7 @@ async fn the_prompt_upload_samples_are_what_the_reader_serves() {
         )
         .await;
     assert_eq!(begun["destination"], "folder");
+    assert!(begun.get("media_only").is_none(), "{begun}");
 
     // The message naming the screenshot, and its repeat after a lost reply.
     let send = json!({"session": "s", "text": "What's wrong in this screenshot?",
@@ -159,6 +182,31 @@ async fn the_prompt_upload_samples_are_what_the_reader_serves() {
         .await;
     assert_eq!(resent["ok"], true, "{resent}");
 
+    // A photo above the model's limit: the runner names the limit, and the phone
+    // encodes it smaller or places it, as for `media_unsupported`.
+    let large = p
+        .upload_named("large.jpg", "image/jpeg", b"a photo above the limit\n")
+        .await;
+    p.runner
+        .scripted
+        .lock()
+        .unwrap()
+        .push_back(Err(RunnerError::Refused {
+            code: "media_too_large".into(),
+            message: "the image is above the model's limit".into(),
+            detail: Some(json!({"max_image_bytes": MAX_IMAGE_BYTES})),
+        }));
+    let too_large = r
+        .keep(
+            "09-send-media_too_large",
+            "session.enqueue_user_message",
+            json!({"session": "s", "text": "This one is big",
+                "clientMessageId": "8b0e7d52-2b59-4ad5-9a37-0f1c6a3c1d07",
+                "parts": [file_part(&large, "image/jpeg", "large.jpg")]}),
+        )
+        .await;
+    assert_eq!(too_large["code"], MEDIA_TOO_LARGE);
+
     // Refusals the phone handles by code.
     let alone = r
         .keep(
@@ -170,6 +218,33 @@ async fn the_prompt_upload_samples_are_what_the_reader_serves() {
         )
         .await;
     assert_eq!(alone["code"], "invalid_request");
+
+    // A runner that stores a message of files alone: begin says so, and a photo
+    // with no text is sent.
+    p.resolver.1.lock().unwrap().media_only = true;
+    p.runner.media_only.store(true, Ordering::SeqCst);
+    let begun = r
+        .keep(
+            "10-begin-photo-alone",
+            uploads::BEGIN,
+            begin_params("alone.png", "image/png", PHOTO),
+        )
+        .await;
+    assert_eq!(begun["media_only"], true);
+    let alone = begun["upload_id"].as_str().unwrap().to_owned();
+    p.chunk(&alone, PHOTO).await;
+    p.serve(uploads::FINISH, json!({"upload_id": alone}), None)
+        .await;
+    let sent_alone = r
+        .keep(
+            "11-send-photo-alone",
+            "session.enqueue_user_message",
+            json!({"session": "s", "text": "",
+                "clientMessageId": "8b0e7d52-2b59-4ad5-9a37-0f1c6a3c1d08",
+                "parts": [file_part(&alone, "image/png", "alone.png")]}),
+        )
+        .await;
+    assert_eq!(sent_alone["ok"], true, "{sent_alone}");
     let sent = r
         .keep(
             "refusal-upload_sent",

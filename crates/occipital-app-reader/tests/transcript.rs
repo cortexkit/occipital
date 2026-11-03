@@ -121,6 +121,7 @@ impl TranscriptSource for FakeSource {
                 attachments: Attachments::Yes,
                 mime_types: Some(vec!["image/png".into()]),
                 modalities: Some(vec!["image".into()]),
+                ..Default::default()
             },
             ..Default::default()
         })

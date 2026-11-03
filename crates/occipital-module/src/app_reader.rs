@@ -101,6 +101,18 @@ pub fn operation_delivery() -> BTreeMap<String, OperationDelivery> {
     .collect()
 }
 
+/// What a session's prompt takes, for a file going into it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PromptFit {
+    /// The runner stores a message of files with no text (the runner contract's
+    /// `media_only_send` group).
+    pub media_only: bool,
+    /// The largest image file the model takes, in bytes as uploaded, and the
+    /// longest side of one image in pixels, when the runner reports them.
+    pub max_image_bytes: Option<u64>,
+    pub max_image_dimension: Option<u64>,
+}
+
 pub type RouteBinding = (
     Option<Principal>,
     RouteTarget,
@@ -248,17 +260,17 @@ pub trait SourceResolver: Send + Sync {
         ))
     }
 
-    /// Whether a file of type `mime` can go into the session's prompt: its runner
-    /// takes uploads (the runner contract's `attachments` group), and its model isn't
-    /// known to refuse the type. Without a resolver that can tell, the file goes to
-    /// the project folder.
-    async fn prompt_accepts(
+    /// Whether a file of type `mime` can go into the session's prompt, and what
+    /// the prompt takes: `Some` when its runner takes uploads (the runner
+    /// contract's `attachments` group) and its model isn't known to refuse the
+    /// type. Without a resolver that can tell, the file goes to the project folder.
+    async fn prompt_fit(
         &self,
         _session: &str,
         _harness: Option<&str>,
         _mime: &str,
-    ) -> Result<bool, ReadError> {
-        Ok(false)
+    ) -> Result<Option<PromptFit>, ReadError> {
+        Ok(None)
     }
 
     async fn watch(

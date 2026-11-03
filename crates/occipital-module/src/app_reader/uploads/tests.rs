@@ -219,13 +219,13 @@ impl SourceResolver for PromptResolver {
         SourceResolver::project_root(&self.inner, session, harness).await
     }
 
-    async fn prompt_accepts(
+    async fn prompt_fit(
         &self,
         _session: &str,
         _harness: Option<&str>,
         _mime: &str,
-    ) -> Result<bool, ReadError> {
-        Ok(self.accepts)
+    ) -> Result<Option<crate::app_reader::PromptFit>, ReadError> {
+        Ok(self.accepts.then(crate::app_reader::PromptFit::default))
     }
 }
 

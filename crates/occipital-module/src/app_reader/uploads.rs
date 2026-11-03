@@ -54,7 +54,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use subc_protocol::manifest::{ManagementOperation, ManagementOperationKind, OperationPayload};
 
-use super::{Caller, SourceResolver};
+use super::{Caller, PromptFit, SourceResolver};
 use sha2::{Digest, Sha256};
 pub(crate) use store::RunnerUpload;
 use store::{Destination, Row, Rows, State};
@@ -354,18 +354,15 @@ impl Uploads {
             // The prompt only when the session's runner takes uploads and its model
             // isn't known to refuse this type. A failed check means the folder: the
             // file still reaches the session, as a path.
-            let prompt = request.prompt
-                && request.size <= PROMPT_MAX_BYTES
-                && resolver
-                    .prompt_accepts(&request.session, request.harness.as_deref(), &request.mime)
+            let fit = if request.prompt && request.size <= PROMPT_MAX_BYTES {
+                resolver
+                    .prompt_fit(&request.session, request.harness.as_deref(), &request.mime)
                     .await
-                    .unwrap_or(false);
-            let destination = if prompt {
-                Destination::Prompt
+                    .unwrap_or(None)
             } else {
-                Destination::Folder
+                None
             };
-            return blocking(move || this.begin(device, request, project_root, destination)).await;
+            return blocking(move || this.begin(device, request, project_root, fit)).await;
         }
         let device = device.unwrap_or_default();
         match method {
@@ -428,9 +425,14 @@ impl Uploads {
         device: String,
         request: BeginParams,
         project_root: PathBuf,
-        destination: Destination,
+        fit: Option<PromptFit>,
     ) -> Result<Value, ReadError> {
         self.disk_floor(&project_root, request.size, request.size)?;
+        let destination = if fit.is_some() {
+            Destination::Prompt
+        } else {
+            Destination::Folder
+        };
         let now = (self.clock)();
         let upload_id = (self.ids)();
         let row = Row {
@@ -465,6 +467,18 @@ impl Uploads {
         });
         if prompt {
             reply["destination"] = json!(destination.as_str());
+        }
+        // What the phone needs to prepare the file: whether a message may carry
+        // it with no text, and the largest image the model takes, when the runner
+        // reports it.
+        if let Some(fit) = fit {
+            reply["media_only"] = json!(fit.media_only);
+            if let Some(bytes) = fit.max_image_bytes {
+                reply["max_image_bytes"] = json!(bytes);
+            }
+            if let Some(side) = fit.max_image_dimension {
+                reply["max_image_dimension"] = json!(side);
+            }
         }
         Ok(reply)
     }

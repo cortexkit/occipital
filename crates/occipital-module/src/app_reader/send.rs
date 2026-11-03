@@ -80,6 +80,9 @@ pub const RUN_ENDED: &str = "run_ended";
 /// files, or its model refuses the type. Nothing was sent; the app can place the
 /// file in the project (`upload.place`) and send its path instead.
 pub const MEDIA_UNSUPPORTED: &str = "media_unsupported";
+/// An image the send names is above the model's limit (`detail` names it). Nothing
+/// was sent.
+pub const MEDIA_TOO_LARGE: &str = "media_too_large";
 /// The runner lost a file this module copied to it before the send named it.
 /// Nothing was sent; a resend copies the file again.
 pub const UPLOAD_GONE: &str = "upload_gone";
@@ -317,14 +320,6 @@ impl Sender {
                     "upload storage is unavailable",
                 ));
             };
-            // The runner contract stores no message of files alone: every send
-            // carries prompt text. The app's own words are needed; none are made up.
-            if request.text.trim().is_empty() {
-                return Err(SendRefusal::new(
-                    "invalid_request",
-                    "a message with files needs text too",
-                ));
-            }
             let Some(device) = device else {
                 return Err(SendRefusal::new(
                     super::uploads::codes::UPLOAD_NOT_YOURS,
@@ -657,10 +652,18 @@ impl Sender {
             ));
         };
         // A runner without the group ignores `content` and would drop the files.
-        if !describe.is_some_and(|describe| describe.declares("attachments")) {
+        let Some(describe) = describe.filter(|describe| describe.declares("attachments")) else {
             return Err(SendRefusal::new(
                 MEDIA_UNSUPPORTED,
                 "this session's runner takes no files in the prompt; place them in the project",
+            ));
+        };
+        // Only a runner declaring `media_only_send` stores a message of files
+        // alone. Elsewhere the app's own words are needed, and none are made up.
+        if request.text.trim().is_empty() && !describe.declares("media_only_send") {
+            return Err(SendRefusal::new(
+                "invalid_request",
+                "a message with files needs text too",
             ));
         }
         let Some(device) = device else {
@@ -677,6 +680,7 @@ impl Sender {
             },
             mime_types: input.mime_types.clone(),
             modalities: input.modalities.clone(),
+            ..InputCapability::default()
         });
         let mut files = Vec::with_capacity(request.attachments().len());
         for id in request.attachments() {
@@ -1519,6 +1523,12 @@ fn refused(code: &str, message: &str, detail: Option<&Value>) -> SendRefusal {
         "media_unsupported" => SendRefusal {
             detail: detail.cloned(),
             ..SendRefusal::new(MEDIA_UNSUPPORTED, said)
+        },
+        // An image above the model's limit, named in `detail`. The app places it
+        // in the project, or encodes it smaller, and sends again.
+        "media_too_large" => SendRefusal {
+            detail: detail.cloned(),
+            ..SendRefusal::new(MEDIA_TOO_LARGE, said)
         },
         // The runner lost a file this module copied to it. A resend under the same
         // `clientMessageId` copies it again.
