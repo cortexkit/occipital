@@ -6,6 +6,8 @@ use super::*;
 use crate::app_reader::{uploads, Caller, SourceResolver};
 use std::{path::PathBuf, sync::atomic::AtomicU64};
 
+mod samples;
+
 const PHONE: &str = "0123456789abcdef0123456789abcdef";
 const OTHER_PHONE: &str = "fedcba9876543210fedcba9876543210";
 
@@ -174,7 +176,7 @@ impl SendTargets for UploadTargets {
     }
 }
 
-/// Where uploads are placed, and a model that takes every file.
+/// Where uploads are placed, and a model that takes images and nothing else.
 struct Project(PathBuf);
 
 #[async_trait]
@@ -191,8 +193,13 @@ impl SourceResolver for Project {
         Ok(self.0.clone())
     }
 
-    async fn prompt_accepts(&self, _: &str, _: Option<&str>, _: &str) -> Result<bool, ReadError> {
-        Ok(true)
+    async fn prompt_accepts(
+        &self,
+        _: &str,
+        _: Option<&str>,
+        mime: &str,
+    ) -> Result<bool, ReadError> {
+        Ok(mime.starts_with("image/"))
     }
 }
 
@@ -201,7 +208,9 @@ struct Prompt {
     runner: Arc<UploadRunner>,
     uploads: Arc<uploads::Uploads>,
     resolver: Arc<Project>,
-    sender: Sender,
+    sender: Arc<Sender>,
+    /// The clock both the uploads and the sender read.
+    now: Arc<AtomicI64>,
 }
 
 impl Prompt {
@@ -211,20 +220,23 @@ impl Prompt {
         let project = dir.path().join("project");
         std::fs::create_dir(&project).unwrap();
         let ids = Arc::new(AtomicU64::new(1));
+        let now = Arc::new(AtomicI64::new(START));
         let receipts = Receipts::open(store.clone()).unwrap();
+        let clock = now.clone();
         let uploads = uploads::Uploads::with(
             store,
             dir.path(),
-            Arc::new(|| START),
+            Arc::new(move || clock.load(Ordering::SeqCst)),
             Arc::new(|_: &std::path::Path| Ok(u64::MAX)),
             Arc::new(move || format!("{:032x}", ids.fetch_add(1, Ordering::SeqCst))),
         )
         .unwrap();
         let runner = UploadRunner::new();
+        let clock = now.clone();
         let sender = Sender::with_clock(
             Arc::new(UploadTargets(runner.clone())),
             Some(receipts),
-            Arc::new(|| START),
+            Arc::new(move || clock.load(Ordering::SeqCst)),
         )
         .with_uploads(Some(uploads.clone()));
         Self {
@@ -232,7 +244,8 @@ impl Prompt {
             runner,
             uploads,
             resolver: Arc::new(Project(project)),
-            sender,
+            sender: Arc::new(sender),
+            now,
         }
     }
 
@@ -250,26 +263,37 @@ impl Prompt {
 
     /// A finished prompt upload of `data` from the phone to session `s`: its id.
     async fn upload(&self, mime: &str, data: &[u8]) -> String {
+        self.upload_named("shot", mime, data).await
+    }
+
+    /// [`Self::upload`] of a file named `name`.
+    async fn upload_named(&self, name: &str, mime: &str, data: &[u8]) -> String {
         let begun = self
-            .serve(
-                uploads::BEGIN,
-                json!({"session": "s", "name": "shot", "mime": mime, "size": data.len(),
-                    "sha256": format!("{:x}", Sha256::digest(data)), "prompt": true}),
-                None,
-            )
+            .serve(uploads::BEGIN, begin_params(name, mime, data), None)
             .await;
         assert_eq!(begun["destination"], "prompt");
         let id = begun["upload_id"].as_str().unwrap().to_owned();
+        self.chunk(&id, data).await;
+        self.serve(uploads::FINISH, json!({"upload_id": id}), None)
+            .await;
+        id
+    }
+
+    /// The whole of `data` as one piece of upload `id`.
+    async fn chunk(&self, id: &str, data: &[u8]) {
         self.serve(
             uploads::CHUNK,
             json!({"upload_id": id, "offset": 0}),
             Some(data.to_vec()),
         )
         .await;
-        self.serve(uploads::FINISH, json!({"upload_id": id}), None)
-            .await;
-        id
     }
+}
+
+/// `upload.begin` for session `s`, asking for the prompt.
+fn begin_params(name: &str, mime: &str, data: &[u8]) -> Value {
+    json!({"session": "s", "name": name, "mime": mime, "size": data.len(),
+        "sha256": format!("{:x}", Sha256::digest(data)), "prompt": true})
 }
 
 fn with_files(id: &str, text: &str, files: &[&str]) -> Value {

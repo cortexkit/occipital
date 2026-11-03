@@ -34,8 +34,10 @@ pub(super) fn decoded(bytes: &[u8]) -> Value {
 
 /// One sample set being served: the requests sent so far and the reply bytes
 /// kept for each.
-pub(super) struct Served {
+pub(crate) struct Served {
     set: &'static str,
+    /// The route requests arrive on: a phone's, unless [`Self::on_route`] names another.
+    route: super::super::super::RouteBinding,
     connection: super::super::super::tests::Connection,
     tx: mpsc::Sender<Frame>,
     rx: mpsc::Receiver<Frame>,
@@ -43,10 +45,11 @@ pub(super) struct Served {
 }
 
 impl Served {
-    pub(super) fn new(set: &'static str, app: Arc<super::super::super::AppReader>) -> Self {
+    pub(crate) fn new(set: &'static str, app: Arc<super::super::super::AppReader>) -> Self {
         let (tx, rx) = mpsc::channel(64);
         Self {
             set,
+            route: phone(),
             connection: super::super::super::tests::Connection::new(app),
             tx,
             rx,
@@ -54,8 +57,14 @@ impl Served {
         }
     }
 
-    /// Send `request` (`{method, params}`) as request `corr` on the phone's route.
-    pub(super) async fn send(&mut self, corr: u64, request: &Value) {
+    /// Serve every request on `route` instead of the phone's default one.
+    pub(crate) fn on_route(mut self, route: super::super::super::RouteBinding) -> Self {
+        self.route = route;
+        self
+    }
+
+    /// Send `request` (`{method, params}`) as request `corr` on the set's route.
+    pub(crate) async fn send(&mut self, corr: u64, request: &Value) {
         let frame = Frame::build(
             FrameType::Request,
             Flags::new(false, Priority::Interactive, false),
@@ -68,7 +77,7 @@ impl Served {
         self.connection
             .dispatch(
                 frame,
-                Some(phone()),
+                Some(self.route.clone()),
                 request["method"].as_str().unwrap().into(),
                 request["params"].clone(),
                 None,
@@ -80,7 +89,7 @@ impl Served {
 
     /// The next frame for request `corr`, as the app receives it, or `None` if
     /// none comes within `wait`.
-    pub(super) async fn next(&mut self, corr: u64, wait: Duration) -> Option<(FrameType, Vec<u8>)> {
+    pub(crate) async fn next(&mut self, corr: u64, wait: Duration) -> Option<(FrameType, Vec<u8>)> {
         let rx = &mut self.rx;
         tokio::time::timeout(wait, async {
             loop {
@@ -119,7 +128,7 @@ impl Served {
     }
 
     /// Keep `reply` as the sample `name`, beside the request that produced it.
-    pub(super) fn keep(&mut self, name: &str, request: &Value, reply: Vec<u8>) {
+    pub(crate) fn keep(&mut self, name: &str, request: &Value, reply: Vec<u8>) {
         self.files.push((
             format!("{name}.request.json"),
             request.to_string().into_bytes(),
@@ -129,7 +138,7 @@ impl Served {
 
     /// Compare every kept file and the checksums with the committed set, or
     /// write the set when `OCCIPITAL_WRITE_SAMPLES` names a folder.
-    pub(super) fn check(mut self) {
+    pub(crate) fn check(mut self) {
         self.files.sort();
         let sums: String = self
             .files

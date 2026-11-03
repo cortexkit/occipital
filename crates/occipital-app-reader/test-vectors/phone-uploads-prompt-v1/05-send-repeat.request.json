@@ -1,0 +1,1 @@
+{"method":"session.enqueue_user_message","params":{"clientMessageId":"8b0e7d52-2b59-4ad5-9a37-0f1c6a3c1d01","parts":[{"attachment_id":"00000000000000000000000000000001","filename":"screenshot.png","mime":"image/png","type":"file"}],"session":"s","text":"What's wrong in this screenshot?"}}
