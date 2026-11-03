@@ -1,0 +1,101 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_45b86dec0f8d4c2599e3c11c52a8f445",
+  "messages": [
+    {
+      "mid": "msg_1a1d77328001EjR9Aa4LzlzXzY",
+      "ordinal": 1,
+      "row": {
+        "client_message_id": "app-message-1",
+        "parts": [
+          {
+            "part": "0",
+            "text": "TOOL_TURN, then answer.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "TOOL_TURN, then answer."
+      },
+      "written_at": 1793716614069
+    },
+    {
+      "mid": "msg_1a1d773a300151XR52m1swzb79",
+      "ordinal": 2,
+      "row": {
+        "model": "probe/probe",
+        "parts": [
+          {
+            "arguments": "{\"command\":\"printf PROBE_TOOL\",\"description\":\"Print a probe marker\"}",
+            "name": "bash",
+            "part": "0",
+            "tool_call_id": "call_probe",
+            "type": "tool_call"
+          },
+          {
+            "content": "{\"catalog_digest\":\"catalog-aft\",\"generation\":\"fake\",\"tools\":[{\"capabilities\":[\"shell.exec/v1\"],\"description\":\"bash from aft\",\"input_schema\":{\"properties\":{},\"type\":\"object\"},\"name\":\"bash\",\"schema_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"semantics\":1},{\"capabilities\":[\"code.edit/v1\"],\"description\":\"edit from aft\",\"input_schema\":{\"properties\":{},\"type\":\"object\"},\"name\":\"edit\",\"schema_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"semantics\":1},{\"capabilities\":[\"code.read/v1\"],\"description\":\"read from aft\",\"input_schema\":{\"properties\":{},\"type\":\"object\"},\"name\":\"read\",\"schema_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"semantics\":1}]}",
+            "part": "0",
+            "tool_call_id": "call_probe",
+            "type": "tool_result"
+          }
+        ],
+        "role": "assistant",
+        "text": ""
+      },
+      "written_at": 1793716614104
+    },
+    {
+      "mid": "msg_1a1d773c8001tkugfupQm3QpEv",
+      "ordinal": 3,
+      "row": {
+        "model": "probe/probe",
+        "parts": [
+          {
+            "part": "0",
+            "text": "PROBE_DONE",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "PROBE_DONE"
+      },
+      "written_at": 1793716614104
+    },
+    {
+      "mid": "msg_1a1d774d0001b52aR5nhXHM2wB",
+      "ordinal": 4,
+      "row": {
+        "client_message_id": "app-message-2",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Say hello.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Say hello."
+      },
+      "written_at": 1793716614372
+    },
+    {
+      "mid": "msg_1a1d774df001Q1mamFNOJxHqP5",
+      "ordinal": 5,
+      "row": {
+        "model": "probe/probe",
+        "parts": [
+          {
+            "part": "0",
+            "text": "PROBE_DONE",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "PROBE_DONE"
+      },
+      "written_at": 1793716614402
+    }
+  ]
+}

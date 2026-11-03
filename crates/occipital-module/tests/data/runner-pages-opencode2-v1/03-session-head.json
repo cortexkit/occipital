@@ -1,0 +1,48 @@
+{
+  "first_ordinal": 1,
+  "head": {
+    "sub_index": 0,
+    "wal_seq": 6
+  },
+  "history_version": 0,
+  "incarnation": "inc_45b86dec0f8d4c2599e3c11c52a8f445",
+  "input": {
+    "attachments": "unknown"
+  },
+  "last_ordinal": 5,
+  "last_run_state": {
+    "run_id": "run_1f6e4f5738987f52bd69a120",
+    "state": "completed"
+  },
+  "model": {
+    "model": "probe",
+    "provider": "probe"
+  },
+  "sender": {
+    "interrupt": true,
+    "modes": [
+      "steer",
+      "idle_start"
+    ],
+    "owner": true
+  },
+  "updated_at": 1793716614405,
+  "usage": {
+    "by_model": [
+      {
+        "input_tokens": 3,
+        "model": "probe",
+        "output_tokens": 3,
+        "provider": "probe",
+        "steps": 3,
+        "unreported_steps": 0,
+        "variant": "default"
+      }
+    ],
+    "input_tokens": 3,
+    "output_tokens": 3,
+    "since": "run_7c9e7acb558b8e16b018d891",
+    "steps": 3,
+    "unreported_steps": 0
+  }
+}

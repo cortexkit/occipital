@@ -1,0 +1,42 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_45b86dec0f8d4c2599e3c11c52a8f445",
+  "messages": [
+    {
+      "mid": "msg_1a1d774d0001b52aR5nhXHM2wB",
+      "ordinal": 4,
+      "row": {
+        "client_message_id": "app-message-2",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Say hello.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Say hello."
+      },
+      "written_at": 1793716614372
+    },
+    {
+      "mid": "msg_1a1d774df001Q1mamFNOJxHqP5",
+      "ordinal": 5,
+      "row": {
+        "model": "probe/probe",
+        "parts": [
+          {
+            "part": "0",
+            "text": "PROBE_DONE",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "PROBE_DONE"
+      },
+      "written_at": 1793716614402
+    }
+  ],
+  "older": "eyJzZXNzaW9uIjoiZTdhODg2YmNkYzEzMjJlMGJlYjVkMWQ1OGJlNzVlN2UiLCJoaXN0b3J5X3ZlcnNpb24iOjAsImZvcndhcmQiOmZhbHNlLCJhdCI6NCwiYW5jaG9yIjp7Im9yZGluYWwiOjQsIm1pZCI6Im1zZ18xYTFkNzc0ZDAwMDFiNTJhUjVuaFhITTJ3QiIsImRpZ2VzdCI6IjE0Yzk5NGViNzhiMDRkM2QwYWJiNDY4ZmZiOTQwMDU0ZmMwOTdlZWNhYTFhY2U3NTY4NTM0YTg0NmRkNTI0N2UifX0"
+}

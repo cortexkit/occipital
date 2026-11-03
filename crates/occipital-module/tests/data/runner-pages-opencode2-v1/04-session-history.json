@@ -1,0 +1,211 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_45b86dec0f8d4c2599e3c11c52a8f445",
+  "messages": [
+    {
+      "message": {
+        "id": "msg_1a1d77328001EjR9Aa4LzlzXzY",
+        "metadata": {
+          "cortexkit_delivery": {
+            "delivery_id": "llmr:e7a886bcdc1322e0beb5d1d58be75e7e:1:2061fed86e76efa556a574a5:start",
+            "mode": "idle_start"
+          }
+        },
+        "text": "TOOL_TURN, then answer.",
+        "time": {
+          "created": 1793716614039
+        },
+        "type": "user"
+      },
+      "mid": "msg_1a1d77328001EjR9Aa4LzlzXzY",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_7c9e7acb558b8e16b018d891"
+      },
+      "written_at": 1793716614069
+    },
+    {
+      "message": {
+        "agent": "build",
+        "content": [
+          {
+            "executed": false,
+            "id": "call_probe",
+            "name": "bash",
+            "state": {
+              "content": [
+                {
+                  "text": "{\"catalog_digest\":\"catalog-aft\",\"generation\":\"fake\",\"tools\":[{\"capabilities\":[\"shell.exec/v1\"],\"description\":\"bash from aft\",\"input_schema\":{\"properties\":{},\"type\":\"object\"},\"name\":\"bash\",\"schema_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"semantics\":1},{\"capabilities\":[\"code.edit/v1\"],\"description\":\"edit from aft\",\"input_schema\":{\"properties\":{},\"type\":\"object\"},\"name\":\"edit\",\"schema_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"semantics\":1},{\"capabilities\":[\"code.read/v1\"],\"description\":\"read from aft\",\"input_schema\":{\"properties\":{},\"type\":\"object\"},\"name\":\"read\",\"schema_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"semantics\":1}]}",
+                  "type": "text"
+                }
+              ],
+              "input": {
+                "command": "printf PROBE_TOOL",
+                "description": "Print a probe marker"
+              },
+              "metadata": {
+                "truncated": false
+              },
+              "status": "completed"
+            },
+            "time": {
+              "completed": 1793716614082,
+              "created": 1793716614072,
+              "ran": 1793716614076
+            },
+            "type": "tool"
+          }
+        ],
+        "cost": 0,
+        "finish": "tool-calls",
+        "id": "msg_1a1d773a300151XR52m1swzb79",
+        "model": {
+          "id": "probe",
+          "providerID": "probe",
+          "variant": "default"
+        },
+        "rawFinish": "tool_calls",
+        "time": {
+          "completed": 1793716614084,
+          "created": 1793716614064,
+          "streamed": 1793716614077
+        },
+        "tokens": {
+          "cache": {
+            "read": 0,
+            "write": 0
+          },
+          "input": 1,
+          "output": 1,
+          "reasoning": 0
+        },
+        "type": "assistant"
+      },
+      "mid": "msg_1a1d773a300151XR52m1swzb79",
+      "ordinal": 2,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_7c9e7acb558b8e16b018d891"
+      },
+      "written_at": 1793716614104
+    },
+    {
+      "message": {
+        "agent": "build",
+        "content": [
+          {
+            "text": "PROBE_DONE",
+            "type": "text"
+          }
+        ],
+        "cost": 0,
+        "finish": "stop",
+        "id": "msg_1a1d773c8001tkugfupQm3QpEv",
+        "model": {
+          "id": "probe",
+          "providerID": "probe",
+          "variant": "default"
+        },
+        "rawFinish": "stop",
+        "time": {
+          "completed": 1793716614099,
+          "created": 1793716614092,
+          "streamed": 1793716614098
+        },
+        "tokens": {
+          "cache": {
+            "read": 0,
+            "write": 0
+          },
+          "input": 1,
+          "output": 1,
+          "reasoning": 0
+        },
+        "type": "assistant"
+      },
+      "mid": "msg_1a1d773c8001tkugfupQm3QpEv",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_7c9e7acb558b8e16b018d891"
+      },
+      "written_at": 1793716614104
+    },
+    {
+      "message": {
+        "id": "msg_1a1d774d0001b52aR5nhXHM2wB",
+        "metadata": {
+          "cortexkit_delivery": {
+            "delivery_id": "llmr:e7a886bcdc1322e0beb5d1d58be75e7e:1:2898076d126d471137400d19:start",
+            "mode": "idle_start"
+          }
+        },
+        "text": "Say hello.",
+        "time": {
+          "created": 1793716614361
+        },
+        "type": "user"
+      },
+      "mid": "msg_1a1d774d0001b52aR5nhXHM2wB",
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_1f6e4f5738987f52bd69a120"
+      },
+      "written_at": 1793716614372
+    },
+    {
+      "message": {
+        "agent": "build",
+        "content": [
+          {
+            "text": "PROBE_DONE",
+            "type": "text"
+          }
+        ],
+        "cost": 0,
+        "finish": "stop",
+        "id": "msg_1a1d774df001Q1mamFNOJxHqP5",
+        "model": {
+          "id": "probe",
+          "providerID": "probe",
+          "variant": "default"
+        },
+        "rawFinish": "stop",
+        "time": {
+          "completed": 1793716614379,
+          "created": 1793716614372,
+          "streamed": 1793716614378
+        },
+        "tokens": {
+          "cache": {
+            "read": 0,
+            "write": 0
+          },
+          "input": 1,
+          "output": 1,
+          "reasoning": 0
+        },
+        "type": "assistant"
+      },
+      "mid": "msg_1a1d774df001Q1mamFNOJxHqP5",
+      "ordinal": 5,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_1f6e4f5738987f52bd69a120"
+      },
+      "written_at": 1793716614402
+    }
+  ]
+}
