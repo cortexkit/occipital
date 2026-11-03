@@ -112,6 +112,12 @@ impl Served {
         reply
     }
 
+    /// Keep `bytes` as the file `name`, for a set whose files aren't each one
+    /// request beside its reply.
+    pub(super) fn keep_file(&mut self, name: &str, bytes: Vec<u8>) {
+        self.files.push((name.into(), bytes));
+    }
+
     /// Keep `reply` as the sample `name`, beside the request that produced it.
     pub(super) fn keep(&mut self, name: &str, request: &Value, reply: Vec<u8>) {
         self.files.push((

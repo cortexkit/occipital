@@ -14,10 +14,12 @@ struct StrictRoute {
 impl StrictRoute {
     fn new(count: u64) -> Arc<Self> {
         let output = "checked source line with compiler diagnostics\n".repeat(12_000);
+        // The runner numbers entries from 1; `index` is the entry's position.
         let entries = (0..count)
-            .map(|ordinal| {
-                let call = format!("call-{}", ordinal / 3);
-                let message = match ordinal % 3 {
+            .map(|index| {
+                let ordinal = index + 1;
+                let call = format!("call-{}", index / 3);
+                let message = match index % 3 {
                     0 => json!({"role":"user", "content":[{"type":"text", "text":"Please inspect the worktree and fix the failing test."}]}),
                     1 => json!({"role":"assistant", "content":[
                         {"type":"reasoning", "text":"Read the compiler output before choosing the next edit."},
@@ -25,7 +27,7 @@ impl StrictRoute {
                     _ => json!({"role":"tool", "content":[{"type":"tool_result", "tool_call_id":call, "output":output}]}),
                 };
                 json!({"mid":format!("m{ordinal}"), "ordinal":ordinal,
-                    "written_at":1_780_000_000_000_u64 + ordinal * 9_000, "message":message})
+                    "written_at":1_780_000_000_000_u64 + index * 9_000, "message":message})
             })
             .collect();
         Arc::new(Self {
@@ -113,9 +115,12 @@ impl StrictRoute {
         } else {
             selected
         };
-        let mut page = json!({"messages":messages, "lineage_id":"cut-a", "history_version":7});
+        let mut page = json!({"messages":messages, "incarnation":"inc-a", "history_version":7});
         if matches!(op, ReadOp::Read) {
-            page["next_from_ordinal"] = json!((next < self.entries.len()).then_some(next));
+            page["next_from_ordinal"] = self
+                .entries
+                .get(next)
+                .map_or(Value::Null, |entry| entry["ordinal"].clone());
         } else {
             page["older"] = json!((start > 0).then_some("older"));
             if next < self.entries.len() {
@@ -132,7 +137,7 @@ fn strict_route_matches_broca_cursor_and_end_semantics() {
     let tail = route
         .page(
             ReadOp::Read,
-            &json!({"from_ordinal":145,"limit":6,"max_bytes":2_097_152}),
+            &json!({"from_ordinal":146,"limit":6,"max_bytes":2_097_152}),
         )
         .unwrap();
     assert_eq!(tail["messages"].as_array().unwrap().len(), 6);
@@ -146,7 +151,7 @@ fn strict_route_matches_broca_cursor_and_end_semantics() {
     assert!(trimmed["messages"].as_array().unwrap().len() < 100);
     assert!(trimmed["next_from_ordinal"].as_u64().unwrap() > 51);
     let history = route
-        .page(ReadOp::History, &json!({"from_mid":"m145","limit":6}))
+        .page(ReadOp::History, &json!({"from_mid":"m146","limit":6}))
         .unwrap();
     assert!(history.get("newer").is_none());
     let display = route
@@ -163,10 +168,10 @@ fn strict_route_matches_broca_cursor_and_end_semantics() {
     assert_eq!(older["messages"][0]["ordinal"], 139);
     assert_eq!(older["messages"][5]["ordinal"], 144);
     for (params, code) in [
-        (json!({"from_mid":"m151"}), "unknown_mid"),
+        (json!({"from_mid":"m152"}), "unknown_mid"),
         (json!({"before_mid":"missing"}), "unknown_mid"),
-        (json!({"from_ordinal":151}), "unknown_ordinal"),
-        (json!({"before_ordinal":151}), "unknown_ordinal"),
+        (json!({"from_ordinal":152}), "unknown_ordinal"),
+        (json!({"before_ordinal":152}), "unknown_ordinal"),
         (
             json!({"from_ordinal":145,"before_mid":"m150"}),
             "invalid_params",
@@ -189,11 +194,9 @@ impl BrocaRoute for StrictRoute {
             tokio::time::sleep(Duration::from_millis(delay)).await;
         }
         match op {
-            ReadOp::Head => Ok(
-                json!({"first_ordinal":0, "last_ordinal":self.entries.len() - 1,
-                "history_version":7, "lineage_id":"cut-a", "updated_at":1_780_001_350_000_u64,
-                "last_run_state":{"run_id":"run-1", "state":"finished"}}),
-            ),
+            ReadOp::Head => Ok(json!({"first_ordinal":1, "last_ordinal":self.entries.len(),
+                "history_version":7, "incarnation":"inc-a", "updated_at":1_780_001_350_000_u64,
+                "last_run_state":{"run_id":"run-1", "state":"finished"}})),
             ReadOp::Describe => {
                 if self.hold_describe.load(Ordering::Acquire) {
                     self.describe_started.notify_one();
@@ -323,8 +326,8 @@ async fn large_tool_pages_complete_through_the_phone_handler() {
         let reply: Value = serde_json::from_slice(&bytes).unwrap();
         let messages = reply["result"]["messages"].as_array().unwrap();
         assert_eq!(messages.len(), count.min(limit) as usize, "{reply}");
-        assert_eq!(messages[0]["ordinal"], count.saturating_sub(limit));
-        assert_eq!(messages.last().unwrap()["ordinal"], count - 1);
+        assert_eq!(messages[0]["ordinal"], count.saturating_sub(limit) + 1);
+        assert_eq!(messages.last().unwrap()["ordinal"], count);
         assert!(
             route.events.lock().unwrap().is_empty(),
             "a plain page must not subscribe"
@@ -401,7 +404,7 @@ async fn concurrent_page_and_watch_finish_after_a_slow_describe() {
         .await
         .unwrap();
     let mut params = params;
-    params["claim"] = json!({"heldFloorMessageId":"m145", "sinceMessageId":"m149", "heldVersion":"history:7:lineage:cut-a"});
+    params["claim"] = json!({"heldFloorMessageId":"m145", "sinceMessageId":"m149", "heldVersion":"history:7:incarnation:inc-a"});
     let second = tokio::spawn(async move {
         crate::app_reader::tests::serve_on_channel(
             &app,
@@ -536,7 +539,7 @@ async fn concurrent_page_and_watch_finish_after_a_slow_binding_lookup() {
         .await
         .unwrap();
     let mut params = params;
-    params["claim"] = json!({"heldFloorMessageId":"m145", "sinceMessageId":"m149", "heldVersion":"history:7:lineage:cut-a"});
+    params["claim"] = json!({"heldFloorMessageId":"m145", "sinceMessageId":"m149", "heldVersion":"history:7:incarnation:inc-a"});
     let watch = tokio::spawn(async move {
         crate::app_reader::tests::serve_on_channel(
             &app,
@@ -565,35 +568,37 @@ pub(super) fn populated(count: u64) -> Arc<FakeRoute> {
         .head_extra
         .lock()
         .unwrap()
-        .insert("last_ordinal".into(), json!(count - 1));
+        .insert("last_ordinal".into(), json!(count));
     *route.describe.lock().unwrap() = Some(describe_with(&["history_display"]));
-    *route.entries.lock().unwrap() = (0..count)
+    *route.entries.lock().unwrap() = (1..=count)
         .map(|ordinal| {
             json!({"mid":format!("m{ordinal}"), "ordinal":ordinal, "written_at":705,
             "message":{"role":"user", "content":[{"type":"text", "text":"hello"}]}})
         })
         .collect();
-    for ordinal in 0..count {
-        let messages: Vec<_> = (ordinal..(ordinal + 2).min(count))
+    for ordinal in 1..=count {
+        let messages: Vec<_> = (ordinal..(ordinal + 2).min(count + 1))
             .map(|n| {
                 DisplayEntry::new(
+                    n,
                     format!("m{n}"),
                     705,
                     DisplayRow::new("user", vec![]).with_client_message_id(format!("phone-{n}")),
                 )
-                .with_ordinal(n)
             })
             .collect();
         route.history_replies.lock().unwrap().insert(
             ordinal,
-            Ok(json!({"messages":messages, "lineage_id":"cut-a", "history_version":7})),
+            Ok(json!({"messages":messages, "incarnation":"inc-a", "history_version":7})),
         );
     }
     route
 }
 
+/// Behind a compaction marker that keeps entries 4 and up for the model, pages
+/// still walk back to the first entry and forward again.
 #[tokio::test]
-async fn numbered_history_before_a_cut_keeps_ordinal_and_mid_cursors() {
+async fn history_before_a_cut_pages_back_to_the_first_entry() {
     let route = populated(8);
     route
         .head_extra
@@ -601,64 +606,28 @@ async fn numbered_history_before_a_cut_keeps_ordinal_and_mid_cursors() {
         .unwrap()
         .insert("first_ordinal".into(), json!(4));
     let source = BrocaSource::new(resolved(), route);
+    let mids = |page: &HistoryPage| {
+        page.rows
+            .iter()
+            .map(|row| row.mid.clone())
+            .collect::<Vec<_>>()
+    };
     let page = source.newest(4).await.unwrap();
-    assert_eq!(page.rows[0].mid, "m4");
+    assert_eq!(page.rows[0].mid, "m5");
     let older = source
         .older(&Anchor::Cursor(page.older.unwrap()), 2)
         .await
         .unwrap();
-    assert_eq!(
-        older
-            .rows
-            .iter()
-            .map(|row| row.mid.as_str())
-            .collect::<Vec<_>>(),
-        ["m2", "m3"]
-    );
-    let oldest = source.older(&Anchor::Ordinal(2), 2).await.unwrap();
-    assert_eq!(
-        oldest
-            .rows
-            .iter()
-            .map(|row| row.mid.as_str())
-            .collect::<Vec<_>>(),
-        ["m0", "m1"]
-    );
+    assert_eq!(mids(&older), ["m3", "m4"]);
+    let oldest = source.older(&Anchor::Ordinal(3), 2).await.unwrap();
+    assert_eq!(mids(&oldest), ["m1", "m2"]);
     assert!(oldest.older.is_none());
     let exact = source.exact(&Anchor::Ordinal(1)).await.unwrap().unwrap();
     assert_eq!(exact.mid, "m1");
     assert_eq!(exact.ordinal, Some(1));
-    let after = source.newer("m3", 2).await.unwrap();
-    assert_eq!(
-        after
-            .rows
-            .iter()
-            .map(|row| row.mid.as_str())
-            .collect::<Vec<_>>(),
-        ["m4", "m5"]
-    );
+    let after = source.newer("m4", 2).await.unwrap();
+    assert_eq!(mids(&after), ["m5", "m6"]);
     assert!(source.exact(&Anchor::Ordinal(99)).await.unwrap().is_none());
-}
-
-#[tokio::test]
-async fn unavailable_host_history_does_not_hide_the_numbered_window() {
-    let route = populated(4);
-    route.anchor_replies.lock().unwrap().insert(
-        "m0".into(),
-        Err(ReadError::new(
-            "history_unrepresentable",
-            "old rows have no recorded time",
-        )),
-    );
-    let source = BrocaSource::new(resolved(), route);
-    let page = source.newest(4).await.unwrap();
-    assert_eq!(page.rows.len(), 4);
-    assert_eq!(page.rows[0].mid, "m0");
-    assert_eq!(page.rows[3].mid, "m3");
-    assert!(
-        page.older.is_some(),
-        "unavailable history must not imply reachedStart"
-    );
 }
 
 #[tokio::test]
@@ -674,24 +643,21 @@ async fn reader_window_cost_does_not_grow_with_the_transcript() {
             .unwrap();
         assert_eq!(
             newest["messages"][0]["messageId"],
-            format!("m{}", count - 4)
+            format!("m{}", count - 3)
         );
         assert_eq!(
             newest["messages"][3]["clientMessageId"],
-            format!("phone-{}", count - 1)
+            format!("phone-{count}")
         );
         let mut claim = request.clone();
-        claim["claim"] = json!({"heldFloorMessageId":format!("m{}", count - 4),
-            "sinceMessageId":format!("m{}", count - 2), "heldVersion":newest["version"]});
+        claim["claim"] = json!({"heldFloorMessageId":format!("m{}", count - 3),
+            "sinceMessageId":format!("m{}", count - 1), "heldVersion":newest["version"]});
         let matched = app
             .read(crate::app_reader::TRANSCRIPT_PAGE, claim)
             .await
             .unwrap();
         assert_eq!(matched["claim"], "matched");
-        assert_eq!(
-            matched["newTurns"][0]["messageId"],
-            format!("m{}", count - 1)
-        );
+        assert_eq!(matched["newTurns"][0]["messageId"], format!("m{count}"));
         let anchors = |route: &FakeRoute| {
             route
                 .calls
@@ -709,8 +675,8 @@ async fn reader_window_cost_does_not_grow_with_the_transcript() {
             "an anchor on the newest page needs no lookup"
         );
         let mut gap = request.clone();
-        gap["claim"] = json!({"heldFloorMessageId":format!("m{}", count - 21),
-            "sinceMessageId":format!("m{}", count - 20), "heldVersion":newest["version"]});
+        gap["claim"] = json!({"heldFloorMessageId":format!("m{}", count - 20),
+            "sinceMessageId":format!("m{}", count - 19), "heldVersion":newest["version"]});
         gap["acceptClaims"] = json!(["outside_window"]);
         let gap = app
             .read(crate::app_reader::TRANSCRIPT_PAGE, gap)
@@ -719,12 +685,12 @@ async fn reader_window_cost_does_not_grow_with_the_transcript() {
         assert_eq!(gap["claim"], "outside_window");
         assert_eq!(anchors(&route), 1, "a gap gets one bounded anchor lookup");
         let mut older = request;
-        older["beforeOrdinal"] = json!(count - 4);
+        older["beforeOrdinal"] = json!(count - 3);
         let older = app
             .read(crate::app_reader::TRANSCRIPT_PAGE, older)
             .await
             .unwrap();
-        assert_eq!(older["messages"][0]["messageId"], format!("m{}", count - 8));
+        assert_eq!(older["messages"][0]["messageId"], format!("m{}", count - 7));
         let calls = route.calls.lock().unwrap();
         costs.push((
             calls

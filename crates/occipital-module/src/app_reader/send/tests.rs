@@ -91,7 +91,7 @@ impl FakeRunner {
         })
     }
 
-    /// `send.status`: the send's durable fate, read without acting.
+    /// `session.send_status`: the send's durable fate, read without acting.
     fn status(&self, params: &Value) -> Result<Value, RunnerError> {
         let sends = self.sends.lock().unwrap();
         let Some((_, state)) = sends.get(params["send_id"].as_str().unwrap()) else {
@@ -209,7 +209,7 @@ impl SendTarget for Target {
         match method {
             "session.head" => {
                 let mut head = json!({
-                "lineage_id": "l1", "first_ordinal": 0, "history_version": 1, "updated_at": 1,
+                "incarnation": "inc-a", "first_ordinal": 1, "history_version": 1, "updated_at": 1,
                 "last_run_state": {"run_id": *self.0.run_id.lock().unwrap(), "state": if self.0.running.load(Ordering::SeqCst) { "active" } else { "completed" }},
                 });
                 if let Some(sender) = self.0.sender.lock().unwrap().as_ref() {
@@ -231,7 +231,7 @@ impl SendTarget for Target {
                 )
             }
             "session.send" => self.0.send(&params),
-            "send.status" => self.0.status(&params),
+            "session.send_status" => self.0.status(&params),
             "session.retract" => self.0.retract(&params),
             other => panic!("the sender called {other}"),
         }
@@ -684,7 +684,7 @@ async fn a_steer_the_run_never_takes_expires_and_the_app_is_told_late() {
         .runner
         .calls()
         .iter()
-        .any(|(method, _)| method == "send.status"));
+        .any(|(method, _)| method == "session.send_status"));
     assert_eq!(f.runner.written().len(), 1);
     // A repeat now answers the final outcome, marked as a duplicate, sending nothing.
     let calls = f.runner.calls().len();
@@ -1016,7 +1016,7 @@ fn statuses(runner: &FakeRunner) -> usize {
     runner
         .calls()
         .iter()
-        .filter(|(method, _)| method == "send.status")
+        .filter(|(method, _)| method == "session.send_status")
         .count()
 }
 
@@ -1229,7 +1229,7 @@ async fn an_owner_only_retract_refusal_leaves_the_steer_for_its_deadline() {
     };
     let retracts = || count("session.retract");
     // Several follow rounds after the refusal, all before the deadline.
-    eventually(|| retracts() == 1 && count("send.status") >= 6).await;
+    eventually(|| retracts() == 1 && count("session.send_status") >= 6).await;
     assert_eq!(retracts(), 1);
     let (queued, _) = f.sender.queued("s").await.unwrap();
     assert_eq!(queued[0]["state"], "queued");
@@ -1356,7 +1356,7 @@ async fn a_restart_after_the_deadline_settles_each_held_steer_from_send_status()
     }
     reported.sort();
     assert_eq!(reported, ["expired", "never-landed", "unknown"]);
-    // Recovery asked with send.status only.
+    // Recovery asked with session.send_status only.
     assert_eq!(sends(&f.runner).len(), sent);
     // A repeat answers the settled outcome without reaching the runner.
     let calls = f.runner.calls().len();
@@ -1378,6 +1378,7 @@ mod samples_0_7 {
 
 #[tokio::test]
 async fn broca_0_7_heads_and_describes_keep_enqueue_permissions() {
+    use crate::app_reader::broca::tests::current_contract;
     use crate::app_reader::{AppReader, UnwiredResolver, SEND};
     for head_file in [
         "session.head.completed.json",
@@ -1390,7 +1391,7 @@ async fn broca_0_7_heads_and_describes_keep_enqueue_permissions() {
                 .captured
                 .lock()
                 .unwrap()
-                .insert("session.head", head);
+                .insert("session.head", current_contract(head));
             let app = AppReader::with_sender(Arc::new(UnwiredResolver), f.sender.clone());
             let reply = app
                 .read(SEND, message("phone-granted", "hello"))
@@ -1408,7 +1409,7 @@ async fn broca_0_7_heads_and_describes_keep_enqueue_permissions() {
                 .captured
                 .lock()
                 .unwrap()
-                .insert("role.describe", describe);
+                .insert("role.describe", current_contract(describe));
             let app = AppReader::with_sender(Arc::new(UnwiredResolver), f.sender.clone());
             let error = app
                 .read(SEND, message("phone-refused", "hello"))

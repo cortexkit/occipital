@@ -2,7 +2,9 @@
 //! 0.3.261 adds the `host_history`, `history_display` and `output_refs` groups and
 //! their operations. Both ways this reader decodes it must still accept it and still
 //! find `head_sender`, because that group is what makes a head without `sender` mean
-//! "the app may not send" rather than "unknown".
+//! "the app may not send" rather than "unknown". The samples were recorded under
+//! runner contract 0.7 and are read as a runner on the current contract serves
+//! them (`current_contract`).
 
 use super::*;
 use std::path::{Path, PathBuf};
@@ -20,7 +22,7 @@ fn root() -> PathBuf {
 }
 
 fn sample(name: &str) -> Value {
-    serde_json::from_slice(&std::fs::read(root().join(name)).unwrap()).unwrap()
+    current_contract(serde_json::from_slice(&std::fs::read(root().join(name)).unwrap()).unwrap())
 }
 
 #[test]
@@ -41,7 +43,7 @@ fn broca_describe_samples_keep_their_checksums() {
 fn every_broca_describe_decodes_on_both_paths_and_still_declares_head_sender() {
     // A head with no `sender`, as the send path reads it.
     let head: cortexkit_role_llm_runner::read::HeadMeta = serde_json::from_value(json!({
-        "lineage_id": "l1", "first_ordinal": 0, "history_version": 1, "updated_at": 1,
+        "incarnation": "inc-a", "first_ordinal": 1, "history_version": 1, "updated_at": 1,
         "last_run_state": {"run_id": "r1", "state": "active"},
     }))
     .unwrap();
@@ -77,11 +79,12 @@ fn the_service_tier_describe_decodes_on_both_paths() {
         sums,
         format!("{:x}  role.describe.json\n", Sha256::digest(&bytes))
     );
-    let value = serde_json::from_slice::<Value>(&bytes).unwrap()["result"].clone();
+    let value =
+        current_contract(serde_json::from_slice::<Value>(&bytes).unwrap()["result"].clone());
     let checked = check_describe(&value).unwrap_or_else(|error| panic!("{error:?}"));
     let plain: RoleDescribe = serde_json::from_value(value).unwrap();
     let head: cortexkit_role_llm_runner::read::HeadMeta = serde_json::from_value(json!({
-        "lineage_id": "l1", "first_ordinal": 0, "history_version": 1, "updated_at": 1,
+        "incarnation": "inc-a", "first_ordinal": 1, "history_version": 1, "updated_at": 1,
         "last_run_state": {"run_id": "r1", "state": "active"},
     }))
     .unwrap();
@@ -116,7 +119,7 @@ fn turn_system_describe_and_heads_decode_as_before() {
     }
     let load = |side: &str, name: &str| -> Value {
         let bytes = std::fs::read(root.join(side).join(name)).unwrap();
-        serde_json::from_slice::<Value>(&bytes).unwrap()["result"].clone()
+        current_contract(serde_json::from_slice::<Value>(&bytes).unwrap()["result"].clone())
     };
     let describe = |side: &str| {
         let value = load(side, "role-describe.response.json");
@@ -139,11 +142,6 @@ fn turn_system_describe_and_heads_decode_as_before() {
         let before: HeadMeta = serde_json::from_value(load("before", name)).unwrap();
         let after: HeadMeta = serde_json::from_value(load("after", name))
             .unwrap_or_else(|error| panic!("{name}: {error}"));
-        assert_eq!(
-            after.lineage_consistent(),
-            before.lineage_consistent(),
-            "{name}"
-        );
         let was = send_grant(&before, Some(&before_describe), false);
         for describe in [&checked, &plain] {
             match (&was, send_grant(&after, Some(describe), false)) {
@@ -167,6 +165,7 @@ fn turn_system_describe_and_heads_decode_as_before() {
 fn broca_0_7_describes_preserve_sender_grants_on_both_decoders() {
     for file in ["role.describe.before.json", "role.describe.after.json"] {
         for (name, reply) in samples_0_7::samples(file) {
+            let reply = current_contract(reply);
             let value = result(reply).unwrap();
             let checked = check_describe(&value).unwrap_or_else(|e| panic!("{name}: {e:?}"));
             let plain: RoleDescribe = serde_json::from_value(value).unwrap();
@@ -183,6 +182,7 @@ fn broca_0_7_describes_preserve_sender_grants_on_both_decoders() {
                     "session.head.error.missing-delay.json",
                 ] {
                     for (head_name, reply) in samples_0_7::samples(head_file) {
+                        let reply = current_contract(reply);
                         let mut head = result(reply).unwrap();
                         let meta = serde_json::from_value(head.clone()).unwrap();
                         assert_eq!(

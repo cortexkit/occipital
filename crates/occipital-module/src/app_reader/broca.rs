@@ -13,6 +13,7 @@ use std::{
 
 use async_trait::async_trait;
 use cortexkit_role_llm_runner::{
+    archive_prunes_reasoning::PrunedReasoning,
     describe::{check_describe, RoleDescribe},
     display::DisplayPage,
     history::{HistoryForm, HistoryRequest},
@@ -234,6 +235,8 @@ impl SendTargets for LazyBrocaSources {
 
 pub const SUBSCRIPTION_LINGER: Duration = Duration::from_secs(60);
 const SOURCE_PAGE_LIMIT: u32 = 100;
+/// A runner numbers a session's entries from 1, and every entry stays readable.
+const FIRST_ORDINAL: u64 = 1;
 
 /// Only observation operations can cross this adapter's route boundary. In
 /// particular, attaching a reader never opens a session or acquires its owner.
@@ -794,7 +797,7 @@ impl BrocaSource {
         &self,
         entries: &[Value],
         full: bool,
-        pruned_reasoning: &[cortexkit_role_llm_runner::archive_prunes_reasoning::PrunedReasoning],
+        pruned_reasoning: &[PrunedReasoning],
     ) -> Result<Vec<Row>, ReadError> {
         let profile = match self.harness() {
             "opencode2" => Some(broca_entries::DisplayProfile::OpenCode2),
@@ -1036,19 +1039,8 @@ impl BrocaSource {
 
     async fn read_head(&self) -> Result<Head, ReadError> {
         let value = self.remote_read(ReadOp::Head, json!({})).await?;
-        let meta: cortexkit_role_llm_runner::read::HeadMeta =
-            serde_json::from_value(value.clone()).map_err(|error| invalid(error.to_string()))?;
-        // The contract rejects partial snapshots, rather than filling in missing
-        // counters or times from a previous read.
-        if !head_consistent(&value, &meta) {
-            return Err(invalid("Broca session.head has an inconsistent snapshot"));
-        }
-        let history_version = value.get("history_version").and_then(Value::as_u64);
-        let lineage_id = value
-            .get("lineage_id")
-            .and_then(Value::as_str)
-            .map(str::to_string);
-        // Only a session with a lineage has a durable transcript update time.
+        let meta = head_meta(&value)?;
+        // Only a written session has a durable transcript update time.
         let at = meta.updated_at.and_then(|at| i64::try_from(at).ok());
         *self.activity.guard() = at.and_then(|at| {
             meta.last_run_state
@@ -1091,18 +1083,14 @@ impl BrocaSource {
             None
         };
         let sender = send_grant(&meta, describe.as_deref(), !self.sendable);
-        // An identity outside the contract's 1 to 128 bytes is treated as unknown,
-        // so claims fall back to the lineage rather than binding a malformed value.
-        let incarnation = meta
-            .incarnation
-            .clone()
-            .filter(|_| meta.incarnation_valid());
         Ok(Head {
-            first_ordinal: value["first_ordinal"].as_u64(),
+            // Every entry stays readable from ordinal 1. The head's own
+            // `first_ordinal` is where the newest compaction marker starts what the
+            // model sees, and doesn't bound what the apps may read.
+            first_ordinal: meta.last_ordinal.map(|_| FIRST_ORDINAL),
             last_ordinal: meta.last_ordinal,
-            history_version,
-            lineage_id,
-            incarnation,
+            history_version: Some(meta.history_version),
+            incarnation: Some(meta.incarnation.clone()),
             activity_token,
             input: InputCapability {
                 attachments: match value["input"]["attachments"].as_str() {
@@ -1194,8 +1182,7 @@ impl BrocaSource {
                 continue;
             }
             let entry = entries.iter_mut().find(|entry| {
-                history_entry.ordinal.is_some()
-                    && entry["ordinal"].as_u64() == history_entry.ordinal
+                entry["ordinal"].as_u64() == Some(history_entry.ordinal)
                     && entry["mid"].as_str() == Some(history_entry.mid.as_str())
             });
             let Some(entry) = entry else {
@@ -1223,36 +1210,22 @@ impl BrocaSource {
         serde_json::from_value(value).map_err(|error| invalid(error.to_string()))
     }
 
-    async fn history_window(
-        &self,
-        head: Head,
-        request: HistoryRequest,
-    ) -> Result<Snapshot, ReadError> {
-        let mut page = self.history_page(request).await?;
-        self.echo_client_message_ids(&mut page.messages).await;
-        let older = page.older.is_some();
-        let newer = page.newer.is_some();
-        self.project_window(head, page, older, newer).await
-    }
-
+    /// Project entries read from the history `head` names, which the caller has
+    /// checked page by page, once a second head read shows that history unchanged.
     async fn project_window(
         &self,
         head: Head,
-        page: RawPage,
+        entries: Vec<Value>,
+        pruned_reasoning: Vec<PrunedReasoning>,
         older: bool,
         newer: bool,
     ) -> Result<Snapshot, ReadError> {
-        if (page.history_version.is_some() && page.history_version != head.history_version)
-            || page.lineage_id != head.lineage_id
-        {
-            return Err(unstable());
-        }
         let after = self.read_head().await?;
-        if after.history_version != head.history_version || after.lineage_id != head.lineage_id {
+        if after.history_version != head.history_version || after.incarnation != head.incarnation {
             return Err(unstable());
         }
         let mut rows = super::observe::synchronous("projection", || {
-            self.rows(&page.messages, false, &page.pruned_reasoning)
+            self.rows(&entries, false, &pruned_reasoning)
         })?;
         // The apps draw every system row as a prompt card that opens on tap, so
         // one with nothing in it, such as the entry Pi writes when a session
@@ -1286,8 +1259,8 @@ impl BrocaSource {
         Ok(Snapshot {
             rows,
             head,
-            entries: page.messages,
-            pruned_reasoning: page.pruned_reasoning,
+            entries,
+            pruned_reasoning,
             older,
             newer,
         })
@@ -1302,7 +1275,7 @@ impl BrocaSource {
         let mut next = from;
         let mut entries = Vec::new();
         let mut pruned_reasoning = Vec::new();
-        let mut older = from > head.first_ordinal.unwrap_or(0);
+        let older = from > FIRST_ORDINAL;
         // A runner declaring `rich_ui_stamp` adds each stamped assistant entry's stamp
         // to the same read when asked, and one declaring `read_display_facts` adds
         // each entry's client message id and its calls' times. Any other runner
@@ -1323,9 +1296,7 @@ impl BrocaSource {
             let value = self.remote_read(ReadOp::Read, json_of(&request)?).await?;
             let mut page: RawPage =
                 serde_json::from_value(value).map_err(|error| invalid(error.to_string()))?;
-            if (page.history_version.is_some() && page.history_version != head.history_version)
-                || page.lineage_id != head.lineage_id
-            {
+            if !page.agrees_with(&head) {
                 return Err(unstable());
             }
             // The requested ordinal window, not total transcript length, bounds the work.
@@ -1349,56 +1320,27 @@ impl BrocaSource {
             };
             next = cursor;
         }
-        if !older {
-            if let Some(mid) = entries.first().and_then(|entry| entry["mid"].as_str()) {
-                // Ordinal zero can still have unnumbered host history before it.
-                older = !self
-                    .history_page(HistoryRequest::before_mid(mid).with_limit(1))
-                    .await
-                    .map(|page| page.messages.is_empty())
-                    // Unavailable host history must not hide the readable numbered page
-                    // or claim that the phone has reached the transcript's beginning.
-                    .unwrap_or(false);
-            }
-        }
         let newer = head.last_ordinal.is_some_and(|last| end <= last);
-        self.project_window(
-            head.clone(),
-            RawPage {
-                messages: entries,
-                pruned_reasoning,
-                next_from_ordinal: None,
-                older: None,
-                newer: None,
-                history_version: head.history_version,
-                lineage_id: head.lineage_id.clone(),
-            },
-            older,
-            newer,
-        )
-        .await
+        self.project_window(head, entries, pruned_reasoning, older, newer)
+            .await
     }
 
     async fn window_head(&self) -> Result<Head, ReadError> {
         self.refresh_binding().await?;
-        let mut head = self.read_head().await?;
-        if head.last_ordinal.is_none() {
-            // Older heads may omit the newest ordinal; the native tail is still bounded.
-            let request = ReadRequest::tail().with_limit(1).with_max_bytes(2_097_152);
-            let value = self.remote_read(ReadOp::Read, json_of(&request)?).await?;
-            let page: RawPage =
-                serde_json::from_value(value).map_err(|error| invalid(error.to_string()))?;
-            if page.lineage_id != head.lineage_id
-                || (page.history_version.is_some() && page.history_version != head.history_version)
-            {
-                return Err(unstable());
-            }
-            head.last_ordinal = page
-                .messages
-                .last()
-                .and_then(|entry| entry["ordinal"].as_u64());
+        self.read_head().await
+    }
+
+    /// A window with no entries, for a read that reaches before the first entry or
+    /// into an empty transcript.
+    fn empty_window(head: Head) -> Snapshot {
+        Snapshot {
+            rows: Vec::new(),
+            head,
+            entries: Vec::new(),
+            pruned_reasoning: Vec::new(),
+            older: false,
+            newer: false,
         }
-        Ok(head)
     }
 
     async fn anchor_entry(&self, head: &Head, anchor: &Anchor) -> Result<Option<Value>, ReadError> {
@@ -1406,8 +1348,8 @@ impl BrocaSource {
             Anchor::Mid(mid) => mid.clone(),
             Anchor::Cursor(cursor) => {
                 let cursor: Cursor = serde_json::from_str(cursor).map_err(|_| expired())?;
-                if cursor.history_version != head.history_version
-                    || (cursor.incarnation, cursor.lineage_id) != log_identity(head)
+                if Some(cursor.history_version) != head.history_version
+                    || Some(&cursor.incarnation) != head.incarnation.as_ref()
                 {
                     return Err(expired());
                 }
@@ -1418,10 +1360,19 @@ impl BrocaSource {
         let page = self
             .history_page(HistoryRequest::from_mid(&mid).with_limit(1))
             .await?;
+        if !page.agrees_with(head) {
+            return Err(unstable());
+        }
         let older = page.older.is_some();
         let newer = page.newer.is_some();
         let snapshot = self
-            .project_window(head.clone(), page, older, newer)
+            .project_window(
+                head.clone(),
+                page.messages,
+                page.pruned_reasoning,
+                older,
+                newer,
+            )
             .await?;
         snapshot
             .entries
@@ -1553,35 +1504,59 @@ async fn pump(
 struct RawPage {
     messages: Vec<Value>,
     #[serde(default)]
-    pruned_reasoning: Vec<cortexkit_role_llm_runner::archive_prunes_reasoning::PrunedReasoning>,
+    pruned_reasoning: Vec<PrunedReasoning>,
     #[serde(default, alias = "nextFromOrdinal")]
     next_from_ordinal: Option<u64>,
     #[serde(default)]
     older: Option<String>,
     #[serde(default)]
     newer: Option<String>,
-    lineage_id: Option<String>,
-    history_version: Option<u64>,
+    history_version: u64,
+    incarnation: String,
+}
+
+impl RawPage {
+    /// Whether the page was read from the history `head` names: the same history
+    /// counter and the same log.
+    fn agrees_with(&self, head: &Head) -> bool {
+        Some(self.history_version) == head.history_version
+            && Some(&self.incarnation) == head.incarnation.as_ref()
+    }
 }
 
 struct Snapshot {
     rows: Vec<Row>,
     head: Head,
     entries: Vec<Value>,
-    pruned_reasoning: Vec<cortexkit_role_llm_runner::archive_prunes_reasoning::PrunedReasoning>,
+    pruned_reasoning: Vec<PrunedReasoning>,
     older: bool,
     newer: bool,
 }
 
+/// A cursor binds the history it was served from: the history counter, which a
+/// rewrite raises, and the log's incarnation, which a compaction cut keeps and a
+/// recreated log changes. A cursor that doesn't decode, such as one served before
+/// runners numbered their entries from 1, reads as expired, and the app reloads.
 #[derive(Deserialize, Serialize)]
 struct Cursor {
     mid: String,
     after: bool,
-    history_version: Option<u64>,
-    /// Bound only when the head carries no `incarnation`; see [`log_identity`].
-    lineage_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    incarnation: Option<String>,
+    history_version: u64,
+    incarnation: String,
+}
+
+impl Cursor {
+    /// A cursor at `mid` in the history `head` names; `None` for a head without
+    /// one, which no runner on this contract serves.
+    fn at(mid: &str, after: bool, head: &Head) -> Option<String> {
+        let cursor = Cursor {
+            mid: mid.into(),
+            after,
+            history_version: head.history_version?,
+            incarnation: head.incarnation.clone()?,
+        };
+        Some(encode_cursor(&cursor))
+    }
 }
 
 /// A cursor as the phone holds it. Its plain fields always serialize; were that
@@ -1589,15 +1564,6 @@ struct Cursor {
 /// rather than the read panicking.
 fn encode_cursor(cursor: &Cursor) -> String {
     serde_json::to_string(cursor).unwrap_or_default()
-}
-/// What a cursor binds besides the history counter: the log's incarnation when the
-/// runner reports one, which a compaction cut keeps and a recreated log changes, and
-/// otherwise the lineage, which a cut also changes.
-fn log_identity(head: &Head) -> (Option<String>, Option<String>) {
-    match &head.incarnation {
-        Some(incarnation) => (Some(incarnation.clone()), None),
-        None => (None, head.lineage_id.clone()),
-    }
 }
 
 /// Whether a row is a system row with nothing to show: no text, and only text
@@ -1631,19 +1597,12 @@ impl Snapshot {
             newer: ((end < self.rows.len() || self.newer) && end > start)
                 .then(|| self.cursor(end - 1, true)),
             history_version: self.head.history_version,
-            lineage_id: self.head.lineage_id.clone(),
+            incarnation: self.head.incarnation.clone(),
         }
     }
 
     fn cursor(&self, index: usize, after: bool) -> String {
-        let (incarnation, lineage_id) = log_identity(&self.head);
-        encode_cursor(&Cursor {
-            mid: self.rows[index].mid.clone(),
-            after,
-            history_version: self.head.history_version,
-            lineage_id,
-            incarnation,
-        })
+        Cursor::at(&self.rows[index].mid, after, &self.head).unwrap_or_default()
     }
 }
 
@@ -1664,17 +1623,17 @@ impl TranscriptSource for BrocaSource {
         let head = self.window_head().await?;
         let snapshot = if let Some(last) = head.last_ordinal {
             let end = last.saturating_add(1);
-            let from = end
-                .saturating_sub(u64::from(limit))
-                .max(head.first_ordinal.unwrap_or(0));
+            let from = end.saturating_sub(u64::from(limit)).max(FIRST_ORDINAL);
             self.numbered_window(head, from, end).await?
         } else {
-            self.history_window(head, HistoryRequest::newest().with_limit(u64::from(limit)))
-                .await?
+            Self::empty_window(head)
         };
         Ok(snapshot.page(0, snapshot.rows.len()))
     }
     async fn older(&self, anchor: &Anchor, limit: u32) -> Result<HistoryPage, ReadError> {
+        if *anchor == Anchor::Newest {
+            return self.newest(limit).await;
+        }
         let head = self.window_head().await?;
         let after = match anchor {
             Anchor::Cursor(cursor) => {
@@ -1689,10 +1648,13 @@ impl TranscriptSource for BrocaSource {
             Anchor::Ordinal(ordinal) => Some(*ordinal),
             _ => entry.as_ref().and_then(|entry| entry["ordinal"].as_u64()),
         };
-        let snapshot = if let Some(ordinal) = ordinal.filter(|ordinal| {
-            *ordinal > head.first_ordinal.unwrap_or(0)
-                || (after && Some(*ordinal) == head.first_ordinal)
-        }) {
+        // Every entry is numbered, so an anchor without an ordinal names no entry
+        // of this history.
+        let ordinal = ordinal.ok_or_else(expired)?;
+        let snapshot = if !after && ordinal <= FIRST_ORDINAL {
+            // Nothing is older than the first entry.
+            Self::empty_window(head)
+        } else {
             let Some(last) = head.last_ordinal.filter(|last| ordinal <= *last) else {
                 return Err(expired());
             };
@@ -1705,34 +1667,11 @@ impl TranscriptSource for BrocaSource {
                 )
             } else {
                 (
-                    ordinal
-                        .saturating_sub(u64::from(limit))
-                        .max(head.first_ordinal.unwrap_or(0)),
+                    ordinal.saturating_sub(u64::from(limit)).max(FIRST_ORDINAL),
                     ordinal,
                 )
             };
             self.numbered_window(head, from, end).await?
-        } else {
-            let request = match anchor {
-                Anchor::Ordinal(ordinal) => HistoryRequest::before_ordinal(*ordinal),
-                Anchor::Newest => HistoryRequest::newest(),
-                _ => {
-                    let mid = entry
-                        .as_ref()
-                        .and_then(|entry| entry["mid"].as_str())
-                        .ok_or_else(expired)?;
-                    if after {
-                        HistoryRequest::from_mid(mid)
-                    } else {
-                        HistoryRequest::before_mid(mid)
-                    }
-                }
-            };
-            self.history_window(
-                head,
-                request.with_limit(u64::from(limit) + u64::from(after)),
-            )
-            .await?
         };
         let start = usize::from(
             after
@@ -1750,14 +1689,7 @@ impl TranscriptSource for BrocaSource {
     }
     async fn newer(&self, from_mid: &str, limit: u32) -> Result<HistoryPage, ReadError> {
         let head = self.window_head().await?;
-        let (incarnation, lineage_id) = log_identity(&head);
-        let cursor = encode_cursor(&Cursor {
-            mid: from_mid.into(),
-            after: true,
-            history_version: head.history_version,
-            lineage_id,
-            incarnation,
-        });
+        let cursor = Cursor::at(from_mid, true, &head).ok_or_else(expired)?;
         self.older(&Anchor::Cursor(cursor), limit).await
     }
     async fn around(&self, mid: &str, limit: u32) -> Result<Option<Positioned>, ReadError> {
@@ -1774,19 +1706,18 @@ impl TranscriptSource for BrocaSource {
             Err(error) if matches!(error.code, "unknown_mid" | "cursor_expired") => None,
             Err(error) => return Err(error),
         };
-        let first = head.first_ordinal.unwrap_or(0);
         let (Some(ordinal), Some(last)) = (
             entry.and_then(|entry| entry["ordinal"].as_u64()),
             head.last_ordinal,
         ) else {
             return Ok(None);
         };
-        // A message below this history line's first ordinal, or not yet numbered, is not
-        // in this version of the transcript.
-        if ordinal < first || ordinal > last {
+        // A message outside the numbered entries the head names is not in this
+        // version of the transcript.
+        if !(FIRST_ORDINAL..=last).contains(&ordinal) {
             return Ok(None);
         }
-        let from = ordinal.saturating_sub(u64::from(limit)).max(first);
+        let from = ordinal.saturating_sub(u64::from(limit)).max(FIRST_ORDINAL);
         let end = ordinal
             .saturating_add(u64::from(limit))
             .saturating_add(1)
@@ -1801,9 +1732,7 @@ impl TranscriptSource for BrocaSource {
     async fn after(&self, ordinal: u64, limit: u32) -> Result<Positioned, ReadError> {
         let head = self.window_head().await?;
         let newest = head.last_ordinal;
-        let from = ordinal
-            .saturating_add(1)
-            .max(head.first_ordinal.unwrap_or(0));
+        let from = ordinal.saturating_add(1).max(FIRST_ORDINAL);
         let Some(last) = newest.filter(|last| from <= *last && limit > 0) else {
             return Ok(Positioned {
                 page: HistoryPage {
@@ -1811,7 +1740,7 @@ impl TranscriptSource for BrocaSource {
                     older: None,
                     newer: None,
                     history_version: head.history_version,
-                    lineage_id: head.lineage_id.clone(),
+                    incarnation: head.incarnation.clone(),
                 },
                 anchor: None,
                 newest,
@@ -1834,29 +1763,13 @@ impl TranscriptSource for BrocaSource {
             Anchor::Ordinal(ordinal) => Some(*ordinal),
             _ => entry.as_ref().and_then(|entry| entry["ordinal"].as_u64()),
         };
-        let snapshot = if let Some(ordinal) =
-            ordinal.filter(|ordinal| *ordinal >= head.first_ordinal.unwrap_or(0))
-        {
-            let end = ordinal
-                .saturating_add(u64::from(SOURCE_PAGE_LIMIT))
-                .min(head.last_ordinal.unwrap_or(ordinal).saturating_add(1));
-            self.numbered_window(head, ordinal, end).await?
-        } else if let Some(ordinal) = ordinal {
-            self.history_window(
-                head,
-                HistoryRequest::from_ordinal(ordinal).with_limit(u64::from(SOURCE_PAGE_LIMIT)),
-            )
-            .await?
-        } else if let Some(entry) = entry {
-            self.history_window(
-                head,
-                HistoryRequest::from_mid(entry["mid"].as_str().ok_or_else(expired)?)
-                    .with_limit(u64::from(SOURCE_PAGE_LIMIT)),
-            )
-            .await?
-        } else {
+        let Some(ordinal) = ordinal.filter(|ordinal| *ordinal >= FIRST_ORDINAL) else {
             return Ok(None);
         };
+        let end = ordinal
+            .saturating_add(u64::from(SOURCE_PAGE_LIMIT))
+            .min(head.last_ordinal.unwrap_or(ordinal).saturating_add(1));
+        let snapshot = self.numbered_window(head, ordinal, end).await?;
         if snapshot.entries.is_empty() {
             return Ok(None);
         }
@@ -1997,23 +1910,16 @@ pub(crate) fn send_grant(
     }
 }
 
-/// Whether a runner's `session.head` is a consistent snapshot, under the runner
-/// contract it was written for. Runners move from contract 0.7 to 0.8 one by one
-/// while this module reads them all, and the two disagree on the same members:
-/// 0.7 binds history to a `lineage_id`, numbers from 0, and requires a head
-/// without a lineage to carry nothing else; 0.8 has no lineage, numbers from 1,
-/// and requires `history_version` and `incarnation` on every head. So a head with
-/// a lineage is held to 0.7's rule. One without is held to 0.8's rule when it
-/// decodes as an 0.8 head, and otherwise to 0.7's rule for a never-written
-/// session.
-fn head_consistent(value: &Value, meta: &cortexkit_role_llm_runner::read::HeadMeta) -> bool {
-    if meta.lineage_id.is_some() {
-        return meta.lineage_consistent();
+/// A runner's `session.head`, decoded and checked. The contract rejects partial
+/// snapshots, rather than filling in missing counters or times from a previous
+/// read. That includes the log identity, which must fit its 1 to 128-byte bound.
+fn head_meta(value: &Value) -> Result<cortexkit_role_llm_runner::read::HeadMeta, ReadError> {
+    let meta: cortexkit_role_llm_runner::read::HeadMeta =
+        serde_json::from_value(value.clone()).map_err(|error| invalid(error.to_string()))?;
+    if !meta.snapshot_consistent() {
+        return Err(invalid("Broca session.head has an inconsistent snapshot"));
     }
-    match serde_json::from_value::<llm_runner_0_8::read::HeadMeta>(value.clone()) {
-        Ok(head) => head.snapshot_consistent(),
-        Err(_) => meta.lineage_consistent(),
-    }
+    Ok(meta)
 }
 
 fn activity_for(state: Option<&str>) -> Option<&'static str> {
@@ -2044,7 +1950,7 @@ fn expired() -> ReadError {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     mod held;
     mod held_status_1029;
     mod live_frames;
@@ -2053,7 +1959,6 @@ mod tests {
     mod pruned_reasoning;
     mod rich_ui;
     mod rich_ui_stamp_1028;
-    mod runner_0_8;
     mod session_change_1030;
     mod subscribe_flatten_1028;
     mod tool_outage_1027;
@@ -2075,9 +1980,8 @@ mod tests {
         live_ids: Mutex<Vec<bool>>,
         detaches: Arc<AtomicUsize>,
         history: AtomicU64,
-        /// The `lineage_id` on every head and page. Empty for a runner on contract
-        /// 0.8, which serves none.
-        lineage: Mutex<String>,
+        /// The log identity on every head and page.
+        incarnation: Mutex<String>,
         unavailable: AtomicBool,
         stuck: AtomicBool,
         updated_at: AtomicU64,
@@ -2117,6 +2021,49 @@ mod tests {
         .unwrap()
     }
 
+    /// A runner reply recorded under runner contract 0.7, as a runner on the current
+    /// contract serves the same session. Entries are now numbered from 1, so every
+    /// ordinal is one higher; the log is named by `incarnation`, which takes the
+    /// recorded `lineage_id` when the reply names none, and a reply recorded
+    /// before runners kept a history counter is at counter 0, since its history
+    /// was never rewritten; and a description that
+    /// lists `send.status` also lists the operation's current name, which a runner
+    /// declaring `send_status` must serve. Recorded samples keep their bytes and
+    /// checksums, and tests read them through this.
+    pub(crate) fn current_contract(mut value: Value) -> Value {
+        fn walk(value: &mut Value) {
+            match value {
+                Value::Object(object) => {
+                    for key in [
+                        "ordinal",
+                        "first_ordinal",
+                        "last_ordinal",
+                        "next_from_ordinal",
+                    ] {
+                        if let Some(ordinal) = object.get(key).and_then(Value::as_u64) {
+                            object.insert(key.into(), json!(ordinal + 1));
+                        }
+                    }
+                    if let Some(lineage) = object.remove("lineage_id") {
+                        object.entry("incarnation").or_insert(lineage);
+                        object.entry("history_version").or_insert(json!(0));
+                    }
+                    object.values_mut().for_each(walk);
+                }
+                Value::Array(values) => {
+                    let named = |name: &str| values.iter().any(|value| value == name);
+                    if named("send.status") && !named("session.send_status") {
+                        values.push(json!("session.send_status"));
+                    }
+                    values.iter_mut().for_each(walk);
+                }
+                _ => {}
+            }
+        }
+        walk(&mut value);
+        value
+    }
+
     fn raw_history(page: &Value, params: &Value) -> Result<Value, ReadError> {
         let entries = page["messages"].as_array().expect("raw fixture messages");
         let limit = params["limit"].as_u64().unwrap_or(100) as usize;
@@ -2151,7 +2098,7 @@ mod tests {
         Ok(
             json!({"messages":entries[start..end], "older":(start > 0).then_some("older"),
             "newer":(end < entries.len()).then_some("newer"),
-            "history_version":page["history_version"], "lineage_id":page["lineage_id"]}),
+            "history_version":page["history_version"], "incarnation":page["incarnation"]}),
         )
     }
 
@@ -2185,8 +2132,8 @@ mod tests {
         fn new() -> Arc<Self> {
             Arc::new(Self {
                 entries: Mutex::new(vec![
-                    entry("old-a", None, 699),
-                    entry("old-b", None, 700),
+                    entry("old-a", Some(18), 699),
+                    entry("old-b", Some(19), 700),
                     entry("m20", Some(20), 705),
                     entry("m21", Some(21), 710),
                     entry("m22", Some(22), 720),
@@ -2197,7 +2144,7 @@ mod tests {
                 live_ids: Mutex::new(Vec::new()),
                 detaches: Arc::new(AtomicUsize::new(0)),
                 history: AtomicU64::new(7),
-                lineage: Mutex::new("cut-a".into()),
+                incarnation: Mutex::new("inc-a".into()),
                 unavailable: AtomicBool::new(false),
                 stuck: AtomicBool::new(false),
                 updated_at: AtomicU64::new(730),
@@ -2215,12 +2162,10 @@ mod tests {
         }
     }
 
-    /// A runner on contract 0.8 decodes these requests with types that refuse
-    /// unknown members, so every read this module sends must decode under them
-    /// as well as under 0.7: a member only 0.7 knows would be refused by every
-    /// runner that has moved.
-    fn runner_0_8_accepts(op: ReadOp, params: &Value) {
-        use llm_runner_0_8::{history::HistoryRequest, read};
+    /// A runner decodes these requests with the contract's types, which refuse
+    /// unknown members, so every read this module sends must decode under them.
+    fn runner_accepts(op: ReadOp, params: &Value) {
+        use cortexkit_role_llm_runner::{history::HistoryRequest, read};
         let decoded = match op {
             ReadOp::Head => serde_json::from_value::<read::HeadRequest>(params.clone()).map(drop),
             ReadOp::Read => serde_json::from_value::<read::ReadRequest>(params.clone()).map(drop),
@@ -2229,7 +2174,7 @@ mod tests {
         };
         if let Err(error) = decoded {
             panic!(
-                "{} {params} is refused by runner contract 0.8: {error}",
+                "{} {params} is refused by the runner contract: {error}",
                 op.method()
             );
         }
@@ -2239,21 +2184,26 @@ mod tests {
     impl BrocaRoute for FakeRoute {
         async fn read(&self, op: ReadOp, params: Value) -> Result<Value, ReadError> {
             let request: Value = serde_json::from_slice(&body(op, params.clone())).unwrap();
-            runner_0_8_accepts(op, &params);
+            runner_accepts(op, &params);
             self.calls.lock().unwrap().push(request.clone());
             if self.unavailable.load(Ordering::Relaxed) {
                 return Err(ReadError::new("provider_unavailable", "Broca route lost"));
             }
-            let reply = match request["method"].as_str().unwrap() {
+            match request["method"].as_str().unwrap() {
                 "session.head" => {
-                    let first = self
-                        .entries
-                        .lock()
-                        .unwrap()
-                        .iter()
-                        .find_map(|entry| entry["ordinal"].as_u64())
-                        .unwrap_or(20);
-                    let mut head = json!({"first_ordinal":first, "history_version":self.history.load(Ordering::Relaxed), "lineage_id":*self.lineage.lock().unwrap(),
+                    let (first, last) = {
+                        let entries = self.entries.lock().unwrap();
+                        let mut ordinals =
+                            entries.iter().filter_map(|entry| entry["ordinal"].as_u64());
+                        (
+                            ordinals.next().unwrap_or(1),
+                            entries
+                                .iter()
+                                .rev()
+                                .find_map(|entry| entry["ordinal"].as_u64()),
+                        )
+                    };
+                    let mut head = json!({"first_ordinal":first, "last_ordinal":last, "history_version":self.history.load(Ordering::Relaxed), "incarnation":*self.incarnation.lock().unwrap(),
                     "cut":{"mid":"m19", "digest":"0000000000000000000000000000000000000000000000000000000000000000", "written_at":699},
                     "updated_at":self.updated_at.load(Ordering::Relaxed), "last_run_state":*self.run_state.lock().unwrap(),
                     "input":{"attachments":"yes", "modalities":["image", "pdf"]}});
@@ -2299,7 +2249,7 @@ mod tests {
                         .fetch_add(selected.len().min(limit), Ordering::Relaxed);
                     Ok(
                         json!({"messages":selected.into_iter().take(limit).collect::<Vec<_>>(), "next_from_ordinal":if self.stuck.load(Ordering::Relaxed) { Some(from) } else { next },
-                        "history_version":self.history.load(Ordering::Relaxed), "lineage_id":*self.lineage.lock().unwrap()}),
+                        "history_version":self.history.load(Ordering::Relaxed), "incarnation":*self.incarnation.lock().unwrap()}),
                     )
                 }
                 "session.history" if params["form"] != "display" => {
@@ -2344,7 +2294,7 @@ mod tests {
                     Ok(
                         json!({"messages":entries[start..end], "older":(start > 0).then_some("older"),
                         "newer":(end < entries.len()).then_some("newer"),
-                        "history_version":self.history.load(Ordering::Relaxed), "lineage_id":*self.lineage.lock().unwrap()}),
+                        "history_version":self.history.load(Ordering::Relaxed), "incarnation":*self.incarnation.lock().unwrap()}),
                     )
                 }
                 "session.history" => {
@@ -2378,7 +2328,7 @@ mod tests {
                         messages.sort_by_key(|entry| entry["ordinal"].as_u64());
                         messages.truncate(count);
                         Ok(
-                            json!({"messages":messages, "history_version":self.history.load(Ordering::Relaxed), "lineage_id":*self.lineage.lock().unwrap()}),
+                            json!({"messages":messages, "history_version":self.history.load(Ordering::Relaxed), "incarnation":*self.incarnation.lock().unwrap()}),
                         )
                     }
                 }
@@ -2386,18 +2336,7 @@ mod tests {
                     "scope_owner_mismatch",
                     format!("observer cannot call {method}"),
                 )),
-            };
-            // An empty lineage stands for a runner on contract 0.8, which serves
-            // none on its heads or pages.
-            if !self.lineage.lock().unwrap().is_empty() {
-                return reply;
             }
-            reply.map(|mut value| {
-                if let Some(object) = value.as_object_mut() {
-                    object.remove("lineage_id");
-                }
-                value
-            })
         }
         async fn subscribe(&self, live_ids: bool) -> Result<Box<dyn EventStream>, ReadError> {
             self.attaches.fetch_add(1, Ordering::Relaxed);
@@ -2441,7 +2380,7 @@ mod tests {
             ["m21", "m22"]
         );
         let older = source
-            .older(&Anchor::Cursor(newest.older.unwrap()), 10)
+            .older(&Anchor::Cursor(newest.older.unwrap()), 1)
             .await
             .unwrap();
         assert_eq!(
@@ -2452,8 +2391,9 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["m20"]
         );
+        // Reaching back to ordinal 1 reaches the session's start.
         let history = source
-            .older(&Anchor::Cursor(older.older.unwrap()), 10)
+            .older(&Anchor::Cursor(older.older.unwrap()), 19)
             .await
             .unwrap();
         assert_eq!(
@@ -2525,10 +2465,8 @@ mod tests {
         let alone = source.around("m22", 0).await.unwrap().unwrap();
         assert_eq!(mids(&alone.page), ["m22"]);
         assert!(source.around("never-written", 1).await.unwrap().is_none());
-        assert!(
-            source.around("old-a", 1).await.unwrap().is_none(),
-            "unnumbered"
-        );
+        let oldest = source.around("old-a", 1).await.unwrap().unwrap();
+        assert_eq!(mids(&oldest.page), ["old-a", "old-b"]);
         route.anchor_replies.lock().unwrap().insert(
             "gone".into(),
             Err(ReadError::new("unknown_mid", "no such message")),
@@ -2554,7 +2492,7 @@ mod tests {
         assert_eq!(around["messages"][0]["messageId"], "m21");
         assert_eq!(around["nextBeforeOrdinal"], 21, "{around}");
         assert_eq!(around["nextAfterOrdinal"], 21, "{around}");
-        assert_eq!(around["version"], "history:7:lineage:cut-a");
+        assert_eq!(around["version"], "history:7:incarnation:inc-a");
         let newer = reader
             .read(
                 Some(source.as_ref()),
@@ -2575,7 +2513,7 @@ mod tests {
         assert_eq!(missing.code, "message_not_found");
         assert_eq!(
             missing.detail,
-            Some(json!({"version": "history:7:lineage:cut-a"}))
+            Some(json!({"version": "history:7:incarnation:inc-a"}))
         );
         for mixed in [
             json!({"session":"s1", "aroundMessageId":"m21", "beforeOrdinal":21}),
@@ -2607,35 +2545,36 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn shared_page_body_uses_boundary_cursors_and_history_counter_for_claims() {
+    async fn shared_page_body_uses_ordinal_paging_and_history_counter_for_claims() {
         let route = FakeRoute::new();
         let source = BrocaSource::new(resolved(), route.clone());
         let reader = TranscriptReader::default();
         let newest = reader
-            .read(Some(source.as_ref()), json!({"session":"s1", "limit":10}))
+            .read(Some(source.as_ref()), json!({"session":"s1", "limit":3}))
             .await
             .unwrap();
         assert_eq!(newest["historyVersion"], 7);
-        assert_eq!(newest["version"], "history:7:lineage:cut-a");
+        assert_eq!(newest["version"], "history:7:incarnation:inc-a");
         assert_eq!(newest["messages"].as_array().unwrap().len(), 3);
-        assert!(newest.get("nextBeforeOrdinal").is_none());
+        assert_eq!(newest["nextBeforeOrdinal"], 20);
+        assert!(newest.get("nextBeforeCursor").is_none());
         let history = reader
             .read(
                 Some(source.as_ref()),
-                json!({"session":"s1", "beforeCursor":newest["nextBeforeCursor"], "limit":10}),
+                json!({"session":"s1", "beforeOrdinal":20, "limit":19}),
             )
             .await
             .unwrap();
         assert_eq!(history["messages"].as_array().unwrap().len(), 2);
         assert_eq!(history["reachedStart"], true);
         let mut claim = json!({"session":"s1", "limit":3, "claim":{"heldFloorMessageId":"m20", "sinceMessageId":"m21", "heldVersion":newest["version"]}});
-        *route.lineage.lock().unwrap() = "cut-b".into();
+        *route.incarnation.lock().unwrap() = "inc-b".into();
         let expired = reader
             .read(Some(source.as_ref()), claim.clone())
             .await
             .unwrap();
         assert_eq!(expired["claim"], "cursor_expired");
-        claim["claim"]["heldVersion"] = json!("history:7:lineage:cut-b");
+        claim["claim"]["heldVersion"] = json!("history:7:incarnation:inc-b");
         let matched = reader
             .read(Some(source.as_ref()), claim.clone())
             .await
@@ -2908,11 +2847,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn source_cursors_refuse_lineage_changes_rewrites_and_stuck_raw_cursors() {
+    async fn source_cursors_refuse_a_new_log_rewrites_and_stuck_raw_cursors() {
         let route = FakeRoute::new();
         let source = BrocaSource::new(resolved(), route.clone());
         let cursor = source.newest(1).await.unwrap().older.unwrap();
-        *route.lineage.lock().unwrap() = "new-cut".into();
+        *route.incarnation.lock().unwrap() = "inc-recreated".into();
         assert_eq!(
             source
                 .older(&Anchor::Cursor(cursor.clone()), 1)
@@ -3465,14 +3404,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_lineage_head_without_its_required_update_time_is_malformed() {
+    async fn a_written_head_without_its_required_update_time_is_malformed() {
         let route = FakeRoute::new();
         *route.run_state.lock().unwrap() = json!({"run_id":"r1", "state":"completed"});
         route.updated_at.store(u64::MAX, Ordering::Relaxed);
         let (sources, _) = serving(route.clone());
         let reader = TranscriptReader::default();
         let source = sources.source(&resolved().reference).await.unwrap();
-        // updated_at is absent only before the session has a lineage; a written
+        // updated_at is absent only before the session is written; a written
         // session cannot report a partial head without its durable update time.
         let error = reader
             .read(Some(source.as_ref()), params())
@@ -3540,7 +3479,7 @@ mod tests {
         assert!(next.get("unchanged").is_none());
         assert_ne!(next["activityToken"], token);
         assert_eq!(next["activityAtMs"], 740);
-        *route.lineage.lock().unwrap() = "replacement-lineage".into();
+        *route.incarnation.lock().unwrap() = "inc-replacement".into();
         let replaced = app
             .read(super::super::TRANSCRIPT_PAGE, params())
             .await
@@ -3553,12 +3492,12 @@ mod tests {
     async fn a_recycled_session_key_cannot_match_old_mids_at_history_zero() {
         let route = FakeRoute::new();
         route.history.store(0, Ordering::Relaxed);
-        *route.entries.lock().unwrap() = vec![entry("m0", Some(0), 700), entry("m1", Some(1), 710)];
+        *route.entries.lock().unwrap() = vec![entry("m0", Some(1), 700), entry("m1", Some(2), 710)];
         let source = BrocaSource::new(resolved(), route.clone());
         let reader = TranscriptReader::default();
         let old = reader.read(Some(source.as_ref()), params()).await.unwrap();
         let cursor = source.newest(1).await.unwrap().older.unwrap();
-        *route.lineage.lock().unwrap() = "new-incarnation".into();
+        *route.incarnation.lock().unwrap() = "inc-recreated".into();
         route.entries.lock().unwrap()[0]["message"]["content"][0]["text"] =
             json!("unrelated replacement");
         let reply = reader.read(Some(source.as_ref()), json!({"session":"s1", "claim":{"heldFloorMessageId":"m0", "sinceMessageId":"m1", "heldVersion":old["version"]}})).await.unwrap();
@@ -3601,7 +3540,7 @@ mod tests {
         let history = reader
             .read(
                 Some(source.as_ref()),
-                json!({"session":"s1", "beforeCursor":page["nextBeforeCursor"]}),
+                json!({"session":"s1", "beforeOrdinal":page["nextBeforeOrdinal"]}),
             )
             .await
             .unwrap();
@@ -3866,6 +3805,7 @@ mod tests {
     mod client_message_ids;
     mod contract_0748_samples;
     mod contract_goldens;
+    mod contract_heads;
     mod describe_samples;
     mod empty_claim_samples;
     mod model_names_samples;

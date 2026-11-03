@@ -116,16 +116,6 @@ async fn pruned_reasoning_is_hidden_without_moving_surviving_parts() {
         {"type":"text", "text":"Done.", "partKey":"1", "partIndex":1}])
     );
 
-    let history = source
-        .history_window(
-            source.window_head().await.unwrap(),
-            HistoryRequest::from_ordinal(20).with_limit(3),
-        )
-        .await
-        .unwrap();
-    for (raw, numbered) in history.rows.iter().zip(&page.rows) {
-        assert_eq!(raw.display, numbered.display);
-    }
     let exact = source.exact(&Anchor::Ordinal(20)).await.unwrap().unwrap();
     let exact_parts = exact.display["parts"].as_array().unwrap();
     assert_eq!(exact_parts.len(), 5);

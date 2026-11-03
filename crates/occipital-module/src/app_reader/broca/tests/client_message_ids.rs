@@ -4,7 +4,7 @@ use crate::app_reader::{TRANSCRIPT_PAGE, TRANSCRIPT_WATCH};
 use cortexkit_role_llm_runner::display::{DisplayEntry, DisplayRow};
 
 fn history_page(messages: Vec<DisplayEntry>) -> Value {
-    let value = json!({"messages":messages, "lineage_id":"cut-a", "history_version":7});
+    let value = json!({"messages":messages, "incarnation":"inc-a", "history_version":7});
     let page: DisplayPage = serde_json::from_value(value).unwrap();
     serde_json::to_value(page).unwrap()
 }
@@ -31,8 +31,7 @@ fn route() -> Arc<FakeRoute> {
                 if ordinal != 25 {
                     row = row.with_client_message_id(format!("phone-{ordinal}"));
                 }
-                DisplayEntry::new(entry["mid"].as_str().unwrap(), 999_999, row)
-                    .with_ordinal(ordinal)
+                DisplayEntry::new(ordinal, entry["mid"].as_str().unwrap(), 999_999, row)
             })
             .collect();
         route.history_replies.lock().unwrap().insert(
@@ -146,9 +145,8 @@ async fn display_history_echoes_onto_opencode_2_shaped_user_entries() {
     route.history_replies.lock().unwrap().insert(
         18,
         Ok(history_page(vec![
-            DisplayEntry::new("msg_u", 999_999, row).with_ordinal(18),
-            DisplayEntry::new("msg_a", 999_999, DisplayRow::new("assistant", vec![]))
-                .with_ordinal(19),
+            DisplayEntry::new(18, "msg_u", 999_999, row),
+            DisplayEntry::new(19, "msg_a", 999_999, DisplayRow::new("assistant", vec![])),
         ])),
     );
     let (sources, _) = serving(route.clone());

@@ -56,9 +56,11 @@ fn fixture(name: &str) -> Value {
         .unwrap_or_else(|_| panic!("{name} parses"))
 }
 
-/// The outage session's raw entries, in stored order.
+/// The outage session's raw entries, in stored order. Recorded under runner
+/// contract 0.7, they are read as a runner on the current contract serves them
+/// (`current_contract`).
 fn outage_entries() -> Vec<Value> {
-    let reply = fixture("session_read.reply.json");
+    let reply = current_contract(fixture("session_read.reply.json"));
     reply["result"]["messages"]
         .as_array()
         .expect("session.read reply carries messages")
@@ -289,7 +291,7 @@ async fn the_outage_display_history_echo_leaves_the_tool_row_alone() {
     use cortexkit_role_llm_runner::display::{DisplayEntry, DisplayRow};
     let route = outage_route();
     *route.describe.lock().unwrap() = Some(describe_with(&["history_display"]));
-    for (from, mids) in [(0u64, vec!["m0", "m1"]), (2u64, vec!["m2", "m3"])] {
+    for (from, mids) in [(1u64, vec!["m0", "m1"]), (3u64, vec!["m2", "m3"])] {
         let entries = outage_entries();
         let messages: Vec<DisplayEntry> = mids
             .into_iter()
@@ -299,11 +301,15 @@ async fn the_outage_display_history_echo_leaves_the_tool_row_alone() {
                 if mid == "m0" {
                     row = row.with_client_message_id("phone-abc");
                 }
-                DisplayEntry::new(mid, entry["written_at"].as_u64().unwrap(), row)
-                    .with_ordinal(entry["ordinal"].as_u64().unwrap())
+                DisplayEntry::new(
+                    entry["ordinal"].as_u64().unwrap(),
+                    mid,
+                    entry["written_at"].as_u64().unwrap(),
+                    row,
+                )
             })
             .collect();
-        let page = json!({"messages": messages, "lineage_id": "cut-a", "history_version": 7});
+        let page = json!({"messages": messages, "incarnation": "inc-a", "history_version": 7});
         // Display form itself is lenient: it decodes without error.
         let decoded: DisplayPage = serde_json::from_value(page.clone()).unwrap();
         assert_eq!(decoded.messages.len(), 2);

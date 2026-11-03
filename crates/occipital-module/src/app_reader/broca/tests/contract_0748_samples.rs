@@ -22,10 +22,12 @@ fn root() -> PathBuf {
 }
 
 /// A sample's reply body: the `result` of a recorded reply, or the whole file
-/// where Broca saved the page alone (the sender samples).
+/// where Broca saved the page alone (the sender samples). Recorded under runner
+/// contract 0.7, it is read as a runner on the current contract serves it
+/// (`current_contract`).
 fn result(name: &str) -> Value {
     let value: Value = serde_json::from_slice(&std::fs::read(root().join(name)).unwrap()).unwrap();
-    value.get("result").cloned().unwrap_or(value)
+    current_contract(value.get("result").cloned().unwrap_or(value))
 }
 
 #[test]
@@ -89,7 +91,7 @@ fn broca_display_facts_reach_the_rows() {
 #[test]
 fn broca_0748_describes_decode_on_both_paths() {
     let head: cortexkit_role_llm_runner::read::HeadMeta = serde_json::from_value(json!({
-        "lineage_id": "l1", "first_ordinal": 0, "history_version": 1, "updated_at": 1,
+        "incarnation": "inc-a", "first_ordinal": 1, "history_version": 1, "updated_at": 1,
         "last_run_state": {"run_id": "r1", "state": "active"},
     }))
     .unwrap();

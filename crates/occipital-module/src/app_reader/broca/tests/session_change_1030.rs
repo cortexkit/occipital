@@ -20,8 +20,10 @@ fn path(name: &str) -> std::path::PathBuf {
         .join(name)
 }
 
+/// A sample recorded under runner contract 0.7, read as a runner on the current
+/// contract serves it (`current_contract`).
 fn sample(name: &str) -> Value {
-    serde_json::from_slice(&std::fs::read(path(name)).unwrap()).unwrap()
+    current_contract(serde_json::from_slice(&std::fs::read(path(name)).unwrap()).unwrap())
 }
 
 /// Every file each SHA256SUMS lists is present and verifies.

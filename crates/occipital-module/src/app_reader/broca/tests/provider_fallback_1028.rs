@@ -31,9 +31,11 @@ fn fixture_dir() -> std::path::PathBuf {
     std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(FIXTURES)
 }
 
+/// A sample's entries, recorded under runner contract 0.7 and read as a runner on
+/// the current contract serves them (`current_contract`).
 fn entries(name: &str) -> Vec<Value> {
     let bytes = std::fs::read(fixture_dir().join(name)).unwrap();
-    serde_json::from_slice::<Value>(&bytes).unwrap()["result"]["messages"]
+    current_contract(serde_json::from_slice::<Value>(&bytes).unwrap())["result"]["messages"]
         .as_array()
         .unwrap()
         .clone()

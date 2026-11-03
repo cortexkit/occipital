@@ -8,7 +8,7 @@ use crate::app_reader::{resolve::Entorhinal, AppReader, DETAILS, TRANSCRIPT_PAGE
 use cortexkit_role_llm_runner::capabilities::HEAD_SENDER;
 use occipital_app_reader::source::SENDER_UNKNOWN;
 
-const SAMPLES: &str = "../occipital-app-reader/test-vectors/phone-session-facts-v2";
+const SAMPLES: &str = "phone-session-facts-v3";
 
 fn last_run() -> Value {
     json!({"runId":"r1", "state":"active"})
@@ -280,7 +280,7 @@ async fn model_rides_on_the_newest_page_and_turn_carrying_claims_only() {
     }
 
     let mut older = params();
-    older["beforeCursor"] = newest["nextBeforeCursor"].clone();
+    older["beforeOrdinal"] = json!(20);
     let older = page(&app, older).await;
     assert!(older.get("model").is_none(), "{older}");
 
@@ -298,14 +298,10 @@ async fn model_rides_on_the_newest_page_and_turn_carrying_claims_only() {
 #[tokio::test]
 async fn session_details_reads_one_head_and_no_messages() {
     let route = FakeRoute::new();
-    for (key, value) in [
-        ("model", model()),
-        ("usage", usage()),
-        ("sender", grant()),
-        ("incarnation", json!("log-7f3a")),
-    ] {
+    for (key, value) in [("model", model()), ("usage", usage()), ("sender", grant())] {
         set_head(&route, key, value);
     }
+    *route.incarnation.lock().unwrap() = "log-7f3a".into();
     let app = sending(&route);
     let reply = details(&app).await;
     assert_eq!(
@@ -322,27 +318,35 @@ async fn session_details_reads_one_head_and_no_messages() {
     assert_eq!(methods, ["session.head"]);
     assert_eq!(route.attaches.load(Ordering::Relaxed), 0);
 
-    for key in ["model", "usage", "sender", "incarnation"] {
+    for key in ["model", "usage", "sender"] {
         clear_head(&route, key);
     }
     let heads = calls(&route, "session.head");
     assert_eq!(
         details(&app).await,
-        json!({SENDER_UNKNOWN: true, "lastRun":last_run()})
+        json!({SENDER_UNKNOWN: true, "incarnation":"log-7f3a", "lastRun":last_run()})
     );
     assert_eq!(calls(&route, "session.head"), heads + 1);
     assert_eq!(calls(&route, "session.read"), 0);
 
-    // Counts a phone can't hold exactly, and an identity outside 1 to 128 bytes,
-    // are left out as unknown.
+    // Counts a phone can't hold exactly are left out as unknown.
     let mut huge = usage();
     huge["steps"] = json!(1_u64 << 53);
     set_head(&route, "usage", huge);
-    set_head(&route, "incarnation", json!("x".repeat(129)));
     assert_eq!(
         details(&app).await,
-        json!({SENDER_UNKNOWN: true, "lastRun":last_run()})
+        json!({SENDER_UNKNOWN: true, "incarnation":"log-7f3a", "lastRun":last_run()})
     );
+    // A log identity outside 1 to 128 bytes breaks the contract's head rule.
+    *route.incarnation.lock().unwrap() = "x".repeat(129);
+    assert_eq!(
+        app.read(DETAILS, json!({"session":"alfonso:s1", "harness":"broca"}))
+            .await
+            .unwrap_err()
+            .code,
+        "invalid_provider_reply"
+    );
+    *route.incarnation.lock().unwrap() = "log-7f3a".into();
 
     let refused = |params: Value| {
         let app = app.clone();
@@ -450,32 +454,23 @@ async fn role_describe_is_read_once_per_session_and_again_after_its_route_is_los
     assert_eq!(calls(&route, "role.describe"), 2);
 }
 
-/// A transcript-page cursor that wraps Broca's own cursor: the newest page's cursor
-/// lands on the unnumbered rows older than numbered history, and reading those one
-/// row at a time hands out Broca's cursor for the next one.
-async fn history_cursor(app: &AppReader) -> Value {
-    let newest = page(app, params()).await;
-    let older = follow(app, &newest["nextBeforeCursor"]).await.unwrap();
-    assert_eq!(older["messages"].as_array().unwrap().len(), 1, "{older}");
-    older["nextBeforeCursor"].clone()
-}
-
-async fn follow(app: &AppReader, cursor: &Value) -> Result<Value, ReadError> {
+/// The page of up to two messages before `ordinal`.
+async fn before(app: &AppReader, ordinal: u64) -> Result<Value, ReadError> {
     let mut request = params();
-    request["limit"] = json!(1);
-    request["beforeCursor"] = cursor.clone();
+    request["limit"] = json!(2);
+    request["beforeOrdinal"] = json!(ordinal);
     app.read(TRANSCRIPT_PAGE, request).await
 }
 
+/// A compaction cut moves where the model's input starts, and nothing the apps
+/// read: the same history counter and log, so a held claim still matches and the
+/// messages before the cut still page back.
 #[tokio::test]
-async fn a_compaction_cut_keeps_a_claim_and_cursor_when_the_head_carries_an_incarnation() {
+async fn a_compaction_cut_keeps_a_claim_and_older_pages() {
     let route = FakeRoute::new();
-    set_head(&route, "incarnation", json!("log-1"));
     let app = sending(&route);
     let newest = page(&app, params()).await;
-    let cursor = history_cursor(&app).await;
-    // The cut starts a new lineage over the same stored messages and history counter.
-    *route.lineage.lock().unwrap() = "cut-b".into();
+    set_head(&route, "first_ordinal", json!(22));
     let matched = page(&app, claim(&newest, "m20", "m22")).await;
     assert_eq!(matched["claim"], "matched", "{matched}");
     assert_eq!(matched["version"], newest["version"]);
@@ -487,7 +482,7 @@ async fn a_compaction_cut_keeps_a_claim_and_cursor_when_the_head_carries_an_inca
     let matched = page(&app, claim(&newest, "m20", "m22")).await;
     assert_eq!(matched["claim"], "matched", "{matched}");
     assert_eq!(matched["newTurns"][0]["messageId"], "m23");
-    let older = follow(&app, &cursor).await.unwrap();
+    let older = before(&app, 20).await.unwrap();
     assert_eq!(older["messages"][0]["messageId"], "old-a", "{older}");
 }
 
@@ -496,45 +491,21 @@ async fn a_recreated_log_expires_claims_and_cursors_even_at_history_zero() {
     let route = FakeRoute::new();
     route.history.store(0, Ordering::Relaxed);
     *route.entries.lock().unwrap() = vec![
-        entry("old-a", None, 690),
-        entry("old-b", None, 695),
         entry("m1", Some(1), 700),
         entry("m2", Some(2), 710),
         entry("m3", Some(3), 720),
     ];
-    set_head(&route, "first_ordinal", json!(1));
-    set_head(&route, "incarnation", json!("log-1"));
+    *route.incarnation.lock().unwrap() = "log-1".into();
     let app = sending(&route);
     let old = page(&app, params()).await;
-    let cursor = history_cursor(&app).await;
     // The log is created again under the same key: the same counter and recycled
     // mids, with different content.
-    set_head(&route, "incarnation", json!("log-2"));
-    *route.lineage.lock().unwrap() = "fresh".into();
-    route.entries.lock().unwrap()[2]["message"]["content"][0]["text"] =
+    *route.incarnation.lock().unwrap() = "log-2".into();
+    route.entries.lock().unwrap()[0]["message"]["content"][0]["text"] =
         json!("unrelated replacement");
     let reply = page(&app, claim(&old, "m1", "m2")).await;
     assert_eq!(reply["claim"], "cursor_expired", "{reply}");
     assert_ne!(reply["version"], old["version"]);
-    assert_eq!(
-        follow(&app, &cursor).await.unwrap_err().code,
-        "cursor_expired"
-    );
-}
-
-#[tokio::test]
-async fn without_an_incarnation_a_cut_still_expires_claims_and_cursors() {
-    let route = FakeRoute::new();
-    let app = sending(&route);
-    let newest = page(&app, params()).await;
-    let cursor = history_cursor(&app).await;
-    *route.lineage.lock().unwrap() = "cut-b".into();
-    let reply = page(&app, claim(&newest, "m20", "m22")).await;
-    assert_eq!(reply["claim"], "cursor_expired", "{reply}");
-    assert_eq!(
-        follow(&app, &cursor).await.unwrap_err().code,
-        "cursor_expired"
-    );
 }
 
 /// A Broca entry stamped with the runner's per-entry `written_at`, or with no write
@@ -578,14 +549,10 @@ async fn samples() -> Vec<(&'static str, Value)> {
     samples.push(("matched-claim-model.json", matched));
 
     let route = sample_route();
-    for (key, value) in [
-        ("model", model()),
-        ("usage", usage()),
-        ("sender", grant()),
-        ("incarnation", json!("6a6ce2eb-b065-4df0-806e-44bcf531e128")),
-    ] {
+    for (key, value) in [("model", model()), ("usage", usage()), ("sender", grant())] {
         set_head(&route, key, value);
     }
+    *route.incarnation.lock().unwrap() = "6a6ce2eb-b065-4df0-806e-44bcf531e128".into();
     samples.push(("details-usage.json", details(&sending(&route)).await));
     clear_head(&route, "usage");
     clear_head(&route, "sender");
@@ -617,64 +584,14 @@ async fn samples() -> Vec<(&'static str, Value)> {
     samples
 }
 
-/// Compare the phone's published samples rather than letting an inherited
-/// recording flag replace the expected bytes and bypass the comparison.
+/// The session fact samples the apps pin, `phone-session-facts-v3`, are what the
+/// handlers answer; `served_samples` says how the set is checked and rewritten.
 #[tokio::test]
 async fn the_session_fact_samples_are_what_the_handlers_answer() {
-    assert!(
-        std::env::var_os("THALAMUS_RECORD_SESSION_SAMPLES").is_none(),
-        "unset THALAMUS_RECORD_SESSION_SAMPLES: correctness tests must compare the published samples"
-    );
-    // The set predates part identities and completion metadata. Remove part
-    // identities and enrich the recorded completion expectation below; the
-    // `phone-reader-broca-v2-keys` set pins part identities themselves.
-    let mut samples = samples().await;
-    for (_, reply) in &mut samples {
-        occipital_app_reader::broca_entries::without_part_identity(reply);
+    let mut served = super::served_samples::Served::new(SAMPLES, sending(&sample_route()));
+    for (name, reply) in samples().await {
+        assert_send_members(name, &reply);
+        served.keep_file(name, serde_json::to_vec(&reply).unwrap());
     }
-    for (name, reply) in &samples {
-        assert_send_members(name, reply);
-    }
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(SAMPLES);
-    let mut recorded_sums = String::new();
-    for (name, reply) in &samples {
-        let recorded = std::fs::read(root.join(name)).unwrap();
-        recorded_sums.push_str(&format!("{:x}  {name}\n", Sha256::digest(&recorded)));
-        let mut expected: Value = serde_json::from_slice(&recorded).unwrap();
-        super::part_keys::add_recorded_completion(&mut expected);
-        // May-not-send replies carry neither sender member, so handler paths name these samples.
-        let session_fact_replies = [
-            "newest-page-model.json",
-            "matched-claim-model.json",
-            "details-usage.json",
-            "details-no-usage.json",
-            "details-no-grant.json",
-            "details-sender-refused.json",
-            "newest-page-network.json",
-        ];
-        if session_fact_replies.contains(name) {
-            super::part_keys::add_recorded_last_run(
-                &mut expected,
-                &json!({"run_id":"r1", "state":"active"}),
-            );
-        }
-        assert_eq!(
-            serde_json::to_string(&expected).unwrap(),
-            serde_json::to_string(reply).unwrap(),
-            "{name}"
-        );
-    }
-    assert_eq!(
-        std::fs::read_to_string(root.join("SHA256SUMS")).unwrap(),
-        recorded_sums
-    );
-    let mut listed: Vec<_> = std::fs::read_dir(&root)
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
-        .filter(|name| name.ends_with(".json"))
-        .collect();
-    listed.sort();
-    let mut named: Vec<_> = samples.iter().map(|(name, _)| name.to_string()).collect();
-    named.sort();
-    assert_eq!(listed, named, "every sample file is recorded here");
+    served.check();
 }

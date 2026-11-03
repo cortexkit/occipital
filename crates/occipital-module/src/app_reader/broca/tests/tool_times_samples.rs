@@ -1,5 +1,5 @@
-//! The tool-times samples the apps pin, `phone-reader-tool-times-v2`. Its README
-//! says what each file shows. The replies come from a test session on
+//! The tool-times samples the apps pin, `phone-reader-tool-times-v3`. Its README
+//! says what each file shows and what changed from v2. The replies come from a test session on
 //! Thalamus's OpenCode 2 runner, which serves the call times beside each read
 //! entry, so the times are fixed and the set is reproducible; `served_samples`
 //! says how the set is checked and rewritten. v1 was recorded the same way on
@@ -65,7 +65,7 @@ async fn the_tool_times_samples_are_what_the_reader_serves() {
             Arc::new(AnyHarness(route)),
         ),
     )));
-    let mut served = Served::new("phone-reader-tool-times-v2", app);
+    let mut served = Served::new("phone-reader-tool-times-v3", app);
     let session = json!({"session": "ses_head", "harness": "opencode2"});
 
     let mut page_request =

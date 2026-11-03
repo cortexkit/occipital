@@ -1,5 +1,5 @@
-//! The tool display samples the apps pin, `phone-reader-tool-display-v3`. Its
-//! README says what each file shows. A test OpenCode 2 session on Thalamus's
+//! The tool display samples the apps pin, `phone-reader-tool-display-v4`. Its
+//! README says what each file shows and what changed from v3. A test OpenCode 2 session on Thalamus's
 //! runner serves four calls with their keys and pins; the display store holds
 //! the views and writes a provider would have sent. `served_samples` says how
 //! the set is checked and rewritten. v2 was recorded the same way on the
@@ -239,7 +239,7 @@ async fn the_tool_display_samples_are_what_the_reader_serves() {
         .with_call_pins(slot),
     )));
     app.set_tool_display(tool);
-    let mut served = Served::new("phone-reader-tool-display-v3", app);
+    let mut served = Served::new("phone-reader-tool-display-v4", app);
     let session = json!({"session": "ses_head", "harness": "opencode2"});
     let request = |method: &str, extra: Value| {
         let mut params = session.clone();

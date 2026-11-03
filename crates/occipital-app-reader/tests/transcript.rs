@@ -20,7 +20,7 @@ use tokio::sync::{mpsc, watch};
 struct State {
     rows: Vec<Row>,
     history_version: Option<u64>,
-    lineage: Option<String>,
+    incarnation: Option<String>,
     activity: (&'static str, i64),
     error: Option<&'static str>,
     unstable: usize,
@@ -46,7 +46,7 @@ impl FakeSource {
             state: Mutex::new(State {
                 rows: (0..count).map(|ordinal| row(ordinal, bytes)).collect(),
                 history_version: native.then_some(1),
-                lineage: None,
+                incarnation: None,
                 activity: ("idle", 1),
                 error: None,
                 unstable: 0,
@@ -87,7 +87,7 @@ impl FakeSource {
             } else {
                 state.history_version
             },
-            lineage_id: state.lineage.clone(),
+            incarnation: state.incarnation.clone(),
         })
     }
 }
@@ -115,7 +115,7 @@ impl TranscriptSource for FakeSource {
             first_ordinal: state.rows.iter().find_map(|row| row.ordinal),
             activity_token: None,
             history_version: state.history_version,
-            lineage_id: state.lineage.clone(),
+            incarnation: state.incarnation.clone(),
             last_run: state.last_run.clone(),
             input: InputCapability {
                 attachments: Attachments::Yes,
@@ -547,12 +547,13 @@ async fn a_numbered_boundary_uses_a_cursor_even_when_the_page_ends_exactly_there
 }
 
 #[tokio::test]
-async fn lineage_changes_and_history_rewrites_each_expire_claims() {
+async fn a_recreated_log_and_history_rewrites_each_expire_claims() {
     let source = FakeSource::new("broca", 3, 4, true);
+    source.state.lock().unwrap().incarnation = Some("log-1".into());
     let reader = TranscriptReader::default();
     let page = read(&reader, &source, json!({"session":"s"})).await;
     let held = claim_for(&page);
-    source.state.lock().unwrap().lineage = Some("after-context-cut".into());
+    source.state.lock().unwrap().incarnation = Some("log-2".into());
     source.notify();
     let cut = read(&reader, &source, json!({"session":"s", "claim":held})).await;
     assert_eq!(cut["claim"], "cursor_expired");

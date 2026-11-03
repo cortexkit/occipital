@@ -419,7 +419,10 @@ impl send::SendTarget for FakeSendTarget {
     async fn call(&self, method: &'static str, params: Value) -> Result<Value, send::RunnerError> {
         self.0.calls.fetch_add(1, Ordering::SeqCst);
         if method == "session.head" {
-            return Ok(json!({"last_run_state": {"run_id": "r1", "state": "active"}}));
+            return Ok(
+                json!({"history_version": 1, "incarnation": "inc-a", "first_ordinal": 1,
+                "updated_at": 1, "last_run_state": {"run_id": "r1", "state": "active"}}),
+            );
         }
         if method == "role.describe" {
             return Ok(serde_json::to_value(

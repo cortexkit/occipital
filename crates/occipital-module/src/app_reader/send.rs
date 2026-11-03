@@ -27,6 +27,7 @@ use async_trait::async_trait;
 use cortexkit_role_llm_runner::{
     delivery_order::{DeliveryOrder, Mode as Order},
     describe::RoleDescribe,
+    ops::SESSION_SEND_STATUS,
     read::HeadMeta,
     send::{states, Delivery, SendReply, SendRequest as RunnerSend},
 };
@@ -646,7 +647,7 @@ impl Sender {
                 wait = true;
                 let past = clock() > settle_after;
                 let answer = target
-                    .call("send.status", json!({"send_id": send_id}))
+                    .call(SESSION_SEND_STATUS, json!({"send_id": send_id}))
                     .await;
                 let fate = match &follow {
                     Follow::Steer { run_id, .. } => {
@@ -849,7 +850,7 @@ enum Fate {
     Unanswered,
 }
 
-/// A held worker steer's fate from one `send.status` answer. Past its deadline, an
+/// A held worker steer's fate from one `session.send_status` answer. Past its deadline, an
 /// answer of `pending` or an unknown send settles it as expired.
 fn steer_fate(answer: Result<Value, RunnerError>, past: bool) -> Fate {
     match answer {
@@ -942,14 +943,14 @@ async fn pending_steer_fate(
                 "worker steer cannot be withdrawn at run end; waiting for its deadline");
             steer_fate(
                 target
-                    .call("send.status", json!({"send_id": send_id}))
+                    .call(SESSION_SEND_STATUS, json!({"send_id": send_id}))
                     .await,
                 past,
             )
         }
         Ok(_) | Err(RunnerError::Refused { .. }) => steer_fate(
             target
-                .call("send.status", json!({"send_id": send_id}))
+                .call(SESSION_SEND_STATUS, json!({"send_id": send_id}))
                 .await,
             past,
         ),
@@ -957,7 +958,7 @@ async fn pending_steer_fate(
     }
 }
 
-/// A head send's fate from one `send.status` answer (or the send's own reply).
+/// A head send's fate from one `session.send_status` answer (or the send's own reply).
 /// Delivered once its message is in a step or a turn, or handed to a run that can't
 /// confirm it; unsent when the runner ended it undelivered, naming why; waiting while
 /// it is queued or handed to the host without a confirmed landing.

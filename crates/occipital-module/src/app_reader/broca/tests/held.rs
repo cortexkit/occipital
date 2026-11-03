@@ -80,6 +80,7 @@ impl SendTarget for PlacementSender {
     async fn call(&self, method: &'static str, _: Value) -> Result<Value, RunnerError> {
         if method == "session.head" {
             return Ok(json!({
+                "history_version": 1, "incarnation": "inc-a", "first_ordinal": 1, "updated_at": 1,
                 "sender": {"modes": ["idle_start", "steer"], "interrupt": true},
                 "last_run_state": {"run_id": "r1", "state": "active"},
             }));

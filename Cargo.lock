@@ -176,22 +176,9 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-role-llm-runner"
-version = "0.7.46"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fed4b23342e44f2fe6c4ce95be53a787b3a144a007b9cbfd97ad5adf9c18413"
-dependencies = [
- "cortexkit-rich-ui-syntax",
- "serde",
- "serde_jcs",
- "serde_json",
- "sha2",
-]
-
-[[package]]
-name = "cortexkit-role-llm-runner"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df98e5ba9c167e65bf8be2ff344917d703256a29256e3a4dece6fce151315032"
+checksum = "64f7de0690d84f63c1a830c8dedf99bc609cc3831589f13eedf8a7904dfcd7d3"
 dependencies = [
  "cortexkit-rich-ui-syntax",
  "cortexkit-role-tool-provider 0.15.0",
@@ -709,7 +696,7 @@ name = "occipital-app-reader"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "cortexkit-role-llm-runner 0.7.46",
+ "cortexkit-role-llm-runner",
  "serde",
  "serde_json",
  "sha2",
@@ -745,8 +732,7 @@ dependencies = [
  "cortexkit-occipital-lang",
  "cortexkit-occipital-registry",
  "cortexkit-project-identity",
- "cortexkit-role-llm-runner 0.7.46",
- "cortexkit-role-llm-runner 0.8.0",
+ "cortexkit-role-llm-runner",
  "cortexkit-role-tool-display",
  "cortexkit-role-tool-provider 0.14.6",
  "cortexkit-store",

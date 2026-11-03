@@ -60,6 +60,23 @@ fn the_contract_valid_head_session_fact_samples_are_complete_and_their_checksums
     verify_published_set("test-vectors/phone-session-facts-v2", 7);
 }
 
+/// The sets served once runners moved to llm-runner 0.8. `occipital-module`
+/// serves each again and compares the bytes; here every file must match its
+/// checksum.
+#[test]
+fn the_runner_0_8_samples_are_complete_and_their_checksums_verify() {
+    for (set, files) in [
+        ("phone-reader-broca-v4-keys", 8),
+        ("phone-session-facts-v3", 7),
+        ("phone-reader-empty-claim-v2", 8),
+        ("phone-reader-pi-v2", 6),
+        ("phone-reader-tool-times-v3", 4),
+        ("phone-reader-tool-display-v4", 22),
+    ] {
+        verify_published_set(&format!("test-vectors/{set}"), files);
+    }
+}
+
 #[test]
 fn contract_valid_head_samples_change_only_the_opaque_activity_token() {
     for (old, new, changed_files) in [

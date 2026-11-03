@@ -1,4 +1,6 @@
 //! Broca's recorded runner replies, decoded through the route and phone handlers.
+//! They were recorded under runner contract 0.7 and are read as a runner on the
+//! current contract serves them (`current_contract`).
 
 use super::*;
 use crate::app_reader::{resolve::Entorhinal, AppReader, DETAILS, TRANSCRIPT_PAGE};
@@ -66,7 +68,16 @@ fn golden(name: &str) -> Value {
         }
     }
     substitute(&mut value);
-    value
+    current_contract(value)
+}
+
+/// The recorded 0.7 samples named `name`, as a runner on the current contract
+/// serves them.
+fn samples(name: &str) -> Vec<(String, Value)> {
+    samples_0_7::samples(name)
+        .into_iter()
+        .map(|(name, value)| (name, current_contract(value)))
+        .collect()
 }
 
 struct GoldenRoute {
@@ -325,10 +336,6 @@ async fn role_describe_head_sender_group_makes_an_absent_grant_known() {
 
 fn assert_no_source_facts(reply: &Value) {
     for field in [
-        "historyVersion",
-        "lineage_id",
-        "lineageId",
-        "incarnation",
         "activity",
         "activityAtMs",
         "model",
@@ -343,21 +350,27 @@ fn assert_no_source_facts(reply: &Value) {
     }
 }
 
+/// A never-written session's head: only the history counter and the log's
+/// identity, which every head carries.
+fn never_written_head() -> Value {
+    json!({"result":{"history_version":0, "incarnation":LOG_ID}})
+}
+
 #[tokio::test]
 async fn never_written_goldens_map_empty_page_details_and_stale_caller_claim_watch() {
-    let (_, app) = app(
-        "session_head.before_head_additions.json",
-        "session_read.before_head_additions.json",
+    let (_, app) = app_with_values(
+        never_written_head(),
+        golden("session_read.before_head_additions.json"),
+        golden("role_describe.head_additions.json"),
     );
     let app = Arc::new(app);
     let newest = page(&app).await;
     assert_eq!(newest["messages"], json!([]));
     assert_eq!(newest["reachedStart"], true);
-    assert!(newest["version"].as_str().unwrap().starts_with("activity-"));
+    assert_eq!(newest["version"], format!("history:0:incarnation:{LOG_ID}"));
     assert!(newest["activityToken"].is_string());
-    assert_eq!(newest["diagnostics"]["deltaRead"], "scan");
     assert_no_source_facts(&newest);
-    assert_eq!(details(&app).await, json!({}));
+    assert_eq!(details(&app).await, json!({"incarnation":LOG_ID}));
 
     // An empty transcript supplies no claim anchors. These ids belong to a
     // stale caller cache, not to messages fabricated for the empty session.
@@ -372,7 +385,7 @@ async fn never_written_goldens_map_empty_page_details_and_stale_caller_claim_wat
     assert_eq!(notice["answers"], stale["claim"]);
     for reply in [direct, notice] {
         assert_eq!(reply["claim"], "cursor_expired", "{reply}");
-        assert!(reply["version"].as_str().unwrap().starts_with("activity-"));
+        assert_eq!(reply["version"], newest["version"]);
         assert_eq!(reply["resync"]["messages"], json!([]));
         assert_eq!(reply["resync"]["reachedStart"], true);
         assert_no_source_facts(&reply);
@@ -383,38 +396,27 @@ async fn never_written_goldens_map_empty_page_details_and_stale_caller_claim_wat
     }
 }
 
+/// A written head missing a member the contract requires, or with ordinals out
+/// of bounds, is malformed, never an empty session.
 #[tokio::test]
-async fn partially_missing_lineage_heads_remain_malformed_not_empty_sessions() {
+async fn partial_heads_are_malformed_not_empty_sessions() {
     let owner = golden("session_head.owner.json");
     let mut cases = Vec::new();
     for field in [
-        "last_ordinal",
+        "updated_at",
         "first_ordinal",
         "history_version",
-        "head",
-        "last_run_state",
-        "updated_at",
+        "incarnation",
     ] {
-        cases.push((
-            format!("{field} without lineage"),
-            json!({"result":{field:owner["result"][field]}}),
-        ));
-    }
-    cases.push((
-        "cut without lineage".into(),
-        json!({"result":{"cut":{
-        "mid":"cut-mid", "digest":"cut-digest", "written_at":500}}}),
-    ));
-    for field in ["updated_at", "first_ordinal", "history_version"] {
         let mut head = owner.clone();
         head["result"].as_object_mut().unwrap().remove(field);
-        cases.push((format!("lineage without {field}"), head));
+        cases.push((format!("without {field}"), head));
     }
     let mut no_cut = owner.clone();
-    no_cut["result"]["first_ordinal"] = json!(1);
-    cases.push(("positive first_ordinal without cut".into(), no_cut));
+    no_cut["result"]["first_ordinal"] = json!(2);
+    cases.push(("first_ordinal above 1 without a cut".into(), no_cut));
     let mut out_of_bounds = owner;
-    out_of_bounds["result"]["first_ordinal"] = json!(3);
+    out_of_bounds["result"]["first_ordinal"] = json!(4);
     cases.push((
         "first_ordinal beyond last_ordinal + 1".into(),
         out_of_bounds,
@@ -427,10 +429,6 @@ async fn partially_missing_lineage_heads_remain_malformed_not_empty_sessions() {
         );
         let error = app.read(TRANSCRIPT_PAGE, params()).await.unwrap_err();
         assert_eq!(error.code, "invalid_provider_reply", "{name}");
-        assert_eq!(
-            error.message, "Broca session.head has an inconsistent snapshot",
-            "{name}"
-        );
     }
 }
 
@@ -473,11 +471,9 @@ async fn entries_without_written_at_do_not_invent_a_phone_time_or_network() {
 }
 
 #[tokio::test]
-async fn omitted_sender_group_and_incarnation_stay_unknown_and_lineage_scoped() {
+async fn an_omitted_sender_group_leaves_the_grant_unknown() {
     let mut head = golden("session_head.owner.json");
-    for member in ["sender", "incarnation"] {
-        head["result"].as_object_mut().unwrap().remove(member);
-    }
+    head["result"].as_object_mut().unwrap().remove("sender");
     let mut describe = golden("role_describe.head_additions.json");
     describe["result"]["capabilities"]
         .as_array_mut()
@@ -485,12 +481,10 @@ async fn omitted_sender_group_and_incarnation_stay_unknown_and_lineage_scoped() 
         .retain(|group| group != "head_sender");
     let (_, app) = app_with_values(head, golden("session_read.written_at.json"), describe);
     let newest = page(&app).await;
-    assert_eq!(newest["version"], format!("history:0:lineage:{LOG_ID}"));
     let matched = app.read(TRANSCRIPT_PAGE, claim(&newest)).await.unwrap();
     assert_eq!(matched["claim"], "matched");
     assert_eq!(matched["version"], newest["version"]);
     let facts = details(&app).await;
-    assert!(facts.get("incarnation").is_none());
     for reply in [newest, matched, facts] {
         assert_eq!(reply["senderUnknown"], true, "{reply}");
         assert!(reply.get("sender").is_none(), "{reply}");
@@ -520,14 +514,12 @@ async fn populated_head_from_before_the_head_additions_reads_with_every_new_fact
     let newest = page(&app).await;
     assert_eq!(newest["messages"].as_array().unwrap().len(), 2, "{newest}");
     assert_eq!(newest["historyVersion"], 0);
-    assert_eq!(newest["version"], format!("history:0:lineage:{LOG_ID}"));
+    assert_eq!(newest["version"], format!("history:0:incarnation:{LOG_ID}"));
     let matched = app.read(TRANSCRIPT_PAGE, claim(&newest)).await.unwrap();
     assert_eq!(matched["claim"], "matched", "{matched}");
     assert_eq!(matched["version"], newest["version"]);
     let facts = details(&app).await;
-    for member in ["usage", "incarnation"] {
-        assert!(facts.get(member).is_none(), "{member}: {facts}");
-    }
+    assert!(facts.get("usage").is_none(), "{facts}");
     for reply in [newest, matched, facts] {
         assert!(reply.get("model").is_none(), "{reply}");
         assert_eq!(reply["senderUnknown"], true, "{reply}");
@@ -536,18 +528,20 @@ async fn populated_head_from_before_the_head_additions_reads_with_every_new_fact
 }
 
 // Head-only captures have no matching raw-read capture. Supply a small raw page
-// with the same lineage and counters rather than joining independent sessions.
+// with the same log and counters rather than joining independent sessions. Its
+// messages are `m0` and up, as the recorded sessions name them.
 fn read_for_head(head: &Value) -> Value {
     let meta = &head["result"];
-    let messages: Vec<_> = (0..=meta["last_ordinal"].as_u64().unwrap())
+    let messages: Vec<_> = (1..=meta["last_ordinal"].as_u64().unwrap())
         .map(|ordinal| {
             json!({
-                "mid":format!("m{ordinal}"), "ordinal":ordinal, "written_at":500 + ordinal,
+                "mid":format!("m{}", ordinal - 1), "ordinal":ordinal, "written_at":500 + ordinal,
                 "message":{"role":"user", "content":[{"type":"text","text":"raw prompt"}]}
             })
         })
         .collect();
-    json!({"result":{"lineage_id":meta["lineage_id"], "messages":messages, "head":{"wal_seq":2,"sub_index":0}}})
+    json!({"result":{"incarnation":meta["incarnation"], "history_version":meta["history_version"],
+        "messages":messages, "head":{"wal_seq":2,"sub_index":0}}})
 }
 
 #[tokio::test]
@@ -557,13 +551,14 @@ async fn broca_0_7_heads_reach_last_run_on_pages_claims_and_details() {
         "session.head.error.fractional.json",
         "session.head.error.missing-delay.json",
     ] {
-        for (name, head) in samples_0_7::samples(file) {
+        for (name, head) in samples(file) {
             let read = read_for_head(&head);
             let (_, app) =
                 app_with_values(head.clone(), read, json!({"result":describe_with(&[])}));
             let newest = page(&app).await;
             let mut request = params();
-            request["claim"] = json!({"heldFloorMessageId":newest["messages"][0]["messageId"], "sinceMessageId":format!("m{}", head["result"]["last_ordinal"]), "heldVersion":newest["version"]});
+            let last = head["result"]["last_ordinal"].as_u64().unwrap();
+            request["claim"] = json!({"heldFloorMessageId":newest["messages"][0]["messageId"], "sinceMessageId":format!("m{}", last - 1), "heldVersion":newest["version"]});
             let matched = app.read(TRANSCRIPT_PAGE, request).await.unwrap();
             assert_eq!(matched["claim"], "matched", "{name}: {matched}");
             for reply in [newest, matched, details(&app).await] {
@@ -605,7 +600,7 @@ async fn broca_0_7_heads_reach_last_run_on_pages_claims_and_details() {
 #[tokio::test]
 async fn broca_0_7_display_history_decodes_on_the_client_message_id_echo_path() {
     for file in ["session.history.json", "approved.session.history.json"] {
-        for (name, history) in samples_0_7::samples(file) {
+        for (name, history) in samples(file) {
             let decoded: DisplayPage = serde_json::from_value(result(history.clone()).unwrap())
                 .unwrap_or_else(|e| panic!("{name}: {e}"));
             let projected = serde_json::to_value(decoded).unwrap();
@@ -618,8 +613,8 @@ async fn broca_0_7_display_history_decodes_on_the_client_message_id_echo_path() 
                     );
                 }
             }
-            let head = json!({"result":{"lineage_id":history["result"]["lineage_id"], "first_ordinal":0,
-                "last_ordinal":1, "history_version":0, "updated_at":506, "last_run_state":{"run_id":"run","state":"completed"}}});
+            let head = json!({"result":{"incarnation":history["result"]["incarnation"], "first_ordinal":1,
+                "last_ordinal":2, "history_version":0, "updated_at":506, "last_run_state":{"run_id":"run","state":"completed"}}});
             let mut raw = read_for_head(&head);
             raw["result"]["messages"]
                 .as_array_mut()
@@ -671,9 +666,9 @@ async fn broca_0_7_display_history_decodes_on_the_client_message_id_echo_path() 
 
 #[tokio::test]
 async fn broca_0_7_approved_read_reaches_source_windows_and_run_state() {
-    for (name, read) in samples_0_7::samples("approved.session.read.json") {
-        let head = json!({"result":{"lineage_id":read["result"]["lineage_id"], "first_ordinal":0,
-            "last_ordinal":3, "history_version":0, "updated_at":506,
+    for (name, read) in samples("approved.session.read.json") {
+        let head = json!({"result":{"incarnation":read["result"]["incarnation"], "first_ordinal":1,
+            "last_ordinal":4, "history_version":0, "updated_at":506,
             "last_run_state":{"run_id":read["result"]["lineage_state"]["last_run_id"],"state":"completed","reason":"completed"}}});
         let (route, app) = app_with_values(
             head.clone(),
@@ -704,33 +699,12 @@ async fn broca_0_7_approved_read_reaches_source_windows_and_run_state() {
             "{name}"
         );
         let source = BrocaSource::new(resolved(), route);
-        let full = source.exact(&Anchor::Ordinal(1)).await.unwrap().unwrap();
+        let full = source.exact(&Anchor::Ordinal(2)).await.unwrap().unwrap();
         assert_eq!(full.mid, "m1", "{name}");
         assert_eq!(
             full.display["parts"][0]["callId"], "approved-call",
             "{name}"
         );
         assert_eq!(full.display["parts"][0]["isError"], false, "{name}");
-        // Older heads omit the tail ordinal; that path discovers it by decoding
-        // a session.read reply before issuing the bounded transcript read.
-        let mut old_head = head;
-        old_head["result"]
-            .as_object_mut()
-            .unwrap()
-            .remove("last_ordinal");
-        let (route, app) = app_with_values(old_head, read, json!({"result":describe_with(&[])}));
-        let reply = page(&app).await;
-        assert_eq!(reply["messages"].as_array().unwrap().len(), 3, "{name}");
-        assert!(
-            route
-                .calls
-                .lock()
-                .unwrap()
-                .iter()
-                .filter(|op| *op == "session.read")
-                .count()
-                >= 2,
-            "{name}: legacy tail discovery was not reached"
-        );
     }
 }

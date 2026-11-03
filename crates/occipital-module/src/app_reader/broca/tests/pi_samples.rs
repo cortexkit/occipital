@@ -1,4 +1,4 @@
-//! The Pi chat sample set `phone-reader-pi-v1`, which the phone and desktop apps
+//! The Pi chat sample set `phone-reader-pi-v2`, which the phone and desktop apps
 //! test their decoders against. Its README says what each file shows. The
 //! session's entries are Thalamus's recording of a real Pi agent session on its
 //! Pi runner (`runner-pages-pi-v2`, see `pi_pages`), served through Occipital,
@@ -33,7 +33,7 @@ async fn the_pi_samples_are_what_the_reader_serves() {
             Arc::new(PiHarness(route)),
         ),
     )));
-    let mut served = Served::new("phone-reader-pi-v1", app);
+    let mut served = Served::new("phone-reader-pi-v2", app);
     let session = json!({"session": "ses_head", "harness": "pi"});
     let request = |method: &str, extra: Value| {
         let mut params = session.clone();

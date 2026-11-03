@@ -22,11 +22,13 @@ const FILES: [&str; 5] = [
     "session.read.opt-in.json",
 ];
 
+/// A sample recorded under runner contract 0.7, read as a runner on the current
+/// contract serves it (`current_contract`).
 fn sample(name: &str) -> Value {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join(FIXTURES)
         .join(name);
-    serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
+    current_contract(serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap())
 }
 
 fn entries(name: &str) -> Vec<Value> {

@@ -11,8 +11,10 @@
 //! `tag`, or an entry without `tags`, would decode neither.
 //!
 //! Neither recorded session has a `session.head` sample, so the tests build a
-//! contract-valid head around the entries: the ordinal range they hold, their
-//! lineage and history counter, and no send grant.
+//! contract-valid head around the entries: the ordinal range they hold, a log
+//! identity and history counter, and no send grant. The samples were recorded
+//! under runner contract 0.7 and are read as a runner on the current contract
+//! serves them (`current_contract`).
 
 use super::*;
 use crate::app_reader::tests::serve;
@@ -24,8 +26,8 @@ use std::path::{Path, PathBuf};
 
 const GOLDENS: &str = "tests/data/broca-tag-rows";
 /// Every sample Broca recorded from its serve path. The first three are read replies
-/// on their own; the last two Broca wrapped in `{"result": …}` and stamped with a
-/// lineage, as some of its read routes serve them. A sample is tested byte for byte
+/// on their own; the last two Broca wrapped in `{"result": …}` and stamped with the
+/// log identity of the time, as some of its read routes serve them. A sample is tested byte for byte
 /// as Broca sent it, so the wrapper stays in the file and is unwrapped on the way in.
 const FILES: &[&str] = &[
     "session_read.counted.json",
@@ -34,7 +36,6 @@ const FILES: &[&str] = &[
     "session_read.two_episode.json",
     "session_read.written_at.json",
 ];
-const LINEAGE: &str = "00000000-0000-4000-8000-0000000000a1";
 const INCARNATION: &str = "00000000-0000-4000-8000-0000000000a2";
 
 fn root() -> PathBuf {
@@ -77,7 +78,10 @@ fn sample(name: &str) -> Value {
 
 /// The sample's entries in ordinal order.
 fn entries(name: &str) -> Vec<Value> {
-    sample(name)["messages"].as_array().unwrap().clone()
+    current_contract(sample(name))["messages"]
+        .as_array()
+        .unwrap()
+        .clone()
 }
 
 /// The row keys of one entry's `tags`, member by member and in order, read against
@@ -157,10 +161,9 @@ impl BrocaRoute for TagRoute {
         let method = request["method"].as_str().unwrap();
         let reply = match method {
             "session.head" => json!({"result":{
-                "first_ordinal":0,
-                "last_ordinal":self.entries.len() - 1,
+                "first_ordinal":1,
+                "last_ordinal":self.entries.len(),
                 "history_version":0,
-                "lineage_id":LINEAGE,
                 "incarnation":INCARNATION,
                 "updated_at":506,
                 "last_run_state":{"run_id":"run-latest", "state":"completed"},
@@ -168,9 +171,9 @@ impl BrocaRoute for TagRoute {
             "session.read" => json!({"result":{
                 "messages":self.entries,
                 "history_version":0,
-                "lineage_id":LINEAGE}}),
+                "incarnation":INCARNATION}}),
             "session.history" => raw_history(
-                &json!({"messages":self.entries, "history_version":0, "lineage_id":LINEAGE}),
+                &json!({"messages":self.entries, "history_version":0, "incarnation":INCARNATION}),
                 &request["params"],
             )?,
             "role.describe" => self.describe.clone(),

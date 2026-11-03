@@ -33,10 +33,12 @@ fn lines(name: &str) -> Vec<Vec<u8>> {
         .collect()
 }
 
+/// A sample's one body, recorded under runner contract 0.7 and read as a runner
+/// on the current contract serves it (`current_contract`).
 fn body(name: &str) -> Value {
     let lines = lines(name);
     assert_eq!(lines.len(), 1, "{name} holds one body");
-    serde_json::from_slice(&lines[0]).unwrap()
+    current_contract(serde_json::from_slice(&lines[0]).unwrap())
 }
 
 #[test]

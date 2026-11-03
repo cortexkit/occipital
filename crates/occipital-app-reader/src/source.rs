@@ -99,22 +99,18 @@ impl SendGrant {
 
 #[derive(Debug, Clone, Default)]
 pub struct Head {
-    /// The oldest assigned ordinal, if numbered history exists.
+    /// The oldest readable ordinal, if numbered history exists.
     pub first_ordinal: Option<u64>,
     /// The newest assigned ordinal, for bounded source reads; not a phone field.
     pub last_ordinal: Option<u64>,
-    /// Rises when already-served history is rewritten (an edit or a revert), never on
-    /// an append, and never when compaction starts a new lineage at a summary cut,
-    /// since a cut leaves every stored message in place. Without an `incarnation`,
-    /// claims also bind the lineage: the counter alone can't tell a cut from a
-    /// recycled session key that restarted at the same count.
+    /// Rises when already-served history is rewritten (an edit, a revert or a
+    /// renumbering), never on an append, and never at a compaction cut, which
+    /// leaves every stored message in place.
     pub history_version: Option<u64>,
-    /// Compatibility for sources that have not yet gained a history counter.
-    pub lineage_id: Option<String>,
     /// An opaque identity of the session's log: unchanged across cuts, reverts,
     /// restarts, restores and moves, and new only when the log is created again.
-    /// When present, claims and cursors bind it instead of `lineage_id`, so a
-    /// compaction cut keeps a claim while a recreated log still expires it.
+    /// Claims and cursors bind it with `history_version`: the counter alone can't
+    /// tell a rewrite from a recreated log that restarted at the same count.
     pub incarnation: Option<String>,
     /// A watermark derived only from durable source facts. Unlike a live-feed
     /// watermark, it can be revalidated by a head read after a source restart.
@@ -156,13 +152,10 @@ fn last_run_with_error_value(run: &LastRunState, error: Option<&LastRunError>) -
 
 impl Head {
     fn claim_version(&self) -> Option<String> {
-        self.history_version
-            .map(|version| match (&self.incarnation, &self.lineage_id) {
-                (Some(incarnation), _) => format!("history:{version}:incarnation:{incarnation}"),
-                (None, Some(lineage)) => format!("history:{version}:lineage:{lineage}"),
-                (None, None) => format!("history:{version}"),
-            })
-            .or_else(|| self.lineage_id.clone())
+        self.history_version.map(|version| match &self.incarnation {
+            Some(incarnation) => format!("history:{version}:incarnation:{incarnation}"),
+            None => format!("history:{version}"),
+        })
     }
 
     /// The session facts every newest page and every turn-carrying claim reply
@@ -238,12 +231,12 @@ pub struct HistoryPage {
     pub older: Option<String>,
     pub newer: Option<String>,
     pub history_version: Option<u64>,
-    pub lineage_id: Option<String>,
+    pub incarnation: Option<String>,
 }
 
 impl HistoryPage {
     fn agrees_with(&self, head: &Head) -> bool {
-        self.history_version == head.history_version && self.lineage_id == head.lineage_id
+        self.history_version == head.history_version && self.incarnation == head.incarnation
     }
 }
 

@@ -3,7 +3,7 @@
 //! <agent>" or "didn't reach <agent>" instead of a delivered tick.
 //!
 //! A row is written when a send is accepted and not already delivered. A follower
-//! asks the runner (`send.status`) until the send settles: delivered removes the row,
+//! asks the runner (`session.send_status`) until the send settles: delivered removes the row,
 //! and any undelivered end keeps it as `unsent` with the runner's reason for
 //! [`UNSENT_RETENTION_MS`]. A queued row is never pruned by age: the runner holds the
 //! send, and the follower settles it however long that takes.

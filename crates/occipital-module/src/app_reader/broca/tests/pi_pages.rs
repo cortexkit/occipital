@@ -36,8 +36,11 @@ fn root(set: &str) -> PathBuf {
         .join(set)
 }
 
+/// A recorded reply of `set`. The sets were recorded under runner contract 0.7
+/// and are read as a runner on the current contract serves them
+/// (`current_contract`): the empty system entry Pi writes first is entry 1.
 fn sample(set: &str, name: &str) -> Value {
-    serde_json::from_slice(&std::fs::read(root(set).join(name)).unwrap()).unwrap()
+    current_contract(serde_json::from_slice(&std::fs::read(root(set).join(name)).unwrap()).unwrap())
 }
 
 /// The recorded `session.read` entries of `set`.
@@ -119,8 +122,8 @@ fn pi_rows_follow_the_runners_display_rows() {
     }
 }
 
-/// Pi's empty system entry at ordinal 0 is left out of pages, which an app would
-/// draw as an empty prompt card; the page still reaches the start, and the
+/// Pi's empty system entry, its first entry, is left out of pages, which an app
+/// would draw as an empty prompt card; the page still reaches the start, and the
 /// rows kept keep their ordinals. A system row with text stays.
 #[tokio::test]
 async fn a_pi_page_leaves_out_the_empty_system_entry() {
@@ -130,7 +133,7 @@ async fn a_pi_page_leaves_out_the_empty_system_entry() {
     let source = BrocaSource::new(pi_binding(), route);
     let page = source.newest(20).await.unwrap();
     let ordinals: Vec<_> = page.rows.iter().map(|row| row.ordinal).collect();
-    assert_eq!(ordinals, [Some(1)]);
+    assert_eq!(ordinals, [Some(2)]);
     assert!(page.older.is_none(), "the page still reaches the start");
 
     let rows = source.rows(&messages[..1], false, &[]).unwrap();

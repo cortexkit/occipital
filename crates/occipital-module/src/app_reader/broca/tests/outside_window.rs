@@ -7,7 +7,7 @@ fn request() -> Value {
 
 fn held(page: &Value, since: &str) -> Value {
     let mut request = request();
-    request["claim"] = json!({"heldFloorMessageId":"m0", "sinceMessageId":since,
+    request["claim"] = json!({"heldFloorMessageId":"m1", "sinceMessageId":since,
         "heldVersion":page["version"]});
     request["acceptClaims"] = json!(["future_verdict", "outside_window"]);
     request
@@ -30,7 +30,7 @@ async fn legacy_claim_clients_resync_gaps_without_outside_window() {
         Some(json!(["matched", "diverged", "cursor_expired"])),
     ] {
         let mut gap = held(&newest, "m1");
-        let mut in_window = held(&newest, "m198");
+        let mut in_window = held(&newest, "m199");
         for params in [&mut gap, &mut in_window] {
             if let Some(accepted) = &accepted {
                 params["acceptClaims"] = accepted.clone();
@@ -49,7 +49,7 @@ async fn legacy_claim_clients_resync_gaps_without_outside_window() {
         let matched = app.read(TRANSCRIPT_PAGE, in_window).await.unwrap();
         assert_eq!(matched["claim"], "matched");
         assert_eq!(matched["newTurns"].as_array().unwrap().len(), 1);
-        assert_eq!(matched["newTurns"][0]["messageId"], "m199");
+        assert_eq!(matched["newTurns"][0]["messageId"], "m200");
     }
 }
 
@@ -70,7 +70,7 @@ async fn malformed_accept_claims_uses_the_invalid_claim_reply() {
         for claim in [
             None,
             Some(
-                json!({"heldFloorMessageId":"m20", "sinceMessageId":"m21", "heldVersion":"history:7:lineage:cut-a"}),
+                json!({"heldFloorMessageId":"m20", "sinceMessageId":"m21", "heldVersion":"history:7:incarnation:inc-a"}),
             ),
         ] {
             if let Some(claim) = claim {
@@ -111,7 +111,7 @@ async fn outside_window_resync_pages_back_to_the_held_anchor() {
     assert_eq!(gap["lastRun"], json!({"runId":"r1", "state":"active"}));
     assert!(gap["resync"].get("lastRun").is_none());
     let mut page = gap["resync"].clone();
-    let mut boundary = 20_000;
+    let mut boundary = 20_001;
     loop {
         let rows = page["messages"].as_array().unwrap();
         assert!(rows
@@ -126,12 +126,12 @@ async fn outside_window_resync_pages_back_to_the_held_anchor() {
         page = app.read(TRANSCRIPT_PAGE, older).await.unwrap();
     }
     let matched = app
-        .read(TRANSCRIPT_PAGE, held(&newest, "m19998"))
+        .read(TRANSCRIPT_PAGE, held(&newest, "m19999"))
         .await
         .unwrap();
     assert_eq!(matched["claim"], "matched");
     assert_eq!(matched["newTurns"].as_array().unwrap().len(), 1);
-    assert_eq!(matched["newTurns"][0]["messageId"], "m19999");
+    assert_eq!(matched["newTurns"][0]["messageId"], "m20000");
     route.history.store(8, Ordering::Relaxed);
     let expired = app
         .read(TRANSCRIPT_PAGE, held(&newest, "m19889"))
@@ -188,7 +188,7 @@ async fn an_unnumbered_gap_anchor_expires() {
     anchor_case(
         "old",
         Some(Ok(
-            json!({"messages":[entry("old", None, 1)], "lineage_id":"cut-a", "history_version":7}),
+            json!({"messages":[entry("old", None, 1)], "incarnation":"inc-a", "history_version":7}),
         )),
     )
     .await;
@@ -196,7 +196,7 @@ async fn an_unnumbered_gap_anchor_expires() {
 
 #[tokio::test]
 async fn a_different_returned_gap_anchor_expires() {
-    anchor_case("m1", Some(Ok(json!({"messages":[entry("m2", Some(2), 1)], "lineage_id":"cut-a", "history_version":7})))).await;
+    anchor_case("m1", Some(Ok(json!({"messages":[entry("m2", Some(2), 1)], "incarnation":"inc-a", "history_version":7})))).await;
 }
 
 #[tokio::test]
