@@ -197,6 +197,18 @@ impl SourceResolver for LazyBrocaSources {
         self.connected().await?.project_root(session, harness).await
     }
 
+    async fn prompt_accepts(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+        mime: &str,
+    ) -> Result<bool, ReadError> {
+        self.connected()
+            .await?
+            .prompt_accepts(session, harness, mime)
+            .await
+    }
+
     async fn watch(
         &self,
         session: &str,
@@ -732,6 +744,26 @@ impl SourceResolver for BrocaSources {
     ) -> Result<Option<Arc<dyn TranscriptSource>>, ReadError> {
         let reference = self.reference(session, harness).await?;
         Ok(Some(self.source(&reference).await?))
+    }
+
+    async fn prompt_accepts(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+        mime: &str,
+    ) -> Result<bool, ReadError> {
+        let reference = self.reference(session, harness).await?;
+        let source = self.source(&reference).await?;
+        // A runner without the group would ignore the send's `content` and drop
+        // the file silently, so its description must name the group.
+        if !source
+            .describe()
+            .await
+            .is_some_and(|describe| describe.declares("attachments"))
+        {
+            return Ok(false);
+        }
+        Ok(source.head().await?.input.accepts(mime) != Some(false))
     }
 
     async fn watch(

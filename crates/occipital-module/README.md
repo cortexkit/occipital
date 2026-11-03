@@ -91,7 +91,14 @@ The apps reach these operations through Callosum, and the desktop app directly:
 | `display.views`, `display.template`, `session.tool_records`, `session.tool_detail` | read |
 | `session.transcript_watch`, `session.display_watch`, `session.tool_records_watch` | watch |
 | `session.enqueue_user_message`, `session.stop` | send |
-| `upload.begin`, `upload.chunk`, `upload.status`, `upload.finish`, `upload.abort` | upload |
+| `upload.begin`, `upload.chunk`, `upload.status`, `upload.finish`, `upload.abort`, `upload.place` | upload |
+
+An uploaded file goes into the model's prompt or into the session's project. An
+app that asks for the prompt (`prompt: true` on `upload.begin`) gets it when the
+session's runner takes uploads and its model accepts the file's type; the send
+that names the file copies it to the runner. Otherwise the file is placed in the
+project, and the app puts its path in the message text. `upload.place` is the
+app's fallback when a send naming a prompt file is refused.
 
 Admission reads only what the daemon attests on the route: a Callosum route
 (`reserved:callosum`, with the device label `fed-<class>:<fingerprint>` it

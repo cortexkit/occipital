@@ -1,0 +1,599 @@
+//! Sends naming files that go into the prompt: each file is copied to the
+//! session's runner through the runner contract's uploads (`session.upload_*`)
+//! and named in the send's `content`, in the message's order.
+
+use super::*;
+use crate::app_reader::{uploads, Caller, SourceResolver};
+use std::{path::PathBuf, sync::atomic::AtomicU64};
+
+const PHONE: &str = "0123456789abcdef0123456789abcdef";
+const OTHER_PHONE: &str = "fedcba9876543210fedcba9876543210";
+
+/// One upload the runner holds: what begin declared, and what arrived.
+struct Held {
+    mime: String,
+    bytes: u64,
+    sha256: String,
+    data: Vec<u8>,
+    committed: bool,
+}
+
+/// A head on a runner declaring `attachments`, keeping what each upload received.
+struct UploadRunner {
+    attachments: AtomicBool,
+    input: Mutex<Option<Value>>,
+    /// Each upload by its runner id.
+    uploads: Mutex<HashMap<String, Held>>,
+    next: AtomicU64,
+    calls: Mutex<Vec<(String, Value)>>,
+    scripted: Mutex<VecDeque<Result<Value, RunnerError>>>,
+}
+
+impl UploadRunner {
+    fn new() -> Arc<Self> {
+        Arc::new(Self {
+            attachments: AtomicBool::new(true),
+            input: Mutex::default(),
+            uploads: Mutex::default(),
+            next: AtomicU64::new(1),
+            calls: Mutex::default(),
+            scripted: Mutex::default(),
+        })
+    }
+
+    fn methods(&self) -> Vec<String> {
+        self.calls
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(method, _)| method.clone())
+            .collect()
+    }
+
+    fn last_send(&self) -> Value {
+        self.calls
+            .lock()
+            .unwrap()
+            .iter()
+            .rev()
+            .find(|(method, _)| method == "session.send")
+            .unwrap()
+            .1
+            .clone()
+    }
+
+    fn received(&self, upload_id: &str) -> Vec<u8> {
+        self.uploads.lock().unwrap()[upload_id].data.clone()
+    }
+}
+
+struct UploadTarget(Arc<UploadRunner>, SessionRef);
+
+#[async_trait]
+impl SendTarget for UploadTarget {
+    fn reference(&self) -> &SessionRef {
+        &self.1
+    }
+
+    async fn call(&self, method: &'static str, params: Value) -> Result<Value, RunnerError> {
+        let runner = &self.0;
+        runner
+            .calls
+            .lock()
+            .unwrap()
+            .push((method.into(), params.clone()));
+        if method == "session.send" {
+            if let Some(scripted) = runner.scripted.lock().unwrap().pop_front() {
+                return scripted;
+            }
+        }
+        let mut uploads = runner.uploads.lock().unwrap();
+        match method {
+            "session.head" => {
+                let mut head = json!({
+                    "incarnation": "inc-a", "first_ordinal": 1, "history_version": 1,
+                    "updated_at": 1, "last_run_state": {"run_id": "r1", "state": "completed"},
+                    "sender": {"modes": ["steer", "idle_start"], "interrupt": true},
+                });
+                if let Some(input) = runner.input.lock().unwrap().clone() {
+                    head["input"] = input;
+                }
+                Ok(head)
+            }
+            "role.describe" => {
+                let mut groups = vec!["head_sender".to_owned()];
+                if runner.attachments.load(Ordering::SeqCst) {
+                    groups.push("attachments".into());
+                }
+                Ok(
+                    serde_json::to_value(RoleDescribe::default().with_capabilities(groups))
+                        .unwrap(),
+                )
+            }
+            "session.upload_begin" => {
+                let id = format!("ru-{}", runner.next.fetch_add(1, Ordering::SeqCst));
+                uploads.insert(
+                    id.clone(),
+                    Held {
+                        mime: params["mime"].as_str().unwrap().into(),
+                        bytes: params["bytes"].as_u64().unwrap(),
+                        sha256: params["sha256"].as_str().unwrap().into(),
+                        data: Vec::new(),
+                        committed: false,
+                    },
+                );
+                Ok(json!({"upload_id": id}))
+            }
+            "session.upload_append" => {
+                let upload = uploads
+                    .get_mut(params["upload_id"].as_str().unwrap())
+                    .unwrap();
+                assert_eq!(params["offset"].as_u64().unwrap(), upload.data.len() as u64);
+                let piece = decode(params["data"].as_str().unwrap());
+                assert!(piece.len() <= CHUNK_MAX);
+                upload.data.extend(piece);
+                Ok(json!({"received": upload.data.len()}))
+            }
+            "session.upload_commit" => {
+                let upload = uploads
+                    .get_mut(params["upload_id"].as_str().unwrap())
+                    .unwrap();
+                assert_eq!(upload.data.len() as u64, upload.bytes);
+                assert_eq!(format!("{:x}", Sha256::digest(&upload.data)), upload.sha256);
+                upload.committed = true;
+                Ok(json!({"state": "committed", "sha256": upload.sha256,
+                    "mime": upload.mime, "bytes": upload.bytes}))
+            }
+            "session.upload_status" => {
+                Ok(match uploads.get(params["upload_id"].as_str().unwrap()) {
+                    Some(upload) if upload.committed => {
+                        json!({"state": "committed", "received": upload.bytes})
+                    }
+                    Some(upload) => json!({"state": "open", "received": upload.data.len()}),
+                    None => json!({"state": "gone", "received": 0}),
+                })
+            }
+            "session.send" => Ok(json!({"state": "active", "run_id": "r2"})),
+            other => panic!("the sender called {other}"),
+        }
+    }
+}
+
+struct UploadTargets(Arc<UploadRunner>);
+
+#[async_trait]
+impl SendTargets for UploadTargets {
+    async fn open(&self, session: &str, _: Option<&str>) -> Result<Arc<dyn SendTarget>, ReadError> {
+        Ok(Arc::new(UploadTarget(
+            self.0.clone(),
+            SessionRef {
+                runner: "broca".into(),
+                session: session.into(),
+            },
+        )))
+    }
+}
+
+/// Where uploads are placed, and a model that takes every file.
+struct Project(PathBuf);
+
+#[async_trait]
+impl SourceResolver for Project {
+    async fn resolve(
+        &self,
+        _: &str,
+        _: Option<&str>,
+    ) -> Result<Option<Arc<dyn occipital_app_reader::source::TranscriptSource>>, ReadError> {
+        Ok(None)
+    }
+
+    async fn project_root(&self, _: &str, _: Option<&str>) -> Result<PathBuf, ReadError> {
+        Ok(self.0.clone())
+    }
+
+    async fn prompt_accepts(&self, _: &str, _: Option<&str>, _: &str) -> Result<bool, ReadError> {
+        Ok(true)
+    }
+}
+
+struct Prompt {
+    _dir: tempfile::TempDir,
+    runner: Arc<UploadRunner>,
+    uploads: Arc<uploads::Uploads>,
+    resolver: Arc<Project>,
+    sender: Sender,
+}
+
+impl Prompt {
+    fn new() -> Self {
+        let dir = tempfile::tempdir().unwrap();
+        let store = crate::store::tests::shared(&dir.path().join("store.db"));
+        let project = dir.path().join("project");
+        std::fs::create_dir(&project).unwrap();
+        let ids = Arc::new(AtomicU64::new(1));
+        let receipts = Receipts::open(store.clone()).unwrap();
+        let uploads = uploads::Uploads::with(
+            store,
+            dir.path(),
+            Arc::new(|| START),
+            Arc::new(|_: &std::path::Path| Ok(u64::MAX)),
+            Arc::new(move || format!("{:032x}", ids.fetch_add(1, Ordering::SeqCst))),
+        )
+        .unwrap();
+        let runner = UploadRunner::new();
+        let sender = Sender::with_clock(
+            Arc::new(UploadTargets(runner.clone())),
+            Some(receipts),
+            Arc::new(|| START),
+        )
+        .with_uploads(Some(uploads.clone()));
+        Self {
+            _dir: dir,
+            runner,
+            uploads,
+            resolver: Arc::new(Project(project)),
+            sender,
+        }
+    }
+
+    /// One upload operation from the phone.
+    async fn serve(&self, method: &str, params: Value, payload: Option<Vec<u8>>) -> Value {
+        let caller = Caller::Device {
+            class: "phone".into(),
+            fingerprint: PHONE.into(),
+        };
+        self.uploads
+            .serve(&caller, method, params, payload, self.resolver.clone())
+            .await
+            .unwrap()
+    }
+
+    /// A finished prompt upload of `data` from the phone to session `s`: its id.
+    async fn upload(&self, mime: &str, data: &[u8]) -> String {
+        let begun = self
+            .serve(
+                uploads::BEGIN,
+                json!({"session": "s", "name": "shot", "mime": mime, "size": data.len(),
+                    "sha256": format!("{:x}", Sha256::digest(data)), "prompt": true}),
+                None,
+            )
+            .await;
+        assert_eq!(begun["destination"], "prompt");
+        let id = begun["upload_id"].as_str().unwrap().to_owned();
+        self.serve(
+            uploads::CHUNK,
+            json!({"upload_id": id, "offset": 0}),
+            Some(data.to_vec()),
+        )
+        .await;
+        self.serve(uploads::FINISH, json!({"upload_id": id}), None)
+            .await;
+        id
+    }
+}
+
+fn with_files(id: &str, text: &str, files: &[&str]) -> Value {
+    let parts: Vec<Value> = files
+        .iter()
+        .map(|file| json!({"type": "file", "attachment_id": file, "mime": "image/png"}))
+        .collect();
+    json!({"session": "s", "text": text, "clientMessageId": id, "parts": parts})
+}
+
+/// RFC 4648's standard alphabet, read back.
+fn decode(text: &str) -> Vec<u8> {
+    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let values: Vec<u32> = text
+        .bytes()
+        .filter(|byte| *byte != b'=')
+        .map(|byte| ALPHABET.iter().position(|known| *known == byte).unwrap() as u32)
+        .collect();
+    let mut out = Vec::new();
+    for group in values.chunks(4) {
+        let word = group
+            .iter()
+            .enumerate()
+            .fold(0, |word, (index, value)| word | value << (18 - 6 * index));
+        out.extend(&word.to_be_bytes()[1..group.len()]);
+    }
+    out
+}
+
+#[test]
+fn pieces_are_encoded_as_rfc_4648_standard_base64() {
+    for (bytes, text) in [
+        (&b""[..], ""),
+        (b"f", "Zg=="),
+        (b"fo", "Zm8="),
+        (b"foo", "Zm9v"),
+        (b"foob", "Zm9vYg=="),
+        (b"fooba", "Zm9vYmE="),
+        (b"foobar", "Zm9vYmFy"),
+    ] {
+        assert_eq!(base64(bytes), text);
+        assert_eq!(decode(text), bytes);
+    }
+    let all: Vec<u8> = (0..=255).collect();
+    assert_eq!(decode(&base64(&all)), all);
+}
+
+#[tokio::test]
+async fn each_file_reaches_the_runner_in_the_messages_order() {
+    let p = Prompt::new();
+    let small = b"tiny png".to_vec();
+    let large: Vec<u8> = (0..CHUNK_MAX + 3).map(|i| (i % 251) as u8).collect();
+    let first = p.upload("image/png", &large).await;
+    let second = p.upload("image/jpeg", &small).await;
+
+    let receipt = p
+        .sender
+        .send_from(Some(PHONE), with_files("m1", "look", &[&first, &second]))
+        .await
+        .unwrap();
+    assert_eq!(receipt["ok"], true, "{receipt}");
+    assert_eq!(
+        p.runner.methods(),
+        [
+            "session.head",
+            "role.describe",
+            "session.upload_begin",
+            "session.upload_append",
+            "session.upload_append",
+            "session.upload_commit",
+            "session.upload_begin",
+            "session.upload_append",
+            "session.upload_commit",
+            "session.send",
+        ]
+    );
+    let send = p.runner.last_send();
+    assert_eq!(
+        send["content"],
+        json!([{"type": "upload", "upload_id": "ru-1"}, {"type": "upload", "upload_id": "ru-2"}])
+    );
+    assert_eq!(send["prompt"], "look");
+    assert_eq!(p.runner.received("ru-1"), large);
+    assert_eq!(p.runner.received("ru-2"), small);
+    assert_eq!(p.runner.uploads.lock().unwrap()["ru-2"].mime, "image/jpeg");
+    // The runner holds the bytes now: no second send can name them.
+    for id in [&first, &second] {
+        assert_eq!(
+            p.uploads.prompt_file(PHONE, "s", id).unwrap_err().code,
+            uploads::codes::UPLOAD_SENT
+        );
+    }
+}
+
+#[tokio::test]
+async fn a_message_without_files_keeps_its_send_bytes() {
+    let p = Prompt::new();
+    p.sender
+        .send_from(Some(PHONE), with_files("m1", "hello", &[]))
+        .await
+        .unwrap();
+    assert!(p.runner.last_send().get("content").is_none());
+    assert!(!p
+        .runner
+        .methods()
+        .iter()
+        .any(|m| m.starts_with("session.upload")));
+}
+
+#[tokio::test]
+async fn a_resent_message_reuses_the_runners_copy() {
+    let p = Prompt::new();
+    let id = p.upload("image/png", b"abc").await;
+    p.runner
+        .scripted
+        .lock()
+        .unwrap()
+        .push_back(Err(RunnerError::Unreachable("route lost".into())));
+    let lost = p
+        .sender
+        .send_from(Some(PHONE), with_files("m1", "see", &[&id]))
+        .await
+        .unwrap();
+    assert_eq!(lost["code"], codes::NOT_SENT);
+    assert!(
+        p.uploads.prompt_file(PHONE, "s", &id).is_ok(),
+        "not sent yet"
+    );
+
+    p.runner.calls.lock().unwrap().clear();
+    let receipt = p
+        .sender
+        .send_from(Some(PHONE), with_files("m1", "see", &[&id]))
+        .await
+        .unwrap();
+    assert_eq!(receipt["ok"], true);
+    assert_eq!(
+        p.runner.methods(),
+        [
+            "session.head",
+            "role.describe",
+            "session.upload_status",
+            "session.send"
+        ]
+    );
+    assert_eq!(
+        p.runner.last_send()["content"],
+        json!([{"type": "upload", "upload_id": "ru-1"}])
+    );
+}
+
+/// The app may upload a message's file again before retrying it, as core's
+/// records show: the new upload id carries the same bytes, so the message is the
+/// same one.
+#[tokio::test]
+async fn a_retry_that_uploaded_the_file_again_is_the_same_message() {
+    let p = Prompt::new();
+    let first = p.upload("image/png", b"abc").await;
+    p.runner
+        .scripted
+        .lock()
+        .unwrap()
+        .push_back(Err(RunnerError::Unreachable("route lost".into())));
+    p.sender
+        .send_from(Some(PHONE), with_files("m1", "see", &[&first]))
+        .await
+        .unwrap();
+
+    // The reply was lost, so nothing is recorded here, but the runner may hold the
+    // message: the retry names the copy the first attempt made.
+    let again = p.upload("image/png", b"abc").await;
+    p.runner.calls.lock().unwrap().clear();
+    let receipt = p
+        .sender
+        .send_from(Some(PHONE), with_files("m1", "see", &[&again]))
+        .await
+        .unwrap();
+    assert_eq!(receipt["duplicate"], false, "{receipt}");
+    assert_eq!(
+        p.runner.methods(),
+        [
+            "session.head",
+            "role.describe",
+            "session.upload_status",
+            "session.send"
+        ]
+    );
+    assert_eq!(
+        p.runner.last_send()["content"],
+        json!([{"type": "upload", "upload_id": "ru-1"}])
+    );
+
+    // Accepted now: a third copy is answered from the receipt, untouched by the runner.
+    let third = p.upload("image/png", b"abc").await;
+    p.runner.calls.lock().unwrap().clear();
+    let repeat = p
+        .sender
+        .send_from(Some(PHONE), with_files("m1", "see", &[&third]))
+        .await
+        .unwrap();
+    assert_eq!(repeat["duplicate"], true, "{repeat}");
+    assert!(p.runner.methods().is_empty());
+
+    // Different bytes under the same message id are a conflict.
+    let other = p.upload("image/png", b"xyz").await;
+    let refusal = p
+        .sender
+        .send_from(Some(PHONE), with_files("m1", "see", &[&other]))
+        .await
+        .unwrap_err();
+    assert_eq!(refusal.code, codes::CONFLICT);
+}
+
+#[tokio::test]
+async fn a_copy_the_runner_lost_is_uploaded_again() {
+    let p = Prompt::new();
+    let id = p.upload("image/png", b"abc").await;
+    let lost = uploads::RunnerUpload {
+        runner: "broca/s".into(),
+        upload_id: "ru-gone".into(),
+    };
+    p.uploads.record_runner_upload(&id, Some(&lost)).unwrap();
+    p.sender
+        .send_from(Some(PHONE), with_files("m1", "see", &[&id]))
+        .await
+        .unwrap();
+    assert_eq!(
+        p.runner.methods()[2..4],
+        ["session.upload_status", "session.upload_begin"]
+    );
+    assert_eq!(
+        p.runner.last_send()["content"],
+        json!([{"type": "upload", "upload_id": "ru-1"}])
+    );
+}
+
+#[tokio::test]
+async fn a_runner_or_model_that_cant_take_the_file_is_refused_before_any_write() {
+    let p = Prompt::new();
+    let id = p.upload("image/png", b"abc").await;
+
+    p.runner.attachments.store(false, Ordering::SeqCst);
+    let refusal = p
+        .sender
+        .send_from(Some(PHONE), with_files("m1", "look", &[&id]))
+        .await
+        .unwrap_err();
+    assert_eq!(refusal.code, MEDIA_UNSUPPORTED);
+
+    p.runner.attachments.store(true, Ordering::SeqCst);
+    *p.runner.input.lock().unwrap() = Some(json!({"attachments": "yes", "modalities": ["text"]}));
+    let refusal = p
+        .sender
+        .send_from(Some(PHONE), with_files("m1", "look", &[&id]))
+        .await
+        .unwrap_err();
+    assert_eq!(refusal.code, MEDIA_UNSUPPORTED);
+    assert_eq!(
+        refusal.detail,
+        Some(json!({"attachment_id": id, "mime": "image/png"}))
+    );
+    assert!(!p
+        .runner
+        .methods()
+        .iter()
+        .any(|m| m.starts_with("session.upload") || m == "session.send"));
+    assert!(
+        p.uploads.prompt_file(PHONE, "s", &id).is_ok(),
+        "still placeable"
+    );
+}
+
+#[tokio::test]
+async fn the_runners_media_refusal_reaches_the_app_and_keeps_the_file() {
+    let p = Prompt::new();
+    let id = p.upload("image/png", b"abc").await;
+    p.runner
+        .scripted
+        .lock()
+        .unwrap()
+        .push_back(Err(RunnerError::Refused {
+            code: "media_unsupported".into(),
+            message: "the model takes no images".into(),
+            detail: Some(json!({"mime": "image/png"})),
+        }));
+    let refusal = p
+        .sender
+        .send_from(Some(PHONE), with_files("m1", "look", &[&id]))
+        .await
+        .unwrap_err();
+    assert_eq!(refusal.code, MEDIA_UNSUPPORTED);
+    assert_eq!(refusal.detail, Some(json!({"mime": "image/png"})));
+    assert!(p.uploads.prompt_file(PHONE, "s", &id).is_ok());
+}
+
+/// The runner contract stores no message of files alone, and Occipital makes up
+/// no text for one.
+#[tokio::test]
+async fn a_message_of_files_alone_is_refused_before_anything_is_sent() {
+    let p = Prompt::new();
+    let id = p.upload("image/png", b"abc").await;
+    let refusal = p
+        .sender
+        .send_from(Some(PHONE), with_files("m1", " ", &[&id]))
+        .await
+        .unwrap_err();
+    assert_eq!(
+        (refusal.code, refusal.message.as_str()),
+        ("invalid_request", "a message with files needs text too")
+    );
+    assert!(p.runner.methods().is_empty());
+}
+
+#[tokio::test]
+async fn only_the_uploading_device_can_send_its_file() {
+    let p = Prompt::new();
+    let id = p.upload("image/png", b"abc").await;
+    for device in [None, Some(OTHER_PHONE)] {
+        let refusal = p
+            .sender
+            .send_from(device, with_files("m1", "look", &[&id]))
+            .await
+            .unwrap_err();
+        assert_eq!(refusal.code, uploads::codes::UPLOAD_NOT_YOURS, "{device:?}");
+    }
+    assert!(!p.runner.methods().iter().any(|m| m == "session.send"));
+}

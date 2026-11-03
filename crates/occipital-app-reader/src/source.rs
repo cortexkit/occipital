@@ -61,6 +61,32 @@ pub struct InputCapability {
     pub modalities: Option<Vec<String>>,
 }
 
+impl InputCapability {
+    /// Whether a send can carry a file of type `mime`: `Some(false)` when that is
+    /// known not to be so, `Some(true)` when it is known to be, `None` when nothing
+    /// says. The runner's exact types decide when it names them; otherwise the
+    /// model's modalities do, by the type's kind (`image/png` is an `image`,
+    /// `application/pdf` a `pdf`). An unknown fact is never a known refusal, as the
+    /// runner contract says.
+    pub fn accepts(&self, mime: &str) -> Option<bool> {
+        let mime = mime.trim().to_ascii_lowercase();
+        if self.attachments == Attachments::No {
+            return Some(false);
+        }
+        if let Some(types) = &self.mime_types {
+            return Some(types.iter().any(|known| known.eq_ignore_ascii_case(&mime)));
+        }
+        let kind = match mime.split_once('/') {
+            Some(("application", "pdf")) => "pdf",
+            Some((kind @ ("image" | "audio" | "video" | "text"), _)) => kind,
+            _ => return None,
+        };
+        self.modalities
+            .as_ref()
+            .map(|modalities| modalities.iter().any(|known| known == kind))
+    }
+}
+
 /// The reply member that says the runner's silence about a sender grant can't be
 /// read as "no grant". Every reply names it through this constant, so a change to
 /// the wire name the apps agree on is made here alone.

@@ -1,5 +1,6 @@
-//! One row per phone upload: who opened it, where it goes, how much of it is
-//! durable, and, once finished, the file it became.
+//! One row per app upload: who opened it, where it goes, how much of it is
+//! durable, and, once finished, the file it became or the runner upload it was
+//! copied to.
 
 use std::{path::PathBuf, sync::Arc};
 
@@ -8,9 +9,10 @@ use rusqlite::{params, OptionalExtension};
 
 /// The chain `--migration-chains` reports, so the deploy check sees this table.
 pub(crate) const NAMESPACE: &str = "harness_app_upload";
-pub(crate) const MIGRATIONS: &[Migration] = &[Migration {
-    version: 1,
-    statements: "
+pub(crate) const MIGRATIONS: &[Migration] = &[
+    Migration {
+        version: 1,
+        statements: "
 CREATE TABLE harness_app_upload (
     upload_id TEXT PRIMARY KEY,
     device TEXT NOT NULL,
@@ -31,7 +33,56 @@ CREATE TABLE harness_app_upload (
 );
 CREATE INDEX harness_app_upload_due ON harness_app_upload(state, expires_at);
 CREATE INDEX harness_app_upload_finished ON harness_app_upload(state, finished_at);",
-}];
+    },
+    Migration {
+        // Uploads bound for the model's prompt: where the file goes, and the runner
+        // upload a send copied it to. Rows written before keep the project folder.
+        version: 2,
+        statements: "
+ALTER TABLE harness_app_upload ADD COLUMN destination TEXT NOT NULL DEFAULT 'folder';
+ALTER TABLE harness_app_upload ADD COLUMN runner TEXT;
+ALTER TABLE harness_app_upload ADD COLUMN runner_upload TEXT;",
+    },
+];
+
+/// Where a finished upload's file goes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Destination {
+    /// Into the session's project, whose path the app puts in its message.
+    Folder,
+    /// Into the model's prompt: a send names the upload, and this module copies it
+    /// to the session's runner.
+    Prompt,
+}
+
+impl Destination {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Folder => "folder",
+            Self::Prompt => "prompt",
+        }
+    }
+
+    fn parse(text: &str) -> rusqlite::Result<Self> {
+        match text {
+            "folder" => Ok(Self::Folder),
+            "prompt" => Ok(Self::Prompt),
+            other => Err(rusqlite::Error::InvalidColumnType(
+                16,
+                format!("unknown upload destination {other}"),
+                rusqlite::types::Type::Text,
+            )),
+        }
+    }
+}
+
+/// The runner upload a send copied a prompt upload to: the runner session it
+/// belongs to, as `<runner module>/<session>`, and the runner's id for it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct RunnerUpload {
+    pub runner: String,
+    pub upload_id: String,
+}
 
 /// Where an upload is in its life.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,6 +94,12 @@ pub(crate) enum State {
     /// Never finished within its life. The blob is gone and the row stays only so a
     /// late finish is told `upload_expired` instead of `upload_unknown`.
     Expired,
+    /// A prompt upload whose bytes are all held and checked, waiting for a send to
+    /// name it. Its blob is kept until then.
+    Ready,
+    /// A prompt upload a send carried to the runner, which now holds the bytes. Its
+    /// blob is gone.
+    Sent,
 }
 
 impl State {
@@ -51,6 +108,8 @@ impl State {
             Self::Open => "open",
             Self::Finished => "finished",
             Self::Expired => "expired",
+            Self::Ready => "ready",
+            Self::Sent => "sent",
         }
     }
 
@@ -59,6 +118,8 @@ impl State {
             "open" => Ok(Self::Open),
             "finished" => Ok(Self::Finished),
             "expired" => Ok(Self::Expired),
+            "ready" => Ok(Self::Ready),
+            "sent" => Ok(Self::Sent),
             other => Err(rusqlite::Error::InvalidColumnType(
                 9,
                 format!("unknown upload state {other}"),
@@ -94,13 +155,15 @@ pub(crate) struct Row {
     pub created_at: i64,
     pub expires_at: i64,
     pub placed: Option<Placed>,
+    pub destination: Destination,
+    pub runner_upload: Option<RunnerUpload>,
 }
 
 pub(crate) struct Rows(Arc<SqliteStore>);
 
 const COLUMNS: &str =
     "upload_id,device,session,project_root,name,mime,size,sha256,committed,state,\
-created_at,expires_at,path,inode,mtime_ns,finished_at";
+created_at,expires_at,path,inode,mtime_ns,finished_at,destination,runner,runner_upload";
 
 fn row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Row> {
     let path: Option<String> = r.get(12)?;
@@ -128,6 +191,11 @@ fn row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Row> {
         created_at: r.get(10)?,
         expires_at: r.get(11)?,
         placed,
+        destination: Destination::parse(&r.get::<_, String>(16)?)?,
+        runner_upload: match (r.get::<_, Option<String>>(17)?, r.get(18)?) {
+            (Some(runner), Some(upload_id)) => Some(RunnerUpload { runner, upload_id }),
+            _ => None,
+        },
     })
 }
 
@@ -142,7 +210,7 @@ impl Rows {
     pub fn insert(&self, row: &Row) -> Result<(), crate::Error> {
         self.0.with_conn(|conn| {
             conn.execute(
-                &format!("INSERT INTO harness_app_upload({COLUMNS}) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,NULL,NULL,NULL,NULL)"),
+                &format!("INSERT INTO harness_app_upload({COLUMNS}) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,NULL,NULL,NULL,NULL,?13,NULL,NULL)"),
                 params![
                     row.upload_id,
                     row.device,
@@ -156,6 +224,7 @@ impl Rows {
                     row.state.as_str(),
                     row.created_at,
                     row.expires_at,
+                    row.destination.as_str(),
                 ],
             )
         })?;
@@ -184,11 +253,13 @@ impl Rows {
         Ok(())
     }
 
+    /// Record the file an upload became in the project. A prompt upload placed this
+    /// way, after a refused send, becomes a folder upload.
     pub fn finish(&self, upload_id: &str, placed: &Placed) -> Result<(), crate::Error> {
         self.0.with_conn(|conn| {
             conn.execute(
-                "UPDATE harness_app_upload SET state='finished',path=?2,inode=?3,mtime_ns=?4,finished_at=?5 \
-                 WHERE upload_id=?1 AND state='open'",
+                "UPDATE harness_app_upload SET state='finished',destination='folder',path=?2,inode=?3,mtime_ns=?4,finished_at=?5 \
+                 WHERE upload_id=?1 AND state IN ('open','ready')",
                 params![
                     upload_id,
                     placed.path.to_string_lossy(),
@@ -201,10 +272,76 @@ impl Rows {
         Ok(())
     }
 
+    /// A prompt upload's bytes are all held and checked: it waits for a send until
+    /// `expires_at`.
+    pub fn ready(&self, upload_id: &str, now: i64, expires_at: i64) -> Result<(), crate::Error> {
+        self.0.with_conn(|conn| {
+            conn.execute(
+                "UPDATE harness_app_upload SET state='ready',finished_at=?2,expires_at=?3 \
+                 WHERE upload_id=?1 AND state='open' AND destination='prompt'",
+                params![upload_id, now, expires_at],
+            )
+        })?;
+        Ok(())
+    }
+
+    /// Remember, or forget with `None`, the runner upload a ready upload was copied to.
+    pub fn set_runner_upload(
+        &self,
+        upload_id: &str,
+        runner: Option<&RunnerUpload>,
+    ) -> Result<(), crate::Error> {
+        self.0.with_conn(|conn| {
+            conn.execute(
+                "UPDATE harness_app_upload SET runner=?2,runner_upload=?3 \
+                 WHERE upload_id=?1 AND state='ready'",
+                params![
+                    upload_id,
+                    runner.map(|runner| runner.runner.as_str()),
+                    runner.map(|runner| runner.upload_id.as_str()),
+                ],
+            )
+        })?;
+        Ok(())
+    }
+
+    /// The runner upload an earlier send copied the same bytes to, for this device's
+    /// uploads to this session and runner session: the newest such copy.
+    pub fn runner_copy(
+        &self,
+        device: &str,
+        session: &str,
+        sha256: &str,
+        mime: &str,
+        runner: &str,
+    ) -> Result<Option<String>, crate::Error> {
+        Ok(self.0.with_conn(|conn| {
+            conn.query_row(
+                "SELECT runner_upload FROM harness_app_upload \
+                 WHERE device=?1 AND session=?2 AND sha256=?3 AND mime=?4 AND runner=?5 \
+                 AND runner_upload IS NOT NULL ORDER BY created_at DESC LIMIT 1",
+                params![device, session, sha256, mime, runner],
+                |row| row.get(0),
+            )
+            .optional()
+        })?)
+    }
+
+    /// A send carried the ready upload to its runner.
+    pub fn sent(&self, upload_id: &str) -> Result<(), crate::Error> {
+        self.0.with_conn(|conn| {
+            conn.execute(
+                "UPDATE harness_app_upload SET state='sent' WHERE upload_id=?1 AND state='ready'",
+                [upload_id],
+            )
+        })?;
+        Ok(())
+    }
+
     pub fn expire(&self, upload_id: &str) -> Result<(), crate::Error> {
         self.0.with_conn(|conn| {
             conn.execute(
-                "UPDATE harness_app_upload SET state='expired' WHERE upload_id=?1 AND state='open'",
+                "UPDATE harness_app_upload SET state='expired' WHERE upload_id=?1 AND state IN ('open','ready')",
                 [upload_id],
             )
         })?;
@@ -230,10 +367,19 @@ impl Rows {
         )
     }
 
-    /// Up to `limit` finished uploads recorded at or before `cutoff`.
+    /// Up to `limit` ready prompt uploads no send named before `now`.
+    pub fn due_ready(&self, now: i64, limit: usize) -> Result<Vec<Row>, crate::Error> {
+        self.select(
+            "state='ready' AND expires_at<=?1 ORDER BY expires_at",
+            now,
+            limit,
+        )
+    }
+
+    /// Up to `limit` finished or sent uploads recorded at or before `cutoff`.
     pub fn due_finished(&self, cutoff: i64, limit: usize) -> Result<Vec<Row>, crate::Error> {
         self.select(
-            "state='finished' AND finished_at<=?1 ORDER BY finished_at",
+            "state IN ('finished','sent') AND finished_at<=?1 ORDER BY finished_at",
             cutoff,
             limit,
         )

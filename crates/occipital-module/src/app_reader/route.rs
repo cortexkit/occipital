@@ -48,6 +48,7 @@ impl Exchange for Sdk {
 /// A read, a send, a Stop or an upload, answered as one reply.
 pub(super) async fn serve_read(
     app: Arc<AppReader>,
+    caller: super::Caller,
     method: String,
     params: Value,
     correlation: String,
@@ -55,7 +56,8 @@ pub(super) async fn serve_read(
     let session = params["session"].as_str().unwrap_or_default().to_string();
     super::observe::request(&method, &session, correlation, async {
         let work = async {
-            let result = super::observe::step("reader", app.read(&method, params)).await;
+            let result =
+                super::observe::step("reader", app.read_as(Some(&caller), &method, params)).await;
             super::observe::synchronous("reply_encode", || match result {
                 Ok(value) => result_outcome(value),
                 Err(error) => {

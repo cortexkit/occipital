@@ -93,17 +93,26 @@ fn cores_text_requests_parse_and_ignore_the_caller_fields_a_route_once_stamped()
     assert_ne!(first.content(), conflict.content());
 }
 
+/// Core's attachment records: the repeat re-uploaded the same photo under a new
+/// upload id, and the conflict names different bytes. Matched by the files' bytes,
+/// the repeat is the same message and the conflict is not.
 #[test]
-fn cores_attachment_requests_are_refused_by_name_until_uploads_exist() {
-    for name in [
-        "attachment-first-enqueue.json",
-        "attachment-repeat.json",
-        "attachment-conflict.json",
-    ] {
-        let refusal = SendRequest::parse(&vector(name)["request"]).unwrap_err();
-        assert_eq!(refusal.code, codes::UNSUPPORTED, "{name}");
-        assert!(refusal.message.contains("attachments"), "{name}");
-    }
+fn cores_attachment_requests_match_by_the_files_bytes() {
+    let parse = |name: &str| SendRequest::parse(&vector(name)["request"]).unwrap();
+    let first = parse("attachment-first-enqueue.json");
+    let repeat = parse("attachment-repeat.json");
+    let conflict = parse("attachment-conflict.json");
+    assert_eq!(first.attachments(), ["<attachment-id-first>"]);
+    assert_ne!(first.content(), repeat.content(), "the upload ids differ");
+    let photo = ["a".repeat(64)];
+    assert_eq!(
+        first.content_by_bytes(&photo),
+        repeat.content_by_bytes(&photo)
+    );
+    assert_ne!(
+        first.content_by_bytes(&photo),
+        conflict.content_by_bytes(&["b".repeat(64)])
+    );
 }
 
 #[test]
@@ -167,8 +176,26 @@ fn malformed_requests_get_cores_codes_in_cores_order() {
         ),
         (
             json!({"session": "s", "text": "t", "parts": [{"type": "file"}]}),
-            "unsupported",
-            "attachments are not accepted on this send yet; send the text without parts",
+            "invalid_request",
+            "each part must be {type: \"file\", attachment_id} naming a finished upload",
+        ),
+        (
+            json!({"session": "s", "text": "t", "parts": [{"type": "text", "attachment_id": "a"}]}),
+            "invalid_request",
+            "each part must be {type: \"file\", attachment_id} naming a finished upload",
+        ),
+        (
+            json!({"session": "s", "text": "t", "parts": [
+                {"type": "file", "attachment_id": "a"}, {"type": "file", "attachment_id": "a"}]}),
+            "invalid_request",
+            "attachment a is named twice",
+        ),
+        (
+            json!({"session": "s", "text": "t", "parts": (0..11)
+                .map(|i| json!({"type": "file", "attachment_id": format!("a{i}")}))
+                .collect::<Vec<_>>()}),
+            "invalid_request",
+            "a message may name at most 10 files",
         ),
         (
             json!({"session": "s", "text": "  "}),
@@ -203,6 +230,20 @@ fn modes_parse_and_an_absent_mode_stays_absent() {
     // Empty parts carry nothing and are part of the compared content as sent.
     let request = SendRequest::parse(&json!({"session": "s", "text": "t", "parts": null})).unwrap();
     assert_eq!(request.content(), json!({"text": "t", "parts": null}));
+    assert!(request.attachments().is_empty());
+}
+
+/// A file part names a finished upload by its `attachment_id`; the files keep the
+/// message's order, and a message holding only files needs no text.
+#[test]
+fn file_parts_name_their_uploads_in_order() {
+    let parts = json!([
+        {"type": "file", "attachment_id": "b", "mime": "image/png", "filename": "b.png"},
+        {"type": "file", "attachment_id": "a"},
+    ]);
+    let request = SendRequest::parse(&json!({"session": "s", "text": "", "parts": parts})).unwrap();
+    assert_eq!(request.attachments(), ["b", "a"]);
+    assert_eq!(request.content(), json!({"text": "", "parts": parts}));
 }
 
 /// Core's `send_id_validation_accepts_only_the_bounded_opaque_charset`.

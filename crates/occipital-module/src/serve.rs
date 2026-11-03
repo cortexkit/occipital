@@ -366,10 +366,10 @@ impl OccipitalHandler {
             ),
             None => app_reader::broca::LazyBrocaSources::unavailable(),
         });
-        let sends = Arc::new(app_reader::send::Sender::new(
-            resolver.clone(),
-            Some(receipts),
-        ));
+        let sends = Arc::new(
+            app_reader::send::Sender::new(resolver.clone(), Some(receipts))
+                .with_uploads(Some(uploads.clone())),
+        );
         let mut background = sends.start();
         background.push(("upload cleanup", uploads.start()));
         let app = AppReader::with_sender(resolver, sends).with_uploads(Some(uploads));

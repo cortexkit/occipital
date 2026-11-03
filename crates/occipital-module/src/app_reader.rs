@@ -228,6 +228,19 @@ pub trait SourceResolver: Send + Sync {
         ))
     }
 
+    /// Whether a file of type `mime` can go into the session's prompt: its runner
+    /// takes uploads (the runner contract's `attachments` group), and its model isn't
+    /// known to refuse the type. Without a resolver that can tell, the file goes to
+    /// the project folder.
+    async fn prompt_accepts(
+        &self,
+        _session: &str,
+        _harness: Option<&str>,
+        _mime: &str,
+    ) -> Result<bool, ReadError> {
+        Ok(false)
+    }
+
     async fn watch(
         &self,
         session: &str,
@@ -432,7 +445,20 @@ impl AppReader {
         .await
     }
 
+    /// A request from no particular caller, as tests send them.
+    #[cfg(test)]
     async fn read(&self, method: &str, params: Value) -> Result<Value, ReadError> {
+        self.read_as(None, method, params).await
+    }
+
+    /// Answer one request from `caller`, the route's admitted caller. Only a send
+    /// reads it: the files a send names must be uploads the same device opened.
+    async fn read_as(
+        &self,
+        caller: Option<&Caller>,
+        method: &str,
+        params: Value,
+    ) -> Result<Value, ReadError> {
         if DISPLAY_METHODS.contains(&method) {
             return self.tool_display_read(method, params).await;
         }
@@ -444,11 +470,19 @@ impl AppReader {
             });
         }
         if method == SEND {
-            return self.sends.send(params).await.map_err(|refusal| ReadError {
-                code: refusal.code,
-                message: refusal.message,
-                detail: refusal.detail,
-            });
+            let device = match caller {
+                Some(Caller::Device { fingerprint, .. }) => Some(fingerprint.as_str()),
+                _ => None,
+            };
+            return self
+                .sends
+                .send_from(device, params)
+                .await
+                .map_err(|refusal| ReadError {
+                    code: refusal.code,
+                    message: refusal.message,
+                    detail: refusal.detail,
+                });
         }
         if method == DISPLAY_READ {
             let request = DisplayReadRequest::parse(&params)
@@ -686,7 +720,7 @@ impl AppReader {
         }
         let records_watch = method == crate::display::app::RECORDS_WATCH;
         if !records_watch && !matches!(method.as_str(), TRANSCRIPT_WATCH | DISPLAY_WATCH) {
-            return route::serve_read(self.clone(), method, params, correlation).await;
+            return route::serve_read(self.clone(), caller, method, params, correlation).await;
         }
         let slot = match self.watches.open(WatchRoute {
             channel: channel.into(),

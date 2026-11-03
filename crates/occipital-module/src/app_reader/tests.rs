@@ -773,6 +773,7 @@ fn verified_desktop_refuses_each_upload_operation() {
         "upload.finish",
         "upload.abort",
         "upload.status",
+        "upload.place",
     ] {
         assert_desktop_refuses(method);
     }

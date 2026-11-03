@@ -20,6 +20,10 @@ pub const OPERATION: &str = "session.enqueue_user_message";
 /// `ENQUEUE_SEND_ID_MAX_CHARS`).
 pub const ENQUEUE_SEND_ID_MAX_CHARS: usize = 128;
 
+/// The most files one message may name. The runner contract sets no limit; this
+/// keeps one send's uploads to the runner bounded.
+pub const MAX_ATTACHMENTS: usize = 10;
+
 /// A named refusal for a malformed send. Nothing is resolved or sent for it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SendRefusal {
@@ -87,6 +91,8 @@ pub struct SendRequest {
     /// The `parts` value exactly as sent, or `[]` when absent: the duplicate check
     /// compares it byte for byte, as core's digest does.
     parts: Value,
+    /// The `attachment_id` each part names, in order.
+    attachments: Vec<String>,
 }
 
 impl SendRequest {
@@ -119,16 +125,8 @@ impl SendRequest {
             }
         };
         let parts = params.get("parts").cloned().unwrap_or_else(|| json!([]));
-        if names_attachments(&parts)? {
-            // Uploads and the parts that name them arrive with the attachment
-            // slice. Until then a send carrying a file is refused, never sent
-            // without it.
-            return Err(SendRefusal::new(
-                "unsupported",
-                "attachments are not accepted on this send yet; send the text without parts",
-            ));
-        }
-        if text.trim().is_empty() {
+        let attachments = attachment_ids(&parts)?;
+        if text.trim().is_empty() && attachments.is_empty() {
             return Err(SendRefusal::invalid(
                 "message must include non-empty text or at least one file part",
             ));
@@ -141,7 +139,14 @@ impl SendRequest {
             send_id,
             mode,
             parts,
+            attachments,
         })
+    }
+
+    /// The uploads the message names, in its order: each an `attachment_id` from
+    /// an `upload.finish` that put the file in the prompt.
+    pub fn attachments(&self) -> &[String] {
+        &self.attachments
     }
 
     /// The bytes a repeat must match: core hashes exactly this JSON,
@@ -149,16 +154,56 @@ impl SendRequest {
     pub fn content(&self) -> Value {
         json!({"text": self.text, "parts": self.parts})
     }
+
+    /// [`Self::content`] with each part's `attachment_id` replaced by the SHA-256
+    /// of the file it names, `sha256[i]` for the i-th part, as core's digest does:
+    /// a retry that uploaded the same bytes again, under a new upload id, is the
+    /// same message. Filenames, media types and part order still count.
+    pub fn content_by_bytes(&self, sha256: &[String]) -> Value {
+        let mut parts = self.parts.clone();
+        if let Value::Array(parts) = &mut parts {
+            for (part, sha256) in parts.iter_mut().zip(sha256) {
+                part["attachment_id"] = json!(sha256);
+            }
+        }
+        json!({"text": self.text, "parts": parts})
+    }
 }
 
-/// Core's `parts` check, up to the point where a part would be read: absent, `null`
-/// and `[]` carry nothing, anything else that is not an array is malformed.
-fn names_attachments(parts: &Value) -> Result<bool, SendRefusal> {
-    match parts {
-        Value::Null => Ok(false),
-        Value::Array(parts) => Ok(!parts.is_empty()),
-        _ => Err(SendRefusal::invalid("parts must be an array of file parts")),
+/// The `attachment_id` of each file part, in order. Absent, `null` and `[]` carry
+/// nothing. Each part is `{type: "file", attachment_id, mime?, filename?}`, the
+/// shape core took; `mime` and `filename` are the app's own labels and are only
+/// compared by the duplicate check, never trusted, since the upload records both.
+fn attachment_ids(parts: &Value) -> Result<Vec<String>, SendRefusal> {
+    let parts = match parts {
+        Value::Null => return Ok(Vec::new()),
+        Value::Array(parts) => parts,
+        _ => return Err(SendRefusal::invalid("parts must be an array of file parts")),
+    };
+    if parts.len() > MAX_ATTACHMENTS {
+        return Err(SendRefusal::invalid(format!(
+            "a message may name at most {MAX_ATTACHMENTS} files"
+        )));
     }
+    let mut ids = Vec::with_capacity(parts.len());
+    for part in parts {
+        let id = (part["type"] == "file")
+            .then(|| part["attachment_id"].as_str())
+            .flatten()
+            .filter(|id| !id.is_empty())
+            .ok_or_else(|| {
+                SendRefusal::invalid(
+                    "each part must be {type: \"file\", attachment_id} naming a finished upload",
+                )
+            })?;
+        if ids.iter().any(|seen| seen == id) {
+            return Err(SendRefusal::invalid(format!(
+                "attachment {id} is named twice"
+            )));
+        }
+        ids.push(id.to_owned());
+    }
+    Ok(ids)
 }
 
 fn required_str(params: &Value, field: &str) -> Result<String, SendRefusal> {

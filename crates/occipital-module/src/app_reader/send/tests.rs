@@ -5,6 +5,8 @@
 
 use super::*;
 use occipital_app_reader::source::ReadError;
+
+mod prompt;
 use std::{
     collections::{HashMap, VecDeque},
     sync::atomic::{AtomicBool, AtomicI64, Ordering},
@@ -503,10 +505,11 @@ async fn malformed_and_attachment_sends_are_refused_before_anything_is_resolved(
             json!({"session": "s", "text": "t", "mode": "now"}),
             "invalid_request",
         ),
+        // This sender has no upload storage, so no file can be sent.
         (
             json!({"session": "s", "text": "look", "clientMessageId": "m1",
                 "parts": [{"type": "file", "mime": "image/png", "filename": "a.png", "attachment_id": "up-1"}]}),
-            "unsupported",
+            "provider_unavailable",
         ),
     ] {
         assert_eq!(

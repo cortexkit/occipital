@@ -1,26 +1,36 @@
-//! Files the phone attaches to an agent message that the model can't take inline: a
-//! video, an archive, anything. The phone sends the file in pieces; the module keeps
-//! the committed prefix in a private blob, and at finish copies it into the session's
-//! project under `.cortexkit/uploads/<YYYY-MM-DD>/`, whose absolute path the phone
-//! then puts in the message text.
+//! Files an app attaches to an agent message. The app sends the file in pieces; the
+//! module keeps the committed prefix in a private blob. At finish, the file goes one
+//! of two ways:
+//! - into the model's prompt: a photo or screenshot for a model that can see it. The
+//!   blob waits for a send (`session.enqueue_user_message`) to name the upload, and
+//!   that send copies it to the session's runner (see `send`).
+//! - into the session's project under `.cortexkit/uploads/<YYYY-MM-DD>/`: anything
+//!   the model can't take inline, such as a video, or a photo for a model without
+//!   vision. The app puts the file's absolute path in the message text.
 //!
-//! Five management operations, admitted exactly as the app reads are (a
+//! Six management operations, admitted exactly as the app reads are (a
 //! daemon-attested `reserved:callosum` route, checked before any parameter is read):
 //!
-//! - `upload.begin {session, name, mime, size, sha256}` answers
+//! - `upload.begin {session, name, mime, size, sha256, prompt?}` answers
 //!   `{upload_id, chunk_bytes, expires_at}` (`expires_at` in milliseconds since the
 //!   Unix epoch). The project root comes from the session's Entorhinal binding, never
-//!   from the phone, and the upload is bound to the opening device's fingerprint.
+//!   from the app, and the upload is bound to the opening device's fingerprint. With
+//!   `prompt: true` the reply adds `destination`, `prompt` or `folder`, chosen from
+//!   the session's runner and model; without it the file always goes to the folder.
 //! - `upload.chunk {upload_id, offset}` carries the piece as the payload of a framed
 //!   request and answers `{committed}`. Only the contiguous prefix is kept: a piece
 //!   overlapping it must match it byte for byte, and a piece starting past it is
 //!   refused without being stored.
 //! - `upload.status {upload_id}` answers `{committed}`.
-//! - `upload.finish {upload_id}` answers `{path, size}`, and the same again on every
-//!   retry for 30 days.
+//! - `upload.finish {upload_id}` answers `{path, size}` for the folder and
+//!   `{attachment_id, size}` for the prompt, and the same again on every retry for 30
+//!   days. A prompt upload no send names within a day of its finish expires.
+//! - `upload.place {upload_id}` puts a prompt upload in the project after all and
+//!   answers `{path, size}`: the app's fallback when a send naming it was refused
+//!   `media_unsupported`.
 //! - `upload.abort {upload_id}` answers `{aborted}` and discards an unfinished
 //!   upload. A finished upload's file and recorded answer are left alone
-//!   (`aborted: false`): the phone has already been given the path.
+//!   (`aborted: false`): the app has already been given the path.
 //!
 //! Every operation but `begin` is refused `upload_not_yours` unless it comes from the
 //! device that opened the upload.
@@ -45,14 +55,22 @@ use serde_json::{json, Value};
 use subc_protocol::manifest::{ManagementOperation, ManagementOperationKind, OperationPayload};
 
 use super::{Caller, SourceResolver};
-use store::{Row, Rows, State};
+use sha2::{Digest, Sha256};
+pub(crate) use store::RunnerUpload;
+use store::{Destination, Row, Rows, State};
 
 pub const BEGIN: &str = "upload.begin";
 pub const CHUNK: &str = "upload.chunk";
 pub const STATUS: &str = "upload.status";
 pub const FINISH: &str = "upload.finish";
 pub const ABORT: &str = "upload.abort";
-pub const METHODS: [&str; 5] = [BEGIN, CHUNK, STATUS, FINISH, ABORT];
+pub const PLACE: &str = "upload.place";
+pub const METHODS: [&str; 6] = [BEGIN, CHUNK, STATUS, FINISH, ABORT, PLACE];
+
+/// The largest file that goes into the prompt. The send that names it copies it to
+/// the runner inside the app request's 45-second deadline, so a larger file goes to
+/// the project folder instead.
+pub const PROMPT_MAX_BYTES: u64 = 32 << 20;
 
 /// The piece size the phone is told to send.
 pub const CHUNK_BYTES: u64 = 1 << 20;
@@ -89,6 +107,13 @@ pub mod codes {
     pub const DESTINATION_UNSAFE: &str = "destination_unsafe";
     pub const SESSION_ON_OTHER_MACHINE: &str = "session_on_other_machine";
     pub const UPLOAD_NOT_YOURS: &str = "upload_not_yours";
+    /// A send named an upload whose bytes aren't all held and checked yet.
+    pub const UPLOAD_NOT_FINISHED: &str = "upload_not_finished";
+    /// A send named an upload an earlier send already carried to the model.
+    pub const UPLOAD_SENT: &str = "upload_sent";
+    /// A send named an upload that went to the project folder: its path goes in
+    /// the message text instead.
+    pub const UPLOAD_NOT_FOR_PROMPT: &str = "upload_not_for_prompt";
 }
 
 pub fn operations() -> Vec<ManagementOperation> {
@@ -149,6 +174,23 @@ struct BeginParams {
     mime: String,
     size: u64,
     sha256: String,
+    /// The app can send the file into the model's prompt. Without it the file always
+    /// goes to the project folder, so an app that predates prompt uploads, which
+    /// expects a path from finish, still gets one.
+    #[serde(default)]
+    prompt: bool,
+}
+
+/// A ready prompt upload, as a send needs it: the bytes to copy to the runner and
+/// what to declare for them.
+#[derive(Debug, Clone)]
+pub(crate) struct PromptFile {
+    pub upload_id: String,
+    pub blob: PathBuf,
+    pub mime: String,
+    pub size: u64,
+    pub sha256: String,
+    pub runner_upload: Option<RunnerUpload>,
 }
 
 #[derive(Deserialize)]
@@ -309,7 +351,21 @@ impl Uploads {
             let project_root = resolver
                 .project_root(&request.session, request.harness.as_deref())
                 .await?;
-            return blocking(move || this.begin(device, request, project_root)).await;
+            // The prompt only when the session's runner takes uploads and its model
+            // isn't known to refuse this type. A failed check means the folder: the
+            // file still reaches the session, as a path.
+            let prompt = request.prompt
+                && request.size <= PROMPT_MAX_BYTES
+                && resolver
+                    .prompt_accepts(&request.session, request.harness.as_deref(), &request.mime)
+                    .await
+                    .unwrap_or(false);
+            let destination = if prompt {
+                Destination::Prompt
+            } else {
+                Destination::Folder
+            };
+            return blocking(move || this.begin(device, request, project_root, destination)).await;
         }
         let device = device.unwrap_or_default();
         match method {
@@ -324,12 +380,13 @@ impl Uploads {
                 blocking(move || this.chunk(&device, &request.upload_id, request.offset, &payload))
                     .await
             }
-            STATUS | FINISH | ABORT => {
+            STATUS | FINISH | ABORT | PLACE => {
                 let request: IdParams = parse(method, params)?;
                 let method = method.to_owned();
                 blocking(move || match method.as_str() {
                     STATUS => this.status(&device, &request.upload_id),
                     FINISH => this.finish(&device, &request.upload_id),
+                    PLACE => this.place(&device, &request.upload_id),
                     _ => this.abort(&device, &request.upload_id),
                 })
                 .await
@@ -371,6 +428,7 @@ impl Uploads {
         device: String,
         request: BeginParams,
         project_root: PathBuf,
+        destination: Destination,
     ) -> Result<Value, ReadError> {
         self.disk_floor(&project_root, request.size, request.size)?;
         let now = (self.clock)();
@@ -389,7 +447,10 @@ impl Uploads {
             created_at: now,
             expires_at: now + OPEN_LIFE_MS,
             placed: None,
+            destination,
+            runner_upload: None,
         };
+        let prompt = request.prompt;
         // The row first: cleanup removes a blob without a row, so a blob never
         // exists for long without one.
         self.rows.insert(&row).map_err(storage)?;
@@ -397,11 +458,15 @@ impl Uploads {
             let _ = self.rows.delete(&upload_id);
             return Err(storage(error));
         }
-        Ok(json!({
+        let mut reply = json!({
             "upload_id": upload_id,
             "chunk_bytes": CHUNK_BYTES,
             "expires_at": row.expires_at,
-        }))
+        });
+        if prompt {
+            reply["destination"] = json!(destination.as_str());
+        }
+        Ok(reply)
     }
 
     /// The upload's row, refused `upload_unknown` when there is none (or its record
@@ -560,19 +625,61 @@ impl Uploads {
         let lock = self.lock(upload_id);
         let _held = lock.lock().unwrap_or_else(|e| e.into_inner());
         let row = self.lookup(device, upload_id)?;
-        if let (State::Finished, Some(placed)) = (row.state, &row.placed) {
-            // A retry after a lost reply gets the recorded answer unchanged.
-            return Ok(json!({"path": placed.path.to_string_lossy(), "size": row.size}));
+        // A retry after a lost reply gets the recorded answer unchanged.
+        match (row.state, &row.placed) {
+            (State::Finished, Some(placed)) => return Ok(placed_answer(placed, row.size)),
+            (State::Ready | State::Sent, _) => return Ok(prompt_answer(&row)),
+            _ => {}
         }
         self.refuse_expired(&row)?;
-        let (mut blob, committed) = self.reconcile(&row)?;
-        if committed != row.size {
-            return Err(refusal(
-                codes::CHECKSUM_MISMATCH,
-                format!("{committed} of the declared {} bytes are held", row.size),
-            )
-            .with_detail(json!({"committed": committed, "size": row.size})));
+        let (blob, committed) = self.reconcile(&row)?;
+        held_whole(&row, committed)?;
+        if row.destination == Destination::Prompt {
+            // The bytes stay in the blob until a send copies them to the runner, so
+            // they are checked here, as placing a file checks them while copying.
+            if sha256_of(&blob).map_err(storage)? != row.sha256 {
+                return Err(refusal(
+                    codes::CHECKSUM_MISMATCH,
+                    "the held bytes don't match the declared sha256",
+                ));
+            }
+            let now = (self.clock)();
+            self.rows
+                .ready(upload_id, now, now + OPEN_LIFE_MS)
+                .map_err(storage)?;
+            return Ok(prompt_answer(&row));
         }
+        self.place_held(&row, blob)
+    }
+
+    /// Put a prompt upload in the project folder after all, as a folder upload's
+    /// finish does: the app's fallback when a send naming it was refused, for
+    /// example because the model can't take its type. A folder upload's finished
+    /// file answers the same; an unfinished upload is finished into the folder.
+    fn place(&self, device: &str, upload_id: &str) -> Result<Value, ReadError> {
+        let lock = self.lock(upload_id);
+        let _held = lock.lock().unwrap_or_else(|e| e.into_inner());
+        let row = self.lookup(device, upload_id)?;
+        match (row.state, &row.placed) {
+            (State::Finished, Some(placed)) => return Ok(placed_answer(placed, row.size)),
+            (State::Sent, _) => {
+                return Err(refusal(
+                    codes::UPLOAD_SENT,
+                    "a send already carried this file to the model",
+                ))
+            }
+            _ => {}
+        }
+        self.refuse_expired(&row)?;
+        let (blob, committed) = self.reconcile(&row)?;
+        held_whole(&row, committed)?;
+        self.place_held(&row, blob)
+    }
+
+    /// Copy an upload's whole blob into the session's project, record the file and
+    /// drop the blob.
+    fn place_held(&self, row: &Row, mut blob: File) -> Result<Value, ReadError> {
+        let upload_id = row.upload_id.as_str();
         // The blob already sits on the data volume; the copy adds the file to the
         // project's.
         self.disk_floor(&row.project_root, row.size, 0)?;
@@ -615,6 +722,107 @@ impl Uploads {
         Ok(json!({"path": placed.path.to_string_lossy(), "size": row.size}))
     }
 
+    /// The ready prompt upload `attachment_id`, for a send from `device` to
+    /// `session`. An upload of another session reads as unknown, as one of another
+    /// device reads as not yours.
+    pub(crate) fn prompt_file(
+        &self,
+        device: &str,
+        session: &str,
+        attachment_id: &str,
+    ) -> Result<PromptFile, ReadError> {
+        let row = self.lookup(device, attachment_id)?;
+        if row.session != session {
+            return Err(refusal(codes::UPLOAD_UNKNOWN, "no such upload"));
+        }
+        if row.destination == Destination::Folder {
+            return Err(refusal(
+                codes::UPLOAD_NOT_FOR_PROMPT,
+                "this upload went to the project folder; name its path in the message text",
+            ));
+        }
+        match row.state {
+            State::Ready if (self.clock)() < row.expires_at => Ok(PromptFile {
+                blob: self.blob(&row.upload_id),
+                upload_id: row.upload_id,
+                mime: row.mime,
+                size: row.size,
+                sha256: row.sha256,
+                runner_upload: row.runner_upload,
+            }),
+            State::Ready | State::Expired => Err(refusal(
+                codes::UPLOAD_EXPIRED,
+                "no send named the upload within its 24 hours",
+            )),
+            State::Sent => Err(refusal(
+                codes::UPLOAD_SENT,
+                "a send already carried this file to the model",
+            )),
+            State::Open | State::Finished => Err(refusal(
+                codes::UPLOAD_NOT_FINISHED,
+                "finish the upload before a send names it",
+            )),
+        }
+    }
+
+    /// The SHA-256 of each file `attachment_ids` names, in order, for a send from
+    /// `device` to `session`: a send's duplicate check matches files by their bytes.
+    /// A sent upload still answers, so a repeat of an accepted message is recognized.
+    pub(crate) fn digests(
+        &self,
+        device: &str,
+        session: &str,
+        attachment_ids: &[String],
+    ) -> Result<Vec<String>, ReadError> {
+        attachment_ids
+            .iter()
+            .map(|id| {
+                let row = self.lookup(device, id)?;
+                if row.session != session {
+                    return Err(refusal(codes::UPLOAD_UNKNOWN, "no such upload"));
+                }
+                Ok(row.sha256)
+            })
+            .collect()
+    }
+
+    /// The runner upload an earlier send from `device` copied `file`'s bytes to in
+    /// `runner` (`<runner module>/<session>`): a message re-uploaded under a new
+    /// upload id is sent with the copy its first attempt made, so the runner sees
+    /// the same message.
+    pub(crate) fn runner_copy(
+        &self,
+        device: &str,
+        session: &str,
+        file: &PromptFile,
+        runner: &str,
+    ) -> Result<Option<String>, crate::Error> {
+        self.rows
+            .runner_copy(device, session, &file.sha256, &file.mime, runner)
+    }
+
+    /// Remember, or forget with `None`, the runner upload a ready upload was copied
+    /// to, so a retried send reuses it.
+    pub(crate) fn record_runner_upload(
+        &self,
+        attachment_id: &str,
+        runner: Option<&RunnerUpload>,
+    ) -> Result<(), crate::Error> {
+        let lock = self.lock(attachment_id);
+        let _held = lock.lock().unwrap_or_else(|e| e.into_inner());
+        self.rows.set_runner_upload(attachment_id, runner)
+    }
+
+    /// A send carrying the upload was accepted: the runner holds the bytes now, so
+    /// the blob goes. A failed removal leaves it to cleanup's orphan sweep.
+    pub(crate) fn mark_sent(&self, attachment_id: &str) -> Result<(), crate::Error> {
+        let lock = self.lock(attachment_id);
+        let _held = lock.lock().unwrap_or_else(|e| e.into_inner());
+        self.rows.sent(attachment_id)?;
+        let _ = std::fs::remove_file(self.blob(attachment_id));
+        Ok(())
+    }
+
     fn abort(&self, device: &str, upload_id: &str) -> Result<Value, ReadError> {
         let lock = self.lock(upload_id);
         let _held = lock.lock().unwrap_or_else(|e| e.into_inner());
@@ -644,7 +852,11 @@ impl Uploads {
     pub fn cleanup_pass(&self) -> Result<Swept, crate::Error> {
         let now = (self.clock)();
         let mut swept = Swept::default();
-        for row in self.rows.due_open(now, CLEANUP_BATCH)? {
+        let due = self.rows.due_open(now, CLEANUP_BATCH)?;
+        for row in due
+            .into_iter()
+            .chain(self.rows.due_ready(now, CLEANUP_BATCH)?)
+        {
             let lock = self.lock(&row.upload_id);
             let _held = lock.lock().unwrap_or_else(|e| e.into_inner());
             match std::fs::remove_file(self.blob(&row.upload_id)) {
@@ -694,7 +906,7 @@ impl Uploads {
             if self
                 .rows
                 .get(upload_id)?
-                .is_some_and(|row| row.state == State::Open)
+                .is_some_and(|row| matches!(row.state, State::Open | State::Ready))
             {
                 continue;
             }
@@ -733,6 +945,41 @@ impl Uploads {
                 tokio::time::sleep(CLEANUP_EVERY).await;
             }
         })
+    }
+}
+
+fn placed_answer(placed: &store::Placed, size: u64) -> Value {
+    json!({"path": placed.path.to_string_lossy(), "size": size})
+}
+
+/// A prompt upload's finish: the id a send names it by, which is the upload's own.
+fn prompt_answer(row: &Row) -> Value {
+    json!({"attachment_id": row.upload_id, "size": row.size})
+}
+
+/// Refuse unless every declared byte is held.
+fn held_whole(row: &Row, committed: u64) -> Result<(), ReadError> {
+    if committed != row.size {
+        return Err(refusal(
+            codes::CHECKSUM_MISMATCH,
+            format!("{committed} of the declared {} bytes are held", row.size),
+        )
+        .with_detail(json!({"committed": committed, "size": row.size})));
+    }
+    Ok(())
+}
+
+/// The lowercase hex SHA-256 of a file's bytes, read from its start.
+fn sha256_of(mut file: &File) -> io::Result<String> {
+    file.seek(SeekFrom::Start(0))?;
+    let mut hasher = Sha256::new();
+    let mut buffer = vec![0; 1 << 20];
+    loop {
+        let read = file.read(&mut buffer)?;
+        if read == 0 {
+            return Ok(format!("{:x}", hasher.finalize()));
+        }
+        hasher.update(&buffer[..read]);
     }
 }
 

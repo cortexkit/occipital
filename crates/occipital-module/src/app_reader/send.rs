@@ -25,6 +25,7 @@ use std::{
 
 use async_trait::async_trait;
 use cortexkit_role_llm_runner::{
+    attachments::{ContentPart, CHUNK_MAX},
     delivery_order::{DeliveryOrder, Mode as Order},
     describe::RoleDescribe,
     ops::SESSION_SEND_STATUS,
@@ -33,13 +34,17 @@ use cortexkit_role_llm_runner::{
 };
 use occipital_app_reader::{
     send::{codes, Mode, SendRefusal, SendRequest},
-    source::SendGrant,
+    source::{Attachments, InputCapability, SendGrant},
 };
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use tokio::sync::broadcast;
 
-use super::{resolve::SessionRef, send_store::Receipts};
+use super::{
+    resolve::SessionRef,
+    send_store::Receipts,
+    uploads::{RunnerUpload, Uploads},
+};
 
 /// Only a backstop if the runner cannot retract: the follower normally withdraws
 /// a worker steer when its target run ends, not while a long tool call is running.
@@ -70,6 +75,14 @@ pub const SESSION_ENDED: &str = "session_ended";
 pub const NOT_SENT_REASON: &str = "not_sent";
 /// A worker steer withdrawn because the run it was sent into is no longer active.
 pub const RUN_ENDED: &str = "run_ended";
+
+/// A file the send names can't go into this model's prompt: its runner takes no
+/// files, or its model refuses the type. Nothing was sent; the app can place the
+/// file in the project (`upload.place`) and send its path instead.
+pub const MEDIA_UNSUPPORTED: &str = "media_unsupported";
+/// The runner lost a file this module copied to it before the send named it.
+/// Nothing was sent; a resend copies the file again.
+pub const UPLOAD_GONE: &str = "upload_gone";
 
 /// Rows resumed per recovery sweep, oldest deadline first.
 pub const RECOVERY_BATCH: usize = 64;
@@ -148,6 +161,9 @@ type MessageLocks = HashMap<(String, String), Weak<tokio::sync::Mutex<()>>>;
 pub struct Sender {
     targets: Arc<dyn SendTargets>,
     receipts: Option<Arc<Receipts>>,
+    /// The apps' uploads, whose prompt files a send copies to the runner. Without
+    /// them, a send naming a file is refused.
+    uploads: Option<Arc<Uploads>>,
     clock: Clock,
     locks: Mutex<MessageLocks>,
     late: broadcast::Sender<LateOutcome>,
@@ -180,6 +196,7 @@ impl Sender {
         Self {
             targets,
             receipts,
+            uploads: None,
             clock,
             locks: Mutex::new(HashMap::new()),
             late: broadcast::channel(64).0,
@@ -188,6 +205,11 @@ impl Sender {
             tasks: Mutex::default(),
             stops: Mutex::default(),
         }
+    }
+
+    pub fn with_uploads(mut self, uploads: Option<Arc<Uploads>>) -> Self {
+        self.uploads = uploads;
+        self
     }
 
     /// Late outcomes for every session; a transcript watch keeps those for its own.
@@ -271,12 +293,62 @@ impl Sender {
         }
     }
 
-    /// Answer one admitted send. `Err` is a refusal the route sends as an error;
-    /// `Ok` is a receipt, delivered or not.
+    /// Answer one admitted send that names no device; it can name no file either.
     pub async fn send(&self, params: Value) -> Result<Value, SendRefusal> {
+        self.send_from(None, params).await
+    }
+
+    /// Answer one admitted send from `device`, the fingerprint the route admitted
+    /// the caller with: the files a send names must be uploads that device opened.
+    /// `Err` is a refusal the route sends as an error; `Ok` is a receipt, delivered
+    /// or not.
+    pub async fn send_from(
+        &self,
+        device: Option<&str>,
+        params: Value,
+    ) -> Result<Value, SendRefusal> {
         let request = SendRequest::parse(&params)?;
+        let content = if request.attachments().is_empty() {
+            request.content()
+        } else {
+            let Some(uploads) = self.uploads.clone() else {
+                return Err(SendRefusal::new(
+                    "provider_unavailable",
+                    "upload storage is unavailable",
+                ));
+            };
+            // The runner contract stores no message of files alone: every send
+            // carries prompt text. The app's own words are needed; none are made up.
+            if request.text.trim().is_empty() {
+                return Err(SendRefusal::new(
+                    "invalid_request",
+                    "a message with files needs text too",
+                ));
+            }
+            let Some(device) = device else {
+                return Err(SendRefusal::new(
+                    super::uploads::codes::UPLOAD_NOT_YOURS,
+                    "only the device that uploaded a file may send it",
+                ));
+            };
+            let (device, session, ids) = (
+                device.to_owned(),
+                request.session.clone(),
+                request.attachments().to_vec(),
+            );
+            let digests =
+                tokio::task::spawn_blocking(move || uploads.digests(&device, &session, &ids))
+                    .await
+                    .map_err(|error| store_error(error.to_string()))?
+                    .map_err(|error| SendRefusal {
+                        code: error.code,
+                        message: error.message,
+                        detail: error.detail,
+                    })?;
+            request.content_by_bytes(&digests)
+        };
         let requested = request.mode.unwrap_or(Mode::Queue);
-        let digest = format!("{:x}", Sha256::digest(request.content().to_string()));
+        let digest = format!("{:x}", Sha256::digest(content.to_string()));
         // Concurrent attempts for one message are answered one after the other,
         // so the second sees the first one's receipt instead of racing it.
         let lock = request
@@ -366,15 +438,18 @@ impl Sender {
                 format!("runner head reply: {error}"),
             )
         })?;
-        let describe: Option<RoleDescribe> = if meta.sender.is_none() {
-            target
-                .call("role.describe", json!({}))
-                .await
-                .ok()
-                .and_then(|value| serde_json::from_value(value).ok())
-        } else {
-            None
-        };
+        // Files need the description too: only a runner declaring `attachments`
+        // takes them.
+        let describe: Option<RoleDescribe> =
+            if meta.sender.is_none() || !request.attachments().is_empty() {
+                target
+                    .call("role.describe", json!({}))
+                    .await
+                    .ok()
+                    .and_then(|value| serde_json::from_value(value).ok())
+            } else {
+                None
+            };
         let grant = super::broca::send_grant(&meta, describe.as_ref(), false);
         let trial = matches!(&grant, SendGrant::Unknown);
         // A worker's grant lacks idle_start. Choose its steer before sending:
@@ -403,8 +478,18 @@ impl Sender {
             }
             SendGrant::Unknown => false,
         };
+        let content = match self
+            .prompt_content(target.as_ref(), &request, &meta, describe.as_ref(), device)
+            .await?
+        {
+            Ok(content) => content,
+            Err(message) => return Ok(not_sent(Some(&head_id), &request, &message)),
+        };
         let (send_id, reply, follow_until) = if worker {
-            match self.worker_steer(target.as_ref(), &request, &head).await? {
+            match self
+                .worker_steer(target.as_ref(), &request, &head, &content)
+                .await?
+            {
                 Ok(sent) => sent,
                 Err(message) => return Ok(not_sent(None, &request, &message)),
             }
@@ -416,7 +501,7 @@ impl Sender {
                 }
                 Mode::Interrupt => Planned::String(Delivery::Interrupt),
             };
-            let body = runner_body(&request, &head_id, &delivery)?;
+            let body = runner_body(&request, &head_id, &delivery, &content)?;
             let outcome = target.call("session.send", body).await;
             let worker = trial
                 && matches!(&outcome, Err(RunnerError::Refused { code, detail, .. })
@@ -426,7 +511,10 @@ impl Sender {
             // the runner's refusal of it is the answer, since only the process that
             // owns the worker may interrupt it.
             if worker && requested != Mode::Interrupt {
-                match self.worker_steer(target.as_ref(), &request, &head).await? {
+                match self
+                    .worker_steer(target.as_ref(), &request, &head, &content)
+                    .await?
+                {
                     Ok(sent) => sent,
                     Err(message) => return Ok(not_sent(None, &request, &message)),
                 }
@@ -457,6 +545,9 @@ impl Sender {
             }),
             _ => accepted(&send_id, &request),
         };
+        if receipt["ok"] == true {
+            self.mark_sent(request.attachments()).await;
+        }
         // A steer the runner holds for its next boundary answers `pending`; one it
         // already rendered answers the run's state with `delivered`.
         let held = follow_until
@@ -543,6 +634,219 @@ impl Sender {
             .map_err(|error| store_error(error.to_string()))
     }
 
+    /// The send's `content`: each file the message names, copied into the runner
+    /// session in the message's order. A file already copied for this runner
+    /// session is reused while the runner still holds it committed, so a resent
+    /// message never uploads twice. Every refusal comes before the send writes
+    /// anything. The inner `Err` is a call that did not reach the runner.
+    async fn prompt_content(
+        &self,
+        target: &dyn SendTarget,
+        request: &SendRequest,
+        meta: &HeadMeta,
+        describe: Option<&RoleDescribe>,
+        device: Option<&str>,
+    ) -> Result<Result<Vec<ContentPart>, String>, SendRefusal> {
+        if request.attachments().is_empty() {
+            return Ok(Ok(Vec::new()));
+        }
+        let Some(uploads) = self.uploads.clone() else {
+            return Err(SendRefusal::new(
+                "provider_unavailable",
+                "upload storage is unavailable",
+            ));
+        };
+        // A runner without the group ignores `content` and would drop the files.
+        if !describe.is_some_and(|describe| describe.declares("attachments")) {
+            return Err(SendRefusal::new(
+                MEDIA_UNSUPPORTED,
+                "this session's runner takes no files in the prompt; place them in the project",
+            ));
+        }
+        let Some(device) = device else {
+            return Err(SendRefusal::new(
+                super::uploads::codes::UPLOAD_NOT_YOURS,
+                "only the device that uploaded a file may send it",
+            ));
+        };
+        let input = meta.input.as_ref().map(|input| InputCapability {
+            attachments: match input.carries_attachments() {
+                Some(true) => Attachments::Yes,
+                Some(false) => Attachments::No,
+                None => Attachments::Unknown,
+            },
+            mime_types: input.mime_types.clone(),
+            modalities: input.modalities.clone(),
+        });
+        let mut files = Vec::with_capacity(request.attachments().len());
+        for id in request.attachments() {
+            let (uploads, device, session, id) = (
+                uploads.clone(),
+                device.to_owned(),
+                request.session.clone(),
+                id.clone(),
+            );
+            let file =
+                tokio::task::spawn_blocking(move || uploads.prompt_file(&device, &session, &id))
+                    .await
+                    .map_err(|error| store_error(error.to_string()))?
+                    .map_err(|error| SendRefusal {
+                        code: error.code,
+                        message: error.message,
+                        detail: error.detail,
+                    })?;
+            if input.as_ref().and_then(|input| input.accepts(&file.mime)) == Some(false) {
+                return Err(SendRefusal {
+                    detail: Some(json!({"attachment_id": file.upload_id, "mime": file.mime})),
+                    ..SendRefusal::new(
+                        MEDIA_UNSUPPORTED,
+                        format!("this session's model can't take {} files", file.mime),
+                    )
+                });
+            }
+            files.push(file);
+        }
+        let reference = target.reference();
+        let runner = format!("{}/{}", reference.runner, reference.session);
+        let mut content = Vec::with_capacity(files.len());
+        for file in files {
+            // The copy this upload already has in the runner session, or else one
+            // an earlier attempt made of the same bytes under another upload id.
+            let mut kept = file
+                .runner_upload
+                .as_ref()
+                .filter(|kept| kept.runner == runner)
+                .map(|kept| kept.upload_id.clone());
+            if kept.is_none() {
+                let (uploads, device, session, file, runner) = (
+                    uploads.clone(),
+                    device.to_owned(),
+                    request.session.clone(),
+                    file.clone(),
+                    runner.clone(),
+                );
+                kept = tokio::task::spawn_blocking(move || {
+                    uploads.runner_copy(&device, &session, &file, &runner)
+                })
+                .await
+                .map_err(|error| store_error(error.to_string()))?
+                .map_err(|error| store_error(error.to_string()))?;
+            }
+            let mut copied = None;
+            if let Some(kept) = kept {
+                match target
+                    .call("session.upload_status", json!({"upload_id": kept}))
+                    .await
+                {
+                    Ok(status) if status["state"] == "committed" => copied = Some(kept),
+                    Ok(_) | Err(RunnerError::Refused { .. }) => {}
+                    Err(RunnerError::Unreachable(message)) => return Ok(Err(message)),
+                }
+            }
+            let upload_id = match copied {
+                Some(upload_id) => upload_id,
+                None => match self.copy_to_runner(target, &file).await? {
+                    Ok(upload_id) => upload_id,
+                    Err(message) => return Ok(Err(message)),
+                },
+            };
+            let recorded = RunnerUpload {
+                runner: runner.clone(),
+                upload_id: upload_id.clone(),
+            };
+            let (uploads, id) = (uploads.clone(), file.upload_id.clone());
+            tokio::task::spawn_blocking(move || uploads.record_runner_upload(&id, Some(&recorded)))
+                .await
+                .map_err(|error| store_error(error.to_string()))?
+                .map_err(|error| store_error(error.to_string()))?;
+            content.push(ContentPart::upload(upload_id));
+        }
+        Ok(Ok(content))
+    }
+
+    /// Upload one prompt file to the runner session: begin, append in pieces of
+    /// the contract's largest chunk, commit. Answers the runner's upload id. The
+    /// inner `Err` is a call that did not reach the runner; an upload left open
+    /// that way is dropped by the runner after its hour.
+    async fn copy_to_runner(
+        &self,
+        target: &dyn SendTarget,
+        file: &super::uploads::PromptFile,
+    ) -> Result<Result<String, String>, SendRefusal> {
+        let bytes = tokio::fs::read(&file.blob)
+            .await
+            .map_err(|error| store_error(format!("upload {}: {error}", file.upload_id)))?;
+        if bytes.len() as u64 != file.size {
+            return Err(store_error(format!(
+                "upload {} holds {} of its {} bytes",
+                file.upload_id,
+                bytes.len(),
+                file.size
+            )));
+        }
+        let call = |method: &'static str, params: Value| async move {
+            match target.call(method, params).await {
+                Ok(reply) => Ok(Ok(reply)),
+                Err(RunnerError::Unreachable(message)) => Ok(Err(message)),
+                Err(RunnerError::Refused {
+                    code,
+                    message,
+                    detail,
+                }) => Err(refused(&code, &message, detail.as_ref())),
+            }
+        };
+        let begun = match call(
+            "session.upload_begin",
+            json!({"mime": file.mime, "bytes": file.size, "sha256": file.sha256}),
+        )
+        .await?
+        {
+            Ok(reply) => reply,
+            Err(message) => return Ok(Err(message)),
+        };
+        let Some(upload_id) = begun["upload_id"].as_str().filter(|id| !id.is_empty()) else {
+            return Err(SendRefusal::new(
+                "invalid_provider_reply",
+                "the runner's upload_begin reply names no upload_id",
+            ));
+        };
+        let upload_id = upload_id.to_owned();
+        for (index, piece) in bytes.chunks(CHUNK_MAX).enumerate() {
+            let offset = (index * CHUNK_MAX) as u64;
+            let appended = json!({"upload_id": upload_id, "offset": offset, "data": base64(piece)});
+            if let Err(message) = call("session.upload_append", appended).await? {
+                return Ok(Err(message));
+            }
+        }
+        match call("session.upload_commit", json!({"upload_id": upload_id})).await? {
+            Ok(committed) if committed["sha256"] == file.sha256.as_str() => Ok(Ok(upload_id)),
+            Ok(_) => Err(SendRefusal::new(
+                "invalid_provider_reply",
+                "the runner committed an upload with a different sha256",
+            )),
+            Err(message) => Ok(Err(message)),
+        }
+    }
+
+    /// Mark each file of an accepted send as sent: the runner holds its bytes now.
+    /// A failure leaves the blob to expire with the upload; it is never resent.
+    async fn mark_sent(&self, attachments: &[String]) {
+        let Some(uploads) = self.uploads.clone() else {
+            return;
+        };
+        if attachments.is_empty() {
+            return;
+        }
+        let ids = attachments.to_vec();
+        let outcome = tokio::task::spawn_blocking(move || {
+            ids.iter().try_for_each(|id| uploads.mark_sent(id))
+        })
+        .await;
+        if !matches!(outcome, Ok(Ok(()))) {
+            tracing::warn!(target: "app_send", reason = "upload_sent_unrecorded", "a sent upload could not be recorded as sent");
+        }
+    }
+
     /// A worker message joins the run in progress or is refused at once: the
     /// session head names the active run. Its lifetime bounds the steer; expiry
     /// after [`WORKER_STEER_EXPIRY`] is only a backstop. The inner `Err` is a call
@@ -553,6 +857,7 @@ impl Sender {
         target: &dyn SendTarget,
         request: &SendRequest,
         head: &Value,
+        content: &[ContentPart],
     ) -> Result<Result<(String, Value, Option<(i64, String)>), String>, SendRefusal> {
         // A held worker steer is followed across restarts from its stored row, which
         // names the session but not its harness, so recovery could only reopen a Broca
@@ -587,7 +892,7 @@ impl Sender {
         let steer = Planned::Order(
             DeliveryOrder::new(vec![Order::Steer]).with_expires_at_ms(expires.max(0) as u64),
         );
-        let body = runner_body(request, &send_id, &steer)?;
+        let body = runner_body(request, &send_id, &steer, content)?;
         match target.call("session.send", body).await {
             Ok(reply) => Ok(Ok((send_id, reply, Some((expires, run_id))))),
             Err(RunnerError::Unreachable(message)) => Ok(Err(message)),
@@ -1100,6 +1405,7 @@ fn runner_body(
     request: &SendRequest,
     send_id: &str,
     delivery: &Planned,
+    content: &[ContentPart],
 ) -> Result<Value, SendRefusal> {
     let mut body = RunnerSend::new(request.text.clone(), send_id);
     body = match delivery {
@@ -1108,6 +1414,10 @@ fn runner_body(
     };
     if let Some(id) = &request.client_message_id {
         body = body.with_client_message_id(id.clone());
+    }
+    // A message without files keeps its bytes: the member is left out, not empty.
+    if !content.is_empty() {
+        body = body.with_content(content.to_vec());
     }
     serde_json::to_value(&body)
         .map_err(|error| SendRefusal::new("internal", format!("cannot encode the send: {error}")))
@@ -1177,6 +1487,28 @@ fn not_sent(send_id: Option<&str>, request: &SendRequest, message: &str) -> Valu
     receipt
 }
 
+/// Standard base64 with padding (RFC 4648 §4), as the runner contract's
+/// `session.upload_append` takes a piece's bytes.
+fn base64(bytes: &[u8]) -> String {
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for group in bytes.chunks(3) {
+        let word = (u32::from(group[0]) << 16)
+            | (u32::from(*group.get(1).unwrap_or(&0)) << 8)
+            | u32::from(*group.get(2).unwrap_or(&0));
+        for position in 0..4 {
+            if position <= group.len() {
+                out.push(char::from(
+                    ALPHABET[(word >> (18 - 6 * position) & 63) as usize],
+                ));
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
 fn conflict() -> SendRefusal {
     SendRefusal::new(
         codes::CONFLICT,
@@ -1204,6 +1536,17 @@ fn refused(code: &str, message: &str, detail: Option<&Value>) -> SendRefusal {
         "delivery_unsupported" => SendRefusal::new(codes::UNSUPPORTED, said),
         "run_paused" => SendRefusal::new("run_paused", said),
         "context_ceiling" => SendRefusal::new("context_ceiling", said),
+        // The model can't take a file's type. The app places the file in the
+        // project instead (`upload.place`) and sends its path.
+        "media_unsupported" => SendRefusal {
+            detail: detail.cloned(),
+            ..SendRefusal::new(MEDIA_UNSUPPORTED, said)
+        },
+        // The runner lost a file this module copied to it. A resend under the same
+        // `clientMessageId` copies it again.
+        "upload_gone" | "unknown_upload" | "upload_not_committed" => {
+            SendRefusal::new(UPLOAD_GONE, said)
+        }
         _ => {
             let mut refusal = SendRefusal::new("runner_refused", said);
             refusal.detail = Some(runner_refused_detail(code, detail));

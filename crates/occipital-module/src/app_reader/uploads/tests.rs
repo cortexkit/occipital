@@ -15,6 +15,7 @@ use tokio::sync::mpsc;
 
 mod names;
 mod ops;
+mod prompt;
 mod samples;
 
 /// 2026-01-01T00:00:00Z.
@@ -175,6 +176,56 @@ impl Fixture {
 
     pub fn wire(&self) -> Wire {
         Wire::new(self.app())
+    }
+
+    /// The reader serving uploads where the session's runner and model take, or
+    /// don't take, files in the prompt.
+    pub fn prompt_wire(&self, accepts: bool) -> Wire {
+        let inner = BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(Lookup {
+                root: self.project.clone(),
+            }))),
+            Arc::new(NoRoutes),
+        );
+        let resolver = Arc::new(PromptResolver { inner, accepts });
+        Wire::new(Arc::new(
+            AppReader::new(resolver).with_uploads(Some(self.uploads.clone())),
+        ))
+    }
+}
+
+/// Sessions found as the reader finds them, and a fixed answer to whether a file
+/// may go into the prompt, standing in for the runner's groups and model facts.
+struct PromptResolver {
+    inner: BrocaSources,
+    accepts: bool,
+}
+
+#[async_trait]
+impl SourceResolver for PromptResolver {
+    async fn resolve(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+    ) -> Result<Option<Arc<dyn occipital_app_reader::source::TranscriptSource>>, ReadError> {
+        SourceResolver::resolve(&self.inner, session, harness).await
+    }
+
+    async fn project_root(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+    ) -> Result<PathBuf, ReadError> {
+        SourceResolver::project_root(&self.inner, session, harness).await
+    }
+
+    async fn prompt_accepts(
+        &self,
+        _session: &str,
+        _harness: Option<&str>,
+        _mime: &str,
+    ) -> Result<bool, ReadError> {
+        Ok(self.accepts)
     }
 }
 

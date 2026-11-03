@@ -265,6 +265,7 @@ mod tests {
                 ("upload.begin", "mutate"),
                 ("upload.chunk", "mutate"),
                 ("upload.finish", "mutate"),
+                ("upload.place", "mutate"),
                 ("upload.status", "query"),
             ]
         );

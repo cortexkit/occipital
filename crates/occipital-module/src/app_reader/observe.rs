@@ -97,11 +97,12 @@ impl Drop for RequestLog {
 /// a run stopped, a file placed in a project or an upload discarded. Each one
 /// that succeeds is logged at INFO, so the log can always answer whether an
 /// app did it, where a successful read is logged only when slow.
-const CONSEQUENTIAL: [&str; 4] = [
+const CONSEQUENTIAL: [&str; 5] = [
     super::SEND,
     super::STOP,
     super::uploads::FINISH,
     super::uploads::ABORT,
+    super::uploads::PLACE,
 ];
 
 fn summary_level(
@@ -341,13 +342,14 @@ pub(crate) mod tests {
             }
         }
 
-        // A successful send, Stop, upload finish or upload abort is always
+        // A successful send, Stop, upload finish, abort or place is always
         // logged, even when fast; an upload chunk is not.
         for (method, level) in [
             (super::super::SEND, "INFO"),
             (super::super::STOP, "INFO"),
             (super::super::uploads::FINISH, "INFO"),
             (super::super::uploads::ABORT, "INFO"),
+            (super::super::uploads::PLACE, "INFO"),
             (super::super::uploads::CHUNK, "DEBUG"),
         ] {
             let (log, _guard) = capture();
