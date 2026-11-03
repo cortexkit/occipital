@@ -81,11 +81,23 @@ struct Entry {
     part_digests: Vec<PartDigest>,
     #[serde(default)]
     part_keys: Vec<String>,
+    /// The readable summary of a provider's private reasoning block, by the
+    /// block's stored position: OpenAI keeps its reasoning encrypted, with a
+    /// summary beside it. A runner declaring `read_display_facts` adds these
+    /// when the read asks for display facts. The block itself stays private.
+    #[serde(default)]
+    reasoning_summaries: Vec<ReasoningSummary>,
 }
 
 #[derive(Deserialize)]
 struct PartDigest {
     part: String,
+}
+
+#[derive(Deserialize)]
+struct ReasoningSummary {
+    part: usize,
+    text: String,
 }
 
 impl Entry {
@@ -178,7 +190,14 @@ pub fn rows_with_pruned_reasoning(
                         continue;
                     }
                     let call_id = tool_call_id(&value);
-                    if let Some(part) = decode_part(value) {
+                    // A private reasoning block shows as reasoning only through
+                    // the summary the runner serves for it.
+                    let summary = entry
+                        .reasoning_summaries
+                        .iter()
+                        .find(|summary| summary.part == stored)
+                        .map(|summary| Part::Reasoning(summary.text.clone()));
+                    if let Some(part) = decode_part(value).or(summary) {
                         let call_id = call_id
                             .filter(|_| matches!(part, Part::Call { .. } | Part::Result { .. }));
                         parts.push(Decoded {
@@ -324,6 +343,9 @@ pub fn display_rows(
             tool_times,
             part_digests: facts.part_digests,
             part_keys: facts.part_keys,
+            // The contract's projection already shows each reasoning summary as
+            // a reasoning part of the display row.
+            reasoning_summaries: Vec::new(),
         };
         let mut parts = Vec::new();
         for (position, part) in row.parts.into_iter().enumerate() {
@@ -957,6 +979,66 @@ mod tests {
                 serde_json::to_vec(&ordinary[0].display).unwrap()
             );
         }
+    }
+
+    /// OpenAI's reasoning is stored encrypted, with a readable summary the runner
+    /// serves beside the message. The summary shows as a reasoning part in the
+    /// block's place, keyed by its stored position; the block itself never shows,
+    /// and reasoning the runner pruned stays hidden.
+    #[test]
+    fn a_private_reasoning_block_shows_only_through_its_served_summary() {
+        let content = json!([
+            {"type":"redacted_reasoning", "provider_format":"open_ai_responses",
+                "data":"{\"type\":\"reasoning\",\"encrypted_content\":\"opaque\"}"},
+            {"type":"text", "text":"It's 2026."},
+        ]);
+        let mut summarized = entry(content.clone());
+        summarized["part_keys"] = json!(["p-0", "p-1"]);
+        summarized["reasoning_summaries"] = json!([{"part": 0, "text": "Checked the year."}]);
+        let kinds_of = |rows: &[Row]| -> Vec<(String, String)> {
+            rows[0].display["parts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|part| {
+                    let text = part["text"].as_str().unwrap_or_default().to_owned();
+                    (part["type"].as_str().unwrap().to_owned(), text)
+                })
+                .collect()
+        };
+        let shown = rows(std::slice::from_ref(&summarized), false).unwrap();
+        assert_eq!(
+            kinds_of(&shown),
+            [
+                ("reasoning".to_owned(), "Checked the year.".to_owned()),
+                ("text".to_owned(), "It's 2026.".to_owned())
+            ]
+        );
+        assert_eq!(shown[0].display["parts"][0][PART_KEY], "0");
+        assert!(!shown[0].display.to_string().contains("opaque"));
+        // Without a summary the block stays hidden, as before.
+        let plain = rows(&[entry(content)], false).unwrap();
+        assert_eq!(
+            kinds_of(&plain),
+            [("text".to_owned(), "It's 2026.".to_owned())]
+        );
+        // A summary names only a block that would otherwise be hidden.
+        let mut misplaced = summarized.clone();
+        misplaced["reasoning_summaries"] = json!([{"part": 1, "text": "Not this."}]);
+        assert_eq!(
+            kinds_of(&rows(&[misplaced], false).unwrap()),
+            [("text".to_owned(), "It's 2026.".to_owned())]
+        );
+        let pruning = vec![serde_json::from_value::<PrunedReasoning>(
+            json!({"mid": "m12", "part": "p-0", "kind": kinds::REASONING, "bytes": 64,
+                "sha256": "0".repeat(64)}),
+        )
+        .unwrap()];
+        let pruned = rows_with_pruned_reasoning(&[summarized], false, &pruning).unwrap();
+        assert_eq!(
+            kinds_of(&pruned),
+            [("text".to_owned(), "It's 2026.".to_owned())]
+        );
     }
 
     fn entry(content: Value) -> Value {
