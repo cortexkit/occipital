@@ -4055,6 +4055,7 @@ pub(crate) mod tests {
     mod describe_samples;
     mod empty_claim_samples;
     mod files_samples;
+    mod head_selection_samples;
     mod model_names_samples;
     mod opencode2_live_samples;
     mod opencode2_pages;
