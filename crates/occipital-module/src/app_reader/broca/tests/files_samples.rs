@@ -251,3 +251,23 @@ async fn a_runner_without_files_is_never_asked_for_media() {
         .unwrap_err();
     assert_eq!(refusal.code, "unsupported");
 }
+
+/// A media read's own refusals reach the app under their own code, as
+/// `refusal-unknown_media` shows, so it doesn't ask again for a file the chat
+/// doesn't hold. The same codes on any other read, and any other refusal of a
+/// media read, still reach it as the runner being unavailable.
+#[test]
+fn a_media_reads_own_refusals_keep_their_code() {
+    let code = super::super::media_refusal;
+    assert_eq!(
+        code(ReadOp::MediaRead, Some("unknown_media")),
+        Some("unknown_media")
+    );
+    assert_eq!(
+        code(ReadOp::MediaRead, Some("invalid_params")),
+        Some("invalid_params")
+    );
+    assert_eq!(code(ReadOp::MediaRead, Some("scope_owner_mismatch")), None);
+    assert_eq!(code(ReadOp::MediaRead, None), None);
+    assert_eq!(code(ReadOp::Read, Some("unknown_media")), None);
+}

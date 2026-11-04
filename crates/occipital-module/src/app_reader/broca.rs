@@ -446,6 +446,23 @@ fn call_error(runner: &str, error: CallError) -> ReadError {
     ReadError::new(code, format!("{runner}: {error}"))
 }
 
+/// The runner refusals of a media read that reach the app under their own code:
+/// a digest the session's history doesn't reference (`unknown_media`), and an
+/// offset or length out of range (`invalid_params`). Each is a definite answer
+/// about the file asked for, which the app must not ask for again. Every other
+/// refusal of a read, and these on other reads, reach it as the runner being
+/// unavailable ([`call_error`], [`result`]).
+fn media_refusal(op: ReadOp, code: Option<&str>) -> Option<&'static str> {
+    if !matches!(op, ReadOp::MediaRead) {
+        return None;
+    }
+    match code? {
+        "unknown_media" => Some("unknown_media"),
+        "invalid_params" => Some("invalid_params"),
+        _ => None,
+    }
+}
+
 /// A runner's reply: its result, or its refusal as the app sees it.
 fn result(value: Value) -> Result<Value, ReadError> {
     if let Some(code) = value.get("code").and_then(Value::as_str) {
@@ -482,7 +499,11 @@ impl BrocaRoute for DaemonRoute {
                     tracing::debug!(code = error.code().unwrap_or("provider_unavailable"), %error,
                         "Broca display history call failed");
                 }
-                call_error(&self.resolved.reference.runner, error)
+                let runner = &self.resolved.reference.runner;
+                match media_refusal(op, error.code()) {
+                    Some(code) => ReadError::new(code, format!("{runner}: {error}")),
+                    None => call_error(runner, error),
+                }
             })?;
         let value: Value =
             serde_json::from_slice(&bytes).map_err(|error| invalid(error.to_string()))?;
@@ -490,6 +511,19 @@ impl BrocaRoute for DaemonRoute {
             if let Some(code) = value.get("code").and_then(Value::as_str) {
                 tracing::debug!(code, "Broca display history refused");
             }
+        }
+        if let Some(code) = media_refusal(op, value.get("code").and_then(Value::as_str)) {
+            let mut error = ReadError::new(
+                code,
+                format!(
+                    "{} {code}: {}",
+                    self.resolved.reference.runner, value["message"]
+                ),
+            );
+            if let Some(detail) = value.get("detail").filter(|detail| !detail.is_null()) {
+                error = error.with_detail(detail.clone());
+            }
+            return Err(error);
         }
         result(value).map_err(|mut error| {
             error.message = format!("{} {}", self.resolved.reference.runner, error.message);
