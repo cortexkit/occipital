@@ -606,6 +606,14 @@ fn decode_part(value: Value) -> Option<Part> {
                 Some("file" | "artifact") => Part::File {
                     raw: Value::Object(map),
                 },
+                // A file the runner keeps as bytes, as Broca stores a photo an app
+                // sent into the prompt: its type, size, pixel size and digest,
+                // which the app asks for its bytes by (`session.media`).
+                Some("media") => Part::File {
+                    raw: json!({"mime": map.get("mime"), "sha256": map.get("sha256"),
+                        "byte_count": map.get("byte_size"), "width": map.get("width"),
+                        "height": map.get("height")}),
+                },
                 Some("tool_call") => Part::Call {
                     name: map
                         .get("name")
@@ -1180,6 +1188,24 @@ mod tests {
         assert_eq!(parts[4]["width"], 3);
         assert_eq!(mapped[0].display["files"][0]["partIndex"], 5);
         assert!(!mapped[0].display.to_string().contains("encrypted"));
+    }
+
+    /// A photo Broca keeps as bytes is a file part with its type, size, pixel
+    /// size and digest, never its stored block shown as text.
+    #[test]
+    fn a_stored_media_block_is_a_file() {
+        let raw = entry(json!([{"type":"media", "kind":"image", "mime":"image/png",
+            "sha256":"ab".repeat(32), "byte_size":3592, "width":640, "height":160}]));
+        let display = &rows(&[raw], false).unwrap()[0].display;
+        assert_eq!(display["parts"].as_array().unwrap().len(), 1, "{display}");
+        assert_eq!(display["text"], "");
+        let file = &display["files"][0];
+        assert_eq!(file["mime"], "image/png");
+        assert_eq!(file["sha256"], "ab".repeat(32));
+        assert_eq!(
+            (&file["byteCount"], &file["width"], &file["height"]),
+            (&json!(3592), &json!(640), &json!(160))
+        );
     }
 
     /// A row dated only by when the runner stored it, after the reply finished,

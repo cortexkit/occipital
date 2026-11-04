@@ -1,0 +1,1 @@
+{"code":"invalid_params","message":"invalid plan or send: {\"field\":\"plan.senders\"}","detail":{"field":"plan.senders"}}

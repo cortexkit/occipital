@@ -1503,7 +1503,7 @@ fn store_error(message: String) -> SendRefusal {
 }
 
 /// Map the runner's refusal onto the app's codes. Every refusal wrote nothing.
-fn refused(code: &str, message: &str, detail: Option<&Value>) -> SendRefusal {
+pub(super) fn refused(code: &str, message: &str, detail: Option<&Value>) -> SendRefusal {
     let field = detail.and_then(|detail| detail["field"].as_str());
     let said = format!("the runner answered {code}: {message}");
     match code {

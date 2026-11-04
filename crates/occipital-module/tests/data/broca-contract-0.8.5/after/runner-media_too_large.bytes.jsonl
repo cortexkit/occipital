@@ -1,0 +1,1 @@
+{"code":"media_too_large","message":"committed image exceeds a reported image limit","detail":{"max_image_bytes":7500000}}
