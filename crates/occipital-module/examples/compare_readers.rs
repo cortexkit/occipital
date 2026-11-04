@@ -19,7 +19,10 @@
 //!
 //! A watch (`session.transcript_watch`, `session.display_watch`) is opened on
 //! both modules, and the first notice each sends within 20 seconds is compared,
-//! or how the watch ended if it sent none. Both watches are then cancelled.
+//! or how the watch ended if it sent none. Both watches are then cancelled. A
+//! watch named on one module twice instead prints every notice it sends for
+//! `COMPARE_STREAM_SECS` seconds (default 60), each with the seconds since the
+//! watch opened, for following a live turn.
 
 use std::process::ExitCode;
 
@@ -73,6 +76,52 @@ async fn first_notice(
     };
     let _ = watch.unsubscribe();
     outcome
+}
+
+/// Print every notice one module's watch sends within `span`, then how it ended.
+async fn stream(
+    consumer: &SubcConsumer,
+    module: &str,
+    request: &Value,
+    span: Duration,
+) -> ExitCode {
+    let mut watch = match consumer
+        .subscribe(
+            target(module),
+            identity(),
+            request.to_string().into_bytes(),
+            SubscribeOptions::default(),
+        )
+        .await
+    {
+        Ok(watch) => watch,
+        Err(error) => {
+            println!(
+                "{{\"code\": {:?}, \"message\": {:?}}}",
+                error.code(),
+                error.to_string()
+            );
+            return ExitCode::from(1);
+        }
+    };
+    let opened = tokio::time::Instant::now();
+    let deadline = opened + span;
+    loop {
+        match tokio::time::timeout_at(deadline, watch.events().recv()).await {
+            Ok(Some(bytes)) => println!(
+                "{:.1}s {}",
+                opened.elapsed().as_secs_f64(),
+                String::from_utf8_lossy(&bytes)
+            ),
+            Ok(None) => {
+                println!("ended: {:?}", watch.ended().await);
+                return ExitCode::SUCCESS;
+            }
+            Err(_) => break,
+        }
+    }
+    let _ = watch.unsubscribe();
+    ExitCode::SUCCESS
 }
 
 /// One module's answer: the reply's `result`, or its refusal body.
@@ -151,6 +200,13 @@ async fn main() -> ExitCode {
         }
     };
     let request = serde_json::json!({ "method": method, "params": params });
+    if first == second && method.ends_with("_watch") {
+        let span = std::env::var("COMPARE_STREAM_SECS")
+            .ok()
+            .and_then(|secs| secs.parse().ok())
+            .unwrap_or(60);
+        return stream(&consumer, first, &request, Duration::from_secs(span)).await;
+    }
     if first == second {
         let reply = ask(&consumer, first, &request).await;
         let (Ok(body) | Err(body)) = &reply;

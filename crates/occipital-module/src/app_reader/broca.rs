@@ -1112,8 +1112,9 @@ impl BrocaSource {
         let live_ids = self.describe().await.is_some_and(|describe| {
             describe.declares(cortexkit_role_llm_runner::capabilities::LIVE_IDS)
         });
+        let runner = self.runner();
         let stream =
-            super::observe::remote("broca", "session.subscribe", self.route.subscribe(live_ids))
+            super::observe::remote(&runner, "session.subscribe", self.route.subscribe(live_ids))
                 .await?;
         // Attach before reading so control events committed during the cold read
         // stay queued, rather than disappearing between the snapshot and attach.
@@ -1212,7 +1213,14 @@ impl BrocaSource {
     }
 
     async fn remote_read(&self, op: ReadOp, params: Value) -> Result<Value, ReadError> {
-        super::observe::remote("broca", op.method(), self.route.read(op, params)).await
+        let runner = self.runner();
+        super::observe::remote(&runner, op.method(), self.route.read(op, params)).await
+    }
+
+    /// The module id of the runner this session is on, which names its calls in
+    /// the request log (`thalamus-harness.session.read`, `broca.session.head`).
+    fn runner(&self) -> String {
+        self.resolved.guard().reference.runner.clone()
     }
 
     async fn read_head(&self) -> Result<Head, ReadError> {
