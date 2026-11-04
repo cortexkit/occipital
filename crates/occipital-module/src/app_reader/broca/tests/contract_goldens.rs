@@ -708,3 +708,88 @@ async fn broca_0_7_approved_read_reaches_source_windows_and_run_state() {
         assert_eq!(full.display["parts"][0]["isError"], false, "{name}");
     }
 }
+
+/// The renumbering samples the apps pin, `phone-reader-broca-renumber-v1`: one
+/// Broca chat as Occipital served it before Broca's runner moved to the current
+/// runner contract, and after. Broca recorded both replies from one session
+/// (`tests/data/broca-renumber-1103`, whose README says how): its entries go from
+/// ordinals 0–3 to 1–4 under the same message ids, and the log gains a history
+/// counter. Occipital `8745905`, the last build that read both contracts, served
+/// the before page once; this build can't, so the page is kept as those recorded
+/// bytes. This build serves the after page, and the claim a phone holding the
+/// before page sends.
+#[tokio::test]
+async fn the_renumbering_samples_are_what_the_reader_serves() {
+    use super::served_samples::{decoded, Served};
+    const SET: &str = "phone-reader-broca-renumber-v1";
+    let data = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/broca-renumber-1103");
+    // Broca's replies are exactly as recorded.
+    let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
+    assert_eq!(sums.lines().count(), 4);
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(data.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+    let raw = |name: &str| -> Value {
+        serde_json::from_slice(&std::fs::read(data.join(name)).unwrap()).unwrap()
+    };
+    let (_, app) = app_with_values(
+        raw("after/session.head.json"),
+        raw("after/session.read.json"),
+        json!({"result": describe_with(&["read_display_facts"])}),
+    );
+    let mut served = Served::new(SET, Arc::new(app));
+    let set = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../occipital-app-reader/test-vectors")
+        .join(SET);
+    let before_request = std::fs::read(set.join("01-before-newest-page.request.json")).unwrap();
+    let before_reply = std::fs::read(set.join("01-before-newest-page.json")).unwrap();
+    let before = decoded(&before_reply)["result"].clone();
+    served.keep_file("01-before-newest-page.request.json", before_request.clone());
+    served.keep_file("01-before-newest-page.json", before_reply);
+
+    // The same request after the move: the same messages, each one ordinal
+    // higher, under a new version.
+    let request: Value = serde_json::from_slice(&before_request).unwrap();
+    let page = served.read(2, &request).await;
+    let after = decoded(&page)["result"].clone();
+    assert_ne!(after["version"], before["version"]);
+    let (old, new) = (
+        before["messages"].as_array().unwrap(),
+        after["messages"].as_array().unwrap(),
+    );
+    assert_eq!(old.len(), 4);
+    assert_eq!(new.len(), old.len());
+    for (old, new) in old.iter().zip(new) {
+        assert_eq!(new["messageId"], old["messageId"]);
+        assert_eq!(
+            new["ordinal"].as_u64().unwrap(),
+            old["ordinal"].as_u64().unwrap() + 1
+        );
+    }
+    served.keep("02-after-newest-page", &request, page);
+
+    // A phone holding the before page claims it. The before version no longer
+    // names this log, so the reply is `cursor_expired` with the whole page again,
+    // under the new version.
+    let mut claim = request.clone();
+    claim["params"]["claim"] = json!({"heldFloorMessageId": old[0]["messageId"],
+        "sinceMessageId": old[3]["messageId"], "heldVersion": before["version"]});
+    let reply = served.read(3, &claim).await;
+    let result = decoded(&reply)["result"].clone();
+    assert_eq!(
+        (&result["claim"], &result["version"]),
+        (&json!("cursor_expired"), &after["version"]),
+        "{result}"
+    );
+    let resynced: Vec<&Value> = result["resync"]["messages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|message| &message["ordinal"])
+        .collect();
+    assert_eq!(resynced, [&json!(1), &json!(2), &json!(3), &json!(4)]);
+    served.keep("03-after-claim-held-before", &claim, reply);
+    served.check();
+}
