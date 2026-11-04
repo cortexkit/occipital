@@ -264,6 +264,11 @@ impl DisplayProfile {
 /// A read entry's members beside its message body, for a display-row runner.
 #[derive(Deserialize)]
 struct EntryFacts {
+    /// When the host recorded the message as created, which a runner declaring
+    /// `read_display_facts` serves when the read asks for display facts. It is
+    /// the row's start time as recorded, even when it is later than the finish.
+    #[serde(default)]
+    created_at: Option<i64>,
     #[serde(default)]
     written_at: Option<i64>,
     #[serde(default, alias = "completedAtMs", alias = "completed_at")]
@@ -332,7 +337,7 @@ pub fn display_rows(
                 completed_at_ms: None,
                 client_message_id: None,
             },
-            created_at_ms: None,
+            created_at_ms: facts.created_at,
             written_at: facts.written_at,
             completed_at_ms: facts.completed_at_ms,
             client_message_id: facts.client_message_id.or(row.client_message_id),
@@ -832,8 +837,9 @@ fn project(
             display["richUi"] = stamp;
         }
     }
-    // A message's start is its stored creation time. A row without one (an
-    // OpenCode 2 or Pi row built from the contract's display row) is dated by
+    // A message's start is the creation time the host recorded, which runners
+    // serve as `created_at` with the read's display facts. It is kept as
+    // recorded, even when later than the finish. A row without one is dated by
     // when the runner stored it, which for a reply comes after it finished; that
     // date is held to the finish, so no row ends before it starts.
     let started = message

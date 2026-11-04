@@ -314,3 +314,39 @@ fn refused_bodies_are_unreadable_and_served_facts_reach_the_row() {
     assert_eq!(rows[0].display["completedAtMs"], 4_242);
     assert_eq!(rows[0].display["clientMessageId"], "phone-1");
 }
+
+/// A served creation time is the row's start, exactly as recorded, on both
+/// display-row runners: before the write, and kept even when it is later than
+/// the served finish. Without one, the write time is held to the finish.
+#[test]
+fn a_served_creation_time_is_the_rows_start_as_recorded() {
+    for (file, profile) in [
+        ("display-opencode-v2.json", DisplayProfile::OpenCode2),
+        ("display-pi.json", DisplayProfile::Pi),
+    ] {
+        let all = entries(file);
+        let reply = display_rows(&all, false, profile, &[])
+            .unwrap()
+            .into_iter()
+            .find(|row| row.display["role"] == "assistant")
+            .unwrap();
+        let mut entry = all
+            .into_iter()
+            .find(|entry| entry["mid"] == reply.mid.as_str())
+            .unwrap();
+        entry["written_at"] = json!(90_000);
+        entry["completed_at"] = json!(80_000);
+        let start = |entry: &Value| {
+            display_rows(std::slice::from_ref(entry), false, profile, &[]).unwrap()[0].written_at
+        };
+        assert_eq!(
+            start(&entry),
+            Some(80_000),
+            "{file}: write held to the finish"
+        );
+        entry["created_at"] = json!(20_000);
+        assert_eq!(start(&entry), Some(20_000), "{file}: served start");
+        entry["created_at"] = json!(85_000);
+        assert_eq!(start(&entry), Some(85_000), "{file}: kept as recorded");
+    }
+}
