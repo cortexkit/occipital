@@ -265,9 +265,11 @@ async fn model_rides_on_the_newest_page_and_turn_carrying_claims_only() {
     let heads_without = calls(&route, "session.head") - unmodelled;
 
     set_head(&route, "model", model());
+    set_head(&route, "service_tier", json!("fast"));
     let before = calls(&route, "session.head");
     let newest = page(&app, params()).await;
     assert_eq!(newest["model"], model());
+    assert_eq!(newest["serviceTier"], "fast");
     // The model comes from the head the page already reads, not another call.
     assert_eq!(calls(&route, "session.head") - before, heads_without);
 
@@ -275,7 +277,7 @@ async fn model_rides_on_the_newest_page_and_turn_carrying_claims_only() {
     cached["activityToken"] = newest["activityToken"].clone();
     let unchanged = page(&app, cached).await;
     assert_eq!(unchanged["unchanged"], true);
-    for member in ["model", "sender", SENDER_UNKNOWN] {
+    for member in ["model", "serviceTier", "sender", SENDER_UNKNOWN] {
         assert!(unchanged.get(member).is_none(), "{member}: {unchanged}");
     }
 
@@ -283,22 +285,30 @@ async fn model_rides_on_the_newest_page_and_turn_carrying_claims_only() {
     older["beforeOrdinal"] = json!(20);
     let older = page(&app, older).await;
     assert!(older.get("model").is_none(), "{older}");
+    assert!(older.get("serviceTier").is_none(), "{older}");
 
     let matched = page(&app, claim(&newest, "m20", "m21")).await;
     assert_eq!(matched["claim"], "matched");
     assert_eq!(matched["model"], model());
+    assert_eq!(matched["serviceTier"], "fast");
 
     route.history.store(8, Ordering::Relaxed);
     let expired = page(&app, claim(&newest, "m20", "m21")).await;
     assert_eq!(expired["claim"], "cursor_expired");
     assert_eq!(expired["model"], model());
+    assert_eq!(expired["serviceTier"], "fast");
     assert!(expired["resync"].get("model").is_none());
 }
 
 #[tokio::test]
 async fn session_details_reads_one_head_and_no_messages() {
     let route = FakeRoute::new();
-    for (key, value) in [("model", model()), ("usage", usage()), ("sender", grant())] {
+    for (key, value) in [
+        ("model", model()),
+        ("service_tier", json!("fast")),
+        ("usage", usage()),
+        ("sender", grant()),
+    ] {
         set_head(&route, key, value);
     }
     *route.incarnation.lock().unwrap() = "log-7f3a".into();
@@ -306,7 +316,7 @@ async fn session_details_reads_one_head_and_no_messages() {
     let reply = details(&app).await;
     assert_eq!(
         reply,
-        json!({"model":model(), "usage":usage(), "sender":grant(), "incarnation":"log-7f3a", "lastRun":last_run()})
+        json!({"model":model(), "serviceTier":"fast", "usage":usage(), "sender":grant(), "incarnation":"log-7f3a", "lastRun":last_run()})
     );
     let methods: Vec<_> = route
         .calls
@@ -318,7 +328,8 @@ async fn session_details_reads_one_head_and_no_messages() {
     assert_eq!(methods, ["session.head"]);
     assert_eq!(route.attaches.load(Ordering::Relaxed), 0);
 
-    for key in ["model", "usage", "sender"] {
+    // A head naming no tier gets none: Occipital passes the head's own word.
+    for key in ["model", "service_tier", "usage", "sender"] {
         clear_head(&route, key);
     }
     let heads = calls(&route, "session.head");
@@ -593,5 +604,47 @@ async fn the_session_fact_samples_are_what_the_handlers_answer() {
         assert_send_members(name, &reply);
         served.keep_file(name, serde_json::to_vec(&reply).unwrap());
     }
+    served.check();
+}
+
+/// The sample set the apps pin for a head's service tier,
+/// `phone-session-tier-v1`; its README says what each file shows.
+/// `served_samples` says how the set is checked and rewritten.
+#[tokio::test]
+async fn the_service_tier_samples_are_what_the_handlers_answer() {
+    let route = sample_route();
+    for (key, value) in [
+        ("model", model()),
+        ("service_tier", json!("fast")),
+        ("sender", grant()),
+    ] {
+        set_head(&route, key, value);
+    }
+    *route.incarnation.lock().unwrap() = "6a6ce2eb-b065-4df0-806e-44bcf531e128".into();
+    let app = sending(&route);
+    let mut served = super::served_samples::Served::new("phone-session-tier-v1", app.clone());
+    let details_request =
+        json!({"method": DETAILS, "params": {"session":"alfonso:s1", "harness":"broca"}});
+    let page_request = json!({"method": TRANSCRIPT_PAGE, "params": params()});
+
+    let tiered = served.read(1, &details_request).await;
+    assert_eq!(
+        super::served_samples::decoded(&tiered)["result"]["serviceTier"],
+        "fast"
+    );
+    served.keep("01-details-fast", &details_request, tiered);
+    let page = served.read(2, &page_request).await;
+    assert_eq!(
+        super::served_samples::decoded(&page)["result"]["serviceTier"],
+        "fast"
+    );
+    served.keep("02-newest-page-fast", &page_request, page);
+
+    clear_head(&route, "service_tier");
+    let untiered = served.read(3, &details_request).await;
+    assert!(super::served_samples::decoded(&untiered)["result"]
+        .get("serviceTier")
+        .is_none());
+    served.keep("03-details-no-tier", &details_request, untiered);
     served.check();
 }

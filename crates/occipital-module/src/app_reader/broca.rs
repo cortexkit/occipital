@@ -1290,6 +1290,12 @@ impl BrocaSource {
                 max_image_dimension: value["input"]["max_image_dimension"].as_u64(),
             },
             model: meta.model.as_ref().map(json_of).transpose()?,
+            // Passed on as the head states it. A runner declaring `head_selection`
+            // leaves it out when it is standard; an app that offers the choice
+            // knows the runner selects heads, so it reads a missing tier as
+            // standard there. Reading the description to say so here would add a
+            // runner call to every head read.
+            service_tier: meta.service_tier.clone(),
             // Counts past 2^53 - 1 can't reach the phone exactly, so such a total is
             // left out as unknown rather than shown rounded.
             usage: meta

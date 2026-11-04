@@ -150,6 +150,10 @@ pub struct Head {
     /// What a send naming no model would use next, `{provider, model, variant?}`.
     /// `None` means unknown.
     pub model: Option<Value>,
+    /// The service tier a send naming none would use next, such as `standard` or
+    /// `fast`, as the runner's head states it. `None` means the head named none:
+    /// standard on a runner that selects heads, unknown on any other.
+    pub service_tier: Option<String>,
     /// The session's durable spend in the runner's own shape. `None` means unknown.
     pub usage: Option<Value>,
     pub sender: SendGrant,
@@ -191,10 +195,13 @@ impl Head {
 
     /// The session facts every newest page and every turn-carrying claim reply
     /// repeats from the head read in the same request: the next send's model and
-    /// whether the app may send, and the most recent run's outcome.
+    /// service tier, whether the app may send, and the most recent run's outcome.
     pub(crate) fn describe_session(&self, reply: &mut Value) {
         if let Some(model) = &self.model {
             reply["model"] = model.clone();
+        }
+        if let Some(tier) = &self.service_tier {
+            reply["serviceTier"] = json!(tier);
         }
         self.sender.write(reply);
         if let Some(run) = &self.last_run {
