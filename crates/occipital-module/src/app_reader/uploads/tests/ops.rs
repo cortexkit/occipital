@@ -798,3 +798,41 @@ fn the_manifest_declares_the_operations_and_only_the_chunk_payload() {
         assert!(text.contains(&format!("\"name\":\"{method}\"")), "{method}");
     }
 }
+
+/// Every upload call leaves the app request's log line, as sends and Stop do:
+/// the begin under its session, the rest under their upload, and the finish at
+/// INFO because it puts a file in the session.
+#[tokio::test]
+async fn upload_calls_are_logged_like_other_app_requests() {
+    let (log, _capture) = crate::app_reader::observe::tests::capture();
+    let f = Fixture::new();
+    let mut wire = f.wire();
+    wire.bind_all().await;
+    let file = content(1_500);
+    let id = wire.begin("notes.txt", &file).await;
+    wire.chunk(&id, 0, &file).await.ok();
+    wire.id_call(FINISH, &id).await.ok();
+    wire.id_call(STATUS, "0".repeat(32).as_str()).await;
+    let text = log.text();
+    // The capture writes each event as `level=… field=value …`, one after another.
+    let line = |method: &str| {
+        text.split("level=")
+            .find(|event| event.contains(&format!("method={method} ")))
+            .unwrap_or_else(|| panic!("no {method} line: {text}"))
+            .to_owned()
+    };
+    assert!(
+        line(BEGIN).contains(&format!("session={SESSION} ")),
+        "{text}"
+    );
+    let finish = line(FINISH);
+    assert!(finish.starts_with("INFO "), "{finish}");
+    assert!(
+        finish.contains(&format!("session=upload:{id} ")),
+        "{finish}"
+    );
+    assert!(finish.contains("outcome=\"ok\""), "{finish}");
+    let refused = line(STATUS);
+    assert!(refused.starts_with("WARN "), "{refused}");
+    assert!(!refused.contains("outcome=\"ok\""), "{refused}");
+}

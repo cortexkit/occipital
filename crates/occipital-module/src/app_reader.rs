@@ -749,10 +749,29 @@ impl AppReader {
             if head_len > 4 + subc_protocol::framed_body::MAX_FRAMED_HEAD_BYTES {
                 return refusal("invalid_request", "request exceeds 64 KiB");
             }
-            return match self.upload(&caller, &method, params, payload).await {
-                Ok(value) => route::result_outcome(value),
-                Err(error) => route::error_outcome(&error),
-            };
+            // Logged like every other app request, so each upload call leaves
+            // its line: `upload.finish`, `upload.abort` and `upload.place` at
+            // INFO even when fast. Only `upload.begin` names the session; the
+            // later calls name their upload instead.
+            let subject = params["session"]
+                .as_str()
+                .map(str::to_owned)
+                .or_else(|| {
+                    params["upload_id"]
+                        .as_str()
+                        .map(|id| format!("upload:{id}"))
+                })
+                .unwrap_or_default();
+            return observe::request(&method, &subject, correlation, async {
+                match self.upload(&caller, &method, params, payload).await {
+                    Ok(value) => route::result_outcome(value),
+                    Err(error) => {
+                        observe::outcome(error.code);
+                        route::error_outcome(&error)
+                    }
+                }
+            })
+            .await;
         }
         if payload.is_some() {
             return refusal("invalid_request", format!("{method} takes no payload"));
