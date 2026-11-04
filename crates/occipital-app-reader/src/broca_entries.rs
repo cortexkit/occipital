@@ -800,11 +800,11 @@ fn project(
             incomplete.join(", ")
         ));
     }
-    if let Some(at) = message
+    let completed = message
         .entry
         .completed_at_ms
-        .or(message.entry.message.completed_at_ms)
-    {
+        .or(message.entry.message.completed_at_ms);
+    if let Some(at) = completed {
         display["completedAtMs"] = json!(at);
     } else if message.entry.message.role == "assistant" {
         // A runner that writes an assistant message only once it has finished
@@ -832,14 +832,22 @@ fn project(
             display["richUi"] = stamp;
         }
     }
+    // A message's start is its stored creation time. A row without one (an
+    // OpenCode 2 or Pi row built from the contract's display row) is dated by
+    // when the runner stored it, which for a reply comes after it finished; that
+    // date is held to the finish, so no row ends before it starts.
+    let started = message
+        .entry
+        .created_at_ms
+        .or(message.entry.message.created_at_ms)
+        .or_else(|| {
+            let stored = message.entry.written_at?;
+            Some(completed.map_or(stored, |done| stored.min(done)))
+        });
     Row {
         mid: message.entry.mid,
         ordinal: message.entry.ordinal,
-        written_at: message
-            .entry
-            .created_at_ms
-            .or(message.entry.message.created_at_ms)
-            .or(message.entry.written_at),
+        written_at: started,
         display,
     }
 }
@@ -1166,6 +1174,27 @@ mod tests {
         assert_eq!(parts[4]["width"], 3);
         assert_eq!(mapped[0].display["files"][0]["partIndex"], 5);
         assert!(!mapped[0].display.to_string().contains("encrypted"));
+    }
+
+    /// A row dated only by when the runner stored it, after the reply finished,
+    /// starts no later than it finishes. A stored creation time is kept as is.
+    #[test]
+    fn a_row_dated_by_its_write_never_starts_after_it_finishes() {
+        let mut raw = entry(json!(["answer"]));
+        raw["written_at"] = json!(730);
+        raw["completed_at"] = json!(720);
+        assert_eq!(
+            rows(&[raw.clone()], false).unwrap()[0].written_at,
+            Some(720)
+        );
+        raw["completed_at"] = json!(740);
+        assert_eq!(
+            rows(&[raw.clone()], false).unwrap()[0].written_at,
+            Some(730)
+        );
+        raw["created_at_ms"] = json!(750);
+        raw["completed_at"] = json!(720);
+        assert_eq!(rows(&[raw], false).unwrap()[0].written_at, Some(750));
     }
 
     #[test]

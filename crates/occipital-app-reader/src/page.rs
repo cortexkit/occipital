@@ -193,7 +193,7 @@ pub fn optional_transcript_harness(params: &Value) -> Result<Option<&str>, PageR
             Ok(Some(harness))
         }
         Some(Value::String(harness)) => Err(invalid(format!(
-            "transcript harness '{harness}' is unsupported; canonical worker harness is 'broca'"
+            "transcript harness '{harness}' is not served here; the served harnesses are 'opencode2', 'broca' and 'pi'"
         ))),
         Some(_) => Err(invalid("transcript harness must be a string when present")),
     }
