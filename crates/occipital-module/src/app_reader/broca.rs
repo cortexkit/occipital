@@ -4050,6 +4050,7 @@ pub(crate) mod tests {
     mod empty_claim_samples;
     mod files_samples;
     mod model_names_samples;
+    mod opencode2_live_samples;
     mod opencode2_pages;
     mod outside_window;
     mod part_keys;

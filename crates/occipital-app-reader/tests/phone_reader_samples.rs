@@ -77,6 +77,7 @@ fn the_runner_0_8_samples_are_complete_and_their_checksums_verify() {
         ("phone-reader-files-v2", 10),
         ("phone-uploads-prompt-v2", 30),
         ("phone-reader-broca-renumber-v1", 6),
+        ("phone-reader-opencode2-live-v1", 9),
     ] {
         verify_published_set(&format!("test-vectors/{set}"), files);
     }
