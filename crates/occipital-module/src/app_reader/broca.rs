@@ -2118,9 +2118,15 @@ fn head_meta(value: &Value) -> Result<cortexkit_role_llm_runner::read::HeadMeta,
 }
 
 fn activity_for(state: Option<&str>) -> Option<&'static str> {
-    match state {
-        Some("active" | "running" | "pending" | "queued" | "paused") => Some("busy"),
-        Some("idle" | "completed" | "interrupted" | "error" | "cancelled") => Some("idle"),
+    // The runner contract's own run states (`RunState` in the llm-runner role
+    // crate): a running or paused run keeps the chat busy, and every state the
+    // crate calls terminal leaves it idle, including a run that ended at its
+    // step limit, its token budget or the context ceiling. A state the crate
+    // doesn't know says nothing.
+    match cortexkit_role_llm_runner::run::RunState::parse(state?) {
+        cortexkit_role_llm_runner::run::RunState::Active
+        | cortexkit_role_llm_runner::run::RunState::Paused => Some("busy"),
+        state if state.is_terminal() => Some("idle"),
         _ => None,
     }
 }
@@ -4056,6 +4062,28 @@ pub(crate) mod tests {
     mod empty_claim_samples;
     mod files_samples;
     mod head_selection_samples;
+
+    /// The chat's activity follows the llm-runner role crate's `RunState`: a
+    /// running or paused run keeps it busy, every terminal state leaves it idle,
+    /// and a state the crate doesn't know says nothing.
+    #[test]
+    fn activity_follows_the_contracts_run_states() {
+        for (state, activity) in [
+            ("active", Some("busy")),
+            ("paused", Some("busy")),
+            ("completed", Some("idle")),
+            ("max_steps", Some("idle")),
+            ("budget_exhausted", Some("idle")),
+            ("context_ceiling", Some("idle")),
+            ("cancelled", Some("idle")),
+            ("error", Some("idle")),
+            ("interrupted", Some("idle")),
+            ("future_state", None),
+        ] {
+            assert_eq!(activity_for(Some(state)), activity, "{state}");
+        }
+        assert_eq!(activity_for(None), None);
+    }
     mod model_names_samples;
     mod opencode2_live_samples;
     mod opencode2_pages;
