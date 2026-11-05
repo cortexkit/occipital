@@ -22,6 +22,11 @@
 //! A failed fetch keeps nothing new: the next write or page that names the pin
 //! asks again.
 //!
+//! Only a writer that declares `tool-views/v1` is asked, because that
+//! capability is its promise to serve `tool.views`. A module can write records
+//! before it serves views; its calls draw as plain chips until it declares
+//! the capability, and the new build that does is asked at the next want.
+//!
 //! A pin can also be wanted without a writer, when a page or an app names a
 //! call no provider has written for yet: rows draw from a call's input alone.
 //! Then every module that serves views (`tool-views/v1`) is asked, and each
@@ -109,7 +114,7 @@ impl Fetcher {
     }
 
     /// Fetch `writer`'s view for `pin`, unless it is already kept under the
-    /// writer's current version. Never waits: when the queue is full the pin
+    /// writer's current version or the writer doesn't serve views. Never waits: when the queue is full the pin
     /// is dropped and asked for later.
     pub fn want(&self, writer: &str, pin: &str) {
         let _ = self
@@ -181,8 +186,13 @@ pub fn start(
                 {
                     continue;
                 }
-                // A writer the daemon doesn't list isn't running to ask.
-                let Some(version) = current.get(&writer).map(|facts| &facts.version) else {
+                // A writer the daemon doesn't list isn't running to ask, and one
+                // that doesn't declare views has none to give.
+                let Some(version) = current
+                    .get(&writer)
+                    .filter(|facts| facts.serves_views)
+                    .map(|facts| &facts.version)
+                else {
                     continue;
                 };
                 let now = now_ms();
@@ -933,5 +943,22 @@ mod tests {
         fetcher.want_pin(&pin("bash"));
         tokio::time::sleep(Duration::from_millis(50)).await;
         assert_eq!(aft.calls.lock().unwrap().len(), 2);
+    }
+
+    /// A module may write records before it serves views. Its writes don't
+    /// make it be asked for views, since it hasn't declared `tool-views/v1`.
+    #[tokio::test(start_paused = true)]
+    async fn a_writer_that_serves_no_views_is_never_asked() {
+        let dir = ScratchDir::new("occipital-views-no-views");
+        let store = opened(&dir);
+        let aft = Aft::new(false);
+        let (fetcher, _task) = start(store.clone(), aft.clone(), None);
+        // Broca's want is taken first, in a pass of its own.
+        fetcher.want("broca", &pin("bash"));
+        tokio::time::sleep(Duration::from_millis(50)).await;
+        fetcher.want("aft", &pin("bash"));
+        until(|| matches!(store.view("aft", &pin("bash")), Ok(Some(_)))).await;
+        assert_eq!(store.view("broca", &pin("bash")).unwrap(), None);
+        assert_eq!(*aft.calls.lock().unwrap(), ["aft catalog", "aft views 1"]);
     }
 }

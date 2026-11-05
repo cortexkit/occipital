@@ -45,11 +45,7 @@ fn the_head_selection_samples_keep_their_checksums() {
 /// still declare what sending and display facts depend on.
 #[test]
 fn broca_0087_describes_decode_on_both_paths() {
-    for (side, selects) in [
-        ("before", false),
-        ("before-routed", true),
-        ("after", true),
-    ] {
+    for (side, selects) in [("before", false), ("before-routed", true), ("after", true)] {
         let value = result(side, "role.describe.json");
         let checked = check_describe(&value).unwrap_or_else(|error| panic!("{side}: {error:?}"));
         let plain: RoleDescribe = serde_json::from_value(value).unwrap();
