@@ -6,6 +6,7 @@
 use super::*;
 use occipital_app_reader::source::ReadError;
 
+mod mode_samples;
 mod prompt;
 use std::{
     collections::{HashMap, VecDeque},
