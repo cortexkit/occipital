@@ -58,6 +58,11 @@ const NOTICES: &str = "CREATE TABLE notices (
   PRIMARY KEY (runner, call_key, send_id)) WITHOUT ROWID;
 CREATE INDEX notices_age ON notices (seen_at_ms);";
 
+/// Version 2: the agent a notice speaks for, when a module carried another
+/// agent's words riding a tool result (llm-runner's `message_marks`), such as a
+/// peer message to a head. Null for a module's own notice.
+const SPEAKS_FOR: &str = "ALTER TABLE notices ADD COLUMN speaks_for TEXT;";
+
 /// How long a notice is kept: as long as a tool display record.
 const KEEP_MS: i64 = crate::display::store::Retention::DEFAULT.record_age_ms;
 
@@ -90,6 +95,9 @@ pub struct Notice {
     pub text: String,
     /// How the runner delivered it, as the runner names it: `tool_result`.
     pub delivered_as: String,
+    /// The agent whose words these are, when the sending module carried them
+    /// for that agent, rather than sending its own notice.
+    pub speaks_for: Option<String>,
     /// Its place among the call's notices on a page read, if seen there.
     pub position: Option<i64>,
 }
@@ -140,6 +148,10 @@ fn notice_of(fact: &Value, runner: &str, session: &str) -> Option<Notice> {
         sender: text("sender")?,
         text: text("text")?,
         delivered_as: text("delivered_as").unwrap_or_else(|| TOOL_RESULT.to_owned()),
+        speaks_for: fact["speaks_for"]["agent_id"]
+            .as_str()
+            .filter(|agent| !agent.is_empty())
+            .map(str::to_owned),
         position: None,
     })
 }
@@ -150,6 +162,7 @@ pub struct Kept {
     pub sender: String,
     pub text: String,
     pub delivered_as: String,
+    pub speaks_for: Option<String>,
 }
 
 /// `notices.db`.
@@ -160,8 +173,13 @@ pub struct NoticeStore {
 impl NoticeStore {
     /// Open the file beside the store `main` names.
     pub fn open(main: &StorageDescriptor, data_root: &Path) -> Result<Self, OpenError> {
-        let file =
-            crate::display::store::open_file(main, data_root, NAMESPACE, FILE, &[&[NOTICES]])?;
+        let file = crate::display::store::open_file(
+            main,
+            data_root,
+            NAMESPACE,
+            FILE,
+            &[&[NOTICES], &[SPEAKS_FOR]],
+        )?;
         Ok(Self { file })
     }
 
@@ -175,7 +193,8 @@ impl NoticeStore {
         self.file.with_conn_fenced(|tx| {
             let mut insert = tx.prepare(
                 "INSERT OR IGNORE INTO notices (runner, call_key, send_id, session, sender, text,
-                 delivered_as, position, seen_at_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                 delivered_as, speaks_for, position, seen_at_ms)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
             )?;
             let mut place = tx.prepare(
                 "UPDATE notices SET position = ?4
@@ -191,6 +210,7 @@ impl NoticeStore {
                     notice.sender,
                     notice.text,
                     notice.delivered_as,
+                    notice.speaks_for,
                     notice.position,
                     now_ms
                 ])?;
@@ -219,7 +239,7 @@ impl NoticeStore {
     ) -> Result<Vec<Kept>, StoreError> {
         self.file.with_conn(|conn| {
             let mut statement = conn.prepare(
-                "SELECT sender, text, delivered_as FROM notices
+                "SELECT sender, text, delivered_as, speaks_for FROM notices
                  WHERE runner = ?1 AND call_key = ?2 AND session = ?3
                  ORDER BY position IS NULL, position, seen_at_ms, send_id",
             )?;
@@ -229,6 +249,7 @@ impl NoticeStore {
                         sender: row.get(0)?,
                         text: row.get(1)?,
                         delivered_as: row.get(2)?,
+                        speaks_for: row.get(3)?,
                     })
                 })?
                 .collect::<rusqlite::Result<_>>()?;
@@ -371,7 +392,8 @@ impl Notices {
 
     /// `session.notices {callKeys}`: for each call of `runner`'s `session`
     /// that a notice rode, its notices as `{sender, text, deliveredAs}`, in
-    /// order. A call no notice rode is left out.
+    /// order, with `speaksFor: {agentId}` on one that carries another agent's
+    /// words. A call no notice rode is left out.
     pub async fn read(
         &self,
         runner: &str,
@@ -392,11 +414,15 @@ impl Notices {
                 let notices: Vec<Value> = kept
                     .into_iter()
                     .map(|kept| {
-                        json!({
+                        let mut notice = json!({
                             "sender": kept.sender,
                             "text": kept.text,
                             "deliveredAs": kept.delivered_as,
-                        })
+                        });
+                        if let Some(agent) = kept.speaks_for {
+                            notice["speaksFor"] = json!({ "agentId": agent });
+                        }
+                        notice
                     })
                     .collect();
                 calls.insert(call_key, Value::Array(notices));
@@ -437,6 +463,7 @@ mod tests {
             sender: "magic-context".into(),
             text: text.into(),
             delivered_as: TOOL_RESULT.into(),
+            speaks_for: None,
             position,
         }
     }
@@ -520,8 +547,49 @@ mod tests {
             "call_key": "ck_c", "send_id": "s5", "sender": "magic-context", "text": "late"});
         let live = from_event(&event, "broca", "s").unwrap();
         assert_eq!(
-            (live.delivered_as.as_str(), live.position),
-            (TOOL_RESULT, None)
+            (live.delivered_as.as_str(), live.position, live.speaks_for),
+            (TOOL_RESULT, None, None)
         );
+        let carried = json!({"type": "notice_delivered", "mid": "m1", "part": 2,
+            "call_key": "ck_c", "send_id": "s6", "sender": "prefrontal-core", "text": "hi",
+            "speaks_for": {"agent_id": "agent_1"}});
+        assert_eq!(
+            from_event(&carried, "broca", "s")
+                .unwrap()
+                .speaks_for
+                .as_deref(),
+            Some("agent_1")
+        );
+    }
+
+    /// A version 1 file, from before notices named the agent they speak for,
+    /// gains the column and keeps its notices, and a notice kept after names
+    /// its agent.
+    #[test]
+    fn a_version_1_file_is_brought_up_to_date_and_keeps_its_notices() {
+        let dir = ScratchDir::new("occipital-notices-upgrade");
+        let descriptor = crate::store::tests::descriptor(&dir);
+        let main = crate::store::open(&descriptor).unwrap();
+        {
+            let conn = rusqlite::Connection::open(main.data_root().join(FILE)).unwrap();
+            conn.execute_batch(NOTICES).unwrap();
+            conn.execute(
+                "INSERT INTO notices VALUES ('broca', 'ck', 'send-1', 's', 'magic-context',
+                 'first', 'tool_result', 0, 1)",
+                [],
+            )
+            .unwrap();
+            conn.pragma_update(None, "user_version", 1).unwrap();
+        }
+        let store = NoticeStore::open(&descriptor, main.data_root()).unwrap();
+        let mut carried = notice("send-2", "second", Some(1));
+        carried.speaks_for = Some("agent_1".into());
+        store.keep(&[carried], 2).unwrap();
+        let kept = store.for_call("broca", "s", "ck").unwrap();
+        let agents: Vec<_> = kept
+            .iter()
+            .map(|kept| (kept.text.as_str(), kept.speaks_for.as_deref()))
+            .collect();
+        assert_eq!(agents, [("first", None), ("second", Some("agent_1"))]);
     }
 }

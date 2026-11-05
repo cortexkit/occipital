@@ -1,0 +1,1 @@
+{"result":{"calls":{"ck_one":[{"deliveredAs":"tool_result","sender":"prefrontal-core","speaksFor":{"agentId":"agent_example_peer"},"text":"Can you look at the failing build?"}]}}}

@@ -31,6 +31,9 @@ struct Trace {
     calls: BTreeMap<String, u64>,
     steps: Vec<Step>,
     outcome: Option<&'static str>,
+    /// The refusal's message, for a request refused: what the code alone
+    /// doesn't say, such as a runner's own reason.
+    refusal: Option<String>,
 }
 
 struct Step {
@@ -69,6 +72,8 @@ impl Drop for RequestLog {
         let pending = timings.iter().rev().find(|step| !step.finished);
         // Keep the timing fields structured so a stalled nested call can be found
         // without logging transcript bodies, request parameters or project paths.
+        // A refusal's message is module text, such as a runner's reason, and
+        // carries none of them.
         let steps: Vec<_> = timings
             .iter()
             .map(|step| (step.step, step.elapsed_ms, step.finished))
@@ -78,7 +83,7 @@ impl Drop for RequestLog {
         macro_rules! summary {
             ($level:expr) => {
                 tracing::event!($level, method = %self.method, session = %self.session, correlation = %self.correlation,
-                    duration_ms = millis(self.started), outcome,
+                    duration_ms = millis(self.started), outcome, refusal = trace.refusal.as_deref(),
                     pending_step = pending.map(|step| step.step), remote_calls = ?trace.calls, steps = ?steps,
                     "app reader request finished")
             };
@@ -152,6 +157,20 @@ pub(super) async fn request<T>(
 
 pub(super) fn outcome(code: &'static str) {
     let _ = REQUEST.try_with(|trace| trace.guard().outcome = Some(code));
+}
+
+/// The most of a refusal's message the request log keeps.
+const REFUSAL_CHARS: usize = 300;
+
+/// Record that the request was refused with `code`, and why: the request log
+/// names the message too, cut to [`REFUSAL_CHARS`] characters.
+pub(super) fn refused(code: &'static str, message: &str) {
+    let message: String = message.chars().take(REFUSAL_CHARS).collect();
+    let _ = REQUEST.try_with(|trace| {
+        let mut trace = trace.guard();
+        trace.outcome = Some(code);
+        trace.refusal = Some(message);
+    });
 }
 
 fn begin(name: &str) -> Option<usize> {
@@ -282,6 +301,47 @@ pub(crate) mod tests {
         assert!(text.contains("pending_step=\"resolution\""), "{text}");
         assert!(text.contains("(\"resolution\", 11, false)"), "{text}");
         assert_eq!(text.matches("level=DEBUG").count(), 2, "{text}");
+    }
+
+    /// A refused request names the refusal's message beside its code, so a
+    /// runner's reason reaches the log; a long one is cut. A request that
+    /// wasn't refused has no such field.
+    #[tokio::test]
+    async fn a_refused_request_logs_why() {
+        let (log, _guard) = capture();
+        request(
+            "session.transcript_page",
+            "session",
+            "1:1:1".into(),
+            async {
+                refused(
+                    "provider_unavailable",
+                    "thalamus-harness: module error transient: bounded runner queue full",
+                );
+            },
+        )
+        .await;
+        request("session.details", "session", "1:1:2".into(), async {
+            refused("provider_unavailable", &"x".repeat(1_000));
+        })
+        .await;
+        request("session.details", "session", "1:1:3".into(), async {
+            outcome("ok");
+        })
+        .await;
+        let text = log.text();
+        assert!(
+            text.contains(
+                "refusal=\"thalamus-harness: module error transient: bounded runner queue full\""
+            ),
+            "{text}"
+        );
+        assert!(
+            text.contains(&format!("refusal=\"{}\"", "x".repeat(REFUSAL_CHARS))),
+            "{text}"
+        );
+        assert!(!text.contains(&"x".repeat(REFUSAL_CHARS + 1)), "{text}");
+        assert_eq!(text.matches("refusal=").count(), 2, "{text}");
     }
 
     #[tokio::test(start_paused = true)]

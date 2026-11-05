@@ -61,7 +61,7 @@ pub(super) async fn serve_read(
             super::observe::synchronous("reply_encode", || match result {
                 Ok(value) => result_outcome(value),
                 Err(error) => {
-                    super::observe::outcome(error.code);
+                    super::observe::refused(error.code, &error.message);
                     error_outcome(&error)
                 }
             })
@@ -478,7 +478,7 @@ pub(super) async fn serve(
             super::observe::request(&method, &session, correlation, async {
                 let opened = resolver.watch(&session, harness.as_deref(), display).await;
                 if let Err(error) = &opened {
-                    super::observe::outcome(error.code);
+                    super::observe::refused(error.code, &error.message);
                 }
                 opened
             })

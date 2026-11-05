@@ -969,6 +969,8 @@ impl BrocaSource {
                 &reference.session,
             ));
         }
+        let mut rows = rows;
+        mark_module_messages(&mut rows, entries);
         Ok(rows)
     }
 
@@ -1812,6 +1814,54 @@ impl Cursor {
 /// rather than the read panicking.
 fn encode_cursor(cursor: &Cursor) -> String {
     serde_json::to_string(cursor).unwrap_or_default()
+}
+
+/// Mark each row a module other than this one sent, from the runner's display
+/// facts on its entry (llm-runner's `message_senders` and `message_marks`), so
+/// the apps never draw it as the person's own message:
+///
+/// - `speaksFor: {agentId}`: another agent's words the module carried, such as
+///   a head's brief or steer to its worker, or a peer message to a head. The
+///   apps draw it as that agent's.
+/// - `notice: {sender, deliveredAs}`: the module's own message to the agent,
+///   such as core's status line or Magic Context's reminders. The apps fold it.
+///   `deliveredAs` is the runner's delivery mode, when it names one.
+/// - `sentBy: {module}`: a module's message with neither mark. The apps show it
+///   labelled with the module, so nothing is hidden on a sender's mistake.
+///
+/// The person's messages come through this module, so a row it sent, or one
+/// whose entry names no sender, gets no mark. Neither does a relayed message:
+/// its `origin` already says which module relayed the person's words.
+fn mark_module_messages(rows: &mut [Row], entries: &[Value]) {
+    let by_mid: HashMap<&str, &Value> = entries
+        .iter()
+        .filter_map(|entry| entry["mid"].as_str().map(|mid| (mid, entry)))
+        .collect();
+    for row in rows {
+        let Some(entry) = by_mid.get(row.mid.as_str()) else {
+            continue;
+        };
+        let Some(sender) = entry["sender"].as_str().filter(|sender| !sender.is_empty()) else {
+            continue;
+        };
+        if sender == crate::MODULE_ID || row.display.get("origin").is_some() {
+            continue;
+        }
+        if let Some(agent) = entry["speaks_for"]["agent_id"]
+            .as_str()
+            .filter(|agent| !agent.is_empty())
+        {
+            row.display["speaksFor"] = json!({ "agentId": agent });
+        } else if entry["notice"] == true {
+            let mut notice = json!({ "sender": sender });
+            if let Some(mode) = entry["delivered_as"]["mode"].as_str() {
+                notice["deliveredAs"] = json!(mode);
+            }
+            row.display["notice"] = notice;
+        } else {
+            row.display["sentBy"] = json!({ "module": sender });
+        }
+    }
 }
 
 /// The `mid` of every entry a runner wrote for a send it delivered with a tool
