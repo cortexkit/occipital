@@ -112,6 +112,44 @@ fn opencode2_rows_follow_the_runners_display_rows() {
     }
 }
 
+/// A user entry a runner wrote for a send it delivered with a tool result is
+/// left out of pages: the model read its text inside the tool's result, so the
+/// apps must not draw it as the person's message. The other rows keep their
+/// ordinals, and a user entry delivered any other way, here as a steer (the
+/// person's message joining the running turn), stays.
+#[tokio::test]
+async fn a_send_delivered_with_a_tool_result_is_left_out_of_pages() {
+    let read = sample("02-session-read-display-facts.json");
+    let mut entries = read["messages"].as_array().unwrap().clone();
+    let entry = |from: &Value, mid: &str, ordinal: u64, mode: &str| {
+        let mut entry = from.clone();
+        entry.as_object_mut().unwrap().remove("client_message_id");
+        entry["mid"] = json!(mid);
+        entry["ordinal"] = json!(ordinal);
+        entry["delivered_as"] = json!({"mode": mode});
+        entry
+    };
+    let mut ride = entry(&entries[0], "ride-status", 6, "tool_result");
+    ride["delivered_as"]["call_key"] = json!("msg_1a1d773a300151XR52m1swzb79/call-1");
+    let steer = entry(&entries[3], "steered", 7, "steer");
+    entries.extend([ride, steer]);
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = entries;
+    let source = BrocaSource::new(opencode2_binding(), route);
+    let page = source.newest(20).await.unwrap();
+    let kept: Vec<_> = page
+        .rows
+        .iter()
+        .map(|row| (row.ordinal, row.mid.as_str()))
+        .collect();
+    assert_eq!(kept.len(), 6, "{kept:?}");
+    assert_eq!(
+        kept.iter().map(|(ordinal, _)| *ordinal).collect::<Vec<_>>(),
+        [Some(1), Some(2), Some(3), Some(4), Some(5), Some(7)]
+    );
+    assert_eq!(kept[5].1, "steered");
+}
+
 /// Serves the recorded replies: the head, the read (with display facts when
 /// asked for them), sliced to the requested ordinals, and the description.
 struct Recorded;

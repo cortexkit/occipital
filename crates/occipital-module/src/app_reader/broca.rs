@@ -1424,9 +1424,13 @@ impl BrocaSource {
         self.size_images(&mut rows).await;
         // The apps draw every system row as a prompt card that opens on tap, so
         // one with nothing in it, such as the entry Pi writes when a session
-        // starts, is left out of pages. The rows kept keep their ordinals, and
-        // whether the page reached the start comes from the runner's page.
-        rows.retain(|row| !is_empty_system_row(&row.display));
+        // starts, is left out of pages. So is the user entry a runner wrote for a
+        // send it delivered with a tool result: the model read that text inside
+        // the tool's result, never as a message, and the apps would draw it as
+        // the person's own. The rows kept keep their ordinals, and whether the
+        // page reached the start comes from the runner's page.
+        let rides = tool_result_rides(&entries);
+        rows.retain(|row| !is_empty_system_row(&row.display) && !rides.contains(&row.mid));
         let mut seen = HashSet::new();
         let mut last = None;
         let mut numbered = false;
@@ -1759,6 +1763,21 @@ impl Cursor {
 /// rather than the read panicking.
 fn encode_cursor(cursor: &Cursor) -> String {
     serde_json::to_string(cursor).unwrap_or_default()
+}
+
+/// The `mid` of every entry a runner wrote for a send it delivered with a tool
+/// result (`delivered_as.mode` is `tool_result`). Runners following llm-runner
+/// 0.8's rule that every delivered send is an entry of its own wrote one for
+/// each such send; those entries stay stored, so readers leave them out.
+fn tool_result_rides(entries: &[Value]) -> HashSet<String> {
+    entries
+        .iter()
+        .filter(|entry| {
+            entry["delivered_as"]["mode"]
+                == cortexkit_role_llm_runner::delivery_order::modes::TOOL_RESULT
+        })
+        .filter_map(|entry| entry["mid"].as_str().map(str::to_owned))
+        .collect()
 }
 
 /// Whether a row is a system row with nothing to show: no text, and only text
