@@ -4092,6 +4092,7 @@ pub(crate) mod tests {
     mod pi_display;
     mod pi_pages;
     mod pi_samples;
+    mod relayed_samples;
     #[path = "../../../../../occipital-app-reader/tests/fixtures/broca_0_7.rs"]
     pub(crate) mod samples_0_7;
     pub(crate) mod served_samples;

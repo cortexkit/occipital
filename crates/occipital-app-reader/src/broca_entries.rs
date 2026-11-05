@@ -25,11 +25,22 @@
 //! placeholder row for an unreadable entry has no stored block, so its part
 //! carries neither key, and a tool block without a `tool_call_id` has no
 //! `callId`.
+//!
+//! A message another module relayed into the chat, such as a chat gateway
+//! passing on a Slack message, starts with a header the runner wrote when it
+//! stored the message (llm-runner §9.7.1). The header frames the text for the
+//! model; the apps never show it. The read names it in an `attribution` fact,
+//! which is trusted only when the stored text really starts with the contract's
+//! exact header for that module. Then the header is cut from the row, and the
+//! row's `origin` names the module, so the apps don't draw the message as the
+//! person's own.
 
 use std::collections::{HashMap, VecDeque};
 
 use cortexkit_role_llm_runner::archive_prunes_reasoning::{kinds, PrunedReasoning};
+use cortexkit_role_llm_runner::attribution::{self, Attribution};
 use cortexkit_role_llm_runner::display::{self, DisplayPart, DisplayRow, ProjectionError};
+use cortexkit_role_llm_runner::serializer_profile;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -87,6 +98,10 @@ struct Entry {
     /// when the read asks for display facts. The block itself stays private.
     #[serde(default)]
     reasoning_summaries: Vec<ReasoningSummary>,
+    /// The module that relayed this message, once its header is verified and
+    /// cut. Never read from the entry itself.
+    #[serde(skip)]
+    origin: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -182,12 +197,22 @@ pub fn rows_with_pruned_reasoning(
     let mut failures = HashMap::new();
     for (index, raw) in entries.iter().enumerate() {
         match serde_json::from_value::<Entry>(raw.clone()) {
-            Ok(entry) if !entry.mid.is_empty() => {
+            Ok(mut entry) if !entry.mid.is_empty() => {
+                let header = relay_header(raw, &entry.message.content);
+                entry.origin = header.as_ref().map(|fact| fact.module.clone());
                 let mut parts = Vec::new();
-                for (stored, value) in entry.message.content.iter().cloned().enumerate() {
+                for (stored, mut value) in entry.message.content.iter().cloned().enumerate() {
                     // Match stored positions before filtering, so later parts retain their keys.
                     if pruned(&entry, stored, pruned_reasoning) {
                         continue;
+                    }
+                    if let Some(fact) = header.as_ref().filter(|fact| fact.part as usize == stored)
+                    {
+                        // A block that held only the header has nothing to show.
+                        match without_header(value, fact.header_bytes as usize) {
+                            Some(rest) => value = rest,
+                            None => continue,
+                        }
                     }
                     let call_id = tool_call_id(&value);
                     // A private reasoning block shows as reasoning only through
@@ -246,11 +271,18 @@ impl DisplayProfile {
 
     /// The contract's display row for one stored body, uncut: the app's own cuts
     /// apply when the row is built, as for Broca, and an exact read keeps all.
-    fn project(self, body: &Value) -> Result<DisplayRow, ProjectionError> {
-        match self {
-            Self::OpenCode2 => display::opencode_v2(body, None),
-            Self::Pi => display::pi(body, None),
-        }
+    /// The contract itself cuts a relayed message's header, and only when the
+    /// stored text carries it exactly.
+    fn project(
+        self,
+        body: &Value,
+        relay: Option<&Attribution>,
+    ) -> Result<DisplayRow, ProjectionError> {
+        let profile = match self {
+            Self::OpenCode2 => serializer_profile::OPENCODE_V2,
+            Self::Pi => serializer_profile::PI,
+        };
+        display::project_with_attribution(profile, body, None, relay)
     }
 
     /// Pi writes a message to its journal once, when the message ends, so an
@@ -310,9 +342,12 @@ pub fn display_rows(
     let mut parsed = Vec::with_capacity(entries.len());
     let mut failures = HashMap::new();
     for (index, raw) in entries.iter().enumerate() {
-        let projected = profile.project(&raw["message"]).ok();
+        let relay = raw
+            .get("attribution")
+            .and_then(|fact| serde_json::from_value::<Attribution>(fact.clone()).ok());
+        let projected = profile.project(&raw["message"], relay.as_ref()).ok();
         let facts = serde_json::from_value::<EntryFacts>(raw.clone()).ok();
-        let (Some(row), Some(facts), Some(mid)) = (
+        let (Some(mut row), Some(facts), Some(mid)) = (
             projected,
             facts,
             raw["mid"].as_str().filter(|mid| !mid.is_empty()),
@@ -322,6 +357,8 @@ pub fn display_rows(
             continue;
         };
         let (_, ordinal) = identity(raw, profile.name())?;
+        // Set only when the contract verified the header and cut it.
+        let relayed = row.attribution.take();
         let tool_times = facts.tool_times.or_else(|| projected_tool_times(&row));
         let role = match row.role.as_str() {
             "toolResult" => "tool".to_owned(),
@@ -351,12 +388,20 @@ pub fn display_rows(
             // The contract's projection already shows each reasoning summary as
             // a reasoning part of the display row.
             reasoning_summaries: Vec::new(),
+            origin: relayed.as_ref().map(|fact| fact.module.clone()),
         };
+        let header_part = relayed.as_ref().map(|fact| fact.part.to_string());
         let mut parts = Vec::new();
         for (position, part) in row.parts.into_iter().enumerate() {
             let Some((key, part, call_id)) = display_part(part) else {
                 continue;
             };
+            // A part that held only the header is left empty by the cut.
+            if Some(&key) == header_part.as_ref()
+                && matches!(&part, Part::Text(text) if text.is_empty())
+            {
+                continue;
+            }
             let stored = key.parse::<usize>().unwrap_or(position);
             if matches!(part, Part::Reasoning(_)) && pruned(&entry, stored, pruned_reasoning) {
                 continue;
@@ -459,6 +504,42 @@ fn projected_tool_times(row: &DisplayRow) -> Option<Value> {
 
 /// Whether the page names the entry's reasoning block at `stored` as pruned, by
 /// the key the runner serves for it.
+/// A Broca entry's relay header, when its `attribution` fact checks out against
+/// the stored block it names: the block is text and starts with the contract's
+/// exact header for that module. A fact that doesn't decode or doesn't match
+/// is ignored, and the text is shown whole.
+fn relay_header(raw: &Value, content: &[Value]) -> Option<Attribution> {
+    let fact = serde_json::from_value::<Attribution>(raw.get("attribution")?.clone()).ok()?;
+    let block = content.get(fact.part as usize)?;
+    let text = match block {
+        Value::String(text) => text.as_str(),
+        Value::Object(map) => {
+            let kind = map.get("type").or_else(|| map.get("kind"));
+            if kind.is_some_and(|kind| kind != "text") {
+                return None;
+            }
+            map.get("text")?.as_str()?
+        }
+        _ => return None,
+    };
+    attribution::verify(&fact, text).then_some(fact)
+}
+
+/// The text block with its first `bytes` bytes (a verified relay header) cut,
+/// or `None` when nothing follows the header.
+fn without_header(block: Value, bytes: usize) -> Option<Value> {
+    let rest = |text: &str| Some(text.get(bytes..)?.to_owned()).filter(|rest| !rest.is_empty());
+    match block {
+        Value::String(text) => rest(&text).map(Value::String),
+        Value::Object(mut map) => {
+            let text = rest(map.get("text")?.as_str()?)?;
+            map.insert("text".into(), Value::String(text));
+            Some(Value::Object(map))
+        }
+        _ => None,
+    }
+}
+
 fn pruned(entry: &Entry, stored: usize, pruned_reasoning: &[PrunedReasoning]) -> bool {
     entry.part_key(stored).is_some_and(|key| {
         pruned_reasoning.iter().any(|pruned| {
@@ -830,6 +911,10 @@ fn project(
             Some(at) => display["completedAtMs"] = json!(at),
             None => display["completion"] = json!("unknown"),
         }
+    }
+    // A message another module relayed, drawn as from that module.
+    if let Some(module) = &message.entry.origin {
+        display["origin"] = json!({"module": module});
     }
     if let Some(id) = message
         .entry
