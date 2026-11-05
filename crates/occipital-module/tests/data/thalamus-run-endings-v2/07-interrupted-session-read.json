@@ -1,0 +1,75 @@
+{
+  "head": {
+    "sub_index": 1,
+    "wal_seq": 6
+  },
+  "history_version": 0,
+  "incarnation": "inc_5162aaca18c04962873c06a66b472644",
+  "messages": [
+    {
+      "message": {
+        "id": "msg_1ab816adf0010u0iqNmq8QnyTk",
+        "metadata": {
+          "cortexkit_delivery": {
+            "delivery_id": "llmr:8735a4dc21bb0361cc6d472b668a2037:1:560b0530b2d68bb66d9e35f2:start",
+            "mode": "idle_start"
+          }
+        },
+        "text": "STALL_TURN then restart.",
+        "time": {
+          "created": 1793878747990
+        },
+        "type": "user"
+      },
+      "mid": "msg_1ab816adf0010u0iqNmq8QnyTk",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_95b82b1a0ab476d3eb710b7f"
+      },
+      "time": {
+        "created": 1793878747990
+      },
+      "tool_calls": [],
+      "written_at": 1793878748022
+    },
+    {
+      "message": {
+        "agent": "build",
+        "content": [],
+        "error": {
+          "message": "Step interrupted",
+          "type": "aborted"
+        },
+        "finish": "error",
+        "id": "msg_1ab816b5c001t6Ii881Y08KuO5",
+        "model": {
+          "id": "probe",
+          "providerID": "probe",
+          "variant": "default"
+        },
+        "time": {
+          "completed": 1793878750157,
+          "created": 1793878748036
+        },
+        "type": "assistant"
+      },
+      "mid": "msg_1ab816b5c001t6Ii881Y08KuO5",
+      "ordinal": 2,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_95b82b1a0ab476d3eb710b7f"
+      },
+      "time": {
+        "completed": 1793878750157,
+        "created": 1793878748036
+      },
+      "tool_calls": [],
+      "written_at": 1793878751375
+    }
+  ]
+}

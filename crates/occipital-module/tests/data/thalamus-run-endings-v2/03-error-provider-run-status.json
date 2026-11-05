@@ -1,0 +1,25 @@
+{
+  "error": {
+    "class": "permanent",
+    "message": "PROBE_PROVIDER_REFUSED",
+    "provider_code": "provider.invalid-request",
+    "status": 400
+  },
+  "final_step_finish_reason": "error",
+  "finish": "error",
+  "state": "error",
+  "undelivered_steers": [],
+  "usage": {
+    "by_model": [
+      {
+        "model": "probe",
+        "provider": "probe",
+        "steps": 1,
+        "unreported_steps": 1,
+        "variant": "default"
+      }
+    ],
+    "steps": 1,
+    "unreported_steps": 1
+  }
+}

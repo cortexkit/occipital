@@ -1,0 +1,1 @@
+{"result":{"incarnation":"inc_09cca8e1ebf645108319dc5f828a96d4","lastRun":{"runId":"run_133e5f4e76d7cda04b7a3324","state":"cancelled"},"model":{"model":"probe","provider":"probe"},"usage":{"by_model":[{"model":"probe","provider":"probe","steps":1,"unreported_steps":1,"variant":"default"}],"since":"run_133e5f4e76d7cda04b7a3324","steps":1,"unreported_steps":1}}}

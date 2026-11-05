@@ -1,0 +1,125 @@
+{
+  "head": {
+    "sub_index": 0,
+    "wal_seq": 6
+  },
+  "history_version": 0,
+  "incarnation": "inc_5553a64017ab4de5919b97767a0bcd7b",
+  "messages": [
+    {
+      "created_at": 1793878746159,
+      "message": {
+        "id": "msg_1ab8163ad001uEo8neemEEsQiQ",
+        "metadata": {
+          "cortexkit_delivery": {
+            "delivery_id": "llmr:d28b964c95d7de88e39384024c5bd248:1:04b5d11e6d76d539f895fa6f:start",
+            "mode": "idle_start"
+          }
+        },
+        "text": "TOOL_TURN at the step limit.",
+        "time": {
+          "created": 1793878746159
+        },
+        "type": "user"
+      },
+      "mid": "msg_1ab8163ad001uEo8neemEEsQiQ",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_4c7efd5f299a3a7d81f8aeeb"
+      },
+      "time": {
+        "created": 1793878746159
+      },
+      "tool_calls": [],
+      "written_at": 1793878746189
+    },
+    {
+      "completed_at": 1793878746229,
+      "created_at": 1793878746211,
+      "message": {
+        "agent": "build",
+        "content": [
+          {
+            "executed": false,
+            "id": "call_probe",
+            "name": "bash",
+            "state": {
+              "error": {
+                "message": "not_executed_at_step_limit",
+                "type": "unknown"
+              },
+              "input": {
+                "command": "printf PROBE_TOOL",
+                "description": "Print a probe marker"
+              },
+              "status": "error"
+            },
+            "time": {
+              "completed": 1793878746227,
+              "created": 1793878746217,
+              "ran": 1793878746221
+            },
+            "type": "tool"
+          }
+        ],
+        "cost": 0,
+        "finish": "tool-calls",
+        "id": "msg_1ab816436001lq8CldFXW9A7wr",
+        "model": {
+          "id": "probe",
+          "providerID": "probe",
+          "variant": "default"
+        },
+        "rawFinish": "tool_calls",
+        "time": {
+          "completed": 1793878746229,
+          "created": 1793878746211,
+          "streamed": 1793878746223
+        },
+        "tokens": {
+          "cache": {
+            "read": 0,
+            "write": 0
+          },
+          "input": 1,
+          "output": 1,
+          "reasoning": 0
+        },
+        "type": "assistant"
+      },
+      "mid": "msg_1ab816436001lq8CldFXW9A7wr",
+      "ordinal": 2,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_4c7efd5f299a3a7d81f8aeeb"
+      },
+      "time": {
+        "completed": 1793878746229,
+        "created": 1793878746211,
+        "streamed": 1793878746223
+      },
+      "tool_calls": [
+        {
+          "call_key": "msg_1ab816436001lq8CldFXW9A7wr/call_probe",
+          "indeterminate": false,
+          "tool_call_id": "call_probe"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_1ab816436001lq8CldFXW9A7wr/call_probe",
+          "finished_at": 1793878746227,
+          "started_at": 1793878746221,
+          "tool_call_id": "call_probe",
+          "unanswered": "not_executed"
+        }
+      ],
+      "written_at": 1793878746243
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "first_ordinal": 1,
+  "head": {
+    "sub_index": 0,
+    "wal_seq": 4
+  },
+  "history_version": 0,
+  "incarnation": "inc_990fe46ac126430f9889fd4a319cef93",
+  "input": {
+    "attachments": "yes",
+    "mime_types": [
+      "image/png",
+      "image/jpeg",
+      "image/webp"
+    ],
+    "modalities": [
+      "text",
+      "image"
+    ]
+  },
+  "last_ordinal": 1,
+  "last_run_error": {
+    "class": "compaction"
+  },
+  "last_run_state": {
+    "run_id": "run_62777560a28b0238052b89d6",
+    "state": "error"
+  },
+  "model": {
+    "model": "probe",
+    "provider": "probe"
+  },
+  "sender": {
+    "interrupt": true,
+    "modes": [
+      "tool_result",
+      "steer",
+      "idle_start"
+    ],
+    "owner": true
+  },
+  "updated_at": 1793878747127
+}

@@ -1,0 +1,19 @@
+{
+  "final_step_finish_reason": "error",
+  "finish": "error",
+  "state": "cancelled",
+  "undelivered_steers": [],
+  "usage": {
+    "by_model": [
+      {
+        "model": "probe",
+        "provider": "probe",
+        "steps": 1,
+        "unreported_steps": 1,
+        "variant": "default"
+      }
+    ],
+    "steps": 1,
+    "unreported_steps": 1
+  }
+}

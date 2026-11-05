@@ -1,0 +1,58 @@
+{
+  "first_ordinal": 1,
+  "head": {
+    "sub_index": 0,
+    "wal_seq": 6
+  },
+  "history_version": 0,
+  "incarnation": "inc_5553a64017ab4de5919b97767a0bcd7b",
+  "input": {
+    "attachments": "yes",
+    "mime_types": [
+      "image/png",
+      "image/jpeg",
+      "image/webp"
+    ],
+    "modalities": [
+      "text",
+      "image"
+    ]
+  },
+  "last_ordinal": 2,
+  "last_run_state": {
+    "run_id": "run_4c7efd5f299a3a7d81f8aeeb",
+    "state": "max_steps"
+  },
+  "model": {
+    "model": "probe",
+    "provider": "probe"
+  },
+  "sender": {
+    "interrupt": true,
+    "modes": [
+      "tool_result",
+      "steer",
+      "idle_start"
+    ],
+    "owner": true
+  },
+  "updated_at": 1793878746246,
+  "usage": {
+    "by_model": [
+      {
+        "input_tokens": 1,
+        "model": "probe",
+        "output_tokens": 1,
+        "provider": "probe",
+        "steps": 1,
+        "unreported_steps": 0,
+        "variant": "default"
+      }
+    ],
+    "input_tokens": 1,
+    "output_tokens": 1,
+    "since": "run_4c7efd5f299a3a7d81f8aeeb",
+    "steps": 1,
+    "unreported_steps": 0
+  }
+}

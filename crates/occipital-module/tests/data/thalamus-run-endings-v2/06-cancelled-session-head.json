@@ -1,0 +1,54 @@
+{
+  "first_ordinal": 1,
+  "head": {
+    "sub_index": 0,
+    "wal_seq": 6
+  },
+  "history_version": 0,
+  "incarnation": "inc_09cca8e1ebf645108319dc5f828a96d4",
+  "input": {
+    "attachments": "yes",
+    "mime_types": [
+      "image/png",
+      "image/jpeg",
+      "image/webp"
+    ],
+    "modalities": [
+      "text",
+      "image"
+    ]
+  },
+  "last_ordinal": 2,
+  "last_run_state": {
+    "run_id": "run_133e5f4e76d7cda04b7a3324",
+    "state": "cancelled"
+  },
+  "model": {
+    "model": "probe",
+    "provider": "probe"
+  },
+  "sender": {
+    "interrupt": true,
+    "modes": [
+      "tool_result",
+      "steer",
+      "idle_start"
+    ],
+    "owner": true
+  },
+  "updated_at": 1793878747821,
+  "usage": {
+    "by_model": [
+      {
+        "model": "probe",
+        "provider": "probe",
+        "steps": 1,
+        "unreported_steps": 1,
+        "variant": "default"
+      }
+    ],
+    "since": "run_133e5f4e76d7cda04b7a3324",
+    "steps": 1,
+    "unreported_steps": 1
+  }
+}

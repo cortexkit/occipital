@@ -1,0 +1,55 @@
+{
+  "first_ordinal": 1,
+  "head": {
+    "sub_index": 1,
+    "wal_seq": 6
+  },
+  "history_version": 0,
+  "incarnation": "inc_5162aaca18c04962873c06a66b472644",
+  "input": {
+    "attachments": "yes",
+    "mime_types": [
+      "image/png",
+      "image/jpeg",
+      "image/webp"
+    ],
+    "modalities": [
+      "text",
+      "image"
+    ]
+  },
+  "last_ordinal": 2,
+  "last_run_state": {
+    "reason": "runner_crash",
+    "run_id": "run_95b82b1a0ab476d3eb710b7f",
+    "state": "interrupted"
+  },
+  "model": {
+    "model": "probe",
+    "provider": "probe"
+  },
+  "sender": {
+    "interrupt": true,
+    "modes": [
+      "tool_result",
+      "steer",
+      "idle_start"
+    ],
+    "owner": true
+  },
+  "updated_at": 1793878751367,
+  "usage": {
+    "by_model": [
+      {
+        "model": "probe",
+        "provider": "probe",
+        "steps": 1,
+        "unreported_steps": 1,
+        "variant": "default"
+      }
+    ],
+    "since": "run_95b82b1a0ab476d3eb710b7f",
+    "steps": 1,
+    "unreported_steps": 1
+  }
+}

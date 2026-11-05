@@ -1,0 +1,79 @@
+{
+  "head": {
+    "sub_index": 0,
+    "wal_seq": 6
+  },
+  "history_version": 0,
+  "incarnation": "inc_d2876a0820a3455c821a8193d9f98f22",
+  "messages": [
+    {
+      "message": {
+        "id": "msg_1ab81659000107hASLaQTHoQ1V",
+        "metadata": {
+          "cortexkit_delivery": {
+            "delivery_id": "llmr:2b7c03e71cd41d278ea4548fac7808bc:1:7bcd97af0a6af833577faf5c:start",
+            "mode": "idle_start"
+          }
+        },
+        "text": "FAIL_TURN now.",
+        "time": {
+          "created": 1793878746617
+        },
+        "type": "user"
+      },
+      "mid": "msg_1ab81659000107hASLaQTHoQ1V",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e8db396ebc369115f4ab46f3"
+      },
+      "time": {
+        "created": 1793878746617
+      },
+      "tool_calls": [],
+      "written_at": 1793878746642
+    },
+    {
+      "message": {
+        "agent": "build",
+        "content": [],
+        "error": {
+          "message": "PROBE_PROVIDER_REFUSED",
+          "response": {
+            "body": "{\"error\":{\"message\":\"PROBE_PROVIDER_REFUSED\",\"type\":\"invalid_request_error\"}}"
+          },
+          "status": 400,
+          "type": "provider.invalid-request"
+        },
+        "finish": "error",
+        "id": "msg_1ab8165ff001WUu6bmOF9foZ3r",
+        "model": {
+          "id": "probe",
+          "providerID": "probe",
+          "variant": "default"
+        },
+        "time": {
+          "completed": 1793878746660,
+          "created": 1793878746655
+        },
+        "type": "assistant"
+      },
+      "mid": "msg_1ab8165ff001WUu6bmOF9foZ3r",
+      "ordinal": 2,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_e8db396ebc369115f4ab46f3"
+      },
+      "time": {
+        "completed": 1793878746660,
+        "created": 1793878746655
+      },
+      "tool_calls": [],
+      "written_at": 1793878746668
+    }
+  ]
+}

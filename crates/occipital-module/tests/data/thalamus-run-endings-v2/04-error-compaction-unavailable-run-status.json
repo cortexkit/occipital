@@ -1,0 +1,15 @@
+{
+  "error": {
+    "class": "compaction",
+    "message": "no compaction view from magic-context",
+    "provider": "magic-context",
+    "provider_code": "compaction_unavailable"
+  },
+  "state": "error",
+  "undelivered_steers": [],
+  "usage": {
+    "by_model": [],
+    "steps": 0,
+    "unreported_steps": 0
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "head": {
+    "sub_index": 0,
+    "wal_seq": 4
+  },
+  "history_version": 0,
+  "incarnation": "inc_990fe46ac126430f9889fd4a319cef93",
+  "messages": [
+    {
+      "created_at": 1793878746832,
+      "message": {
+        "id": "msg_1ab81665c001xYdzrc3gIJbTIq",
+        "metadata": {
+          "cortexkit_delivery": {
+            "delivery_id": "llmr:355238ec5e4c7629b107bb278f72e556:1:647f7936a64cfe344c5b679d:start",
+            "mode": "idle_start"
+          }
+        },
+        "text": "Unmanaged turn.",
+        "time": {
+          "created": 1793878746832
+        },
+        "type": "user"
+      },
+      "mid": "msg_1ab81665c001xYdzrc3gIJbTIq",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_62777560a28b0238052b89d6"
+      },
+      "time": {
+        "created": 1793878746832
+      },
+      "tool_calls": [],
+      "written_at": 1793878746846
+    }
+  ]
+}

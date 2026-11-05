@@ -1,0 +1,78 @@
+{
+  "head": {
+    "sub_index": 0,
+    "wal_seq": 6
+  },
+  "history_version": 0,
+  "incarnation": "inc_09cca8e1ebf645108319dc5f828a96d4",
+  "messages": [
+    {
+      "created_at": 1793878747709,
+      "message": {
+        "id": "msg_1ab8169d8001Dt6Ce5RbYT5mb3",
+        "metadata": {
+          "cortexkit_delivery": {
+            "delivery_id": "llmr:27fe062c10735ab3b20e02b5f0b849e9:1:fc8cc4dcc1e07d3c717882c6:start",
+            "mode": "idle_start"
+          }
+        },
+        "text": "STALL_TURN then stop.",
+        "time": {
+          "created": 1793878747709
+        },
+        "type": "user"
+      },
+      "mid": "msg_1ab8169d8001Dt6Ce5RbYT5mb3",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_133e5f4e76d7cda04b7a3324"
+      },
+      "time": {
+        "created": 1793878747709
+      },
+      "tool_calls": [],
+      "written_at": 1793878747722
+    },
+    {
+      "completed_at": 1793878747793,
+      "created_at": 1793878747735,
+      "message": {
+        "agent": "build",
+        "content": [],
+        "error": {
+          "message": "Step interrupted",
+          "type": "aborted"
+        },
+        "finish": "error",
+        "id": "msg_1ab816a42001G3iMW9yJL2AMsA",
+        "model": {
+          "id": "probe",
+          "providerID": "probe",
+          "variant": "default"
+        },
+        "time": {
+          "completed": 1793878747793,
+          "created": 1793878747735
+        },
+        "type": "assistant"
+      },
+      "mid": "msg_1ab816a42001G3iMW9yJL2AMsA",
+      "ordinal": 2,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_133e5f4e76d7cda04b7a3324"
+      },
+      "time": {
+        "completed": 1793878747793,
+        "created": 1793878747735
+      },
+      "tool_calls": [],
+      "written_at": 1793878747818
+    }
+  ]
+}

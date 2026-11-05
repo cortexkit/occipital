@@ -1,0 +1,23 @@
+{
+  "final_step_finish_reason": "stop",
+  "finish": "stop",
+  "state": "completed",
+  "undelivered_steers": [],
+  "usage": {
+    "by_model": [
+      {
+        "input_tokens": 2,
+        "model": "probe",
+        "output_tokens": 2,
+        "provider": "probe",
+        "steps": 2,
+        "unreported_steps": 0,
+        "variant": "default"
+      }
+    ],
+    "input_tokens": 2,
+    "output_tokens": 2,
+    "steps": 2,
+    "unreported_steps": 0
+  }
+}
