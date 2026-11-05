@@ -149,9 +149,20 @@ enum Part {
     Text(String),
     Reasoning(String),
     Injected(String),
-    Call { name: String, input: Value },
-    Result { content: Value, is_error: bool },
-    File { raw: Value },
+    /// A tool call. `provider_executed` marks a tool the model's provider ran
+    /// itself, such as a hosted web search, so nothing on this computer ran it.
+    Call {
+        name: String,
+        input: Value,
+        provider_executed: bool,
+    },
+    Result {
+        content: Value,
+        is_error: bool,
+    },
+    File {
+        raw: Value,
+    },
     Unknown(Value),
 }
 
@@ -448,9 +459,14 @@ fn display_part(part: DisplayPart) -> Option<(String, Part, Option<String>)> {
             let input = serde_json::from_str(&tool.arguments)
                 .unwrap_or_else(|_| Value::String(tool.arguments.clone()));
             let name = tool.name;
+            let provider_executed = tool.provider_executed;
             (
                 tool.part,
-                Part::Call { name, input },
+                Part::Call {
+                    name,
+                    input,
+                    provider_executed,
+                },
                 call(tool.tool_call_id),
             )
         }
@@ -703,6 +719,9 @@ fn decode_part(value: Value) -> Option<Part> {
                         .unwrap_or_default()
                         .into(),
                     input: map.get("input").cloned().unwrap_or(Value::Null),
+                    // Broca stores no tool its provider ran: it never asks a
+                    // provider for a hosted tool.
+                    provider_executed: false,
                 },
                 Some("tool_result") => Part::Result {
                     content: map
@@ -804,7 +823,11 @@ fn project(
             Part::Text(text) => json!({"type":"text", "text":text}),
             Part::Reasoning(text) => json!({"type":"reasoning", "text":text}),
             Part::Injected(text) => json!({"type":"injected", "text":text}),
-            Part::Call { name, input } => {
+            Part::Call {
+                name,
+                input,
+                provider_executed,
+            } => {
                 let name = if name.is_empty() && !full {
                     "unknown"
                 } else {
@@ -822,6 +845,9 @@ fn project(
                 };
                 let truncated = arguments.len() < serialized.len();
                 let mut value = json!({"type":"tool", "tool":name, "arguments":arguments, "argumentsTruncated":truncated});
+                if *provider_executed {
+                    value["providerExecuted"] = json!(true);
+                }
                 if full {
                     value["arguments"] = input.clone();
                 }

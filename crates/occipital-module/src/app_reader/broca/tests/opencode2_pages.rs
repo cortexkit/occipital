@@ -152,7 +152,11 @@ async fn a_send_delivered_with_a_tool_result_is_left_out_of_pages() {
 
 /// Serves the recorded replies: the head, the read (with display facts when
 /// asked for them), sliced to the requested ordinals, and the description.
-struct Recorded;
+/// With `hosted`, every stored tool call reads as one the model's provider ran
+/// itself (`executed: true`), as OpenCode 2 stores a hosted web search.
+struct Recorded {
+    hosted: bool,
+}
 
 struct Quiet;
 
@@ -188,6 +192,16 @@ impl BrocaRoute for Recorded {
                     .cloned()
                     .collect();
                 read["messages"] = json!(messages);
+                if self.hosted {
+                    for entry in read["messages"].as_array_mut().unwrap() {
+                        let content = entry["message"]["content"].as_array_mut();
+                        for item in content.into_iter().flatten() {
+                            if item.get("executed").is_some() {
+                                item["executed"] = json!(true);
+                            }
+                        }
+                    }
+                }
                 result(read)
             }
             method => panic!("the recorded runner was asked {method}"),
@@ -199,14 +213,29 @@ impl BrocaRoute for Recorded {
     }
 }
 
-struct RecordedRoutes;
+struct RecordedRoutes {
+    hosted: bool,
+}
 
 #[async_trait]
 impl BrocaRoutes for RecordedRoutes {
     async fn open(&self, resolved: &Resolved) -> Result<Arc<dyn BrocaRoute>, ReadError> {
         assert_eq!(resolved.harness, "opencode2");
-        Ok(Arc::new(Recorded))
+        Ok(Arc::new(Recorded {
+            hosted: self.hosted,
+        }))
     }
+}
+
+fn recorded_app(hosted: bool) -> Arc<super::super::super::AppReader> {
+    Arc::new(super::super::super::AppReader::new(Arc::new(
+        BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
+                OPENCODE_RUNNER_MODULE_ID,
+            ))))),
+            Arc::new(RecordedRoutes { hosted }),
+        ),
+    )))
 }
 
 /// The app's newest page, exact read and details over the recorded runner: the
@@ -214,12 +243,7 @@ impl BrocaRoutes for RecordedRoutes {
 /// the app's ids, and the call carries its recorded times.
 #[tokio::test]
 async fn an_app_reads_the_recorded_opencode2_session() {
-    let app = super::super::super::AppReader::new(Arc::new(BrocaSources::new(
-        Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
-            OPENCODE_RUNNER_MODULE_ID,
-        ))))),
-        Arc::new(RecordedRoutes),
-    )));
+    let app = recorded_app(false);
     let session = json!({"session": "ses_head", "harness": "opencode2"});
     let mut request = session.clone();
     request["limit"] = json!(50);
@@ -261,6 +285,8 @@ async fn an_app_reads_the_recorded_opencode2_session() {
         assert_eq!(call["finishedAtMs"], 1_793_716_614_082_u64);
         // OpenCode 2 sessions don't declare call identities yet.
         assert!(call.get("callKey").is_none() && call.get("schemaPin").is_none());
+        // This computer ran it, so it carries no provider mark.
+        assert!(call.get("providerExecuted").is_none(), "{call}");
     }
     let details = app
         .read(super::super::super::DETAILS, session)
@@ -268,4 +294,43 @@ async fn an_app_reads_the_recorded_opencode2_session() {
         .unwrap();
     assert_eq!(details["incarnation"], INCARNATION);
     assert_eq!(details["lastRun"]["state"], "completed", "{details}");
+}
+
+/// The sample set `phone-reader-provider-tools-v1`: the recorded session with
+/// its `bash` call stored as one the provider ran itself. The app's newest page
+/// and exact read of that message carry `providerExecuted: true` on the tool
+/// part, and nothing else in them changes.
+#[tokio::test]
+async fn the_provider_tool_samples_are_what_the_reader_serves() {
+    let mut served =
+        super::served_samples::Served::new("phone-reader-provider-tools-v1", recorded_app(true));
+    let session = json!({"session": "ses_head", "harness": "opencode2"});
+    let tool = |reply: &[u8]| {
+        let page = super::served_samples::decoded(reply)["result"].clone();
+        page["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|message| message["parts"].as_array().cloned().unwrap_or_default())
+            .find(|part| part["type"] == "tool")
+            .unwrap()
+    };
+    let mut params = session.clone();
+    params["limit"] = json!(50);
+    let request = json!({"method": super::super::super::TRANSCRIPT_PAGE, "params": params});
+    let reply = served.read(1, &request).await;
+    let call = tool(&reply);
+    assert_eq!(
+        (&call["callId"], &call["providerExecuted"]),
+        (&json!("call_probe"), &json!(true)),
+        "{call}"
+    );
+    served.keep("01-newest-page", &request, reply);
+    let mut params = session;
+    params["messageOrdinal"] = json!(2);
+    let request = json!({"method": super::super::super::TRANSCRIPT_PAGE, "params": params});
+    let reply = served.read(2, &request).await;
+    assert_eq!(tool(&reply)["providerExecuted"], true);
+    served.keep("02-exact-read", &request, reply);
+    served.check();
 }
