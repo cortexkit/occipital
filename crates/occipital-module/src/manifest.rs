@@ -232,7 +232,7 @@ mod tests {
         assert_eq!(role(&value, "tool_provider")["tools"], json!([]));
     }
 
-    /// The apps address these names, and the three watches must be declared as
+    /// The apps address these names, and the four watches must be declared as
     /// watches or the daemon delivers them as unary calls.
     #[test]
     fn the_management_surface_serves_the_app_operations() {
@@ -256,6 +256,8 @@ mod tests {
                 ("session.display_watch", "query"),
                 ("session.enqueue_user_message", "mutate"),
                 ("session.media", "query"),
+                ("session.notices", "query"),
+                ("session.notices_watch", "query"),
                 ("session.stop", "mutate"),
                 ("session.tool_detail", "query"),
                 ("session.tool_records", "query"),
@@ -277,6 +279,7 @@ mod tests {
             watches,
             [
                 "session.display_watch",
+                "session.notices_watch",
                 "session.tool_records_watch",
                 "session.transcript_watch"
             ]

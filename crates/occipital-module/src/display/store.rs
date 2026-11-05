@@ -69,8 +69,10 @@ const CALL_PINS: &str = "CREATE TABLE display_call_pins (
   PRIMARY KEY (runner, call_key)) WITHOUT ROWID;
 CREATE INDEX display_call_pins_age ON display_call_pins (seen_at_ms);";
 
-/// One schema version for both files. Version 2 adds the records file's call
-/// pins; the details file has nothing new at 2.
+/// One schema version for both files: the number of steps each opens with.
+/// Version 2 adds the records file's call pins; the details file has nothing
+/// new at 2.
+#[cfg(test)]
 const SCHEMA_VERSION: i64 = 2;
 
 /// The limits this server serves in `role.describe.tool_display`: the
@@ -559,17 +561,20 @@ fn writes_in(
     Ok(stored)
 }
 
-/// Open one display file beside the main store, under its own storage
-/// namespace so its lease never contends with another file's, and bring its
-/// tables up to [`SCHEMA_VERSION`]: `steps[n]` takes the file from version `n`
-/// to `n + 1`.
-fn open_file(
+/// Open a file beside the main store, under its own storage namespace so its
+/// lease never contends with another file's, and bring its schema up to date.
+/// `steps[n]` holds the tables version `n + 1` adds, so the file's version is
+/// the number of steps. A file at a version this build doesn't know is
+/// refused. The display files and the notices file (`crate::notices`) open
+/// this way.
+pub(crate) fn open_file(
     main: &StorageDescriptor,
     data_root: &Path,
     namespace: &str,
     file: &str,
     steps: &[&[&str]],
 ) -> Result<SqliteStore, OpenError> {
+    let version = i64::try_from(steps.len()).unwrap_or(i64::MAX);
     let descriptor = StorageDescriptor {
         module_id: main.module_id.clone(),
         storage_namespace: namespace.into(),
@@ -580,18 +585,18 @@ fn open_file(
     };
     let sqlite = open_sqlite(&descriptor)?;
     let found = sqlite.with_conn(user_version)?;
-    if !(0..=SCHEMA_VERSION).contains(&found) {
+    if !(0..=version).contains(&found) {
         return Err(OpenError::VersionUnsupported { found });
     }
     sqlite.with_conn_fenced(|tx| {
         let found = user_version(tx)?;
-        if found < SCHEMA_VERSION {
+        if found < version {
             for step in steps.iter().skip(usize::try_from(found).unwrap_or(0)) {
                 for table in *step {
                     tx.execute_batch(table)?;
                 }
             }
-            tx.pragma_update(None, "user_version", SCHEMA_VERSION)?;
+            tx.pragma_update(None, "user_version", version)?;
         }
         Ok(())
     })?;

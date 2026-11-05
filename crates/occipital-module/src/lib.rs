@@ -30,6 +30,7 @@ pub mod manifest;
 pub mod media;
 #[cfg(feature = "show-ui")]
 pub mod native;
+pub mod notices;
 pub mod serve;
 #[cfg(feature = "show-ui")]
 pub mod show_ui;

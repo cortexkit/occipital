@@ -218,6 +218,10 @@ pub struct OccipitalHandler {
     /// Where the app reader's pages report their calls' pins, set once the
     /// display store is open. The reader is built first, so it holds the slot.
     call_pins: crate::display::call_pins::CallPinSlot,
+    /// Where the app reader's pages and live streams report the notices that
+    /// rode their calls, set once the notices file is open. The reader is
+    /// built first, so it holds the slot.
+    notices: crate::notices::NoticeSlot,
     /// The apps' tool display reads over the display store, once it is open.
     tool_display: OnceLock<Arc<crate::display::app::ToolDisplay>>,
     consumer: Option<Consumer>,
@@ -243,6 +247,7 @@ impl OccipitalHandler {
             display: OnceLock::new(),
             display_views: OnceLock::new(),
             call_pins: Default::default(),
+            notices: Default::default(),
             tool_display: OnceLock::new(),
             consumer,
             daemon_calls: OnceLock::new(),
@@ -363,6 +368,7 @@ impl OccipitalHandler {
                 consumer.connection_file.clone(),
                 consumer.identity.clone(),
                 self.call_pins.clone(),
+                self.notices.clone(),
             ),
             None => app_reader::broca::LazyBrocaSources::unavailable(),
         });
@@ -486,6 +492,7 @@ impl ModuleHandler for OccipitalHandler {
             return (self.on_fatal)(fatal);
         }
         self.open_display(ack, &opened);
+        self.open_notices(ack, &opened);
         // Without the catalog, Engram skips the store; serving goes on.
         if let Err(error) = crate::backup::write_catalog(opened.data_root(), opened.file_name()) {
             tracing::warn!(%error, "cannot write the Engram backup catalog");
@@ -524,6 +531,31 @@ impl ModuleHandler for OccipitalHandler {
 }
 
 impl OccipitalHandler {
+    /// Open the notices file beside the store and start keeping notices. A
+    /// file that can't be opened is logged, and `session.notices` is refused
+    /// from then on: chats are served without their notices.
+    fn open_notices(&self, ack: &ModuleHelloAckBody, store: &Store) {
+        let opened = store::descriptor_from_ack(ack).and_then(|descriptor| {
+            crate::notices::NoticeStore::open(&descriptor, store.data_root())
+        });
+        match opened {
+            Ok(file) => {
+                let (notices, task) = crate::notices::Notices::start(Arc::new(file));
+                let _ = self.notices.set(notices.clone());
+                if let Some(app) = self.app.get() {
+                    app.set_notices(notices);
+                }
+                if let Ok(mut tasks) = self.background.lock() {
+                    tasks.push(("notice keeping", task));
+                }
+            }
+            Err(error) => {
+                let reason = error.fatal().line;
+                tracing::error!(%reason, "cannot open the notices file; notices are not served");
+            }
+        }
+    }
+
     /// Open the display file beside the store and start its pruning. A file
     /// that can't be opened is logged, and writes are refused from then on:
     /// chats are served without display data.

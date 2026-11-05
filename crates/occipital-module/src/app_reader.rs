@@ -72,10 +72,16 @@ pub const DISPLAY_METHODS: [&str; 6] = [
     crate::display::model_names::OPERATION,
 ];
 
+/// The notices that rode a session's tool calls (`crate::notices`), and the
+/// watch saying when one arrives. They are reads, so [`admit`] lets in the
+/// same callers as the transcript reads, the desktop app included.
+pub const NOTICE_METHODS: [&str; 2] = [crate::notices::READ, crate::notices::WATCH];
+
 pub fn operations() -> Vec<ManagementOperation> {
     METHODS
         .into_iter()
         .chain(DISPLAY_METHODS)
+        .chain(NOTICE_METHODS)
         .map(|name| ManagementOperation {
             name: name.into(),
             kind: ManagementOperationKind::Query,
@@ -95,6 +101,7 @@ pub fn operation_delivery() -> BTreeMap<String, OperationDelivery> {
         TRANSCRIPT_WATCH,
         DISPLAY_WATCH,
         crate::display::app::RECORDS_WATCH,
+        crate::notices::WATCH,
     ]
     .into_iter()
     .map(|name| (name.into(), OperationDelivery::WATCH))
@@ -157,7 +164,11 @@ pub fn admit(binding: Option<&RouteBinding>, method: &str) -> Result<Caller, Rea
         matches!(target, RouteTarget::ManagementSurface { module_id } if module_id == crate::MODULE_ID)
             && operator_app.as_ref().is_some_and(|app| app.app == "alfonso-desktop")
     });
-    if desktop_app && (METHODS.contains(&method) || DISPLAY_METHODS.contains(&method)) {
+    if desktop_app
+        && (METHODS.contains(&method)
+            || DISPLAY_METHODS.contains(&method)
+            || NOTICE_METHODS.contains(&method))
+    {
         return Ok(Caller::Operator);
     }
     Err(admission_refusal(binding, method))
@@ -350,6 +361,9 @@ pub struct AppReader {
     /// The model names, once the module can call other modules; refused until
     /// then.
     model_names: std::sync::OnceLock<Arc<crate::display::model_names::ModelNames>>,
+    /// The notices that rode sessions' calls, once their file is open;
+    /// refused until then.
+    notices: std::sync::OnceLock<Arc<crate::notices::Notices>>,
 }
 
 impl Default for AppReader {
@@ -377,7 +391,24 @@ impl AppReader {
             thumbs: crate::media::Thumbs::default(),
             tool_display: std::sync::OnceLock::new(),
             model_names: std::sync::OnceLock::new(),
+            notices: std::sync::OnceLock::new(),
         }
+    }
+
+    /// Serve `session.notices` and its watch from `notices`. The notices file
+    /// opens after the reader is built, so this is set later, once.
+    pub fn set_notices(&self, notices: Arc<crate::notices::Notices>) {
+        let _ = self.notices.set(notices);
+    }
+
+    pub(crate) fn notices(&self) -> Result<&Arc<crate::notices::Notices>, ReadError> {
+        self.notices.get().ok_or_else(|| {
+            ReadError::new(
+                "provider_unavailable",
+                "notices are unavailable: the notices file isn't open",
+            )
+            .with_detail(serde_json::json!({"retryable": true}))
+        })
     }
 
     /// Serve `display.model_names` from `names`, once.
@@ -497,6 +528,13 @@ impl AppReader {
         if DISPLAY_METHODS.contains(&method) {
             return self.tool_display_read(method, params).await;
         }
+        if method == crate::notices::READ {
+            let notices = self.notices()?;
+            let reference = self.session_reference(&params).await?;
+            return notices
+                .read(&reference.runner, &reference.session, &params)
+                .await;
+        }
         if method == STOP {
             return self.sends.stop(params).await.map_err(|refusal| ReadError {
                 code: refusal.code,
@@ -579,6 +617,7 @@ impl AppReader {
 fn served(method: &str) -> bool {
     METHODS.contains(&method)
         || DISPLAY_METHODS.contains(&method)
+        || NOTICE_METHODS.contains(&method)
         || method == SEND
         || method == STOP
         || uploads::METHODS.contains(&method)
@@ -616,7 +655,10 @@ pub fn is_watch(body: &[u8]) -> bool {
         .is_some_and(|method| {
             matches!(
                 method.as_ref(),
-                TRANSCRIPT_WATCH | DISPLAY_WATCH | crate::display::app::RECORDS_WATCH
+                TRANSCRIPT_WATCH
+                    | DISPLAY_WATCH
+                    | crate::display::app::RECORDS_WATCH
+                    | crate::notices::WATCH
             )
         })
 }
@@ -780,7 +822,11 @@ impl AppReader {
             return refusal("invalid_request", "request exceeds 64 KiB");
         }
         let records_watch = method == crate::display::app::RECORDS_WATCH;
-        if !records_watch && !matches!(method.as_str(), TRANSCRIPT_WATCH | DISPLAY_WATCH) {
+        let notices_watch = method == crate::notices::WATCH;
+        if !records_watch
+            && !notices_watch
+            && !matches!(method.as_str(), TRANSCRIPT_WATCH | DISPLAY_WATCH)
+        {
             return route::serve_read(self.clone(), caller, method, params, correlation).await;
         }
         let slot = match self.watches.open(WatchRoute {
@@ -798,6 +844,9 @@ impl AppReader {
         };
         if records_watch {
             return route::serve_records_watch(self.clone(), params, exchange, slot).await;
+        }
+        if notices_watch {
+            return route::serve_notices_watch(self.clone(), params, exchange, slot).await;
         }
         route::serve(
             self.clone(),

@@ -336,6 +336,98 @@ pub(super) async fn serve_records_watch(
     }
 }
 
+/// `session.notices_watch {session, harness?}`: tell the app which of its
+/// session's calls a notice rode, as `{callKeys}`, so it reads their notices
+/// again. Notices carry no data. The first notice, `{callKeys: []}`, says the
+/// watch is listening, so a notices read after it misses nothing.
+///
+/// The watch holds the session's runner subscription, as the transcript and
+/// display watches do, since a riding notice arrives on it
+/// (`notice_delivered`). When that subscription is lost, or the watch falls
+/// behind, it ends, and the app reads again when it reopens.
+pub(super) async fn serve_notices_watch(
+    app: Arc<AppReader>,
+    params: Value,
+    exchange: Box<dyn Exchange>,
+    slot: WatchSlot,
+) -> HandlerOutcome {
+    use std::collections::BTreeSet;
+    use tokio::sync::broadcast::error::RecvError;
+
+    let cancelled = exchange.cancellation();
+    let ended = slot.ended();
+    let work = async {
+        let notices = app.notices()?.clone();
+        let reference = app.session_reference(&params).await?;
+        let harness = occipital_app_reader::page::optional_transcript_harness(&params)
+            .map_err(|error| ReadError::new(error.code, error.message))?;
+        let mut arrivals = notices.arrivals();
+        let followed = app
+            .resolver
+            .watch(&reference.session, harness, app.display.clone())
+            .await?;
+        let _lease = followed.lease;
+        let emit = |notice: Value| {
+            let body = notice.to_string().into_bytes();
+            exchange.emit(body)
+        };
+        if emit(serde_json::json!({"callKeys": []})).await.is_err() {
+            return Ok(());
+        }
+        let hinting = async {
+            loop {
+                let mut call_keys = BTreeSet::new();
+                let mut gathering: Option<std::pin::Pin<Box<tokio::time::Sleep>>> = None;
+                loop {
+                    let next = match gathering.as_mut() {
+                        None => arrivals.recv().await,
+                        Some(deadline) => tokio::select! {
+                            _ = deadline => break,
+                            next = arrivals.recv() => next,
+                        },
+                    };
+                    match next {
+                        Ok(arrived) => {
+                            if arrived.runner == reference.runner
+                                && arrived.session == reference.session
+                            {
+                                call_keys.insert(arrived.call_key);
+                            }
+                        }
+                        // Behind or closing: end, and the reopened watch starts over.
+                        Err(RecvError::Lagged(_) | RecvError::Closed) => return Ok(()),
+                    }
+                    if gathering.is_none() && !call_keys.is_empty() {
+                        gathering = Some(Box::pin(tokio::time::sleep(GATHER)));
+                    }
+                }
+                if emit(serde_json::json!({ "callKeys": call_keys }))
+                    .await
+                    .is_err()
+                {
+                    return Ok(());
+                }
+            }
+        };
+        tokio::select! {
+            biased;
+            _ = source_lost(followed.live) => Ok(()),
+            result = hinting => result,
+        }
+    };
+    let result: Result<(), ReadError> = tokio::select! {
+        biased;
+        _ = signalled(ended) => Ok(()),
+        _ = cancelled.cancelled() => Ok(()),
+        result = work => result,
+    };
+    drop(slot);
+    match result {
+        Ok(()) => HandlerOutcome::Streamed,
+        Err(error) => error_outcome(&error),
+    }
+}
+
 /// A stop interrupts source reads and stalled writes, not just the loop's idle wait.
 pub(super) async fn serve(
     app: Arc<AppReader>,

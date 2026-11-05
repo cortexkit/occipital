@@ -89,7 +89,8 @@ The apps reach these operations through Callosum, and the desktop app directly:
 | --- | --- |
 | `session.transcript_page`, `session.display_read`, `session.details`, `session.media` | read |
 | `display.views`, `display.template`, `session.tool_records`, `session.tool_detail` | read |
-| `session.transcript_watch`, `session.display_watch`, `session.tool_records_watch` | watch |
+| `session.notices` | read |
+| `session.transcript_watch`, `session.display_watch`, `session.tool_records_watch`, `session.notices_watch` | watch |
 | `session.enqueue_user_message`, `session.stop` | send |
 | `upload.begin`, `upload.chunk`, `upload.status`, `upload.finish`, `upload.abort`, `upload.place` | upload |
 
@@ -145,6 +146,21 @@ store, and details in `display-details.db`. Engram backs up `display.db`,
 since a provider writes each record once; details are left out, since they
 are large and can hold file contents. Records are kept 180 days and details 14
 days, at most 512 MiB.
+
+## Notices
+
+A notice is a module's message to the agent, such as Magic Context's
+reminders or core's status line. A runner delivers one either as its own
+message, which is a transcript entry like any other, or riding the next tool
+result, which makes no entry. Occipital keeps each riding notice it learns of,
+from a page read's `notices` fact or the runner's `notice_delivered` event, in
+`notices.db` beside the store. The apps read a call's notices with
+`session.notices` and learn of new ones from `session.notices_watch`, beside
+the pages, as `{sender, text, deliveredAs}` in delivery order. They are not
+tool records: no tool provider writes them. Engram backs up `notices.db`,
+since a runner may prune its own record of a notice. Notices are kept 180
+days. The apps' wire is pinned by the sample set
+`occipital-app-reader/test-vectors/phone-reader-notices-v1/`.
 
 ## Store
 

@@ -19,6 +19,10 @@
 //!   plain tool row the apps show without a record.
 //! - **Tool display details** (`display-details.db`) are left out. They are
 //!   large and can hold file contents, and only a tapped row reads one.
+//! - **Notices** (`notices.db`: the notices modules sent the agent that rode
+//!   its tool results) are captured whole like the store. A runner may prune
+//!   its own record of one, so a notice lost in a restore might never come
+//!   back. A restored older copy only lacks the newest notices.
 
 use std::io::{self, Write};
 use std::path::Path;
@@ -59,6 +63,13 @@ pub fn catalog(store_file: &str) -> Vec<u8> {
                 "path": crate::display::store::DETAILS_FILE,
                 "reason": "tool call details: large, and can hold file contents",
             },
+            {
+                "entry_id": "occipital/notices",
+                "class": "portable",
+                "mechanism": "whole-db",
+                "path": crate::notices::FILE,
+                "writer_interaction": "backup-api-live",
+            },
         ],
     });
     let mut bytes = catalog.to_string().into_bytes();
@@ -98,10 +109,11 @@ mod tests {
     use super::*;
     use serde_json::Value;
 
-    /// The store and the display records are captured whole, live; partial
-    /// uploads and display details are left out, each with a reason.
+    /// The store, the display records and the notices are captured whole,
+    /// live; partial uploads and display details are left out, each with a
+    /// reason.
     #[test]
-    fn the_catalog_captures_the_store_and_display_records_only() {
+    fn the_catalog_captures_the_store_display_records_and_notices_only() {
         let catalog: Value = serde_json::from_slice(&catalog("store.db")).unwrap();
         assert_eq!(catalog["schema_version"], 1);
         assert_eq!(catalog["module_id"], "occipital");
@@ -120,7 +132,7 @@ mod tests {
                 .map(|entry| entry["path"].as_str().unwrap().to_owned())
                 .collect()
         };
-        assert_eq!(paths(&portable), ["store.db", "display.db"]);
+        assert_eq!(paths(&portable), ["store.db", "display.db", "notices.db"]);
         for entry in &portable {
             assert_eq!(entry["mechanism"], "whole-db", "{entry}");
             assert_eq!(entry["writer_interaction"], "backup-api-live", "{entry}");
@@ -134,8 +146,8 @@ mod tests {
     }
 
     /// The paths are the ones the module really writes: the store file the
-    /// daemon names, the folder uploads keep their partial files in, and the
-    /// two display files.
+    /// daemon names, the folder uploads keep their partial files in, the two
+    /// display files and the notices file.
     #[tokio::test]
     async fn the_catalog_paths_are_where_the_module_writes() {
         let dir = cortexkit_test_support::ScratchDir::new("occipital-backup-paths");
@@ -147,6 +159,8 @@ mod tests {
         let display =
             crate::display::store::DisplayStore::open(&descriptor, store.data_root()).unwrap();
         drop(display);
+        let notices = crate::notices::NoticeStore::open(&descriptor, store.data_root()).unwrap();
+        drop(notices);
         write_catalog(store.data_root(), store.file_name()).unwrap();
         let catalog: Value =
             serde_json::from_slice(&std::fs::read(store.data_root().join(FILE)).unwrap()).unwrap();

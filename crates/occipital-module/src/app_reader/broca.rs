@@ -39,6 +39,7 @@ use subc_protocol::RouteTarget;
 use tokio::sync::{broadcast, watch};
 
 use crate::display::call_pins::CallPinSlot;
+use crate::notices::NoticeSlot;
 
 use super::{
     display_hub::DisplayHub,
@@ -80,16 +81,21 @@ impl LazyBrocaSources {
     }
 
     /// Reach the runners and Entorhinal through the daemon at `connection`, as
-    /// `principal`. Pages report their calls' pins to `call_pins` once it is set.
+    /// `principal`. Once each is set, pages report to `call_pins` the tool
+    /// version (schema pin) the runner stored for each call, which joins a
+    /// provider's records to the call, and to `notices` the notices that rode
+    /// their calls.
     pub fn live(
         connection: std::path::PathBuf,
         principal: ConsumerIdentity,
         call_pins: CallPinSlot,
+        notices: NoticeSlot,
     ) -> Self {
         Self::new(Arc::new(LiveConnector {
             connection,
             principal,
             call_pins,
+            notices,
         }))
     }
 
@@ -141,6 +147,7 @@ struct LiveConnector {
     connection: std::path::PathBuf,
     principal: ConsumerIdentity,
     call_pins: CallPinSlot,
+    notices: NoticeSlot,
 }
 
 #[async_trait]
@@ -152,7 +159,13 @@ impl SourceConnector for LiveConnector {
             subc_protocol::BindIdentity::new(crate::MODULE_ID, "app-reader"),
         )
         .await
-        .map(|sources| Arc::new(sources.with_call_pins(self.call_pins.clone())))
+        .map(|sources| {
+            Arc::new(
+                sources
+                    .with_call_pins(self.call_pins.clone())
+                    .with_notices(self.notices.clone()),
+            )
+        })
     }
 }
 
@@ -595,6 +608,7 @@ pub struct BrocaSources {
     sources: tokio::sync::Mutex<HashMap<SessionRef, SourceSlot>>,
     describes: Mutex<HashMap<SessionRef, DescribeSlot>>,
     call_pins: CallPinSlot,
+    notices: NoticeSlot,
     /// The image sizes every session's pages share.
     sizes: Arc<crate::media::Sizes>,
 }
@@ -615,6 +629,7 @@ impl BrocaSources {
             sources: tokio::sync::Mutex::new(HashMap::new()),
             describes: Mutex::new(HashMap::new()),
             call_pins: CallPinSlot::default(),
+            notices: NoticeSlot::default(),
             sizes: Arc::default(),
         }
     }
@@ -622,6 +637,13 @@ impl BrocaSources {
     /// Report each built page's call pins to `call_pins` once it is set.
     pub fn with_call_pins(mut self, call_pins: CallPinSlot) -> Self {
         self.call_pins = call_pins;
+        self
+    }
+
+    /// Report the notices that rode each page's calls, and those the live
+    /// stream delivers, to `notices` once it is set.
+    pub fn with_notices(mut self, notices: NoticeSlot) -> Self {
+        self.notices = notices;
         self
     }
 
@@ -720,6 +742,7 @@ impl BrocaSources {
         let source = BrocaSource::with_send_path(resolved, route, sendable, describe);
         *source.resolver.guard() = Some(self.resolver.clone());
         *source.call_pins.guard() = self.call_pins.clone();
+        *source.notices.guard() = self.notices.clone();
         *source.sizes.guard() = self.sizes.clone();
         *slot = Arc::downgrade(&source);
         Ok(source)
@@ -903,6 +926,8 @@ pub struct BrocaSource {
     describe: DescribeSlot,
     /// Where the pins of the calls this source's pages carry are kept.
     call_pins: Mutex<CallPinSlot>,
+    /// Where the notices that rode this session's calls are reported.
+    notices: Mutex<NoticeSlot>,
     /// The sizes of images this source's pages show.
     sizes: Mutex<Arc<crate::media::Sizes>>,
 }
@@ -934,6 +959,15 @@ impl BrocaSource {
                 let reference = self.resolved.guard().reference.clone();
                 call_pins.seen(&reference.runner, &reference.session, calls);
             }
+        }
+        let notices = self.notices.guard().clone();
+        if let Some(notices) = notices.get() {
+            let reference = self.resolved.guard().reference.clone();
+            notices.seen(crate::notices::from_entries(
+                entries,
+                &reference.runner,
+                &reference.session,
+            ));
         }
         Ok(rows)
     }
@@ -1031,6 +1065,7 @@ impl BrocaSource {
             sendable,
             describe,
             call_pins: Mutex::new(CallPinSlot::default()),
+            notices: Mutex::new(NoticeSlot::default()),
             sizes: Mutex::default(),
         })
     }
@@ -1601,6 +1636,20 @@ impl BrocaSource {
         };
         let event = &mut normalized["event"];
         let name = event["type"].as_str().unwrap_or_default().to_string();
+        // A notice riding a tool result changes no message, so it neither wakes
+        // the transcript watches nor goes to the display hub that streams live
+        // text: it's kept for the notices read, and the notices watch says so.
+        if name == cortexkit_role_llm_runner::live::event_types::NOTICE_DELIVERED {
+            let reference = self.resolved.guard().reference.clone();
+            let notices = self.notices.guard().clone();
+            if let (Some(notices), Some(notice)) = (
+                notices.get(),
+                crate::notices::from_event(event, &reference.runner, &reference.session),
+            ) {
+                notices.seen(vec![notice]);
+            }
+            return true;
+        }
         // A message its host names only when storing it streams under the runner's
         // `live_id` until then (`live_ids`), which `display_events::map` keys on.
         let unstored =
@@ -4104,6 +4153,7 @@ pub(crate) mod tests {
         assert_eq!(activity_for(None), None);
     }
     mod model_names_samples;
+    mod notices_samples;
     mod opencode2_live_samples;
     mod opencode2_pages;
     mod outside_window;

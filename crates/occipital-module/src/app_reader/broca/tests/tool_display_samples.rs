@@ -16,7 +16,7 @@ use cortexkit_test_support::ScratchDir;
 use subc_protocol::{FrameType, Principal};
 
 /// Routes to the test session whatever its harness: here, OpenCode 2.
-struct AnyHarness(Arc<FakeRoute>);
+pub(super) struct AnyHarness(pub(super) Arc<FakeRoute>);
 
 #[async_trait]
 impl BrocaRoutes for AnyHarness {
@@ -26,11 +26,11 @@ impl BrocaRoutes for AnyHarness {
 }
 
 /// A pin whose schema digest is `digit` 64 times, a lowercase hex digit.
-fn pin(tool: &str, digit: char) -> String {
+pub(super) fn pin(tool: &str, digit: char) -> String {
     format!("tp1:{tool}:{}:1", digit.to_string().repeat(64))
 }
 
-fn reserved(module: &str) -> Principal {
+pub(super) fn reserved(module: &str) -> Principal {
     Principal::Reserved {
         module_id: module.into(),
     }
@@ -55,7 +55,7 @@ fn template(profile: &str, source: &str) -> Value {
 }
 
 /// A provider's view: its record schema and its row and page templates.
-fn view(name: &str, fields: Value, row: &str, page: &str, revision: u64) -> Vec<u8> {
+pub(super) fn view(name: &str, fields: Value, row: &str, page: &str, revision: u64) -> Vec<u8> {
     let schema: RecordSchema =
         serde_json::from_value(json!({"name": name, "revision": 1, "fields": fields})).unwrap();
     let manifest = ViewManifest::new(
@@ -67,13 +67,13 @@ fn view(name: &str, fields: Value, row: &str, page: &str, revision: u64) -> Vec<
     serde_jcs::to_vec(&manifest).unwrap()
 }
 
-fn input_schema(required: &str, properties: Value) -> Vec<u8> {
+pub(super) fn input_schema(required: &str, properties: Value) -> Vec<u8> {
     serde_jcs::to_vec(&json!({"type": "object", "properties": properties, "required": [required]}))
         .unwrap()
 }
 
-const BASH_ROW: &str = "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\n<InlineCode code={input.command} />\n<Slot width=\"short\" needs={view.completion ?? view.record}>\n<Badge text={(view.completion ?? view.record).exitCode == 0 ? \"Done\" : \"Failed\"} />\n</Slot>\n</Card>\n";
-const BASH_PAGE: &str = "<TextContent text={view.output ?? \"\"} />\n";
+pub(super) const BASH_ROW: &str = "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\n<InlineCode code={input.command} />\n<Slot width=\"short\" needs={view.completion ?? view.record}>\n<Badge text={(view.completion ?? view.record).exitCode == 0 ? \"Done\" : \"Failed\"} />\n</Slot>\n</Card>\n";
+pub(super) const BASH_PAGE: &str = "<TextContent text={view.output ?? \"\"} />\n";
 const EDIT_ROW: &str = "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\n<InlineCode code={input.path} />\n<Slot width=\"short\" needs={view.record}>\n<TextContent text={\"+\" + Text(view.record.added) + \" \u{2212}\" + Text(view.record.removed)} />\n</Slot>\n</Card>\n";
 const EDIT_PAGE: &str = "<TextContent text={view.detail.diff ?? \"\"} />\n";
 

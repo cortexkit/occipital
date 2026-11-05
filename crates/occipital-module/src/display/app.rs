@@ -444,7 +444,12 @@ fn id(params: &Value, field: &'static str) -> Result<String, ReadError> {
 }
 
 /// A required array of 1 to `max` distinct such strings, in the order given.
-fn ids(params: &Value, field: &'static str, max: usize) -> Result<Vec<String>, ReadError> {
+/// `session.notices` (`crate::notices`) reads its call keys the same way.
+pub(crate) fn ids(
+    params: &Value,
+    field: &'static str,
+    max: usize,
+) -> Result<Vec<String>, ReadError> {
     let items = params[field]
         .as_array()
         .filter(|items| !items.is_empty() && items.len() <= max)
