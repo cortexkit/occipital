@@ -80,6 +80,7 @@ fn the_runner_0_8_samples_are_complete_and_their_checksums_verify() {
         ("phone-reader-opencode2-live-v1", 9),
         ("phone-session-tier-v1", 6),
         ("phone-reader-relayed-v1", 4),
+        ("phone-reader-history-intake-v1", 6),
     ] {
         verify_published_set(&format!("test-vectors/{set}"), files);
     }

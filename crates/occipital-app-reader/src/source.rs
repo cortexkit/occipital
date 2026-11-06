@@ -154,6 +154,12 @@ pub struct Head {
     /// `fast`, as the runner's head states it. `None` means the head named none:
     /// standard on a runner that selects heads, unknown on any other.
     pub service_tier: Option<String>,
+    /// The runner is still taking in history the host already held, as when a
+    /// head has just moved onto it (`session.head.history_intake`). It takes the
+    /// history in oldest first, so until it's done the newest page is the newest
+    /// message taken in so far, not the chat's latest. Any value the head gives
+    /// counts, since the contract reads an unknown one as still running.
+    pub history_intake: bool,
     /// The session's durable spend in the runner's own shape. `None` means unknown.
     pub usage: Option<Value>,
     pub sender: SendGrant,
@@ -195,8 +201,12 @@ impl Head {
 
     /// The session facts every newest page and every turn-carrying claim reply
     /// repeats from the head read in the same request: the next send's model and
-    /// service tier, whether the app may send, and the most recent run's outcome.
+    /// service tier, whether the app may send, the most recent run's outcome, and
+    /// `historyIntake: "running"` while the runner is still taking in history.
     pub(crate) fn describe_session(&self, reply: &mut Value) {
+        if self.history_intake {
+            reply["historyIntake"] = json!("running");
+        }
         if let Some(model) = &self.model {
             reply["model"] = model.clone();
         }
