@@ -127,7 +127,7 @@ impl DisplayHub {
                     projection.start_display();
                 }
             }
-            DisplayInput::RunStart { rich_ui } => projection.start_run(rich_ui),
+            DisplayInput::RunStart { rich_ui, run_id } => projection.start_run(rich_ui, run_id),
             DisplayInput::MessageEnd { mid } => {
                 // Words still held for batching go out first, so they are part of the
                 // message the end makes final.
@@ -136,11 +136,11 @@ impl DisplayHub {
                 }
                 projection.end_message(&mid);
             }
-            DisplayInput::TurnEnd => {
+            DisplayInput::TurnEnd { run_id } => {
                 for chunk in state.batcher.drain_session(session) {
                     projection.observe_display(chunk);
                 }
-                projection.end_display();
+                projection.end_run(run_id.as_deref());
             }
             // Words held for batching go out first, so a reader sees text and calls
             // in the order the runner reported them.

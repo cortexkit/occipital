@@ -507,6 +507,10 @@ struct DisplayProjectionState {
     /// The running run's rich UI stamp, set when the run starts and cleared when it
     /// ends, so a later run without one never inherits it.
     rich_ui: Option<Value>,
+    /// The id of the run that started last and hasn't ended, when its start named
+    /// one. An end naming another run belongs to an earlier run, which a runner
+    /// can report after the next one's start, so it doesn't end this one.
+    run_id: Option<String>,
     /// The message whose words are the live footer: the last one text was shown for
     /// and not yet ended.
     live: Option<LiveMessage>,
@@ -554,6 +558,7 @@ impl DisplayProjection {
                 display_turn_open: false,
                 display_end_emitted: false,
                 rich_ui: None,
+                run_id: None,
                 live: None,
             }),
             display_changed: watch::channel(0).0,
@@ -578,11 +583,25 @@ impl DisplayProjection {
     }
 
     /// A run started: open the display and stamp its text frames with the run's stamp.
-    pub fn start_run(&self, rich_ui: Option<Value>) {
+    pub fn start_run(&self, rich_ui: Option<Value>, run_id: Option<String>) {
         let mut state = self.state.lock().expect("display projection poisoned");
         state.display_turn_open = true;
         state.display_end_emitted = false;
         state.rich_ui = rich_ui;
+        state.run_id = run_id;
+    }
+
+    /// A run ended: end the display, as [`Self::end_display`] does, unless the end
+    /// names a run other than the one running. That end belongs to an earlier run,
+    /// so the running one keeps its stamp, its live words and its calls.
+    pub fn end_run(&self, run_id: Option<&str>) {
+        let state = self.state.lock().expect("display projection poisoned");
+        if let (Some(running), Some(ended)) = (state.run_id.as_deref(), run_id) {
+            if running != ended {
+                return;
+            }
+        }
+        self.end_locked(state);
     }
 
     pub fn observe_display(&self, chunk: DisplayChunk) {
@@ -717,8 +736,12 @@ impl DisplayProjection {
     /// The run ended or paused. A call still running gets an `unanswered`
     /// (`interrupted`) end first, so no reader shows it running for good.
     pub fn end_display(&self) {
-        let mut state = self.state.lock().expect("display projection poisoned");
+        self.end_locked(self.state.lock().expect("display projection poisoned"));
+    }
+
+    fn end_locked(&self, mut state: std::sync::MutexGuard<'_, DisplayProjectionState>) {
         state.rich_ui = None;
+        state.run_id = None;
         let interrupted = crate::display_events::ToolEnd {
             call_id: String::new(),
             outcome: "interrupted".to_owned(),

@@ -913,10 +913,12 @@ pub struct BrocaSource {
     display_targets: Mutex<Vec<(String, Weak<DisplayHub>)>>,
     live: watch::Sender<bool>,
     activity: Mutex<Option<(&'static str, i64)>>,
-    /// The rich UI stamp of the run the last head read found still running, in the
-    /// phone's shape. The feed subscribes from the live tail, so a run already going
-    /// when it attaches never replays its `run_started`; this seeds its stamp.
-    running_rich_ui: Mutex<Option<Value>>,
+    /// The rich UI stamp of the run the last head read found still running, as the
+    /// apps read it (`{dialect, catalogDigest}`, from `broca_entries::rich_ui`), with
+    /// that run's id. The feed subscribes from the live tail, so a run already going
+    /// when it attaches never replays its `run_started`; this seeds its stamp, and
+    /// its id lets a late end of an earlier run pass it by.
+    running_rich_ui: Mutex<Option<(Value, Option<String>)>>,
     mids: Mutex<HashSet<String>>,
     feed: tokio::sync::Mutex<Option<Feed>>,
     feed_live: AtomicBool,
@@ -1167,9 +1169,10 @@ impl BrocaSource {
         // Events queued since the subscribe come after this, so a run that started or
         // ended after the cold read still sets or clears the stamp in order.
         let running = self.running_rich_ui.guard().clone();
-        if let Some(rich_ui) = running {
+        if let Some((rich_ui, run_id)) = running {
             self.display_input(DisplayInput::RunStart {
                 rich_ui: Some(rich_ui),
+                run_id,
             });
         }
         let task = tokio::spawn(pump(self.clone(), stream, receiver));
@@ -1271,17 +1274,18 @@ impl BrocaSource {
                 .and_then(|run| activity_for(Some(&run.state)))
                 .map(|activity| (activity, at))
         });
+        let running = meta
+            .last_run_state
+            .as_ref()
+            .filter(|run| activity_for(Some(&run.state)) == Some("busy"));
         *self.running_rich_ui.guard() = meta
             .last_run_rich_ui
             .as_ref()
-            .filter(|_| {
-                meta.last_run_state
-                    .as_ref()
-                    .is_some_and(|run| activity_for(Some(&run.state)) == Some("busy"))
-            })
+            .filter(|_| running.is_some())
             .and_then(|stamp| serde_json::to_value(stamp).ok())
             .as_ref()
-            .and_then(occipital_app_reader::broca_entries::rich_ui);
+            .and_then(occipital_app_reader::broca_entries::rich_ui)
+            .map(|stamp| (stamp, running.map(|run| run.run_id.clone())));
         // The contract's head is a durable snapshot, including the last run and
         // transcript update time. Include rendering policy as well: changing it
         // changes served rows even when the transcript itself is untouched.
@@ -3129,7 +3133,8 @@ pub(crate) mod tests {
         assert_eq!(
             lease.events.try_recv().ok(),
             Some(DisplayInput::RunStart {
-                rich_ui: Some(json!({"dialect":"1.0", "catalogDigest":"a".repeat(64)}))
+                rich_ui: Some(json!({"dialect":"1.0", "catalogDigest":"a".repeat(64)})),
+                run_id: Some("r1".into())
             })
         );
     }
@@ -3158,7 +3163,12 @@ pub(crate) mod tests {
         route
             .emit(json!({"kind":"control", "unit":{"type":"RunFinished", "run_id":"r1"}}))
             .await;
-        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::TurnEnd);
+        assert_eq!(
+            lease.events.recv().await.unwrap(),
+            DisplayInput::TurnEnd {
+                run_id: Some("r1".into())
+            }
+        );
         changes.changed().await.unwrap();
         *route.run_state.lock().unwrap() = json!({"run_id":"r1", "state":"completed"});
         route.updated_at.store(740, Ordering::Relaxed);
@@ -3173,7 +3183,10 @@ pub(crate) mod tests {
             .await;
         assert_eq!(
             lease.events.recv().await.unwrap(),
-            DisplayInput::RunStart { rich_ui: None }
+            DisplayInput::RunStart {
+                rich_ui: None,
+                run_id: Some("r2".into())
+            }
         );
         *route.run_state.lock().unwrap() = json!({"run_id":"r2", "state":"active"});
         route.updated_at.store(750, Ordering::Relaxed);

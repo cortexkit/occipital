@@ -887,7 +887,9 @@ async fn an_operator_app_stamp_admits_the_desktop_to_reads_only() {
         .chain(uploads::METHODS)
     {
         let mut h = Harness::new();
-        h.app.display.ingest("s", DisplayInput::TurnEnd);
+        h.app
+            .display
+            .ingest("s", DisplayInput::TurnEnd { run_id: None });
         h.app.display.ingest("s", DisplayInput::Reset);
         h.bind(7, 1, desktop_binding()).await;
         h.request(method, 1, params(method, "s")).await;
@@ -982,7 +984,9 @@ async fn app_reads_admit_unscoped_callosum_routes_and_development_direct_callers
     for (label, b, allowed) in cases {
         for method in METHODS.into_iter().chain([SEND]) {
             let mut h = Harness::new();
-            h.app.display.ingest("s", DisplayInput::TurnEnd);
+            h.app
+                .display
+                .ingest("s", DisplayInput::TurnEnd { run_id: None });
             h.app.display.ingest("s", DisplayInput::Reset);
             h.bind(7, 1, b.clone()).await;
             h.request(method, 1, params(method, "s")).await;

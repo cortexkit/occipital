@@ -121,7 +121,8 @@ fn the_run_started_frame_starts_the_live_turn() {
     assert_eq!(
         display_events::map(&normalized),
         Some(display_events::DisplayInput::RunStart {
-            rich_ui: Some(stamp())
+            rich_ui: Some(stamp()),
+            run_id: Some("r1".into())
         })
     );
     let source = BrocaSource::new(resolved(), FakeRoute::new());

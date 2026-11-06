@@ -22,16 +22,22 @@ pub enum DisplayInput {
         mid: String,
         live_id: String,
     },
-    /// A run started, with its rich UI stamp in the phone's shape when it carries one.
+    /// A run started, with its rich UI stamp as the apps read it
+    /// (`{dialect, catalogDigest}`, built by `broca_entries::rich_ui`) when it carries
+    /// one, and its `run_id` when the event names it.
     RunStart {
         rich_ui: Option<Value>,
+        run_id: Option<String>,
     },
     /// The runner stored this message: its live words are final, and the stored copy
     /// replaces them once the transcript is read.
     MessageEnd {
         mid: String,
     },
-    TurnEnd,
+    /// A run finished or paused, naming its `run_id` when the event does.
+    TurnEnd {
+        run_id: Option<String>,
+    },
     /// A call of the message went to its tool.
     ToolStarted(ToolStart),
     /// A call of the message ended.
@@ -95,6 +101,15 @@ const EVENT_NAMES: &[(&str, &str, Effect)] = &[
     ("control", "run_paused", Effect::End),
 ];
 
+/// The run an event names, when it names one.
+fn run_id(event: &Value) -> Option<String> {
+    event
+        .get("run_id")
+        .and_then(Value::as_str)
+        .filter(|id| !id.is_empty())
+        .map(str::to_owned)
+}
+
 /// Accept a subscription envelope with `kind` and `event` fields.
 /// An event type this reader doesn't know, on either lane, resets the live display.
 pub fn map(envelope: &Value) -> Option<DisplayInput> {
@@ -156,6 +171,7 @@ pub fn map(envelope: &Value) -> Option<DisplayInput> {
         // stamp on a stored row is.
         Effect::RunStart => Some(DisplayInput::RunStart {
             rich_ui: event.get("rich_ui").and_then(crate::broca_entries::rich_ui),
+            run_id: run_id(event),
         }),
         Effect::MessageEnd => {
             let mid = event.get("mid").and_then(Value::as_str)?;
@@ -163,7 +179,9 @@ pub fn map(envelope: &Value) -> Option<DisplayInput> {
                 mid: mid.to_string(),
             })
         }
-        Effect::End => Some(DisplayInput::TurnEnd),
+        Effect::End => Some(DisplayInput::TurnEnd {
+            run_id: run_id(event),
+        }),
         // A tool event missing a member it requires is dropped, as a text delta
         // without its `mid` is: the stored page still shows the call.
         Effect::ToolStarted => {
@@ -258,8 +276,8 @@ pub(crate) mod test_support {
                     }
                     None
                 }
-                DisplayInput::RunStart { rich_ui } => {
-                    self.projection.start_run(rich_ui);
+                DisplayInput::RunStart { rich_ui, run_id } => {
+                    self.projection.start_run(rich_ui, run_id);
                     None
                 }
                 DisplayInput::MessageEnd { mid } => {
@@ -267,9 +285,9 @@ pub(crate) mod test_support {
                     self.projection.end_message(&mid);
                     None
                 }
-                DisplayInput::TurnEnd => {
+                DisplayInput::TurnEnd { run_id } => {
                     self.flush();
-                    self.projection.end_display();
+                    self.projection.end_run(run_id.as_deref());
                     None
                 }
                 DisplayInput::ToolStarted(start) => {
@@ -469,7 +487,10 @@ mod tests {
             map(
                 &serde_json::json!({"kind":"control","runner_event":"run_started","event":{"type":"run_started","run_id":"r"}})
             ),
-            Some(DisplayInput::RunStart { rich_ui: None })
+            Some(DisplayInput::RunStart {
+                rich_ui: None,
+                run_id: Some("r".into())
+            })
         );
     }
 
@@ -602,6 +623,55 @@ mod tests {
 
     fn live_delta(live_id: &str, text: &str) -> Value {
         json!({"kind":"display", "event":{"type":"text_delta", "live_id":live_id, "delta":text}})
+    }
+
+    /// A runner can report the next run's start before the previous run's end,
+    /// as Thalamus's runner did when a held send started a run in the same pass
+    /// that saw the last one finish. The late end names the earlier run, so the
+    /// running one keeps its stamp, its running calls and its live words, and its
+    /// own end still ends it. An end naming no run, or a run with no id, ends it.
+    #[test]
+    fn a_late_end_of_an_earlier_run_leaves_the_running_one_going() {
+        let session = FakeSession::new("ses", 32);
+        let raw = json!({"dialect":"1.0", "catalog_digest":"a".repeat(64)});
+        session.ingest(
+            json!({"kind":"control", "event":{"type":"run_started", "run_id":"new", "rich_ui":raw}}),
+        );
+        session.ingest(json!({"kind":"control", "event":{"type":"run_finished",
+            "run_id":"old", "reason":"completed"}}));
+        session.ingest(
+            json!({"kind":"control", "event":{"type":"tool_started", "mid":"m1",
+            "tool_call_id":"c1", "name":"bash", "arguments":"{}"}}),
+        );
+        session.ingest(delta("m1", "still going"));
+        session.flush();
+        let cold = serde_json::to_value(session.projection.display_read(None)).unwrap();
+        assert_eq!(cold["frame"]["chunk"], "still going", "{cold}");
+        assert!(cold["frame"].get("richUi").is_some(), "{cold}");
+        let kinds = |session: &FakeSession| -> Vec<String> {
+            frames(session).into_iter().map(|(kind, _)| kind).collect()
+        };
+        assert_eq!(kinds(&session), ["display"]);
+        session.ingest(json!({"kind":"control", "event":{"type":"run_finished",
+            "run_id":"new", "reason":"completed"}}));
+        assert_eq!(kinds(&session), ["display", "display_end"]);
+
+        for end in [
+            json!({"type":"run_finished"}),
+            json!({"type":"run_paused", "run_id":"other"}),
+        ] {
+            let session = FakeSession::new("ses", 32);
+            let start = if end.get("run_id").is_some() {
+                json!({"type":"run_started"})
+            } else {
+                json!({"type":"run_started", "run_id":"r1"})
+            };
+            session.ingest(json!({"kind":"control", "event":start}));
+            session.ingest(delta("m1", "words"));
+            session.flush();
+            session.ingest(json!({"kind":"control", "event":end}));
+            assert_eq!(kinds(&session), ["display", "display_end"], "{end}");
+        }
     }
 
     fn frames(session: &FakeSession) -> Vec<(String, String)> {
