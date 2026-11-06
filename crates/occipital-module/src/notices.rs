@@ -14,7 +14,8 @@
 //! arrives.
 //!
 //! Each notice is kept in `notices.db`, beside the store, by its runner, the
-//! carrying call's key and its send, so one seen twice is kept once. Engram
+//! carrying call's key, its sender and its send, so one seen twice is kept
+//! once. Engram
 //! captures the file, and a notice still shows after the runner prunes its own
 //! record of it. A notice is kept as long as a tool display record.
 //!
@@ -48,9 +49,10 @@ const NAMESPACE: &str = "notices";
 /// tool records.
 pub const MAX_CALLS: usize = crate::display::app::MAX_CALLS;
 
-/// Each riding notice, by runner, call key and send. `position` is the
+/// Each riding notice, by runner, call key and send (version 1's key). `position` is the
 /// notice's place among the call's notices on a page read, and null for one
-/// seen only on the live stream until a page lists it.
+/// seen only on the live stream until a page lists it. Version 3 rebuilds the
+/// table keyed by sender too ([`BY_SENDER`]).
 const NOTICES: &str = "CREATE TABLE notices (
   runner TEXT NOT NULL, call_key TEXT NOT NULL, send_id TEXT NOT NULL,
   session TEXT NOT NULL, sender TEXT NOT NULL, text TEXT NOT NULL,
@@ -62,6 +64,25 @@ CREATE INDEX notices_age ON notices (seen_at_ms);";
 /// agent's words riding a tool result (llm-runner's `message_marks`), such as a
 /// peer message to a head. Null for a module's own notice.
 const SPEAKS_FOR: &str = "ALTER TABLE notices ADD COLUMN speaks_for TEXT;";
+
+/// Version 3: a notice is one sender's send, so it's keyed by its sender as
+/// well as its send id. Each sender chooses its own send ids, and a runner
+/// keys sends by sender and send id, so two modules can use the same id. Keyed
+/// by send id alone, the second module's notice on the same call was taken for
+/// the first's and dropped. SQLite can't change a primary key in place, so the
+/// table is rebuilt.
+const BY_SENDER: &str = "CREATE TABLE notices_by_sender (
+  runner TEXT NOT NULL, call_key TEXT NOT NULL, sender TEXT NOT NULL, send_id TEXT NOT NULL,
+  session TEXT NOT NULL, text TEXT NOT NULL, delivered_as TEXT NOT NULL,
+  speaks_for TEXT, position INTEGER, seen_at_ms INTEGER NOT NULL,
+  PRIMARY KEY (runner, call_key, sender, send_id)) WITHOUT ROWID;
+INSERT INTO notices_by_sender (runner, call_key, sender, send_id, session, text,
+  delivered_as, speaks_for, position, seen_at_ms)
+  SELECT runner, call_key, sender, send_id, session, text, delivered_as, speaks_for,
+    position, seen_at_ms FROM notices;
+DROP TABLE notices;
+ALTER TABLE notices_by_sender RENAME TO notices;
+CREATE INDEX notices_age ON notices (seen_at_ms);";
 
 /// How long a notice is kept: as long as a tool display record.
 const KEEP_MS: i64 = crate::display::store::Retention::DEFAULT.record_age_ms;
@@ -178,7 +199,7 @@ impl NoticeStore {
             data_root,
             NAMESPACE,
             FILE,
-            &[&[NOTICES], &[SPEAKS_FOR]],
+            &[&[NOTICES], &[SPEAKS_FOR], &[BY_SENDER]],
         )?;
         Ok(Self { file })
     }
@@ -197,8 +218,9 @@ impl NoticeStore {
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
             )?;
             let mut place = tx.prepare(
-                "UPDATE notices SET position = ?4
-                 WHERE runner = ?1 AND call_key = ?2 AND send_id = ?3 AND position IS NULL",
+                "UPDATE notices SET position = ?5
+                 WHERE runner = ?1 AND call_key = ?2 AND sender = ?3 AND send_id = ?4
+                   AND position IS NULL",
             )?;
             let mut fresh = Vec::new();
             for notice in notices {
@@ -220,6 +242,7 @@ impl NoticeStore {
                     place.execute(rusqlite::params![
                         notice.runner,
                         notice.call_key,
+                        notice.sender,
                         notice.send_id,
                         position
                     ])?;
@@ -281,10 +304,10 @@ pub type NoticeSlot = Arc<OnceLock<Arc<Notices>>>;
 pub struct Notices {
     store: Arc<NoticeStore>,
     queue: mpsc::Sender<Vec<Notice>>,
-    /// Each notice already queued, by runner, call key and send, with whether
-    /// it had its place: a page read's place still has to reach a notice
-    /// first seen on the live stream.
-    queued: Mutex<HashMap<(String, String, String), bool>>,
+    /// Each notice already queued, by runner, call key, sender and send, with
+    /// whether it had its place: a page read's place still has to reach a
+    /// notice first seen on the live stream.
+    queued: Mutex<HashMap<(String, String, String, String), bool>>,
     arrivals: broadcast::Sender<Arrived>,
 }
 
@@ -359,6 +382,7 @@ impl Notices {
             (
                 notice.runner.clone(),
                 notice.call_key.clone(),
+                notice.sender.clone(),
                 notice.send_id.clone(),
             )
         };
@@ -565,6 +589,22 @@ mod tests {
     /// A version 1 file, from before notices named the agent they speak for,
     /// gains the column and keeps its notices, and a notice kept after names
     /// its agent.
+    /// Two modules may choose the same send id, since each picks its own. On
+    /// one call, their notices are two notices, each kept and served.
+    #[test]
+    fn notices_from_two_senders_with_one_send_id_are_both_kept() {
+        let dir = ScratchDir::new("occipital-notices-senders");
+        let (_main, store) = opened(&dir);
+        let mut second = notice("status", "from core", Some(1));
+        second.sender = "prefrontal-core".into();
+        let first = notice("status", "from magic context", Some(0));
+        assert_eq!(
+            store.keep(&[first.clone(), second.clone()], 1).unwrap(),
+            [first, second]
+        );
+        assert_eq!(texts(&store), ["from magic context", "from core"]);
+    }
+
     #[test]
     fn a_version_1_file_is_brought_up_to_date_and_keeps_its_notices() {
         let dir = ScratchDir::new("occipital-notices-upgrade");
