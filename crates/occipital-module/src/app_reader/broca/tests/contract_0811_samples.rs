@@ -258,3 +258,30 @@ async fn broca_0811_live_frames_keep_the_feed_and_deliver_the_notice() {
         .collect();
     assert_eq!(kept, [("sample-sender", "synthetic notice ☃")]);
 }
+
+/// Broca marks the tool-result message that carried a notice with
+/// `delivered_as: {mode: "tool_result"}`, as its 0.3.318 replies do in the
+/// earlier side of this set. That row holds the tool's result, so pages keep
+/// it, whether its call is on the same page or an older one, and its result
+/// still reaches the app.
+#[tokio::test]
+async fn a_tool_result_that_carried_a_notice_stays_on_pages() {
+    let page: RawPage =
+        serde_json::from_value(result("before", "session.read.facts.json")).unwrap();
+    assert_eq!(page.messages[2]["delivered_as"]["mode"], "tool_result");
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = page.messages;
+    let source = BrocaSource::new(resolved(), route);
+    let newest = source.newest(20).await.unwrap();
+    let kept: Vec<_> = newest.rows.iter().map(|row| row.mid.as_str()).collect();
+    assert_eq!(kept, ["m0", "m1", "m2", "m3"]);
+    let call = &newest.rows[1].display["parts"][0];
+    assert_eq!(call["type"], "tool", "{call}");
+    assert!(
+        call["outputBytes"].as_u64().is_some_and(|bytes| bytes > 0),
+        "{call}"
+    );
+    let cut = source.newest(2).await.unwrap();
+    let kept: Vec<_> = cut.rows.iter().map(|row| row.mid.as_str()).collect();
+    assert_eq!(kept, ["m2", "m3"], "{kept:?}");
+}

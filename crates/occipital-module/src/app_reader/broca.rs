@@ -1467,7 +1467,10 @@ impl BrocaSource {
         // the person's own. The rows kept keep their ordinals, and whether the
         // page reached the start comes from the runner's page.
         let rides = tool_result_rides(&entries);
-        rows.retain(|row| !is_empty_system_row(&row.display) && !rides.contains(&row.mid));
+        rows.retain(|row| {
+            !is_empty_system_row(&row.display)
+                && !(rides.contains(&row.mid) && row.display["role"] == "user")
+        });
         let mut seen = HashSet::new();
         let mut last = None;
         let mut numbered = false;
@@ -1867,7 +1870,9 @@ fn mark_module_messages(rows: &mut [Row], entries: &[Value]) {
 /// The `mid` of every entry a runner wrote for a send it delivered with a tool
 /// result (`delivered_as.mode` is `tool_result`). Runners following llm-runner
 /// 0.8's rule that every delivered send is an entry of its own wrote one for
-/// each such send; those entries stay stored, so readers leave them out.
+/// each such send; those entries stay stored, so readers leave out the user
+/// rows among them. Broca also marks the tool-result message that carried a
+/// send this way. That row holds the tool's result, so it stays.
 fn tool_result_rides(entries: &[Value]) -> HashSet<String> {
     entries
         .iter()
