@@ -1,0 +1,1 @@
+{"cursor":{"digest":"c6aaa13395440448","incarnation":"3032d37b-1fc9-44c8-a32b-882150f0b9f8","sub_index":0,"wal_seq":5},"event":{"arguments":"{}","call_key":"3032d37b-1fc9-44c8-a32b-882150f0b9f8:5","mid":"m1","name":"work","started_at":1793978458306,"tool_call_id":"sample-carrying-call","type":"tool_started"},"kind":"control","seq":9,"unit":{"mid":"m1","type":"message_boundary"}}

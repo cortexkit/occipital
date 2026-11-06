@@ -1,0 +1,1 @@
+{"cursor":{"digest":"150dacc82aab78a7","incarnation":"37a0b584-a967-490c-9242-a4771f2b68f6","sub_index":1,"wal_seq":5},"event":{"finished_at":1793917368463,"mid":"m1","outcome":"denied","output_bytes":12,"tool_call_id":"denied-first","type":"tool_finished"},"kind":"control","seq":11,"unit":{"mid":"m1","type":"message_boundary"}}

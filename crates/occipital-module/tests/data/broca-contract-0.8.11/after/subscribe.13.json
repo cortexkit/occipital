@@ -1,0 +1,1 @@
+{"cursor":{"digest":"cd8b88bb08e97563","incarnation":"3032d37b-1fc9-44c8-a32b-882150f0b9f8","sub_index":0,"wal_seq":13},"event":{"mid":"m3","type":"message_finished"},"kind":"control","seq":14,"unit":{"message":{"content":[{"text":"answer","type":"text"}],"message_id":"m"},"type":"assistant_message"}}

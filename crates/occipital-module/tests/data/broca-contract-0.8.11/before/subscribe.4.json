@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":3,"sub_index":0},"unit":{"type":"assistant_message","message":{"message_id":"m","content":[{"type":"tool_call","tool_call_id":"sample-carrying-call","tool_name":"work","input":{}}]}},"seq":5,"event":{"type":"message_finished","mid":"m1"}}

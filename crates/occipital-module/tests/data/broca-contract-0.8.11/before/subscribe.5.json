@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":3,"sub_index":1},"unit":{"type":"tool_call","call":{"tool_call_id":"sample-carrying-call","tool_name":"work","input":{}}},"seq":6,"event":{"type":"display_reset"}}
