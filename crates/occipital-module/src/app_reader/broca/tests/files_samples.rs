@@ -252,6 +252,84 @@ async fn a_runner_without_files_is_never_asked_for_media() {
     assert_eq!(refusal.code, "unsupported");
 }
 
+/// A runner declaring `media_refs` is asked for media references on every
+/// `session.read`, newest, older and exact pages alike, so its photos come as
+/// file parts rather than text markers. A runner that takes files without
+/// declaring it, or one whose description is unknown, is never sent the value,
+/// which it would refuse. `session.history`, which finds a message by id, asks
+/// for no media form.
+#[tokio::test]
+async fn only_a_runner_declaring_media_refs_is_asked_for_media_references() {
+    for (groups, asked) in [
+        (
+            Some(vec!["attachments", "transcript_reads", "media_refs"]),
+            true,
+        ),
+        (Some(vec!["attachments"]), false),
+        (None, false),
+    ] {
+        let route = FakeRoute::new();
+        *route.describe.lock().unwrap() = groups.as_deref().map(describe_with);
+        *route.entries.lock().unwrap() = vec![
+            json!({"mid": "msg_file_alone", "ordinal": 1, "written_at": 1_793_365_560_000_u64,
+                "message": body("synthetic-existing-image-ref")}),
+            json!({"mid": "msg_reply", "ordinal": 2, "written_at": 1_793_365_561_000_u64,
+                "message": {"id": "msg_reply", "type": "assistant",
+                    "time": {"created": 1_793_365_560_500_u64},
+                    "content": [{"type": "text", "text": "A single pixel."}]}}),
+        ];
+        *route.run_state.lock().unwrap() = Value::Null;
+        let app = Arc::new(super::super::super::AppReader::new(Arc::new(
+            BrocaSources::new(
+                Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
+                    OPENCODE_RUNNER_MODULE_ID,
+                ))))),
+                Arc::new(OpenCode2(route.clone())),
+            ),
+        )));
+        let page = app
+            .read(
+                super::super::super::TRANSCRIPT_PAGE,
+                json!({"session": "ses_head", "harness": "opencode2", "limit": 50}),
+            )
+            .await
+            .unwrap();
+        assert_eq!(page["messages"][0]["parts"][0]["type"], "file", "{page}");
+        let older = app
+            .read(
+                super::super::super::TRANSCRIPT_PAGE,
+                json!({"session": "ses_head", "harness": "opencode2", "limit": 1,
+                    "beforeOrdinal": 2}),
+            )
+            .await
+            .unwrap();
+        assert_eq!(older["messages"][0]["ordinal"], 1, "{older}");
+        app.read(
+            super::super::super::TRANSCRIPT_PAGE,
+            json!({"session": "ses_head", "harness": "opencode2", "messageOrdinal": 2}),
+        )
+        .await
+        .unwrap();
+        let calls = route.calls.lock().unwrap().clone();
+        let media = |method: &str| -> Vec<Option<Value>> {
+            calls
+                .iter()
+                .filter(|call| call["method"] == method)
+                .map(|call| call["params"].get("media").cloned())
+                .collect()
+        };
+        let reads = media("session.read");
+        assert!(reads.len() >= 3, "{groups:?}: {calls:?}");
+        let expected = asked.then(|| json!("media_refs"));
+        assert!(
+            reads.iter().all(|media| *media == expected),
+            "{groups:?}: {reads:?}"
+        );
+        let found = media("session.history");
+        assert!(found.iter().all(Option::is_none), "{groups:?}: {found:?}");
+    }
+}
+
 /// A media read's own refusals reach the app under their own code, as
 /// `refusal-unknown_media` shows, so it doesn't ask again for a file the chat
 /// doesn't hold. The same codes on any other read, and any other refusal of a

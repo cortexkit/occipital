@@ -17,7 +17,7 @@ use cortexkit_role_llm_runner::{
     describe::{check_describe, RoleDescribe},
     display::DisplayPage,
     history::{HistoryForm, HistoryRequest},
-    read::{ReadRequest, SenderGrant},
+    read::{MediaMode, ReadRequest, SenderGrant},
 };
 use futures_util::future::{BoxFuture, FutureExt, Shared};
 use occipital_app_reader::{
@@ -1523,7 +1523,9 @@ impl BrocaSource {
         // A runner declaring `rich_ui_stamp` adds each stamped assistant entry's stamp
         // to the same read when asked, and one declaring `read_display_facts` adds
         // each entry's client message id and its calls' times. Any other runner
-        // refuses either field, so each is asked for only where declared.
+        // refuses either field, so each is asked for only where declared. One
+        // declaring `media_refs` serves each stored photo or file as a reference
+        // instead of a text marker, when asked.
         let describe = self.describe().await;
         let stamped = describe
             .as_ref()
@@ -1531,12 +1533,17 @@ impl BrocaSource {
         let display_facts = describe
             .as_ref()
             .is_some_and(|describe| describe.declares("read_display_facts"));
+        let media = stored_media(describe.as_deref());
         while next < end {
             let request = ReadRequest::range(next)
                 .with_limit((end - next).min(u64::from(SOURCE_PAGE_LIMIT)))
                 .with_max_bytes(2_097_152)
                 .with_include_rich_ui(stamped)
                 .with_include_display_facts(display_facts);
+            let request = match media {
+                Some(media) => request.with_media(media),
+                None => request,
+            };
             let value = self.remote_read(ReadOp::Read, json_of(&request)?).await?;
             let mut page: RawPage =
                 serde_json::from_value(value).map_err(|error| invalid(error.to_string()))?;
@@ -2192,6 +2199,20 @@ fn normalize(mut envelope: Value) -> Option<Value> {
     Some(envelope)
 }
 
+/// The media form a page read asks for. A default read renders each stored
+/// photo or file as a text marker (`[media not shown: … reason=not_requested]`).
+/// A runner declaring `media_refs` serves it instead as a reference (sha256,
+/// mime, size and pixel size), which rows show as a file part, keeping every
+/// other payload as a default read serves it. Any other runner refuses the
+/// value, so it's asked for nothing and its pages keep the markers.
+fn stored_media(describe: Option<&RoleDescribe>) -> Option<MediaMode> {
+    describe
+        .is_some_and(|describe| {
+            describe.declares(cortexkit_role_llm_runner::capabilities::MEDIA_REFS)
+        })
+        .then_some(MediaMode::MediaRefs)
+}
+
 fn strings(value: &Value) -> Option<Vec<String>> {
     value
         .as_array()?
@@ -2360,12 +2381,17 @@ pub(crate) mod tests {
                 }
             }
         }
-        serde_json::to_value(
+        let mut describe = serde_json::to_value(
             RoleDescribe::new(vec![Major::new(PROVIDES, served, "alpha")], "fake-broca")
                 .with_capabilities(groups.iter().map(|group| group.to_string()).collect())
                 .with_session_capabilities_from("baseline"),
         )
-        .unwrap()
+        .unwrap();
+        // A runner declaring `transcript_reads` states its read size limits.
+        if groups.contains(&"transcript_reads") {
+            describe["max_bytes"] = json!({"default": 1_048_576, "maximum": 4_194_304});
+        }
+        describe
     }
 
     /// A runner reply recorded under runner contract 0.7, as a runner on the current
