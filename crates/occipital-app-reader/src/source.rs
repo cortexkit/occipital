@@ -160,6 +160,13 @@ pub struct Head {
     /// message taken in so far, not the chat's latest. Any value the head gives
     /// counts, since the contract reads an unknown one as still running.
     pub history_intake: bool,
+    /// The state of the session's host program when the runner can't show it is
+    /// alive (`session.head.host`), as the runner spells it: `unknown` while it
+    /// can't tell after a restart. The run stays active, but nothing more arrives
+    /// until the host is found, and Stop ends the run at once. The contract's
+    /// later spellings mean the same: never that the host is alive. `None` when
+    /// the head names none.
+    pub host: Option<String>,
     /// The session's durable spend in the runner's own shape. `None` means unknown.
     pub usage: Option<Value>,
     pub sender: SendGrant,
@@ -201,11 +208,15 @@ impl Head {
 
     /// The session facts every newest page and every turn-carrying claim reply
     /// repeats from the head read in the same request: the next send's model and
-    /// service tier, whether the app may send, the most recent run's outcome, and
-    /// `historyIntake: "running"` while the runner is still taking in history.
+    /// service tier, whether the app may send, the most recent run's outcome,
+    /// `historyIntake: "running"` while the runner is still taking in history, and
+    /// `host` while the runner can't show the session's host program is alive.
     pub(crate) fn describe_session(&self, reply: &mut Value) {
         if self.history_intake {
             reply["historyIntake"] = json!("running");
+        }
+        if let Some(host) = &self.host {
+            reply["host"] = json!(host);
         }
         if let Some(model) = &self.model {
             reply["model"] = model.clone();

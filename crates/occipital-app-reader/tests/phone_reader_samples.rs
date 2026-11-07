@@ -81,6 +81,7 @@ fn the_runner_0_8_samples_are_complete_and_their_checksums_verify() {
         ("phone-session-tier-v1", 6),
         ("phone-reader-relayed-v1", 4),
         ("phone-reader-history-intake-v1", 6),
+        ("phone-reader-host-unknown-v1", 8),
         ("phone-reader-stop-all-v1", 13),
     ] {
         verify_published_set(&format!("test-vectors/{set}"), files);

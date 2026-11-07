@@ -1340,6 +1340,7 @@ impl BrocaSource {
             // runner call to every head read.
             service_tier: meta.service_tier.clone(),
             history_intake: meta.history_intake_running(),
+            host: meta.host.clone().map(String::from),
             // Counts past 2^53 - 1 can't reach the phone exactly, so such a total is
             // left out as unknown rather than shown rounded.
             usage: meta
@@ -4309,6 +4310,7 @@ pub(crate) mod tests {
         assert_eq!(activity_for(None), None);
     }
     mod history_intake_samples;
+    mod host_unknown_samples;
     mod model_names_samples;
     mod notices_samples;
     mod opencode2_live_samples;
