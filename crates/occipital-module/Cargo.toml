@@ -50,9 +50,9 @@ serde_json = { version = "1", features = ["raw_value"] }
 # RFC 8785 canonical JSON, the form display writes are keyed and compared in.
 serde_jcs = "0.2"
 sha2 = "0.10"
-subc-client-rs = "=0.33.1"
+subc-client-rs = "=0.34.0"
 subc-os = "0.1.25"
-subc-protocol = "=0.34.1"
+subc-protocol = "=0.34.4"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time", "fs", "io-util"] }
 # The SDK hands each request's cancellation as a tokio-util token.
 tokio-util = "0.7"
@@ -70,6 +70,6 @@ rustix = { version = "1", features = ["fs"] }
 cortexkit-test-support = "0.1.6"
 # The in-memory daemon stand-in that drives the real handler. Enabled only
 # here, so the harness never reaches a production build.
-subc-client-rs = { version = "=0.33.1", features = ["test-support"] }
+subc-client-rs = { version = "=0.34.0", features = ["test-support"] }
 tempfile = "3"
 tokio = { version = "1", features = ["test-util"] }
