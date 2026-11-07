@@ -471,3 +471,111 @@ fn a_tool_result_with_a_referenced_image_reads_as_its_text() {
         }
     }
 }
+
+/// The contract's own cases for parts it can't show, from
+/// cortexkit-role-llm-runner 0.8.22's `display-unprojected.json`, copied with
+/// its checksum into `tests/fixtures/llm-runner-0.8.22/`, for the profiles
+/// Occipital serves.
+fn unprojected(group: &str) -> Vec<(DisplayProfile, Value)> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/llm-runner-0.8.22");
+    let sums = std::fs::read_to_string(root.join("SHA256SUMS")).unwrap();
+    let (expected, name) = sums.trim_end().split_once("  ").unwrap();
+    let bytes = std::fs::read(root.join(name)).unwrap();
+    assert_eq!(format!("{:x}", Sha256::digest(&bytes)), expected, "{name}");
+    let set: Value = serde_json::from_slice(&bytes).unwrap();
+    set[group]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|case| {
+            let profile = match case["profile"].as_str().unwrap() {
+                "opencode-v2" => DisplayProfile::OpenCode2,
+                "anthropic-messages" => DisplayProfile::ClaudeCode,
+                "pi" => DisplayProfile::Pi,
+                _ => return None,
+            };
+            Some((profile, case.clone()))
+        })
+        .collect()
+}
+
+fn one_row(profile: DisplayProfile, case: &Value, full: bool) -> Value {
+    let entry = json!({"mid": "m1", "ordinal": 1, "written_at": 1_000, "message": case["body"]});
+    display_rows(std::slice::from_ref(&entry), full, profile, &[]).unwrap()[0]
+        .display
+        .clone()
+}
+
+/// A tool result with a file the contract can't show keeps its text; a
+/// message part it can't show becomes an `unreadable` part in its place,
+/// beside the parts that read, and adds nothing to the row's text. Nothing from the stored body's bad part reaches the
+/// app. Only a body with no usable shape, or one never served, is an
+/// unreadable row.
+#[test]
+fn a_part_that_cant_be_shown_leaves_the_rest_of_its_message_readable() {
+    for group in [
+        "tool_files",
+        "standalone",
+        "native_failures",
+        "carried_refusals",
+    ] {
+        let cases = unprojected(group);
+        assert!(!cases.is_empty(), "{group}");
+        for (profile, case) in cases {
+            let name = format!("{group}: {}", case["name"]);
+            for full in [false, true] {
+                let row = one_row(profile, &case, full);
+                assert!(row.get("unreadable").is_none(), "{name}: {row}");
+                assert!(
+                    !row.to_string().contains("private-body-sentinel"),
+                    "{name}: {row}"
+                );
+            }
+            let row = one_row(profile, &case, false);
+            let parts = row["parts"].as_array().unwrap();
+            let want = &case["row"]["parts"];
+            let failed = want
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|part| part["type"] == "other" && part.get("reason").is_some())
+                .count();
+            let marked: Vec<&Value> = parts
+                .iter()
+                .filter(|part| part["type"] == "unreadable")
+                .collect();
+            assert_eq!(marked.len(), failed, "{name}: {row}");
+            for part in marked {
+                let mut members: Vec<&str> = part
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .map(String::as_str)
+                    .collect();
+                members.sort_unstable();
+                assert_eq!(members, [PART_INDEX, PART_KEY, "type"], "{name}: {part}");
+            }
+            // The row's text is only what the message's own text parts say.
+            assert_eq!(row["text"], case["row"]["text"], "{name}");
+            if group == "tool_files" {
+                // An exact read carries the result's text, whether the result
+                // sits in its call's part or, stored alone, in its own.
+                let exact = one_row(profile, &case, true);
+                let tool = exact["parts"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|part| part["type"] == "tool")
+                    .cloned()
+                    .unwrap_or_else(|| panic!("{name}: {exact}"));
+                assert_eq!(tool["content"], "readable result", "{name}: {tool}");
+            }
+        }
+    }
+    for group in ["refused", "never_served"] {
+        for (profile, case) in unprojected(group) {
+            let row = one_row(profile, &case, false);
+            assert_eq!(row["unreadable"], true, "{group}: {}: {row}", case["name"]);
+        }
+    }
+}

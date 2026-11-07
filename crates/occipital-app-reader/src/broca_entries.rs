@@ -164,6 +164,11 @@ enum Part {
         raw: Value,
     },
     Unknown(Value),
+    /// A part the runner contract couldn't show and kept with a reason, so
+    /// the rest of its message still reads. The apps get a part of its own
+    /// kind, `unreadable`, which an app that doesn't know it skips, and add
+    /// nothing to the row's text.
+    Unreadable,
 }
 
 /// A decoded content block and where it sits in the stored message. Some stored
@@ -370,6 +375,7 @@ pub fn display_rows(
     let mut parsed = Vec::with_capacity(entries.len());
     let mut failures = HashMap::new();
     let mut why = Unreadable::default();
+    let mut not_shown = NotShown::default();
     for (index, raw) in entries.iter().enumerate() {
         let relay = raw
             .get("attribution")
@@ -433,6 +439,19 @@ pub fn display_rows(
         let header_part = relayed.as_ref().map(|fact| fact.part.to_string());
         let mut parts = Vec::new();
         for (position, part) in row.parts.into_iter().enumerate() {
+            match &part {
+                DisplayPart::ToolResult(result) => {
+                    for failed in &result.unprojected {
+                        not_shown.note(raw, &failed.kind, &failed.reason);
+                    }
+                }
+                DisplayPart::Other(other) => {
+                    if let Some(reason) = &other.reason {
+                        not_shown.note(raw, &other.kind, reason);
+                    }
+                }
+                _ => {}
+            }
             let Some((key, part, call_id)) = display_part(part) else {
                 continue;
             };
@@ -473,12 +492,15 @@ pub fn display_rows(
         }));
     }
     why.log(profile.name());
+    not_shown.log(profile.name());
     Ok(assemble(parsed, failures, full))
 }
 
 /// A display part as the app part it becomes, with its key and, for tool calls
 /// and results, its call id. A part kind this reader doesn't know is shown the
-/// way an unknown Broca block is: as its kind, in text.
+/// way an unknown Broca block is: as its kind, in text. A part the contract
+/// couldn't show (an `other` part with a reason) is unreadable; a tool result
+/// keeps its text when one of its files couldn't be shown.
 fn display_part(part: DisplayPart) -> Option<(String, Part, Option<String>)> {
     let call = |id: String| Some(id).filter(|id| !id.is_empty());
     Some(match part {
@@ -525,6 +547,7 @@ fn display_part(part: DisplayPart) -> Option<(String, Part, Option<String>)> {
                 "sha256": media["sha256"]});
             (file.part, Part::File { raw }, None)
         }
+        DisplayPart::Other(other) if other.reason.is_some() => (other.part, Part::Unreadable, None),
         DisplayPart::Other(other) => (other.part, Part::Unknown(json!({"type": other.kind})), None),
         _ => return None,
     })
@@ -647,6 +670,44 @@ impl Unreadable {
                 ?ordinal,
                 reason,
                 "stored entries can't be read and show as unreadable; the first is named"
+            );
+        }
+    }
+}
+
+/// Parts of a read's entries the runner contract couldn't show, logged once
+/// per read. The contract's reasons are its own fixed text, never taken from
+/// the stored body, so they are logged as they are.
+#[derive(Default)]
+struct NotShown {
+    count: usize,
+    first: Option<(String, Option<u64>, String, String)>,
+}
+
+impl NotShown {
+    fn note(&mut self, raw: &Value, kind: &str, reason: &str) {
+        self.count += 1;
+        if self.first.is_none() {
+            let mid = raw["mid"].as_str().unwrap_or_default().to_owned();
+            self.first = Some((
+                mid,
+                raw["ordinal"].as_u64(),
+                kind.to_owned(),
+                reason.to_owned(),
+            ));
+        }
+    }
+
+    fn log(self, harness: &str) {
+        if let Some((mid, ordinal, kind, reason)) = self.first {
+            tracing::warn!(
+                harness,
+                count = self.count,
+                mid,
+                ?ordinal,
+                kind,
+                reason,
+                "parts of stored entries can't be shown; the first is named"
             );
         }
     }
@@ -970,9 +1031,10 @@ fn project(
                 json!({"type":"tool", "content":result_text(content), "isError":is_error})
             }
             Part::Result { .. } => continue,
-            Part::File { .. } | Part::Unknown(_) if full => continue,
+            Part::File { .. } | Part::Unknown(_) | Part::Unreadable if full => continue,
             Part::File { raw } => file_part(stored, raw),
             Part::Unknown(raw) => json!({"type":"text", "text":body(raw)}),
+            Part::Unreadable => json!({"type":"unreadable"}),
         };
         // The stored block's identity, never the part's position in this row.
         value[PART_KEY] = json!(decoded.key);
