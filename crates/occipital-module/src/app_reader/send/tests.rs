@@ -8,6 +8,7 @@ use occipital_app_reader::source::ReadError;
 
 mod mode_samples;
 mod prompt;
+mod stop_all_samples;
 use std::{
     collections::{HashMap, VecDeque},
     sync::atomic::{AtomicBool, AtomicI64, Ordering},
@@ -1530,6 +1531,111 @@ async fn stop_is_unsupported_without_the_runner_group_and_checks_its_request() {
         ),
     ] {
         let refusal = f.sender.stop(params).await.unwrap_err();
+        assert_eq!(refusal.code, "invalid_request");
+        assert_eq!(refusal.detail, Some(json!({"field": field})));
+    }
+}
+
+/// Stop everything calls the runner's `session.stop_all` under the app's request id,
+/// naming the run when the app does, and passes the runner's reply on unchanged, item
+/// members it doesn't know included. A repeat goes to the runner under the same id,
+/// which answers it with its first reply.
+#[tokio::test]
+async fn stop_all_asks_the_runner_under_the_apps_id_and_passes_its_reply_on() {
+    let f = fixture(Kind::Head);
+    f.runner.captured.lock().unwrap().insert(
+        "role.describe",
+        json!({"result": {"capabilities": ["run_cancel", "delivery_order",
+            "run_cancel_by_interrupt", "stop_all"]}}),
+    );
+    let reply = json!({"providers": [
+        {"provider": "aft", "outcome": "answered", "items": [
+            {"kind": "shell", "id": "bash-1", "label": "cargo test", "outcome": "stopped",
+                "future_member": 1}]},
+        {"provider": "basal", "outcome": "no_answer"}],
+        "runner": {"items": []}});
+    f.runner
+        .captured
+        .lock()
+        .unwrap()
+        .insert("session.stop_all", json!({"result": reply.clone()}));
+    let stop = json!({"session": "s", "runId": "r1", "clientRequestId": "stop-all-1"});
+    assert_eq!(f.sender.stop_all(stop.clone()).await.unwrap(), reply);
+    assert_eq!(f.sender.stop_all(stop).await.unwrap(), reply);
+    let anyway = json!({"session": "s", "clientRequestId": "stop-all-2"});
+    f.sender.stop_all(anyway).await.unwrap();
+    let asked: Vec<_> = f
+        .runner
+        .calls()
+        .into_iter()
+        .filter(|(method, _)| method == "session.stop_all")
+        .map(|(_, params)| params)
+        .collect();
+    assert_eq!(
+        asked,
+        [
+            json!({"request_id": "stop-all-1", "run_id": "r1"}),
+            json!({"request_id": "stop-all-1", "run_id": "r1"}),
+            json!({"request_id": "stop-all-2"}),
+        ]
+    );
+
+    // A sender without `interrupt`: the runner refuses, as it does Stop.
+    f.runner.captured.lock().unwrap().insert(
+        "session.stop_all",
+        json!({"code": "scope_owner_mismatch", "message": "not the owner"}),
+    );
+    let refused = json!({"session": "s", "clientRequestId": "stop-all-3"});
+    assert_eq!(
+        f.sender.stop_all(refused).await.unwrap_err().code,
+        codes::NOT_AUTHORIZED
+    );
+}
+
+/// A runner that doesn't declare `stop_all` is never sent it, which it would refuse;
+/// the app is told `unsupported` and can fall back to Stop. A malformed request,
+/// including an id the runner couldn't take, is refused naming its field.
+#[tokio::test]
+async fn stop_all_is_unsupported_without_the_runner_group_and_checks_its_request() {
+    let f = fixture(Kind::Head);
+    f.runner.captured.lock().unwrap().insert(
+        "role.describe",
+        json!({"result": {"capabilities": ["run_cancel", "delivery_order",
+            "run_cancel_by_interrupt"]}}),
+    );
+    let refusal = f
+        .sender
+        .stop_all(json!({"session": "s", "clientRequestId": "stop-all-1"}))
+        .await
+        .unwrap_err();
+    assert_eq!(refusal.code, codes::UNSUPPORTED);
+    assert_eq!(refusal.detail, Some(json!({"field": "session.stop_all"})));
+    assert!(f
+        .runner
+        .calls()
+        .iter()
+        .all(|(method, _)| method != "session.stop_all"));
+    for (params, field) in [
+        (json!({"session": "s"}), "clientRequestId"),
+        (
+            json!({"session": "s", "clientRequestId": "x".repeat(129)}),
+            "clientRequestId",
+        ),
+        (
+            json!({"session": "s", "clientRequestId": "tab\tin"}),
+            "clientRequestId",
+        ),
+        (
+            json!({"session": "s", "clientRequestId": "c", "runId": ""}),
+            "runId",
+        ),
+        (
+            json!({"session": "s", "clientRequestId": "c", "at": "now"}),
+            "at",
+        ),
+        (json!({"clientRequestId": "c"}), "session"),
+    ] {
+        let refusal = f.sender.stop_all(params).await.unwrap_err();
         assert_eq!(refusal.code, "invalid_request");
         assert_eq!(refusal.detail, Some(json!({"field": field})));
     }

@@ -1570,5 +1570,6 @@ fn runner_refused_detail(code: &str, detail: Option<&Value>) -> Value {
 }
 
 pub mod stop;
+pub mod stop_all;
 #[cfg(test)]
 mod tests;

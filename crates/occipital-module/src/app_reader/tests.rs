@@ -782,6 +782,7 @@ fn verified_desktop_refuses_send() {
 #[test]
 fn verified_desktop_refuses_stop() {
     assert_desktop_refuses("session.stop");
+    assert_desktop_refuses("session.stop_all");
 }
 
 #[test]

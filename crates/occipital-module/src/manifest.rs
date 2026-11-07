@@ -259,6 +259,7 @@ mod tests {
                 ("session.notices", "query"),
                 ("session.notices_watch", "query"),
                 ("session.stop", "mutate"),
+                ("session.stop_all", "mutate"),
                 ("session.tool_detail", "query"),
                 ("session.tool_records", "query"),
                 ("session.tool_records_watch", "query"),

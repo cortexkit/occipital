@@ -57,6 +57,8 @@ pub const METHODS: [&str; 6] = [
 pub const SEND: &str = occipital_app_reader::send::OPERATION;
 /// The apps' Stop for the session's running turn (`send::stop`).
 pub const STOP: &str = send::stop::OPERATION;
+/// The apps' Stop everything: the turn, and what the session's tools run (`send::stop_all`).
+pub const STOP_ALL: &str = send::stop_all::OPERATION;
 
 /// The tool display reads (`crate::display::app`): views by pin, templates by
 /// digest, a session's records and a call's detail, and the watch saying when
@@ -87,7 +89,7 @@ pub fn operations() -> Vec<ManagementOperation> {
             kind: ManagementOperationKind::Query,
             description: None,
         })
-        .chain([SEND, STOP].map(|name| ManagementOperation {
+        .chain([SEND, STOP, STOP_ALL].map(|name| ManagementOperation {
             name: name.into(),
             kind: ManagementOperationKind::Mutate,
             description: None,
@@ -542,6 +544,17 @@ impl AppReader {
                 detail: refusal.detail,
             });
         }
+        if method == STOP_ALL {
+            return self
+                .sends
+                .stop_all(params)
+                .await
+                .map_err(|refusal| ReadError {
+                    code: refusal.code,
+                    message: refusal.message,
+                    detail: refusal.detail,
+                });
+        }
         if method == SEND {
             let device = match caller {
                 Some(Caller::Device { fingerprint, .. }) => Some(fingerprint.as_str()),
@@ -620,6 +633,7 @@ fn served(method: &str) -> bool {
         || NOTICE_METHODS.contains(&method)
         || method == SEND
         || method == STOP
+        || method == STOP_ALL
         || uploads::METHODS.contains(&method)
 }
 

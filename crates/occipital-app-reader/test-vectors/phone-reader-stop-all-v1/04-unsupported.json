@@ -1,0 +1,1 @@
+{"code":"unsupported","detail":{"field":"session.stop_all"},"message":"this session's runner doesn't stop its tools' work on request"}

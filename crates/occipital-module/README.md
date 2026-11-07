@@ -91,7 +91,7 @@ The apps reach these operations through Callosum, and the desktop app directly:
 | `display.views`, `display.template`, `session.tool_records`, `session.tool_detail` | read |
 | `session.notices` | read |
 | `session.transcript_watch`, `session.display_watch`, `session.tool_records_watch`, `session.notices_watch` | watch |
-| `session.enqueue_user_message`, `session.stop` | send |
+| `session.enqueue_user_message`, `session.stop`, `session.stop_all` | send |
 | `upload.begin`, `upload.chunk`, `upload.status`, `upload.finish`, `upload.abort`, `upload.place` | upload |
 
 An uploaded file goes into the model's prompt or into the session's project. An
