@@ -141,18 +141,56 @@ pub(super) async fn request<T>(
     let trace = Arc::new(Mutex::new(Trace::default()));
     REQUEST
         .scope(trace.clone(), async {
-            let _log = RequestLog {
+            let log = RequestLog {
                 method: method.into(),
                 session: session.into(),
                 correlation,
                 started: Instant::now(),
                 trace: trace.clone(),
             };
-            let result = work.await;
+            let result = note_a_long_wait(&log, work).await;
             trace.guard().outcome.get_or_insert("ok");
             result
         })
         .await
+}
+
+/// How long a request may run before the log says it's still running.
+const STILL_RUNNING_AFTER: std::time::Duration = std::time::Duration::from_secs(10);
+
+/// Run `work`, and log once if it's still running after
+/// [`STILL_RUNNING_AFTER`], naming the step it waits in. A request that never
+/// answers otherwise leaves no line at all, since the summary is logged when it
+/// ends. A watch is held open by design, so it's never noted.
+async fn note_a_long_wait<T>(log: &RequestLog, work: impl Future<Output = T>) -> T {
+    let watch = matches!(
+        log.method.as_str(),
+        super::TRANSCRIPT_WATCH
+            | super::DISPLAY_WATCH
+            | crate::display::app::RECORDS_WATCH
+            | crate::notices::WATCH
+    );
+    if watch {
+        return work.await;
+    }
+    tokio::pin!(work);
+    tokio::select! {
+        result = &mut work => return result,
+        () = tokio::time::sleep(STILL_RUNNING_AFTER) => {}
+    }
+    {
+        let trace = log.trace.guard();
+        let pending = trace
+            .steps
+            .iter()
+            .rev()
+            .find(|step| step.elapsed_ms.is_none())
+            .map(|step| step.name.as_str());
+        tracing::warn!(method = %log.method, session = %log.session, correlation = %log.correlation,
+            running_ms = millis(log.started), pending_step = pending, remote_calls = ?trace.calls,
+            "app reader request still running");
+    }
+    work.await
 }
 
 pub(super) fn outcome(code: &'static str) {
@@ -301,6 +339,57 @@ pub(crate) mod tests {
         assert!(text.contains("pending_step=\"resolution\""), "{text}");
         assert!(text.contains("(\"resolution\", 11, false)"), "{text}");
         assert_eq!(text.matches("level=DEBUG").count(), 2, "{text}");
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn a_request_still_running_after_ten_seconds_is_logged_once() {
+        let (log, _guard) = capture();
+        request(
+            "session.transcript_page",
+            "session",
+            "1:1:3".into(),
+            async {
+                remote(
+                    "thalamus-harness",
+                    "session.read",
+                    tokio::time::sleep(std::time::Duration::from_secs(25)),
+                )
+                .await;
+            },
+        )
+        .await;
+        let text = log.text();
+        assert_eq!(
+            text.matches("app reader request still running").count(),
+            1,
+            "{text}"
+        );
+        assert!(text.contains("running_ms=10000"), "{text}");
+        assert!(
+            text.contains("pending_step=\"thalamus-harness.session.read\""),
+            "{text}"
+        );
+        assert!(text.contains("correlation=1:1:3"), "{text}");
+        // A quick request and a watch held for minutes are never noted.
+        request("session.details", "session", "1:1:4".into(), async {
+            tokio::time::sleep(std::time::Duration::from_secs(9)).await;
+        })
+        .await;
+        request(
+            super::super::DISPLAY_WATCH,
+            "session",
+            "1:1:5".into(),
+            async {
+                tokio::time::sleep(std::time::Duration::from_secs(300)).await;
+            },
+        )
+        .await;
+        assert_eq!(
+            log.text()
+                .matches("app reader request still running")
+                .count(),
+            1
+        );
     }
 
     /// A refused request names the refusal's message beside its code, so a
