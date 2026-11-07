@@ -5,7 +5,8 @@
 //! integers, return an `int32_t` status, and hand their result back through an
 //! `out` pointer as a Rust-owned JSON string or an opaque handle; the `_free`
 //! functions return nothing. This crate only encodes, decodes and maps
-//! statuses; checking, evaluation and layout all stay in occipital-lang.
+//! statuses; checking, evaluation and layout all stay in occipital-lang, and
+//! finding issue and pull request mentions in cortexkit-occipital-refs.
 //!
 //! Every `extern "C"` function runs its body inside `catch_unwind`, so a panic
 //! in the library never unwinds into C code (which is undefined behaviour) or
@@ -47,6 +48,7 @@ mod measure;
 mod metrics;
 mod output;
 mod program;
+mod refs;
 mod reply;
 mod status;
 mod strings;
@@ -63,6 +65,7 @@ pub use hooks::{occ_test_decode_layout, occ_test_force_panic};
 pub use measure::{occ_measure_block, occ_measure_tree};
 pub use metrics::{LineHeight, OccMetrics, TextHeight, TextWidth};
 pub use program::{occ_program_check, occ_template_evaluate};
+pub use refs::occ_text_references;
 pub use reply::{
     occ_reply_chunk, occ_reply_event, occ_reply_finish, occ_reply_free, occ_reply_measure,
     occ_reply_new, OccReply,

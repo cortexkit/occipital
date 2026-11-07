@@ -5,8 +5,10 @@
 # refuse a committed binary that no longer matches its sources.
 #
 # Inputs, in byte-wise sorted path order:
-#   - every git-tracked file under crates/occipital-lang/ and crates/occipital-ffi/,
-#     except crates/occipital-ffi/vectors/ (test data, not compiled into the archive);
+#   - every git-tracked file under crates/occipital-lang/, crates/occipital-refs/
+#     and crates/occipital-ffi/,
+#     except crates/occipital-ffi/vectors/ and crates/occipital-refs/vectors/ (test
+#     data, not compiled into the archive);
 #   - the root Cargo.toml (it holds the release profile);
 #   - scripts/build-xcframework.sh;
 # followed by the locked versions and features of every package occipital-ffi
@@ -53,8 +55,8 @@ fi
 # Built in full before hashing, so a missing input fails the script instead of
 # printing a digest of a partial manifest.
 manifest="$({
-  git ls-files -z -- crates/occipital-lang crates/occipital-ffi \
-    ':(exclude)crates/occipital-ffi/vectors'
+  git ls-files -z -- crates/occipital-lang crates/occipital-refs crates/occipital-ffi \
+    ':(exclude)crates/occipital-ffi/vectors' ':(exclude)crates/occipital-refs/vectors'
   printf '%s\0' Cargo.toml scripts/build-xcframework.sh
 } | LC_ALL=C sort -z -u | {
   while IFS= read -r -d '' path; do

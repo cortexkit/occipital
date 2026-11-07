@@ -1,0 +1,9 @@
+{
+  "entry": "occ_text_references",
+  "request": {
+    "project_json": "{\"id\":\"pj-030ff29a745f4ef9\",\"name\":\"occipital\",\"repository\":{\"host\":\"github.com\",\"owner\":\"cortexkit\",\"name\":\"occipital\"}}",
+    "text": "Rml4ZWQgYnkgUFIgIzQ5OSDigJQgc2VlIGNvcnRleGtpdC9hZnQjMTIsIG5vdCBgUFIgMWAu"
+  },
+  "status": 0,
+  "response": "{\"rules\":1,\"references\":[{\"start\":9,\"end\":16,\"kind\":\"issue\",\"target\":\"https://github.com/cortexkit/occipital/issues/499\"},{\"start\":25,\"end\":41,\"kind\":\"repository_issue\",\"target\":\"https://github.com/cortexkit/aft/issues/12\"}]}"
+}

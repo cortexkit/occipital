@@ -408,6 +408,30 @@ int32_t occ_template_evaluate(const uint8_t *src, size_t len,
                               const char *ctx_json, char **out);
 
 /* ------------------------------------------------------------------------
+ * Text references
+ * --------------------------------------------------------------------- */
+
+/*
+ * Finds the issue and pull request mentions in `text` (`len` bytes of UTF-8,
+ * the Markdown source the app is about to draw), so the app can draw them as
+ * links without changing the text. The rules are those of the
+ * cortexkit-occipital-refs crate (its README); "rules" in the answer is
+ * their version.
+ *
+ * `project_json` is the project record core serves beside the text's agent,
+ * passed as it arrived (members other than "repository" are ignored), or
+ * JSON null for text with no project, such as a room post by the person.
+ *
+ * *out is {"rules": 1, "references": [{"start", "end", "kind", "target"}]},
+ * in text order, none overlapping. "start" and "end" are UTF-8 byte offsets
+ * into `text`, "kind" is "issue" or "repository_issue" (draw a kind you
+ * don't know as a plain link), and "target" is the URL. Text that is not
+ * UTF-8 is OCC_INVALID_ARGUMENT.
+ */
+int32_t occ_text_references(const uint8_t *text, size_t len,
+                            const char *project_json, char **out);
+
+/* ------------------------------------------------------------------------
  * Strings
  * --------------------------------------------------------------------- */
 

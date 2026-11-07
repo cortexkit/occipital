@@ -1,0 +1,24 @@
+[package]
+name = "cortexkit-occipital-refs"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Finds issue and pull request mentions in agent text, so the CortexKit apps can draw them as links"
+readme = "README.md"
+repository = "https://github.com/cortexkit/occipital"
+keywords = ["cortexkit", "markdown", "links", "github"]
+categories = ["text-processing"]
+# The library and its rules only. The test vectors stay in the repository.
+include = ["Cargo.toml", "README.md", "LICENSE", "src/lib.rs"]
+
+[lib]
+name = "occipital_refs"
+
+# No dependencies, so an app that depends on this crate keeps its own feature
+# choices: Cargo unifies features across a whole build.
+[dependencies]
+
+[dev-dependencies]
+# SHA-256 for the vectors' SHA256SUMS. The workspace already locks it.
+hmac-sha256 = { version = "1", default-features = false }

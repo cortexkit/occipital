@@ -16,7 +16,7 @@ checking that it returns `status` and leaves `response` in `*out`:
 - A member named after a JSON parameter (`ctx_json`, `layout_json`,
   `tree_json`, `path_json`, `records_json`, `event_json`) holds the exact
   string to pass.
-- A member named after a byte buffer (`src`, `bytes`, `tail`) holds the
+- A member named after a byte buffer (`src`, `bytes`, `tail`, `text`) holds the
   bytes as standard base64; pass the decoded bytes and their length.
 - `"metrics": "fixed"` means an `OccMetrics` table whose `l` and `t` return
   20 for every input and whose `tw` returns the UTF-8 byte length of its
@@ -51,3 +51,9 @@ a 200-wide transcript row: the Slot keeps its width, the command is cut to
 what the Slot leaves, and both trees have the same height.
 
 The `version` case is `occ_version` with no arguments; its request is `{}`.
+
+The `text-references` case is `occ_text_references` on a reply naming an
+issue, a pull request in another repository, and a pull request inside a
+code span, under a project record as core serves it. The rules themselves
+are pinned by the `text-references-v1` vectors of cortexkit-occipital-refs;
+this case pins the entry point's JSON.

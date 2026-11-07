@@ -20,8 +20,8 @@
 //! golden inputs fails here. Two more `occ_program_check` cases, a program
 //! with error diagnostics and a source with invalid UTF-8, have no golden
 //! trace and are checked by assertions instead, as are the tool row cases
-//! (a long command beside a Slot, evaluated and measured as a row) and the
-//! version descriptor. The
+//! (a long command beside a Slot, evaluated and measured as a row), the
+//! version descriptor and one call of `occ_text_references`. The
 //! scheduler traces drive a program session, which no entry point exposes, so
 //! they have no vectors.
 //!
@@ -46,6 +46,7 @@ use crate::metrics::tests::{table, Script};
 use crate::occ_version;
 use crate::output::to_json;
 use crate::program::{occ_program_check, occ_template_evaluate};
+use crate::refs::occ_text_references;
 use crate::reply::{
     occ_reply_chunk, occ_reply_event, occ_reply_finish, occ_reply_free, occ_reply_measure, OccReply,
 };
@@ -89,7 +90,7 @@ checking that it returns `status` and leaves `response` in `*out`:
 - A member named after a JSON parameter (`ctx_json`, `layout_json`,
   `tree_json`, `path_json`, `records_json`, `event_json`) holds the exact
   string to pass.
-- A member named after a byte buffer (`src`, `bytes`, `tail`) holds the
+- A member named after a byte buffer (`src`, `bytes`, `tail`, `text`) holds the
   bytes as standard base64; pass the decoded bytes and their length.
 - `"metrics": "fixed"` means an `OccMetrics` table whose `l` and `t` return
   20 for every input and whose `tw` returns the UTF-8 byte length of its
@@ -124,6 +125,12 @@ a 200-wide transcript row: the Slot keeps its width, the command is cut to
 what the Slot leaves, and both trees have the same height.
 
 The `version` case is `occ_version` with no arguments; its request is `{}`.
+
+The `text-references` case is `occ_text_references` on a reply naming an
+issue, a pull request in another repository, and a pull request inside a
+code span, under a project record as core serves it. The rules themselves
+are pinned by the `text-references-v1` vectors of cortexkit-occipital-refs;
+this case pins the entry point's JSON.
 "#;
 
 /// One recorded call, or for a reply session the session.
@@ -873,6 +880,47 @@ fn tool_row(
 }
 
 /// Every vector file, `README.md` and `SHA256SUMS`, by file name.
+/// `occ_text_references` under a served project record, checked against the
+/// rules crate itself so the vector can't record a wrong answer.
+fn text_references() -> Vector {
+    let text = "Fixed by PR #499 — see cortexkit/aft#12, not `PR 1`.";
+    let project = r#"{"id":"pj-030ff29a745f4ef9","name":"occipital","repository":{"host":"github.com","owner":"cortexkit","name":"occipital"}}"#;
+    let project_c = c(project);
+    // SAFETY: `text` and `project_c` outlive the call; `out` is the helper's.
+    let result = call(|out| unsafe {
+        occ_text_references(text.as_ptr(), text.len(), project_c.as_ptr(), out)
+    });
+    let vector = Vector::call(
+        "occ_text_references",
+        json!({ "text": base64::encode(text.as_bytes()), "project_json": project }),
+        result,
+    );
+    let expected = occipital_refs::references(
+        text,
+        &occipital_refs::Project {
+            repository: Some(occipital_refs::Repository {
+                host: "github.com",
+                owner: "cortexkit",
+                name: "occipital",
+            }),
+        },
+    );
+    let answer = json(vector.ok());
+    assert_eq!(answer["references"].as_array().unwrap().len(), 2);
+    for (got, want) in answer["references"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(&expected)
+    {
+        assert_eq!(got["start"], want.start);
+        assert_eq!(got["end"], want.end);
+        assert_eq!(got["kind"], want.kind);
+        assert_eq!(got["target"], want.target.as_str());
+    }
+    vector
+}
+
 fn generate() -> BTreeMap<String, Vec<u8>> {
     let mut vectors: Vec<(String, Vector)> = vec![];
     for case in reply_cases() {
@@ -906,6 +954,7 @@ fn generate() -> BTreeMap<String, Vec<u8>> {
         occipital_lang::Catalog::tool_templates_digest()
     );
     vectors.push(("version".to_owned(), version));
+    vectors.push(("text-references".to_owned(), text_references()));
     // The acceptance cases of `occ_program_check`: error diagnostics and
     // invalid UTF-8 are results, not failed calls.
     let show_ui = json!({ "context": context("show_ui", json!({}), Json::Null) });

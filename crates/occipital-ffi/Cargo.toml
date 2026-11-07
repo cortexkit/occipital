@@ -14,6 +14,7 @@ crate-type = ["staticlib", "rlib"]
 # traces and their fixtures must stay out of the shipped archive.
 [dependencies]
 occipital-lang = { package = "cortexkit-occipital-lang", path = "../occipital-lang" }
+occipital-refs = { package = "cortexkit-occipital-refs", path = "../occipital-refs" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

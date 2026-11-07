@@ -6,6 +6,7 @@ members = [
     "crates/occipital-ffi",
     "crates/occipital-app-reader",
     "crates/occipital-files",
+    "crates/occipital-refs",
 ]
 resolver = "2"
 
