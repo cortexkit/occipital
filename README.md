@@ -9,6 +9,7 @@ It holds:
 - **The tool template contract** (`crates/occipital-registry`, published as `cortexkit-occipital-registry`). The `occipital.template/1` document with its canonical JSON and digest, the checks a tool provider's view must pass, and the `occipital-check` command providers run in CI. The [template guide](crates/occipital-registry/TEMPLATES.md) explains how to write one.
 - **The `ck-occipital` binary** (`crates/occipital-module`). It runs on the person's computer as the reserved `occipital` module under the CortexKit daemon. It serves the apps' chat operations (transcript pages, live text, sends, Stop and uploads) and the reply teaching, the part of a head's system prompt that teaches the interface tags, which Core adds for runners that stamp replies. See the [module guide](crates/occipital-module/README.md).
 - **The transcript engine** (`crates/occipital-app-reader`). The pages, claims, live-text ring and watches behind the apps' chat reads, independent of the daemon.
+- **Mentions for links** (`crates/occipital-refs`, published as `cortexkit-occipital-refs`). Finds "Issue N", "PR #N" and `owner/repo#N` in text so the apps can draw them as links, without changing the text.
 - **File placement helpers** (`crates/occipital-files`). A no-replace move, a file's identity and free space, on Windows, Linux and macOS, for placing uploads.
 
 ## Where it's going
@@ -18,7 +19,9 @@ Occipital is becoming the one module the apps use for a chat:
 - **Writing:** it forwards sends, uploads and stop to the runner hosting the session.
 - **Tool views:** it keeps the display data tool providers write for each call, such as a command's exit code or an edit's diff. Runners keep only what the model reads and writes.
 
-Reading and writing are served for Broca sessions and for Thalamus's OpenCode 2 and Pi sessions, and both apps read their chats through Occipital. Tool views are served for every provider that publishes them.
+Reading and writing are served for Broca sessions and for Thalamus's OpenCode 2, Claude Code and Pi sessions, and both apps read their chats through Occipital. Tool views are served for every provider that publishes them, and the notices modules send agents are kept beside the chats.
+
+`ARCHITECTURE.md` explains how the parts work together, and `STRUCTURE.md` maps the code.
 
 ## Build
 

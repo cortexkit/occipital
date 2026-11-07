@@ -113,11 +113,13 @@ Everything else is refused `carrier_op_not_permitted` before the request is
 read further.
 
 A session is found through Entorhinal by its runner and session id. Broca
-sessions are read from Broca, OpenCode 2 sessions from Thalamus's runner
-(`thalamus-harness`, harness `opencode2`) and Pi sessions from Thalamus's Pi
-runner (`thalamus-pi`), all through the llm-runner contract. Broca's stored
-messages are decoded directly; OpenCode 2's and Pi's go through the contract's
-display rows first, so all three reach the apps in one row shape. The module calls
+sessions are read from Broca; OpenCode 2, Claude Code and Pi sessions from
+Thalamus's runner (`thalamus-harness`, harnesses `opencode2`, `claude-code`
+and `pi`), and Pi sessions also from Thalamus's Pi runner (`thalamus-pi`)
+until they move; all through the llm-runner contract. A harness recorded on a
+runner that doesn't host it is refused. Broca's stored messages are decoded
+directly; the others go through the contract's display projections first, so
+every harness reaches the apps in one row shape. The module calls
 them, and Entorhinal, as `reserved:occipital`, proved by its launch nonce; the
 runners check that principal against the session's plan before taking a send
 or a Stop. Any other runner's session is refused `session_unknown`, naming that
