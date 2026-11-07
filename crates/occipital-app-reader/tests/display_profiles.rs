@@ -1,10 +1,13 @@
 //! Chats on a runner whose stored bodies the runner contract projects to display
-//! rows (OpenCode 2 and Pi) reach the apps in the same app row shape as Broca's.
+//! rows (OpenCode 2, Claude Code and Pi) reach the apps in the same app row shape
+//! as Broca's.
 //!
-//! The bodies are the contract's own: `display-opencode-v2.json` and
-//! `display-pi.json` from cortexkit-role-llm-runner 0.8.0's
-//! `test-vectors/llm-runner-v1`, with the checksums it publishes for them. Each
-//! case pairs a stored body with the display row the contract projects from it.
+//! The bodies are the contract's own, with the checksums it publishes for them:
+//! `display-opencode-v2.json` and `display-pi.json` from
+//! cortexkit-role-llm-runner 0.8.0's `test-vectors/llm-runner-v1`, and
+//! `display-anthropic-messages.json` (Claude Code's stored format) from 0.8.17's.
+//! Each case pairs a stored body with the display row the contract projects from
+//! it.
 
 use std::path::{Path, PathBuf};
 
@@ -14,12 +17,17 @@ use occipital_app_reader::broca_entries::{
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
-fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/llm-runner-0.8.0")
+const ANTHROPIC: &str = "display-anthropic-messages.json";
+
+/// The folder of the contract release `file` was copied from.
+fn folder(file: &str) -> PathBuf {
+    let release = if file == ANTHROPIC { "0.8.17" } else { "0.8.0" };
+    Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("tests/fixtures/llm-runner-{release}"))
 }
 
 fn cases(file: &str) -> Vec<Value> {
-    let set: Value = serde_json::from_slice(&std::fs::read(root().join(file)).unwrap()).unwrap();
+    let set: Value =
+        serde_json::from_slice(&std::fs::read(folder(file).join(file)).unwrap()).unwrap();
     set["rows"].as_array().unwrap().clone()
 }
 
@@ -37,12 +45,27 @@ fn entries(file: &str) -> Vec<Value> {
 
 #[test]
 fn the_contract_display_vectors_keep_their_checksums() {
-    let sums = std::fs::read_to_string(root().join("SHA256SUMS")).unwrap();
-    assert_eq!(sums.lines().count(), 2);
-    for line in sums.lines() {
-        let (expected, name) = line.split_once("  ").unwrap();
-        let bytes = std::fs::read(root().join(name)).unwrap();
-        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    for (file, count) in [("display-pi.json", 2), (ANTHROPIC, 1)] {
+        let root = folder(file);
+        let sums = std::fs::read_to_string(root.join("SHA256SUMS")).unwrap();
+        assert_eq!(sums.lines().count(), count);
+        for line in sums.lines() {
+            let (expected, name) = line.split_once("  ").unwrap();
+            let bytes = std::fs::read(root.join(name)).unwrap();
+            assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+        }
+    }
+}
+
+/// The app role a contract display row becomes: Pi's `toolResult`, and a Claude
+/// Code user message holding only tool results, are the apps' `tool` role.
+fn app_role(profile: DisplayProfile, row: &Value) -> String {
+    let parts = row["parts"].as_array().unwrap();
+    let only_results = !parts.is_empty() && parts.iter().all(|part| part["type"] == "tool_result");
+    match (profile, row["role"].as_str().unwrap()) {
+        (_, "toolResult") => "tool".into(),
+        (DisplayProfile::ClaudeCode, "user") if only_results => "tool".into(),
+        (_, role) => role.into(),
     }
 }
 
@@ -69,6 +92,7 @@ fn every_contract_case_becomes_an_app_row() {
     for (file, profile) in [
         ("display-opencode-v2.json", DisplayProfile::OpenCode2),
         ("display-pi.json", DisplayProfile::Pi),
+        (ANTHROPIC, DisplayProfile::ClaudeCode),
     ] {
         let cases = cases(file);
         for full in [false, true] {
@@ -79,11 +103,7 @@ fn every_contract_case_becomes_an_app_row() {
                 assert!(row.display.get("unreadable").is_none(), "{name}");
                 assert_app_shape(&row.display, &name);
                 let want = &case["row"];
-                let role = match want["role"].as_str().unwrap() {
-                    "toolResult" => "tool",
-                    role => role,
-                };
-                assert_eq!(row.display["role"], role, "{name}");
+                assert_eq!(row.display["role"], app_role(profile, want), "{name}");
                 assert_eq!(row.display["text"], want["text"], "{name}");
                 if let Some(model) = want.get("model") {
                     // A served model isn't an app row member today.
@@ -273,12 +293,14 @@ fn a_pi_tool_result_folds_into_its_call_in_an_earlier_message() {
 }
 
 /// A Pi assistant reply is written when it ends, so its write time is its end.
-/// OpenCode 2's isn't known to be, so without a served end it stays unknown.
+/// OpenCode 2's and Claude Code's aren't known to be, so without a served end it
+/// stays unknown.
 #[test]
 fn only_pi_dates_a_reply_by_its_write() {
     for (file, profile, dated) in [
         ("display-pi.json", DisplayProfile::Pi, true),
         ("display-opencode-v2.json", DisplayProfile::OpenCode2, false),
+        (ANTHROPIC, DisplayProfile::ClaudeCode, false),
     ] {
         let rows = display_rows(&entries(file), false, profile, &[]).unwrap();
         let reply = rows
@@ -349,4 +371,62 @@ fn a_served_creation_time_is_the_rows_start_as_recorded() {
         entry["created_at"] = json!(85_000);
         assert_eq!(start(&entry), Some(85_000), "{file}: kept as recorded");
     }
+}
+
+/// Claude Code stores a tool's answer the Messages API way: a `tool_use` block
+/// in the assistant's message, its `tool_result` in the next user message. The
+/// answer folds into the call, and the user message that holds only results is
+/// a `tool` row with nothing of its own on a page, never a message from the
+/// person. A user message with the person's text beside a result stays theirs.
+#[test]
+fn a_claude_code_tool_result_is_the_tools_not_the_persons() {
+    let entry = |ordinal: usize, message: Value| {
+        json!({"mid": format!("m{ordinal}"), "ordinal": ordinal, "written_at": 1_000 + ordinal,
+            "message": message})
+    };
+    let entries = [
+        entry(1, json!({"role": "user", "content": "Read the notes"})),
+        entry(
+            2,
+            json!({"role": "assistant", "content": [
+            {"type": "text", "text": "Reading."},
+            {"type": "tool_use", "id": "toolu_1", "name": "Read", "input": {"file_path": "/w/notes.md"}}]}),
+        ),
+        entry(
+            3,
+            json!({"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": "toolu_1", "content": "line one"}]}),
+        ),
+        entry(
+            4,
+            json!({"role": "assistant", "content": [
+            {"type": "tool_use", "id": "toolu_2", "name": "Read", "input": {"file_path": "/w/gone.md"}}]}),
+        ),
+        entry(
+            5,
+            json!({"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": "toolu_2", "is_error": true,
+                "content": "File does not exist."},
+            {"type": "text", "text": "Then check the other folder"}]}),
+        ),
+    ];
+    let rows = display_rows(&entries, false, DisplayProfile::ClaudeCode, &[]).unwrap();
+    let roles: Vec<_> = rows.iter().map(|row| row.display["role"].clone()).collect();
+    assert_eq!(roles, ["user", "assistant", "tool", "assistant", "user"]);
+    let read = &rows[1].display["parts"][1];
+    assert_eq!(
+        (&read["type"], &read["tool"]),
+        (&json!("tool"), &json!("Read")),
+        "{read}"
+    );
+    assert_eq!(read["outputBytes"], "line one".len(), "{read}");
+    assert!(read.get("isError").is_none(), "{read}");
+    assert_eq!(rows[2].display["parts"], json!([]));
+    assert_eq!(rows[3].display["parts"][0]["isError"], true);
+    assert_eq!(rows[4].display["text"], "Then check the other folder");
+    let parts = rows[4].display["parts"].as_array().unwrap();
+    assert_eq!(parts.len(), 1, "{parts:?}");
+    // An exact read of the tool row shows the answer itself.
+    let full = display_rows(&entries, true, DisplayProfile::ClaudeCode, &[]).unwrap();
+    assert_eq!(full[1].display["parts"][1]["content"], "line one");
 }

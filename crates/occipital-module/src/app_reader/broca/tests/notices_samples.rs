@@ -72,7 +72,7 @@ async fn the_notices_samples_are_what_the_reader_serves() {
     let app = Arc::new(super::super::super::AppReader::new(Arc::new(
         BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
-                OPENCODE_RUNNER_MODULE_ID,
+                THALAMUS_RUNNER_MODULE_ID,
             ))))),
             Arc::new(AnyHarness(route.clone())),
         )
@@ -99,7 +99,7 @@ async fn the_notices_samples_are_what_the_reader_serves() {
     served.keep("01-page", &page_request, page);
     for _ in 0..1_000 {
         if file
-            .for_call(OPENCODE_RUNNER_MODULE_ID, "ses_head", "ck_two")
+            .for_call(THALAMUS_RUNNER_MODULE_ID, "ses_head", "ck_two")
             .unwrap()
             .len()
             == 2
@@ -239,7 +239,7 @@ async fn the_notices_v2_samples_are_what_the_reader_serves() {
     let app = Arc::new(super::super::super::AppReader::new(Arc::new(
         BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
-                OPENCODE_RUNNER_MODULE_ID,
+                THALAMUS_RUNNER_MODULE_ID,
             ))))),
             Arc::new(AnyHarness(route.clone())),
         )
@@ -279,7 +279,7 @@ async fn the_notices_v2_samples_are_what_the_reader_serves() {
     served.keep("01-page-marks", &page_request, page);
     for _ in 0..1_000 {
         if !file
-            .for_call(OPENCODE_RUNNER_MODULE_ID, "ses_head", "ck_one")
+            .for_call(THALAMUS_RUNNER_MODULE_ID, "ses_head", "ck_one")
             .unwrap()
             .is_empty()
         {

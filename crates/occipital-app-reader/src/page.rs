@@ -188,12 +188,12 @@ pub fn optional_transcript_harness(params: &Value) -> Result<Option<&str>, PageR
     match params.get("harness") {
         None => Ok(None),
         Some(Value::String(harness))
-            if matches!(harness.as_str(), "opencode2" | "broca" | "pi") =>
+            if matches!(harness.as_str(), "opencode2" | "claude-code" | "broca" | "pi") =>
         {
             Ok(Some(harness))
         }
         Some(Value::String(harness)) => Err(invalid(format!(
-            "transcript harness '{harness}' is not served here; the served harnesses are 'opencode2', 'broca' and 'pi'"
+            "transcript harness '{harness}' is not served here; the served harnesses are 'opencode2', 'claude-code', 'broca' and 'pi'"
         ))),
         Some(_) => Err(invalid("transcript harness must be a string when present")),
     }

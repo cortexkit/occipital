@@ -5,8 +5,8 @@
 //!   from prefrontal-core at a13318fba1581db2776e91f4954744f35dbbbef6
 //!   (`llm_runner_consumer::{mod,runtime,full_message}`), without runner
 //!   dependencies.
-//! - Runners whose stored format the contract does project (OpenCode 2 and Pi)
-//!   go through the contract's display row first ([`display_rows`]), and its
+//! - Runners whose stored format the contract does project (OpenCode 2, Claude
+//!   Code and Pi) go through the contract's display row first ([`display_rows`]), and its
 //!   parts become the same app parts.
 //!
 //! Every display part built from a stored content block carries that block's
@@ -262,12 +262,15 @@ pub fn rows_with_pruned_reasoning(
 }
 
 /// A runner whose stored message bodies the runner contract turns into display
-/// rows (`display::opencode_v2`, `display::pi`). Its chats reach the apps through
-/// [`display_rows`], in the same app row shape as Broca's.
+/// rows (`display::opencode_v2`, `display::anthropic_messages`, `display::pi`).
+/// Its chats reach the apps through [`display_rows`], in the same app row shape
+/// as Broca's.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DisplayProfile {
     /// OpenCode 2, on Thalamus's runner.
     OpenCode2,
+    /// Claude Code, on Thalamus's runner, which stores Messages API messages.
+    ClaudeCode,
     /// Pi, on Thalamus's Pi runner.
     Pi,
 }
@@ -276,6 +279,7 @@ impl DisplayProfile {
     fn name(self) -> &'static str {
         match self {
             Self::OpenCode2 => "OpenCode 2",
+            Self::ClaudeCode => "Claude Code",
             Self::Pi => "Pi",
         }
     }
@@ -291,14 +295,16 @@ impl DisplayProfile {
     ) -> Result<DisplayRow, ProjectionError> {
         let profile = match self {
             Self::OpenCode2 => serializer_profile::OPENCODE_V2,
+            Self::ClaudeCode => serializer_profile::ANTHROPIC_MESSAGES,
             Self::Pi => serializer_profile::PI,
         };
         display::project_with_attribution(profile, body, None, relay)
     }
 
     /// Pi writes a message to its journal once, when the message ends, so an
-    /// entry's `written_at` is when it finished. For OpenCode 2 that isn't
-    /// established, so only a served `completed_at` says when a reply finished.
+    /// entry's `written_at` is when it finished. For OpenCode 2 and Claude Code
+    /// that isn't established, so only a served `completed_at` says when a reply
+    /// finished.
     fn written_when_finished(self) -> bool {
         matches!(self, Self::Pi)
     }
@@ -339,8 +345,11 @@ struct EntryFacts {
 ///   display facts or, without them, from the projected call. A result in the
 ///   same row as its call has no part of its own; one in a later row, as Pi
 ///   stores them, shows its text on an exact read, as Broca's do.
-/// - Pi's `toolResult` role is the apps' `tool` role, as on Broca. Every other
-///   role is passed on as the runner names it.
+/// - Pi's `toolResult` role is the apps' `tool` role, as on Broca. So is a
+///   Claude Code `user` message holding only tool results: the Messages API
+///   carries a tool's answer in a user message, but nobody typed it. A user
+///   message that also has text or files stays the person's. Every other role
+///   is passed on as the runner names it.
 ///
 /// An entry whose body doesn't project stays visible as the unreadable
 /// placeholder, as on Broca.
@@ -371,9 +380,15 @@ pub fn display_rows(
         // Set only when the contract verified the header and cut it.
         let relayed = row.attribution.take();
         let tool_times = facts.tool_times.or_else(|| projected_tool_times(&row));
-        let role = match row.role.as_str() {
-            "toolResult" => "tool".to_owned(),
-            role => role.to_owned(),
+        let only_results = !row.parts.is_empty()
+            && row
+                .parts
+                .iter()
+                .all(|part| matches!(part, DisplayPart::ToolResult(_)));
+        let role = match (profile, row.role.as_str()) {
+            (_, "toolResult") => "tool".to_owned(),
+            (DisplayProfile::ClaudeCode, "user") if only_results => "tool".to_owned(),
+            (_, role) => role.to_owned(),
         };
         let entry = Entry {
             mid: mid.to_owned(),

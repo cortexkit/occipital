@@ -29,7 +29,7 @@ fn sample(name: &str) -> Value {
 
 fn opencode2_binding() -> Resolved {
     let mut binding = resolved();
-    binding.reference.runner = OPENCODE_RUNNER_MODULE_ID.into();
+    binding.reference.runner = THALAMUS_RUNNER_MODULE_ID.into();
     binding.harness = "opencode2".into();
     binding
 }
@@ -231,7 +231,7 @@ fn recorded_app(hosted: bool) -> Arc<super::super::super::AppReader> {
     Arc::new(super::super::super::AppReader::new(Arc::new(
         BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
-                OPENCODE_RUNNER_MODULE_ID,
+                THALAMUS_RUNNER_MODULE_ID,
             ))))),
             Arc::new(RecordedRoutes { hosted }),
         ),

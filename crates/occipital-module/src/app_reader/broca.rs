@@ -44,7 +44,7 @@ use crate::notices::NoticeSlot;
 use super::{
     display_hub::DisplayHub,
     resolve::{
-        served_harness, DaemonEntorhinal, Resolved, Resolver, SessionRef, BROCA_RUNNER_MODULE_ID,
+        served_harnesses, DaemonEntorhinal, Resolved, Resolver, SessionRef, BROCA_RUNNER_MODULE_ID,
     },
     send::{RunnerError, SendTarget, SendTargets},
     SourceResolver, SourceWatch,
@@ -752,8 +752,9 @@ impl BrocaSources {
 impl BrocaSources {
     /// The session the phone named, under the runner that serves it. A session named
     /// without a harness, or as Broca's, is a Broca session. Any other harness is routed
-    /// by the runner Entorhinal records for the session: Thalamus's OpenCode and Pi
-    /// runners are read like Broca, and any other runner, or none, is refused
+    /// by the runner Entorhinal records for the session: Thalamus's two runners (one for
+    /// OpenCode 2 and Claude Code, one for Pi) are read like Broca, and any other runner,
+    /// or none, is refused
     /// `session_unknown` naming it (null for none), so the phone reads the runner again.
     async fn reference(
         &self,
@@ -768,7 +769,7 @@ impl BrocaSources {
         };
         match self.resolver.runner_by_harness(harness, session).await? {
             Some(runner)
-                if runner != BROCA_RUNNER_MODULE_ID && served_harness(&runner).is_some() =>
+                if runner != BROCA_RUNNER_MODULE_ID && !served_harnesses(&runner).is_empty() =>
             {
                 Ok(SessionRef {
                     runner,
@@ -944,6 +945,7 @@ impl BrocaSource {
     ) -> Result<Vec<Row>, ReadError> {
         let profile = match self.harness() {
             "opencode2" => Some(broca_entries::DisplayProfile::OpenCode2),
+            "claude-code" => Some(broca_entries::DisplayProfile::ClaudeCode),
             "pi" => Some(broca_entries::DisplayProfile::Pi),
             _ => None,
         };
@@ -1941,6 +1943,7 @@ impl TranscriptSource for BrocaSource {
     fn harness(&self) -> &'static str {
         match self.resolved.guard().harness.as_str() {
             "opencode2" => "opencode2",
+            "claude-code" => "claude-code",
             "pi" => "pi",
             _ => "broca",
         }
@@ -2314,7 +2317,7 @@ pub(crate) mod tests {
     mod tool_outage_1027;
 
     use super::super::resolve::{
-        Entorhinal, Network, NetworkChange, OPENCODE_RUNNER_MODULE_ID, PI_RUNNER_MODULE_ID,
+        Entorhinal, Network, NetworkChange, PI_RUNNER_MODULE_ID, THALAMUS_RUNNER_MODULE_ID,
     };
     use super::*;
     use occipital_app_reader::source::TranscriptReader;
@@ -3468,7 +3471,7 @@ pub(crate) mod tests {
     #[tokio::test]
     async fn a_display_read_checks_the_session_under_its_own_runner() {
         for (runner, harness) in [
-            (OPENCODE_RUNNER_MODULE_ID, "opencode2"),
+            (THALAMUS_RUNNER_MODULE_ID, "opencode2"),
             (PI_RUNNER_MODULE_ID, "pi"),
         ] {
             let opened = FakeRoute::new();
@@ -3488,6 +3491,63 @@ pub(crate) mod tests {
             assert!(read.get("absent").is_some(), "{harness}: {read}");
             assert!(opened.calls.lock().unwrap().is_empty(), "{harness}");
         }
+    }
+
+    /// Entorhinal recording session `ses_head` as a session of `harness` on `runner`.
+    struct Hosts(&'static str, &'static str);
+    #[async_trait]
+    impl Entorhinal for Hosts {
+        async fn request(&self, method: &str, params: Value) -> Result<Value, ReadError> {
+            let Self(runner, harness) = *self;
+            match method {
+                "agent.session_for_harness" => {
+                    assert_eq!(params, json!({"harness": harness, "session":"ses_head"}))
+                }
+                "agent.session_for_runner" => {
+                    assert_eq!(params, json!({"runner": runner, "session":"ses_head"}))
+                }
+                other => panic!("unexpected Entorhinal call {other}"),
+            }
+            Ok(
+                json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref",
+                "incarnation":"entorhinal-test", "ended_at_ms":null, "runner":runner, "session":"ses_head",
+                "harness":harness, "project_root":"/workspace/head", "network":"unknown", "network_history":[]}}),
+            )
+        }
+    }
+
+    /// Thalamus's runner hosts both OpenCode 2 and Claude Code sessions, so either
+    /// harness on it is read; a harness recorded on a runner that doesn't host it is
+    /// refused, rather than read in another harness's message shape.
+    #[tokio::test]
+    async fn a_runner_hosting_two_harnesses_serves_both_and_only_those() {
+        for (runner, harness) in [
+            (THALAMUS_RUNNER_MODULE_ID, "opencode2"),
+            (THALAMUS_RUNNER_MODULE_ID, "claude-code"),
+            (PI_RUNNER_MODULE_ID, "pi"),
+        ] {
+            let sources = BrocaSources::new(
+                Arc::new(Resolver::new(Arc::new(Hosts(runner, harness)))),
+                Arc::new(Routes(FakeRoute::new())),
+            );
+            sources
+                .validate_session("ses_head", Some(harness))
+                .await
+                .unwrap_or_else(|error| panic!("{harness} on {runner}: {error:?}"));
+        }
+        let sources = BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(Hosts(
+                PI_RUNNER_MODULE_ID,
+                "claude-code",
+            )))),
+            Arc::new(Routes(FakeRoute::new())),
+        );
+        let refused = sources
+            .validate_session("ses_head", Some("claude-code"))
+            .await
+            .unwrap_err();
+        assert_eq!(refused.code, "invalid_provider_reply", "{refused:?}");
+        assert!(refused.message.contains("not a pi session"), "{refused:?}");
     }
 
     /// Routes that only count the send paths handed out.
@@ -3527,7 +3587,7 @@ pub(crate) mod tests {
         let routes = Arc::new(CountingSends::default());
         let ours = BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(ByHarness(Some(
-                OPENCODE_RUNNER_MODULE_ID,
+                THALAMUS_RUNNER_MODULE_ID,
             ))))),
             routes.clone(),
         );
@@ -3535,7 +3595,7 @@ pub(crate) mod tests {
             .send_target("ses_head", Some("opencode2"))
             .await
             .unwrap();
-        assert_eq!(target.reference().runner, OPENCODE_RUNNER_MODULE_ID);
+        assert_eq!(target.reference().runner, THALAMUS_RUNNER_MODULE_ID);
         assert_eq!(target.reference().session, "ses_head");
         let pi = BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(ByHarness(Some(

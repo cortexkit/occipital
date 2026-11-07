@@ -98,7 +98,7 @@ async fn the_attached_file_samples_are_what_the_reader_serves() {
     let app = Arc::new(super::super::super::AppReader::new(Arc::new(
         BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
-                OPENCODE_RUNNER_MODULE_ID,
+                THALAMUS_RUNNER_MODULE_ID,
             ))))),
             Arc::new(OpenCode2(route.clone())),
         ),
@@ -218,7 +218,7 @@ async fn a_runner_without_files_is_never_asked_for_media() {
     let app = Arc::new(super::super::super::AppReader::new(Arc::new(
         BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
-                OPENCODE_RUNNER_MODULE_ID,
+                THALAMUS_RUNNER_MODULE_ID,
             ))))),
             Arc::new(OpenCode2(route.clone())),
         ),
@@ -282,7 +282,7 @@ async fn only_a_runner_declaring_media_refs_is_asked_for_media_references() {
         let app = Arc::new(super::super::super::AppReader::new(Arc::new(
             BrocaSources::new(
                 Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
-                    OPENCODE_RUNNER_MODULE_ID,
+                    THALAMUS_RUNNER_MODULE_ID,
                 ))))),
                 Arc::new(OpenCode2(route.clone())),
             ),

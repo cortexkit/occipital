@@ -140,10 +140,11 @@ pub fn durable_error_reply(code: &str, message: &str) -> Value {
 
 pub fn harness_mismatch_reply(requested: &str, session_id: &str, actual: &str) -> Value {
     // The recorded refusals report scan support for Thalamus's harnesses (OpenCode
-    // 1, as they name it, OpenCode 2 and Pi), and none for other harnesses. Claims
-    // a runner answers itself are refused by `runner_claim_reply` instead; this
-    // refusal keeps its recorded shape.
-    let delta_read = if matches!(actual, "opencode" | "opencode2" | "pi") {
+    // 1, as they name it, OpenCode 2, Claude Code and Pi), and none for other
+    // harnesses; this refusal keeps its recorded shape. A claim (an app's check
+    // that its cached page is current) that the runner answers itself is refused
+    // by `runner_claim_reply` instead.
+    let delta_read = if matches!(actual, "opencode" | "opencode2" | "claude-code" | "pi") {
         "scan"
     } else {
         "none"

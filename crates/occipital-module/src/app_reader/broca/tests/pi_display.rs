@@ -154,7 +154,7 @@ fn each_harness_uses_its_own_row_builder() {
     );
 
     let mut binding = resolved();
-    binding.reference.runner = crate::app_reader::resolve::OPENCODE_RUNNER_MODULE_ID.into();
+    binding.reference.runner = crate::app_reader::resolve::THALAMUS_RUNNER_MODULE_ID.into();
     binding.harness = "opencode2".into();
     let source = BrocaSource::new(binding, FakeRoute::new());
     let entries = [json!({"mid":"oc2", "ordinal": 1, "message":{

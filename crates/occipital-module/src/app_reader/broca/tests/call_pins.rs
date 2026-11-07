@@ -46,7 +46,7 @@ async fn a_page_names_its_calls_and_keeps_their_pins() {
     let app = Arc::new(super::super::super::AppReader::new(Arc::new(
         BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
-                OPENCODE_RUNNER_MODULE_ID,
+                THALAMUS_RUNNER_MODULE_ID,
             ))))),
             Arc::new(AnyHarness(route)),
         )
@@ -74,7 +74,7 @@ async fn a_page_names_its_calls_and_keeps_their_pins() {
 
     for _ in 0..1_000 {
         if display
-            .call_pin(OPENCODE_RUNNER_MODULE_ID, "ck_ls")
+            .call_pin(THALAMUS_RUNNER_MODULE_ID, "ck_ls")
             .unwrap()
             .is_some()
         {
@@ -84,7 +84,7 @@ async fn a_page_names_its_calls_and_keeps_their_pins() {
     }
     assert_eq!(
         display
-            .call_pin(OPENCODE_RUNNER_MODULE_ID, "ck_ls")
+            .call_pin(THALAMUS_RUNNER_MODULE_ID, "ck_ls")
             .unwrap(),
         Some(("ses_head".into(), PIN.into()))
     );

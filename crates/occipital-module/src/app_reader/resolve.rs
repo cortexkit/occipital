@@ -17,20 +17,20 @@ use subc_client_rs::ConsumerIdentity;
 use subc_protocol::{BindIdentity, RouteTarget};
 
 pub const BROCA_RUNNER_MODULE_ID: &str = "broca";
-/// Thalamus's runner, which hosts OpenCode 2 sessions.
-pub const OPENCODE_RUNNER_MODULE_ID: &str = "thalamus-harness";
-/// Thalamus's runner for Pi sessions: the same program as the OpenCode one,
-/// registered as its own module.
+/// Thalamus's runner, which hosts OpenCode 2 and Claude Code sessions.
+pub const THALAMUS_RUNNER_MODULE_ID: &str = "thalamus-harness";
+/// Thalamus's runner for Pi sessions: the same program as Thalamus's other
+/// runner, registered as its own module.
 pub const PI_RUNNER_MODULE_ID: &str = "thalamus-pi";
 
-/// The harness of the sessions `runner` hosts, for every runner this reader
-/// serves; `None` for any other.
-pub fn served_harness(runner: &str) -> Option<&'static str> {
+/// The harnesses of the sessions `runner` hosts, for every runner this reader
+/// serves; empty for any other.
+pub fn served_harnesses(runner: &str) -> &'static [&'static str] {
     match runner {
-        BROCA_RUNNER_MODULE_ID => Some("broca"),
-        OPENCODE_RUNNER_MODULE_ID => Some("opencode2"),
-        PI_RUNNER_MODULE_ID => Some("pi"),
-        _ => None,
+        BROCA_RUNNER_MODULE_ID => &["broca"],
+        THALAMUS_RUNNER_MODULE_ID => &["opencode2", "claude-code"],
+        PI_RUNNER_MODULE_ID => &["pi"],
+        _ => &[],
     }
 }
 
@@ -473,13 +473,18 @@ fn resolved(
             reference.session, reference.runner
         ),
     )?;
-    // Each runner hosts one harness's sessions; a runner this reader doesn't
-    // know is read as Broca's, which the harness check then refuses.
-    let expected = served_harness(&reference.runner).unwrap_or("broca");
-    if harness != expected {
+    // A session must be of a harness its runner hosts. A runner this reader
+    // doesn't know is read as Broca's, which the harness check then refuses.
+    let hosted = match served_harnesses(&reference.runner) {
+        [] => &["broca"][..],
+        hosted => hosted,
+    };
+    if !hosted.contains(&harness.as_str()) {
         return Err(invalid(format!(
-            "session {} on runner {} is not a {expected} session",
-            reference.session, reference.runner
+            "session {} on runner {} is not a {} session",
+            reference.session,
+            reference.runner,
+            hosted.join(" or ")
         )));
     }
     Ok(Resolved {

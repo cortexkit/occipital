@@ -148,7 +148,7 @@ fn seed(store: &DisplayStore) {
     kept("aft", &pin("twice", 'd'), bash.clone());
     kept("core", &pin("twice", 'd'), bash);
 
-    let runner = reserved(OPENCODE_RUNNER_MODULE_ID);
+    let runner = reserved(THALAMUS_RUNNER_MODULE_ID);
     let write = |writer: &str, call: &str, kind: DisplayKind, pin: String, body: Value| {
         let write = DisplayWrite::new(
             runner.clone(),
@@ -232,7 +232,7 @@ async fn the_tool_display_samples_are_what_the_reader_serves() {
     let app = Arc::new(super::super::super::AppReader::new(Arc::new(
         BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
-                OPENCODE_RUNNER_MODULE_ID,
+                THALAMUS_RUNNER_MODULE_ID,
             ))))),
             Arc::new(AnyHarness(route)),
         )
@@ -263,7 +263,7 @@ async fn the_tool_display_samples_are_what_the_reader_serves() {
     served.keep("01-page-with-call-keys", &page_request, page);
     for _ in 0..1_000 {
         if store
-            .call_pin(OPENCODE_RUNNER_MODULE_ID, "ck_two")
+            .call_pin(THALAMUS_RUNNER_MODULE_ID, "ck_two")
             .unwrap()
             .is_some()
         {
@@ -365,9 +365,9 @@ async fn the_tool_display_samples_are_what_the_reader_serves() {
     // A call this session's pages never carried, and the same key under
     // another runner, aren't this session's: the notice names neither.
     for (runner, call_key) in [
-        (OPENCODE_RUNNER_MODULE_ID, "ck_elsewhere"),
+        (THALAMUS_RUNNER_MODULE_ID, "ck_elsewhere"),
         ("broca", "ck_read"),
-        (OPENCODE_RUNNER_MODULE_ID, "ck_read"),
+        (THALAMUS_RUNNER_MODULE_ID, "ck_read"),
     ] {
         crate::display::write(
             Some(&crate::display::State::Open(store.clone())),

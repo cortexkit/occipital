@@ -90,7 +90,7 @@ async fn the_opencode2_live_samples_are_what_the_reader_serves() {
     let app = Arc::new(super::super::super::AppReader::new(Arc::new(
         BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
-                OPENCODE_RUNNER_MODULE_ID,
+                THALAMUS_RUNNER_MODULE_ID,
             ))))),
             Arc::new(AnyHarness(route.clone())),
         ),
