@@ -4294,6 +4294,7 @@ pub(crate) mod tests {
     mod files_samples;
     mod head_selection_samples;
     mod moved_calls;
+    mod notice_writer_1107;
 
     /// The chat's activity follows the llm-runner role crate's `RunState`: a
     /// running or paused run keeps it busy, every terminal state leaves it idle,
