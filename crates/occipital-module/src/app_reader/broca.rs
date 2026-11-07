@@ -955,7 +955,7 @@ impl BrocaSource {
         }?;
         let call_pins = self.call_pins.guard().clone();
         if let Some(call_pins) = call_pins.get() {
-            let calls: Vec<(String, String)> = rows
+            let calls: Vec<_> = rows
                 .iter()
                 .flat_map(|row| occipital_app_reader::tool_times::call_identities(&row.display))
                 .collect();
@@ -963,6 +963,11 @@ impl BrocaSource {
                 let reference = self.resolved.guard().reference.clone();
                 call_pins.seen(&reference.runner, &reference.session, calls);
             }
+        }
+        // A moved call's minting runner is this module's to know, not the app's.
+        let mut rows = rows;
+        for row in &mut rows {
+            occipital_app_reader::tool_times::take_carriers(&mut row.display);
         }
         let notices = self.notices.guard().clone();
         if let Some(notices) = notices.get() {
@@ -973,7 +978,6 @@ impl BrocaSource {
                 &reference.session,
             ));
         }
-        let mut rows = rows;
         mark_module_messages(&mut rows, entries);
         Ok(rows)
     }
@@ -3517,14 +3521,16 @@ pub(crate) mod tests {
         }
     }
 
-    /// Thalamus's runner hosts both OpenCode 2 and Claude Code sessions, so either
-    /// harness on it is read; a harness recorded on a runner that doesn't host it is
-    /// refused, rather than read in another harness's message shape.
+    /// Thalamus's runner hosts OpenCode 2, Claude Code and Pi sessions, so each
+    /// harness on it is read, as Pi is on the Pi runner until Pi sessions move; a
+    /// harness recorded on a runner that doesn't host it is refused, rather than
+    /// read in another harness's message shape.
     #[tokio::test]
-    async fn a_runner_hosting_two_harnesses_serves_both_and_only_those() {
+    async fn a_runner_hosting_several_harnesses_serves_each_and_only_those() {
         for (runner, harness) in [
             (THALAMUS_RUNNER_MODULE_ID, "opencode2"),
             (THALAMUS_RUNNER_MODULE_ID, "claude-code"),
+            (THALAMUS_RUNNER_MODULE_ID, "pi"),
             (PI_RUNNER_MODULE_ID, "pi"),
         ] {
             let sources = BrocaSources::new(
@@ -4287,6 +4293,7 @@ pub(crate) mod tests {
     mod empty_claim_samples;
     mod files_samples;
     mod head_selection_samples;
+    mod moved_calls;
 
     /// The chat's activity follows the llm-runner role crate's `RunState`: a
     /// running or paused run keeps it busy, every terminal state leaves it idle,

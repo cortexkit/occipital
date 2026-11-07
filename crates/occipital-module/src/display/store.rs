@@ -69,11 +69,18 @@ const CALL_PINS: &str = "CREATE TABLE display_call_pins (
   PRIMARY KEY (runner, call_key)) WITHOUT ROWID;
 CREATE INDEX display_call_pins_age ON display_call_pins (seen_at_ms);";
 
+/// Version 3: a call is found by its session and key. A call moved here from
+/// another runner stays filed under the runner that minted its key, which the
+/// app doesn't know, so the join looks the call up in the session it asks
+/// about.
+const CALL_PINS_BY_SESSION: &str =
+    "CREATE INDEX display_call_pins_session ON display_call_pins (session, call_key);";
+
 /// One schema version for both files: the number of steps each opens with.
-/// Version 2 adds the records file's call pins; the details file has nothing
-/// new at 2.
+/// Version 2 adds the records file's call pins and version 3 their session
+/// index; the details file has nothing new at either.
 #[cfg(test)]
-const SCHEMA_VERSION: i64 = 2;
+const SCHEMA_VERSION: i64 = 3;
 
 /// The limits this server serves in `role.describe.tool_display`: the
 /// contract's ceilings for now. They come down only once a measured week of
@@ -182,14 +189,14 @@ impl DisplayStore {
             data_root,
             NAMESPACE,
             FILE,
-            &[&[WRITES, VIEWS], &[CALL_PINS]],
+            &[&[WRITES, VIEWS], &[CALL_PINS], &[CALL_PINS_BY_SESSION]],
         )?;
         let details = open_file(
             main,
             data_root,
             DETAILS_NAMESPACE,
             DETAILS_FILE,
-            &[&[WRITES], &[]],
+            &[&[WRITES], &[], &[]],
         )?;
         Ok(Self {
             records: Arc::new(records),
@@ -283,9 +290,13 @@ impl DisplayStore {
             return Ok(());
         }
         self.records.with_conn_fenced(|tx| {
+            // A call seen in another session than before has moved with its
+            // history, and follows it. Its pin is the runner's and never changes.
             let mut insert = tx.prepare(
-                "INSERT OR IGNORE INTO display_call_pins
-                 (runner, call_key, session, pin, seen_at_ms) VALUES (?1, ?2, ?3, ?4, ?5)",
+                "INSERT INTO display_call_pins
+                 (runner, call_key, session, pin, seen_at_ms) VALUES (?1, ?2, ?3, ?4, ?5)
+                 ON CONFLICT (runner, call_key) DO UPDATE SET session = excluded.session
+                 WHERE session != excluded.session",
             )?;
             for (runner, call_key, session, pin) in calls {
                 insert.execute(rusqlite::params![runner, call_key, session, pin, now_ms])?;
@@ -307,6 +318,37 @@ impl DisplayStore {
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .optional()
+        })
+    }
+
+    /// The runner a call of `session` is filed under, and its pin: the call
+    /// `runner` (the session's runner) filed itself, else the one other
+    /// runner's call with that key in the session, which minted it before the
+    /// call moved here. `None` when there's no such call, or more than one
+    /// other.
+    pub fn session_call_pin(
+        &self,
+        runner: &str,
+        session: &str,
+        call_key: &str,
+    ) -> Result<Option<(String, String)>, StoreError> {
+        let found: Vec<(String, String)> = self.records.with_conn(|conn| {
+            let mut statement = conn.prepare(
+                "SELECT runner, pin FROM display_call_pins WHERE session = ?1 AND call_key = ?2",
+            )?;
+            let rows = statement
+                .query_map(rusqlite::params![session, call_key], |row| {
+                    Ok((row.get(0)?, row.get(1)?))
+                })?
+                .collect::<rusqlite::Result<_>>()?;
+            Ok(rows)
+        })?;
+        if let Some(own) = found.iter().find(|(filed, _)| filed == runner) {
+            return Ok(Some(own.clone()));
+        }
+        Ok(match found.as_slice() {
+            [other] => Some(other.clone()),
+            _ => None,
         })
     }
 
@@ -920,6 +962,50 @@ mod tests {
         };
         assert_eq!(store.prune(1_000, &tight).unwrap(), 1);
         assert!(!kept("d2") && kept("d3"));
+    }
+
+    /// A call is found in the session the app asks about: under the session's
+    /// own runner, else under the one other runner that minted its key before
+    /// the call moved here. Seen in a new session, it follows its call there.
+    #[test]
+    fn a_moved_call_is_found_in_its_session() {
+        let dir = ScratchDir::new("occipital-display-moved-calls");
+        let (_main, store) = opened(&dir);
+        let call = |runner: &str, session: &str, pin: &str| {
+            (
+                runner.to_owned(),
+                "ck".to_owned(),
+                session.to_owned(),
+                pin.to_owned(),
+            )
+        };
+        store
+            .keep_call_pins(&[call("thalamus-pi", "s", "tp1:bash:00:1")], 1)
+            .unwrap();
+        let found =
+            |runner: &str, session: &str| store.session_call_pin(runner, session, "ck").unwrap();
+        let minted = Some(("thalamus-pi".to_owned(), "tp1:bash:00:1".to_owned()));
+        assert_eq!(found("thalamus-harness", "s"), minted);
+        assert_eq!(found("thalamus-harness", "other"), None);
+        // The session's own runner's call comes first.
+        store
+            .keep_call_pins(&[call("thalamus-harness", "s", "tp1:read:00:1")], 2)
+            .unwrap();
+        assert_eq!(
+            found("thalamus-harness", "s"),
+            Some(("thalamus-harness".to_owned(), "tp1:read:00:1".to_owned()))
+        );
+        // Two other runners' calls with one key in one session: neither.
+        assert_eq!(found("broca", "s"), None);
+        // Seen in a new session, the call moves there with its pin.
+        store
+            .keep_call_pins(&[call("thalamus-pi", "s2", "tp1:bash:00:1")], 3)
+            .unwrap();
+        assert_eq!(found("broca", "s2"), minted);
+        assert_eq!(
+            store.call_pin("thalamus-pi", "ck").unwrap(),
+            Some(("s2".to_owned(), "tp1:bash:00:1".to_owned()))
+        );
     }
 
     /// A call's pin is kept once, read back by runner and call key, and pruned

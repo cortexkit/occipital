@@ -7,6 +7,12 @@
 //! the pin is learned. It's kept in the display store, since the app may ask
 //! about a chat it cached long before this process started.
 //!
+//! A call is filed under the runner that minted its key: the page's runner,
+//! or for a call moved here from another runner with its history, the one
+//! its `call_carrier` names. Providers wrote its records under that runner,
+//! so the join finds them there. A call seen in another session follows it,
+//! as when another runner imports the chat and gives it a new session id.
+//!
 //! Page building never waits on this: sightings go to a task through a
 //! bounded queue, and one that doesn't fit is dropped. A dropped call is kept
 //! the next time a page carrying it is built.
@@ -14,6 +20,7 @@
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex, OnceLock};
 
+use occipital_app_reader::tool_times::CallIdentity;
 use tokio::sync::mpsc;
 
 use super::store::{now_ms, DisplayStore};
@@ -26,12 +33,11 @@ const QUEUE: usize = 256;
 /// again costs no store write. Past this the memory starts over.
 const REMEMBERED: usize = 100_000;
 
-/// The calls one built page carries: its runner and session, and each call's
-/// key and pin.
+/// The calls one built page carries: its session, and each call's minting
+/// runner, key and pin.
 struct Sighting {
-    runner: String,
     session: String,
-    calls: Vec<(String, String)>,
+    calls: Vec<(String, String, String)>,
 }
 
 /// Where page building reports calls, once the display store is open.
@@ -39,19 +45,26 @@ pub type CallPinSlot = Arc<OnceLock<CallPins>>;
 
 pub struct CallPins {
     queue: mpsc::Sender<Sighting>,
-    kept: Mutex<HashSet<(String, String)>>,
+    /// `(minting runner, call key, session)` of each call already kept.
+    kept: Mutex<HashSet<(String, String, String)>>,
 }
 
 impl CallPins {
-    /// Report the calls a page of `runner`'s `session` carries, each as
-    /// `(call key, pin)`. Calls already kept are skipped; never waits.
-    pub fn seen(&self, runner: &str, session: &str, calls: Vec<(String, String)>) {
+    /// Report the calls a page of `runner`'s `session` carries. Calls already
+    /// kept in that session are skipped; never waits.
+    pub fn seen(&self, runner: &str, session: &str, calls: Vec<CallIdentity>) {
         let Ok(mut kept) = self.kept.lock() else {
             return;
         };
-        let fresh: Vec<(String, String)> = calls
+        let fresh: Vec<(String, String, String)> = calls
             .into_iter()
-            .filter(|(call_key, _)| !kept.contains(&(runner.to_owned(), call_key.clone())))
+            .map(|call| {
+                let minted_by = call.carrier.unwrap_or_else(|| runner.to_owned());
+                (minted_by, call.call_key, call.schema_pin)
+            })
+            .filter(|(minted_by, call_key, _)| {
+                !kept.contains(&(minted_by.clone(), call_key.clone(), session.to_owned()))
+            })
             .collect();
         if fresh.is_empty() {
             return;
@@ -59,19 +72,19 @@ impl CallPins {
         if kept.len() + fresh.len() > REMEMBERED {
             kept.clear();
         }
+        // Remembered only once queued, so a dropped sighting is reported again.
+        let remembered: Vec<(String, String, String)> = fresh
+            .iter()
+            .map(|(minted_by, call_key, _)| {
+                (minted_by.clone(), call_key.clone(), session.to_owned())
+            })
+            .collect();
         let sighting = Sighting {
-            runner: runner.to_owned(),
             session: session.to_owned(),
             calls: fresh,
         };
-        // Remembered only once queued, so a dropped sighting is reported again.
-        let calls: Vec<(String, String)> = sighting
-            .calls
-            .iter()
-            .map(|(call_key, _)| (runner.to_owned(), call_key.clone()))
-            .collect();
         if self.queue.try_send(sighting).is_ok() {
-            kept.extend(calls);
+            kept.extend(remembered);
         }
     }
 }
@@ -94,9 +107,9 @@ pub fn start(
             let rows: Vec<(String, String, String, String)> = batch
                 .iter()
                 .flat_map(|sighting| {
-                    sighting.calls.iter().map(|(call_key, pin)| {
+                    sighting.calls.iter().map(|(minted_by, call_key, pin)| {
                         (
-                            sighting.runner.clone(),
+                            minted_by.clone(),
                             call_key.clone(),
                             sighting.session.clone(),
                             pin.clone(),
@@ -137,8 +150,12 @@ mod tests {
     use super::*;
     use cortexkit_test_support::ScratchDir;
 
-    fn call(key: &str, pin: &str) -> (String, String) {
-        (key.to_owned(), pin.to_owned())
+    fn call(key: &str, pin: &str) -> CallIdentity {
+        CallIdentity {
+            call_key: key.to_owned(),
+            schema_pin: pin.to_owned(),
+            carrier: None,
+        }
     }
 
     /// A page's calls are kept with their runner and session, each new pin is

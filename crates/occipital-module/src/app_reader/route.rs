@@ -292,11 +292,12 @@ pub(super) async fn serve_records_watch(
                     },
                 };
                 match next {
+                    // Filed under the runner that minted the call's key, which
+                    // for a call moved here isn't this session's runner.
                     Ok(Hint::Write { runner, call_key }) => {
-                        if runner == reference.runner
-                            && tool
-                                .is_session_call(&runner, &reference.session, &call_key)
-                                .await
+                        if tool
+                            .is_session_call(&runner, &reference.session, &call_key)
+                            .await
                         {
                             call_keys.insert(call_key);
                         }
@@ -387,10 +388,10 @@ pub(super) async fn serve_notices_watch(
                         },
                     };
                     match next {
+                        // Filed under the runner that minted the call's key, which
+                        // for a call moved here isn't this session's runner.
                         Ok(arrived) => {
-                            if arrived.runner == reference.runner
-                                && arrived.session == reference.session
-                            {
+                            if arrived.session == reference.session {
                                 call_keys.insert(arrived.call_key);
                             }
                         }

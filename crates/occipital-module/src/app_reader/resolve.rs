@@ -17,18 +17,19 @@ use subc_client_rs::ConsumerIdentity;
 use subc_protocol::{BindIdentity, RouteTarget};
 
 pub const BROCA_RUNNER_MODULE_ID: &str = "broca";
-/// Thalamus's runner, which hosts OpenCode 2 and Claude Code sessions.
+/// Thalamus's runner, which hosts OpenCode 2, Claude Code and Pi sessions.
 pub const THALAMUS_RUNNER_MODULE_ID: &str = "thalamus-harness";
 /// Thalamus's runner for Pi sessions: the same program as Thalamus's other
 /// runner, registered as its own module.
 pub const PI_RUNNER_MODULE_ID: &str = "thalamus-pi";
 
 /// The harnesses of the sessions `runner` hosts, for every runner this reader
-/// serves; empty for any other.
+/// serves; empty for any other. Pi sessions are moving from Thalamus's Pi runner
+/// into its main one, so both serve `pi` until the Pi runner is retired.
 pub fn served_harnesses(runner: &str) -> &'static [&'static str] {
     match runner {
         BROCA_RUNNER_MODULE_ID => &["broca"],
-        THALAMUS_RUNNER_MODULE_ID => &["opencode2", "claude-code"],
+        THALAMUS_RUNNER_MODULE_ID => &["opencode2", "claude-code", "pi"],
         PI_RUNNER_MODULE_ID => &["pi"],
         _ => &[],
     }

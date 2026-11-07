@@ -84,6 +84,12 @@ DROP TABLE notices;
 ALTER TABLE notices_by_sender RENAME TO notices;
 CREATE INDEX notices_age ON notices (seen_at_ms);";
 
+/// Version 4: a call's notices are found by its session and key. A call moved
+/// here from another runner stays filed under the runner that minted its key,
+/// which the app doesn't know, so a read looks the call up in the session it
+/// asks about.
+const BY_SESSION: &str = "CREATE INDEX notices_session ON notices (session, call_key);";
+
 /// How long a notice is kept: as long as a tool display record.
 const KEEP_MS: i64 = crate::display::store::Retention::DEFAULT.record_age_ms;
 
@@ -104,7 +110,9 @@ const ARRIVALS: usize = 1024;
 /// A riding notice, as page reads and the live stream report it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Notice {
-    /// The runner's module id.
+    /// The module id of the runner that minted the call's key: the read's
+    /// runner, or for a call moved here from another runner with its history,
+    /// the one its `call_carrier` names.
     pub runner: String,
     pub session: String,
     /// The key of the call whose tool result carried it.
@@ -162,7 +170,7 @@ fn notice_of(fact: &Value, runner: &str, session: &str) -> Option<Notice> {
             .map(str::to_owned)
     };
     Some(Notice {
-        runner: runner.to_owned(),
+        runner: text("call_carrier").unwrap_or_else(|| runner.to_owned()),
         session: session.to_owned(),
         call_key: text("call_key")?,
         send_id: text("send_id")?,
@@ -199,14 +207,15 @@ impl NoticeStore {
             data_root,
             NAMESPACE,
             FILE,
-            &[&[NOTICES], &[SPEAKS_FOR], &[BY_SENDER]],
+            &[&[NOTICES], &[SPEAKS_FOR], &[BY_SENDER], &[BY_SESSION]],
         )?;
         Ok(Self { file })
     }
 
     /// Keep each of `notices`, and return the ones not kept before. A notice
     /// kept again keeps its text; a place from a page read fills in one the
-    /// live stream left out.
+    /// live stream left out. One seen in another session than before moved
+    /// with its call's history, follows it, and counts as new there.
     pub fn keep(&self, notices: &[Notice], now_ms: i64) -> Result<Vec<Notice>, StoreError> {
         if notices.is_empty() {
             return Ok(Vec::new());
@@ -221,6 +230,11 @@ impl NoticeStore {
                 "UPDATE notices SET position = ?5
                  WHERE runner = ?1 AND call_key = ?2 AND sender = ?3 AND send_id = ?4
                    AND position IS NULL",
+            )?;
+            let mut moved = tx.prepare(
+                "UPDATE notices SET session = ?5
+                 WHERE runner = ?1 AND call_key = ?2 AND sender = ?3 AND send_id = ?4
+                   AND session != ?5",
             )?;
             let mut fresh = Vec::new();
             for notice in notices {
@@ -238,7 +252,19 @@ impl NoticeStore {
                 ])?;
                 if inserted == 1 {
                     fresh.push(notice.clone());
-                } else if let Some(position) = notice.position {
+                    continue;
+                }
+                let followed = moved.execute(rusqlite::params![
+                    notice.runner,
+                    notice.call_key,
+                    notice.sender,
+                    notice.send_id,
+                    notice.session
+                ])?;
+                if followed == 1 {
+                    fresh.push(notice.clone());
+                }
+                if let Some(position) = notice.position {
                     place.execute(rusqlite::params![
                         notice.runner,
                         notice.call_key,
@@ -253,31 +279,52 @@ impl NoticeStore {
     }
 
     /// The notices kept for a call of `runner`'s `session`: in the order a
-    /// page listed them, then any seen only live, in the order they came.
+    /// page listed them, then any seen only live, in the order they came. They
+    /// are the ones `runner` filed, else those of the one other runner that
+    /// filed the call in this session, which minted its key before the call
+    /// moved here; none when more than one other did.
     pub fn for_call(
         &self,
         runner: &str,
         session: &str,
         call_key: &str,
     ) -> Result<Vec<Kept>, StoreError> {
-        self.file.with_conn(|conn| {
+        let found: Vec<(String, Kept)> = self.file.with_conn(|conn| {
             let mut statement = conn.prepare(
-                "SELECT sender, text, delivered_as, speaks_for FROM notices
-                 WHERE runner = ?1 AND call_key = ?2 AND session = ?3
+                "SELECT runner, sender, text, delivered_as, speaks_for FROM notices
+                 WHERE session = ?1 AND call_key = ?2
                  ORDER BY position IS NULL, position, seen_at_ms, send_id",
             )?;
             let kept = statement
-                .query_map(rusqlite::params![runner, call_key, session], |row| {
-                    Ok(Kept {
-                        sender: row.get(0)?,
-                        text: row.get(1)?,
-                        delivered_as: row.get(2)?,
-                        speaks_for: row.get(3)?,
-                    })
+                .query_map(rusqlite::params![session, call_key], |row| {
+                    Ok((
+                        row.get(0)?,
+                        Kept {
+                            sender: row.get(1)?,
+                            text: row.get(2)?,
+                            delivered_as: row.get(3)?,
+                            speaks_for: row.get(4)?,
+                        },
+                    ))
                 })?
                 .collect::<rusqlite::Result<_>>()?;
             Ok(kept)
-        })
+        })?;
+        let filed_by = if found.iter().any(|(filed, _)| filed == runner) {
+            runner.to_owned()
+        } else {
+            let others: std::collections::BTreeSet<&str> =
+                found.iter().map(|(filed, _)| filed.as_str()).collect();
+            match others.into_iter().collect::<Vec<_>>().as_slice() {
+                [other] => (*other).to_owned(),
+                _ => return Ok(Vec::new()),
+            }
+        };
+        Ok(found
+            .into_iter()
+            .filter(|(filed, _)| *filed == filed_by)
+            .map(|(_, kept)| kept)
+            .collect())
     }
 
     /// Drop the notices first seen before `cutoff_ms`. Returns how many went.
@@ -287,6 +334,9 @@ impl NoticeStore {
         })
     }
 }
+
+/// A queued notice's runner, call key, sender, send id and session.
+type QueuedKey = (String, String, String, String, String);
 
 /// A notice newly kept for a call of `runner`'s `session`, announced to the
 /// notices watches.
@@ -304,10 +354,10 @@ pub type NoticeSlot = Arc<OnceLock<Arc<Notices>>>;
 pub struct Notices {
     store: Arc<NoticeStore>,
     queue: mpsc::Sender<Vec<Notice>>,
-    /// Each notice already queued, by runner, call key, sender and send, with
+    /// Each notice already queued, by runner, call key, sender, send and session, with
     /// whether it had its place: a page read's place still has to reach a
     /// notice first seen on the live stream.
-    queued: Mutex<HashMap<(String, String, String, String), bool>>,
+    queued: Mutex<HashMap<QueuedKey, bool>>,
     arrivals: broadcast::Sender<Arrived>,
 }
 
@@ -378,12 +428,15 @@ impl Notices {
         let Ok(mut queued) = self.queued.lock() else {
             return;
         };
+        // The session too: a notice seen in another session than before has
+        // moved with its call's history, and must reach the store to follow it.
         let key = |notice: &Notice| {
             (
                 notice.runner.clone(),
                 notice.call_key.clone(),
                 notice.sender.clone(),
                 notice.send_id.clone(),
+                notice.session.clone(),
             )
         };
         let fresh: Vec<Notice> = notices
@@ -631,5 +684,56 @@ mod tests {
             .map(|kept| (kept.text.as_str(), kept.speaks_for.as_deref()))
             .collect();
         assert_eq!(agents, [("first", None), ("second", Some("agent_1"))]);
+    }
+
+    /// A notice on a call another runner minted is filed under that runner,
+    /// from its fact's `call_carrier`, and read in the session the app asks
+    /// about: the session's own runner's notices first, else the one other
+    /// runner's. Seen in a new session, it follows its call there.
+    #[test]
+    fn a_moved_calls_notices_are_read_in_its_session() {
+        let fact = json!({"call_key": "ck", "call_carrier": "thalamus-pi", "send_id": "send-1",
+            "sender": "magic-context", "text": "moved", "delivered_as": "tool_result"});
+        let moved = from_event(&fact, "thalamus-harness", "s").unwrap();
+        assert_eq!(moved.runner, "thalamus-pi");
+        let dir = ScratchDir::new("occipital-notices-moved");
+        let (_main, store) = opened(&dir);
+        assert_eq!(
+            store.keep(std::slice::from_ref(&moved), 1).unwrap().len(),
+            1
+        );
+        let read = |runner: &str, session: &str| -> Vec<String> {
+            store
+                .for_call(runner, session, "ck")
+                .unwrap()
+                .into_iter()
+                .map(|kept| kept.text)
+                .collect()
+        };
+        assert_eq!(read("thalamus-harness", "s"), ["moved"]);
+        assert_eq!(read("thalamus-pi", "s"), ["moved"]);
+        // The session's own runner's notices come before another's.
+        let mut own = notice("send-2", "own", Some(0));
+        own.runner = "thalamus-harness".into();
+        store.keep(&[own], 2).unwrap();
+        assert_eq!(read("thalamus-harness", "s"), ["own"]);
+        // Two other runners' notices on one key in one session: neither.
+        let mut third = notice("send-3", "third", Some(0));
+        third.runner = "elsewhere".into();
+        store.keep(&[third], 3).unwrap();
+        assert!(read("broca", "s").is_empty());
+        // Seen again in a new session, it moves there, and is new there.
+        let mut followed = moved.clone();
+        followed.session = "s2".into();
+        assert_eq!(
+            store
+                .keep(std::slice::from_ref(&followed), 4)
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(read("broca", "s2"), ["moved"]);
+        // It left session s, where two other runners' notices now share the key.
+        assert!(read("thalamus-pi", "s").is_empty());
     }
 }

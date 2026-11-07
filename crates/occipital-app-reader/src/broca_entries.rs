@@ -525,7 +525,8 @@ fn projected_tool_times(row: &DisplayRow) -> Option<Value> {
             DisplayPart::ToolCall(call) => Some(json!({
                 "tool_call_id": call.tool_call_id, "started_at": call.started_at,
                 "finished_at": call.finished_at, "unanswered": call.unanswered,
-                "call_key": call.call_key, "schema_pin": call.schema_pin,
+                "call_key": call.call_key, "call_carrier": call.call_carrier,
+                "schema_pin": call.schema_pin,
             })),
             _ => None,
         })

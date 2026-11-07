@@ -330,23 +330,24 @@ impl ToolDisplay {
 
     /// The call's writes from the one writer whose own view of the runner's
     /// pin authorizes it, or `None`: an unknown call, a call of another
-    /// session, no such writer, or more than one.
+    /// session, no such writer, or more than one. A call moved here from
+    /// another runner is read under the runner that minted its key, which
+    /// providers wrote its records for.
     fn join(
         &self,
         runner: &str,
         session: &str,
         call_key: &str,
     ) -> Result<Option<Joined>, ReadError> {
-        let Some((call_session, pin)) =
-            self.store.call_pin(runner, call_key).map_err(unavailable)?
+        let Some((minted_by, pin)) = self
+            .store
+            .session_call_pin(runner, session, call_key)
+            .map_err(unavailable)?
         else {
             return Ok(None);
         };
-        if call_session != session {
-            return Ok(None);
-        }
         let runner_principal = Principal::Reserved {
-            module_id: runner.to_owned(),
+            module_id: minted_by.clone(),
         };
         let mut by_writer: BTreeMap<String, Vec<Stored>> = BTreeMap::new();
         for stored in self
@@ -379,7 +380,7 @@ impl ToolDisplay {
                     .iter()
                     .map(|(writer, _)| writer.as_str())
                     .collect();
-                tracing::warn!(%runner, %call_key, ?writers, "several writers may join one call; showing none");
+                tracing::warn!(runner = %minted_by, %call_key, ?writers, "several writers may join one call; showing none");
                 return Ok(None);
             }
         };
@@ -401,8 +402,9 @@ impl ToolDisplay {
         )
     }
 
-    /// Whether a stored write belongs to `runner`'s `session`, so its watch
-    /// should say so.
+    /// Whether a write stored for a call of `runner` (the runner that minted
+    /// its key) belongs to `session`, so that session's watch should say so.
+    /// The session may be on another runner, for a call that moved there.
     pub async fn is_session_call(
         self: &Arc<Self>,
         runner: &str,
