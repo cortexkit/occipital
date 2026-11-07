@@ -181,6 +181,18 @@ fn cases() -> Vec<Case> {
             vec![named("cortexkit", "aft", 4)],
         ),
         case(
+            "20-reference-links",
+            OCCIPITAL,
+            "See [PR 14][1], [PR 15][] and [PR 16]; [⟦PR 17⟧] has no definition.\n\n[1]: https://github.com/cortexkit/occipital/pull/14 \"PR 14\"\n  [pr 15]: https://x.dev/15\n[PR  16]: https://x.dev/16\n",
+            vec![home(17)],
+        ),
+        case(
+            "21-keyword-spacing-and-escapes",
+            OCCIPITAL,
+            "pull  request 3, pull\nrequest 4, PR\n12 and PR \\#12 aren't mentions; ⟦Pull Request 5⟧ is.",
+            vec![home(5)],
+        ),
+        case(
             "19-code-span-stops-at-a-blank-line",
             OCCIPITAL,
             "A ` opens nothing here\n\n⟦PR 1⟧ after ` it.",

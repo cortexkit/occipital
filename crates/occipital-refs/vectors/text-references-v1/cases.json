@@ -53,6 +53,12 @@
   {"name": "18-repository-not-linkable", "project": {"id": "pj-test", "repository": {"host": "github.com", "owner": "cortex kit", "name": "occipital"}},
    "text": "Issue 3 gets no link into an owner GitHub can't have, but cortexkit/aft#4 does.",
    "references": [{"start": 58, "end": 73, "kind": "repository_issue", "target": "https://github.com/cortexkit/aft/issues/4"}]},
+  {"name": "20-reference-links", "project": {"id": "pj-test", "repository": {"host": "github.com", "owner": "cortexkit", "name": "occipital"}},
+   "text": "See [PR 14][1], [PR 15][] and [PR 16]; [PR 17] has no definition.\n\n[1]: https://github.com/cortexkit/occipital/pull/14 \"PR 14\"\n  [pr 15]: https://x.dev/15\n[PR  16]: https://x.dev/16\n",
+   "references": [{"start": 40, "end": 45, "kind": "issue", "target": "https://github.com/cortexkit/occipital/issues/17"}]},
+  {"name": "21-keyword-spacing-and-escapes", "project": {"id": "pj-test", "repository": {"host": "github.com", "owner": "cortexkit", "name": "occipital"}},
+   "text": "pull  request 3, pull\nrequest 4, PR\n12 and PR \\#12 aren't mentions; Pull Request 5 is.",
+   "references": [{"start": 68, "end": 82, "kind": "issue", "target": "https://github.com/cortexkit/occipital/issues/5"}]},
   {"name": "19-code-span-stops-at-a-blank-line", "project": {"id": "pj-test", "repository": {"host": "github.com", "owner": "cortexkit", "name": "occipital"}},
    "text": "A ` opens nothing here\n\nPR 1 after ` it.",
    "references": [{"start": 24, "end": 28, "kind": "issue", "target": "https://github.com/cortexkit/occipital/issues/1"}]}

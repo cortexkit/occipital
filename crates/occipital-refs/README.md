@@ -57,9 +57,12 @@ The range covers the whole mention, from the first letter of the keyword or
 of `owner` to the last digit.
 
 - **Keywords** are `issue`, `pr` and `pull request`, matched without regard
-  to ASCII case. One or more spaces (U+0020) follow the keyword, then an
-  optional `#`, then N. A tab or no space at all (`PR#5`) is not a mention.
-  `issues 4` is not one either.
+  to ASCII case. In `pull request` exactly one space (U+0020) sits between
+  the two words. One or more spaces (U+0020) follow the keyword, then an
+  optional `#`, then N. Anything else between them is not a mention: a tab,
+  a line break (`PR` at the end of a soft-wrapped line and `12` on the next),
+  no space at all (`PR#5`), or a backslash (`PR \#12`, which Markdown draws
+  as "PR #12"). `issues 4` is not one either.
 - **N** is one to nine ASCII digits, not starting with `0`.
 - **A mention starts** at the start of the text or after a character that is
   not a letter, digit or `_` (any script). For `owner/repo#N`, the character
@@ -86,10 +89,15 @@ of `owner` to the last digit.
 - **Code spans.** A run of backticks opens one, closed by the next run of the
   same length in the same paragraph. A run that nothing closes is plain text.
   A backtick after a backslash opens nothing.
-- **Markdown inline links and images,** `[label](destination)` and
-  `![alt](destination)`, label and destination both: a mention the agent
-  linked already keeps the agent's link. Brackets with no destination
-  (`[PR 14]`) are searched.
+- **Markdown links and images,** label and destination both, so a mention
+  the agent linked already keeps the agent's link: inline links
+  `[label](destination)` and `![alt](destination)`; full and collapsed
+  references `[label][ref]` and `[label][]`; and a shortcut reference
+  `[label]` whose label the text defines. Labels match as CommonMark matches
+  them: blanks collapsed, ASCII case ignored. Brackets that are none of these
+  (`[PR 14]` with no definition) are searched.
+- **Link reference definitions,** a line whose first non-blank characters
+  are `[label]:`, to the end of that line.
 - **HTML tags and autolinks,** from a `<` followed by a letter, `/`, `!` or
   `?` to the next `>` on the same line. This covers the apps' rich UI tags.
 - **Bare URLs,** from `http://` or `https://` (any case) at the start of a

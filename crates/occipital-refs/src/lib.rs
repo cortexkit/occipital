@@ -15,15 +15,16 @@
 //! - `owner/repo#N` names issue or pull request N in that repository, kind
 //!   [`REPOSITORY_ISSUE`], whatever the project.
 //! - A bare `#N` names nothing: in agents' text it is usually a room post.
-//! - Nothing inside code (code spans and fenced code blocks), Markdown links,
-//!   HTML tags, autolinks or bare URLs is a mention.
+//! - Nothing inside code (code spans and fenced code blocks), Markdown links
+//!   (inline, reference and their definitions), HTML tags, autolinks or bare
+//!   URLs is a mention.
 //!
 //! The crate has no dependencies, so an app can depend on it without its
 //! feature choices reaching the app's own crates.
 
 #![forbid(unsafe_code)]
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// The version of the rules [`references`] applies. It goes up whenever the
 /// same text and project could give different references, so apps can tell
@@ -86,8 +87,10 @@ pub fn references(text: &str, project: &Project<'_>) -> Vec<Reference> {
         .repository
         .is_none_or(|repository| repository.host.eq_ignore_ascii_case(GITHUB));
     let mut found = Vec::new();
-    for (start, end) in prose(text) {
-        Stretch::new(text, start, end).scan(start, home, host_known, &mut found);
+    let stretches = prose(text);
+    let defined = definitions(text, &stretches);
+    for &(start, end) in &stretches {
+        Stretch::new(text, start, end, &defined).scan(start, home, host_known, &mut found);
     }
     found
 }
@@ -143,6 +146,46 @@ fn prose(text: &str) -> Vec<(usize, usize)> {
     ranges
 }
 
+/// The normalized labels of the link reference definitions in the prose
+/// stretches: lines whose first non-blank character opens `[label]:`.
+/// Definitions apply to the whole text, wherever they sit.
+fn definitions(text: &str, stretches: &[(usize, usize)]) -> HashSet<String> {
+    let mut defined = HashSet::new();
+    for &(start, end) in stretches {
+        for line in text[start..end].split('\n') {
+            let Some(rest) = line.trim_start_matches([' ', '\t']).strip_prefix('[') else {
+                continue;
+            };
+            let Some(close) = rest.find(']') else {
+                continue;
+            };
+            if rest[close + 1..].starts_with(':') && !rest[..close].contains('[') {
+                defined.insert(normalize(&rest[..close]));
+            }
+        }
+    }
+    defined
+}
+
+/// A link label as CommonMark matches it: blanks collapsed to one space,
+/// trimmed, and ASCII letters in lower case.
+fn normalize(label: &str) -> String {
+    label
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_ascii_lowercase()
+}
+
+/// Whether only blanks come before `at` on its line.
+fn line_starts_at(text: &str, at: usize) -> bool {
+    text[..at]
+        .bytes()
+        .rev()
+        .take_while(|&byte| byte != b'\n')
+        .all(|byte| byte == b' ' || byte == b'\t')
+}
+
 /// The fence a line opens, as its character and length, if it opens one.
 fn fence(trimmed: &str) -> Option<(u8, usize)> {
     let mark = *trimmed.as_bytes().first()?;
@@ -161,6 +204,8 @@ fn fence(trimmed: &str) -> Option<(u8, usize)> {
 /// to its length.
 struct Stretch<'t> {
     text: &'t str,
+    /// The labels of the text's link reference definitions, normalized.
+    defined: &'t HashSet<String>,
     end: usize,
     /// Where each line holding only blanks starts, in order. No code span or
     /// link crosses one.
@@ -175,7 +220,7 @@ struct Stretch<'t> {
 }
 
 impl<'t> Stretch<'t> {
-    fn new(text: &'t str, start: usize, end: usize) -> Self {
+    fn new(text: &'t str, start: usize, end: usize, defined: &'t HashSet<String>) -> Self {
         let bytes = text.as_bytes();
         let mut breaks = Vec::new();
         let mut line_start = start;
@@ -217,6 +262,7 @@ impl<'t> Stretch<'t> {
         }
         Self {
             text,
+            defined,
             end,
             breaks,
             closers,
@@ -315,19 +361,40 @@ impl<'t> Stretch<'t> {
         at + run
     }
 
-    /// Past a Markdown inline link or image, `[label](destination)`, starting
-    /// at its `[`. Its label and destination are both left alone: a label the
-    /// agent already linked keeps the agent's link.
+    /// Past a Markdown link or image starting at its `[`, or past a link
+    /// reference definition's line: a mention the agent already linked keeps
+    /// the agent's link. The forms are an inline link `[label](destination)`,
+    /// a full or collapsed reference `[label][ref]` or `[label][]`, a
+    /// shortcut reference `[label]` whose label the text defines, and a
+    /// definition `[label]: destination` at the start of a line.
     fn link(&self, at: usize) -> Option<usize> {
         // CommonMark caps a link label at 999 characters.
         const LABEL: usize = 1_000;
         const DESTINATION: usize = 2_048;
+        let bytes = self.text.as_bytes();
         let close = *self.closers.get(&at)?;
-        if close - at > LABEL || self.text.as_bytes().get(close + 1) != Some(&b'(') {
+        if close - at > LABEL {
             return None;
         }
-        let after = *self.closers.get(&(close + 1))?;
-        (after - close <= DESTINATION).then_some(after + 1)
+        match bytes.get(close + 1).filter(|_| close + 1 < self.end) {
+            Some(b'(') => {
+                let after = *self.closers.get(&(close + 1))?;
+                (after - close <= DESTINATION).then_some(after + 1)
+            }
+            Some(b'[') => {
+                let after = *self.closers.get(&(close + 1))?;
+                (after - close <= LABEL).then_some(after + 1)
+            }
+            Some(b':') if line_starts_at(self.text, at) => Some(
+                self.text[close..self.end]
+                    .find('\n')
+                    .map_or(self.end, |offset| close + offset + 1),
+            ),
+            _ => self
+                .defined
+                .contains(&normalize(&self.text[at + 1..close]))
+                .then_some(close + 1),
+        }
     }
 
     /// Past an HTML tag or an autolink (`<https://…>`) on one line, starting
