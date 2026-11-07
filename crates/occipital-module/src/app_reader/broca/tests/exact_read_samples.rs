@@ -60,7 +60,7 @@ fn route(entries: Vec<Value>) -> Arc<FakeRoute> {
     route
 }
 
-/// A long tool output: 2,000 lines, 96,000 bytes.
+/// A long tool output: 2,000 lines of 47 bytes, 94,000 bytes.
 fn long_output() -> String {
     (0..2_000)
         .map(|line| format!("test result {line:05}: ok, 0 failed, 12 passed ...\n"))

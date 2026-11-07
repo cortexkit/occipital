@@ -11,7 +11,7 @@ harness). Each `NN-name.json` is the reply the app receives for
 
 | File | Shows |
 | --- | --- |
-| `01-opencode2-long-output` | a `bash` call with 96,000 bytes of output |
+| `01-opencode2-long-output` | a `bash` call with 94,000 bytes of output (2,000 lines of 47 bytes) |
 | `02-opencode2-error` | a call that failed |
 | `03-pi-long-output` | the same long call on Pi, whose result is stored as its own message |
 | `04-pi-error` | a failed call on Pi |
