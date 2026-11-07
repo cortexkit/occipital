@@ -6,6 +6,13 @@ use tokio::sync::watch;
 
 pub const MAX_OPEN_WATCHES: usize = 32;
 
+/// The most watches one route may hold open. The daemon lets a route have 32
+/// requests in flight, and a watch keeps its request in flight for as long as
+/// it's open. While every one is taken, the daemon holds the route's next
+/// request, and every request the same client sends to any module waits behind
+/// it. So watches stop at 24, leaving 8 for the route's reads, sends and uploads.
+pub const MAX_ROUTE_WATCHES: usize = 24;
+
 /// An attested route's channel and epoch, supplied by the transport.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WatchRoute {
@@ -32,7 +39,10 @@ struct OpenWatch {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum OpenRefusal {
+    /// The module holds [`MAX_OPEN_WATCHES`] watches.
     Capacity,
+    /// The route holds [`MAX_ROUTE_WATCHES`] watches.
+    RouteCapacity,
     Stopping,
 }
 
@@ -48,6 +58,14 @@ impl WatchRegistry {
         }
         if state.open.len() >= MAX_OPEN_WATCHES {
             return Err(OpenRefusal::Capacity);
+        }
+        let on_route = state
+            .open
+            .values()
+            .filter(|watch| watch.route == route)
+            .count();
+        if on_route >= MAX_ROUTE_WATCHES {
+            return Err(OpenRefusal::RouteCapacity);
         }
         let id = state.next_id;
         state.next_id += 1;
@@ -112,11 +130,21 @@ mod tests {
             channel: 1,
             epoch: 2,
         };
-        let mut slots: Vec<_> = (0..32).map(|_| registry.open(route).unwrap()).collect();
-        assert!(matches!(registry.open(route), Err(OpenRefusal::Capacity)));
+        let other = WatchRoute {
+            channel: 4,
+            epoch: 2,
+        };
+        let mut slots: Vec<_> = (0..MAX_ROUTE_WATCHES)
+            .map(|_| registry.open(route).unwrap())
+            .collect();
+        let mut others: Vec<_> = (MAX_ROUTE_WATCHES..MAX_OPEN_WATCHES)
+            .map(|_| registry.open(other).unwrap())
+            .collect();
+        assert!(matches!(registry.open(other), Err(OpenRefusal::Capacity)));
         assert_eq!(registry.open_count(), 32);
         slots.pop();
         slots.push(registry.open(route).unwrap());
+        others.clear();
         registry.end_route(WatchRoute {
             channel: 1,
             epoch: 3,
@@ -126,6 +154,32 @@ mod tests {
         assert!(slots.iter().all(|slot| *slot.ended.borrow()));
         drop(slots);
         assert_eq!(registry.open_count(), 0);
+        assert!(registry.open(route).is_ok());
+    }
+
+    /// One route's watches stop short of the daemon's 32 requests in flight per
+    /// route, while other routes still open theirs.
+    #[test]
+    fn a_route_holding_twenty_four_watches_is_refused_another() {
+        let registry = Arc::new(WatchRegistry::default());
+        let route = WatchRoute {
+            channel: 1,
+            epoch: 2,
+        };
+        let mut slots: Vec<_> = (0..MAX_ROUTE_WATCHES)
+            .map(|_| registry.open(route).unwrap())
+            .collect();
+        assert!(matches!(
+            registry.open(route),
+            Err(OpenRefusal::RouteCapacity)
+        ));
+        // The same channel under a new epoch is another route.
+        let reopened = WatchRoute {
+            channel: 1,
+            epoch: 3,
+        };
+        assert!(registry.open(reopened).is_ok());
+        slots.pop();
         assert!(registry.open(route).is_ok());
     }
 

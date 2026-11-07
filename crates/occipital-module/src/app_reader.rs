@@ -835,11 +835,17 @@ impl AppReader {
         }) {
             Ok(slot) => slot,
             Err(error) => {
-                let code = match error {
-                    OpenRefusal::Capacity => "watch_capacity",
-                    OpenRefusal::Stopping => "module_stopping",
+                // Both limits answer `watch_capacity`, which an app retries once
+                // it has closed a watch.
+                let (code, message) = match error {
+                    OpenRefusal::Capacity => ("watch_capacity", "app watch cannot be opened"),
+                    OpenRefusal::RouteCapacity => (
+                        "watch_capacity",
+                        "this connection already holds 24 watches; close one before opening another",
+                    ),
+                    OpenRefusal::Stopping => ("module_stopping", "app watch cannot be opened"),
                 };
-                return refusal(code, "app watch cannot be opened");
+                return refusal(code, message);
             }
         };
         if records_watch {

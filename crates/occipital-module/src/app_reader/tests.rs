@@ -1138,22 +1138,37 @@ async fn an_expired_worker_steer_is_reported_on_the_sessions_transcript_watch() 
 async fn the_thirty_third_watch_is_refused_and_slots_free_when_watches_end() {
     let mut h = Harness::new();
     h.bind(7, 1, binding("fed-phone:fp")).await;
-    for corr in 1..=32 {
+    h.bind(8, 1, binding("fed-phone:fp")).await;
+    // One route holds at most 24, so the daemon always has requests in flight
+    // left for its reads and sends.
+    for corr in 1..=24 {
         h.request(DISPLAY_WATCH, corr, params(DISPLAY_WATCH, "s"))
             .await;
     }
     h.barrier().await;
-    assert_eq!(h.app.watches.open_count(), 32);
-    h.request(DISPLAY_WATCH, 33, params(DISPLAY_WATCH, "s"))
+    h.request(DISPLAY_WATCH, 25, params(DISPLAY_WATCH, "s"))
         .await;
     let refusal = h.next().await;
     assert_eq!(refusal.header.ty, FrameType::Error);
+    assert_eq!(refusal.header.corr, 25);
+    assert_eq!(body(&refusal)["code"], "watch_capacity");
+    for corr in 26..=33 {
+        h.request_on(8, 1, DISPLAY_WATCH, corr, params(DISPLAY_WATCH, "s"))
+            .await;
+    }
+    h.barrier().await;
+    assert_eq!(h.app.watches.open_count(), 32);
+    h.request_on(8, 1, DISPLAY_WATCH, 34, params(DISPLAY_WATCH, "s"))
+        .await;
+    let refusal = h.next().await;
+    assert_eq!(refusal.header.ty, FrameType::Error);
+    assert_eq!(refusal.header.corr, 34);
     assert_eq!(body(&refusal)["code"], "watch_capacity");
     h.cancel(7, 1, 1);
     let ended = h.next().await;
     assert_eq!(ended.header.ty, FrameType::StreamEnd);
     assert_eq!(ended.header.corr, 1);
-    h.request(DISPLAY_WATCH, 34, params(DISPLAY_WATCH, "s"))
+    h.request(DISPLAY_WATCH, 35, params(DISPLAY_WATCH, "s"))
         .await;
     h.barrier().await;
     assert_eq!(h.app.watches.open_count(), 32);
