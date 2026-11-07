@@ -198,6 +198,19 @@ fn last_run_with_error_value(run: &LastRunState, error: Option<&LastRunError>) -
     value
 }
 
+/// The members [`Head::describe_session`] writes. A claim reply carries them at
+/// its top level and never inside its `resync` page, so anything that rebuilds a
+/// reply around a page (a watch trimming an oversized one) moves all of them.
+pub const SESSION_FACTS: &[&str] = &[
+    "historyIntake",
+    "host",
+    "model",
+    "serviceTier",
+    "sender",
+    SENDER_UNKNOWN,
+    "lastRun",
+];
+
 impl Head {
     fn claim_version(&self) -> Option<String> {
         self.history_version.map(|version| match &self.incarnation {

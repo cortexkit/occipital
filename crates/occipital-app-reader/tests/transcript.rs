@@ -28,6 +28,9 @@ struct State {
     wrong_page_version: bool,
     exact_unavailable: bool,
     last_run: Option<cortexkit_role_llm_runner::read::LastRunState>,
+    service_tier: Option<String>,
+    history_intake: bool,
+    host: Option<String>,
 }
 
 struct FakeSource {
@@ -54,6 +57,9 @@ impl FakeSource {
                 wrong_page_version: false,
                 exact_unavailable: false,
                 last_run: None,
+                service_tier: None,
+                history_intake: false,
+                host: None,
             }),
             changes,
             newest_reads: AtomicUsize::new(0),
@@ -117,6 +123,9 @@ impl TranscriptSource for FakeSource {
             history_version: state.history_version,
             incarnation: state.incarnation.clone(),
             last_run: state.last_run.clone(),
+            service_tier: state.service_tier.clone(),
+            history_intake: state.history_intake,
+            host: state.host.clone(),
             input: InputCapability {
                 attachments: Attachments::Yes,
                 mime_types: Some(vec!["image/png".into()]),
@@ -735,7 +744,7 @@ async fn source_errors_and_request_refusals_keep_their_codes() {
 }
 
 #[tokio::test(start_paused = true)]
-async fn last_run_changes_emit_even_when_idle_and_survive_oversize_resync() {
+async fn session_facts_emit_even_when_idle_and_survive_oversize_resync() {
     let source = FakeSource::new("broca", 3, 10, true);
     let reader = Arc::new(TranscriptReader::default());
     let baseline = read(&reader, &source, json!({"session":"s"})).await;
@@ -750,11 +759,27 @@ async fn last_run_changes_emit_even_when_idle_and_survive_oversize_resync() {
     assert_eq!(notice["lastRun"], expected);
     assert_eq!(notice["activity"], "idle");
     assert!(notice["newTurns"].as_array().unwrap().is_empty());
+    // Every session fact rides an oversized reply at its top level, never in the
+    // trimmed page it carries.
+    {
+        let mut state = source.state.lock().unwrap();
+        state.service_tier = Some("fast".into());
+        state.history_intake = true;
+        state.host = Some("unknown".into());
+    }
     source.append(3, 90_000);
     let oversized = running.next().await;
     assert_eq!(oversized["lastRun"], expected);
     assert!(oversized["resync"].is_object(), "{oversized}");
-    assert!(oversized["resync"].get("lastRun").is_none());
+    for (fact, value) in [
+        ("lastRun", expected.clone()),
+        ("serviceTier", json!("fast")),
+        ("historyIntake", json!("running")),
+        ("host", json!("unknown")),
+    ] {
+        assert_eq!(oversized[fact], value, "{fact}");
+        assert!(oversized["resync"].get(fact).is_none(), "{fact} in resync");
+    }
     assert!(serde_json::to_vec(&oversized).unwrap().len() <= NOTICE_BOUND);
     running.end().await;
 }

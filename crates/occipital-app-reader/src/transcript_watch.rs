@@ -53,7 +53,8 @@ const TRANSIENT_CODES: &[&str] = &[
 ];
 
 /// Fields a claim reply's nested `resync` page never carries; the top-level
-/// reply carries them instead.
+/// reply carries them instead, as it does the session facts
+/// ([`crate::source::SESSION_FACTS`]).
 const RESYNC_DECORATIONS: &[&str] = &[
     "activityToken",
     "discardActivityToken",
@@ -63,10 +64,6 @@ const RESYNC_DECORATIONS: &[&str] = &[
     "timing",
     "version",
     "historyVersion",
-    "model",
-    "sender",
-    crate::source::SENDER_UNKNOWN,
-    "lastRun",
 ];
 
 /// What the transport supplies to [`run`].
@@ -255,13 +252,16 @@ async fn oversize_transcript<H: TranscriptWatchHost>(
         if let Some(resync) = resync {
             let mut resync = resync.clone();
             if let Some(object) = resync.as_object_mut() {
-                for field in RESYNC_DECORATIONS {
+                for field in RESYNC_DECORATIONS
+                    .iter()
+                    .chain(crate::source::SESSION_FACTS)
+                {
                     object.remove(*field);
                 }
             }
             reply["resync"] = resync;
         }
-        for field in [
+        let page_facts = [
             "attachmentCapability",
             "acceptsAttachments",
             "acceptedMimeTypes",
@@ -269,11 +269,8 @@ async fn oversize_transcript<H: TranscriptWatchHost>(
             "activity",
             "activityAtMs",
             "historyVersion",
-            "model",
-            "sender",
-            crate::source::SENDER_UNKNOWN,
-            "lastRun",
-        ] {
+        ];
+        for field in page_facts.iter().chain(crate::source::SESSION_FACTS) {
             if let Some(value) = newest.get(field) {
                 reply[field] = value.clone();
             }
