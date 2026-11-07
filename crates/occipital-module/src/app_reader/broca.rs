@@ -4296,6 +4296,7 @@ pub(crate) mod tests {
     mod contract_heads;
     mod describe_samples;
     mod empty_claim_samples;
+    mod exact_read_samples;
     mod files_samples;
     mod head_selection_samples;
     mod moved_calls;

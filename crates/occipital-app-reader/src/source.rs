@@ -507,11 +507,19 @@ impl TranscriptReader {
                     };
                     // A retained summary is useful during an outage, but must
                     // never masquerade as the full arguments or tool output.
-                    let summary = source
-                        .older(&Anchor::Ordinal(ordinal as u64 + 1), 1)
-                        .await
-                        .map(|page| page.rows)
-                        .unwrap_or_default();
+                    // The summary is read as the one row after `ordinal - 1`.
+                    // Reading the one row older than `ordinal + 1` instead finds
+                    // nothing when `ordinal` is the newest message, which is where
+                    // a call still waiting for its result usually is; it is kept
+                    // only for a source that can't read after an ordinal.
+                    let summary = match source.after((ordinal as u64).saturating_sub(1), 1).await {
+                        Ok(positioned) => positioned.page.rows,
+                        Err(_) => source
+                            .older(&Anchor::Ordinal(ordinal as u64 + 1), 1)
+                            .await
+                            .map(|page| page.rows)
+                            .unwrap_or_default(),
+                    };
                     let rows = summary
                         .into_iter()
                         .filter(|row| row.ordinal == Some(ordinal as u64))

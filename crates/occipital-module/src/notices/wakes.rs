@@ -628,11 +628,13 @@ mod tests {
             "send_id": case["notice"]["send_id"], "sender": "prefrontal-core",
             "text": "Work updated.", "delivered_as": "tool_result"}]});
         let session = write["session"].as_str().unwrap();
+        // Kept now: the notices task drops old notices when it starts, and one
+        // dated far in the past could go before the read.
         notices
             .store
             .keep(
                 &crate::notices::from_entries(&[entry], "runner", session),
-                1,
+                now_ms(),
             )
             .unwrap();
         let read = notices
