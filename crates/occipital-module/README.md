@@ -89,7 +89,7 @@ The apps reach these operations through Callosum, and the desktop app directly:
 | --- | --- |
 | `session.transcript_page`, `session.display_read`, `session.details`, `session.media` | read |
 | `display.views`, `display.template`, `session.tool_records`, `session.tool_detail` | read |
-| `session.notices` | read |
+| `session.notices`, `session.wake_records` | read |
 | `session.transcript_watch`, `session.display_watch`, `session.tool_records_watch`, `session.notices_watch` | watch |
 | `session.enqueue_user_message`, `session.stop`, `session.stop_all` | send |
 | `upload.begin`, `upload.chunk`, `upload.status`, `upload.finish`, `upload.abort`, `upload.place` | upload |
@@ -163,6 +163,16 @@ tool records: no tool provider writes them. Engram backs up `notices.db`,
 since a runner may prune its own record of a notice. Notices are kept 180
 days. The apps' wire is pinned by the sample set
 `occipital-app-reader/test-vectors/phone-reader-notices-v1/`.
+
+A wake record says what a wake held, so the apps draw it as chips. The waking
+module writes it before the send, with `display.write` and `kind: "wake"` on
+the tool-provider route, keyed by its own send id; the sender is the writer the
+daemon attests. Occipital declares `wake-record-display/v1` and keeps each
+record in `notices.db`, once and unchanged, for 180 days. A page read records
+which send each message came from, from the runner's `sender` and `send_id`
+read facts. The apps read records by message id with `session.wake_records`,
+and a riding notice carries its send's record as `wake` in `session.notices`.
+The wire is pinned by `phone-reader-wake-records-v1`.
 
 ## Store
 

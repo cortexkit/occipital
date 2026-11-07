@@ -74,10 +74,15 @@ pub const DISPLAY_METHODS: [&str; 6] = [
     crate::display::model_names::OPERATION,
 ];
 
-/// The notices that rode a session's tool calls (`crate::notices`), and the
-/// watch saying when one arrives. They are reads, so [`admit`] lets in the
-/// same callers as the transcript reads, the desktop app included.
-pub const NOTICE_METHODS: [&str; 2] = [crate::notices::READ, crate::notices::WATCH];
+/// The notices that rode a session's tool calls (`crate::notices`), the
+/// watch saying when one arrives, and the wake records of a session's
+/// messages (`crate::notices::wakes`). They are reads, so [`admit`] lets in
+/// the same callers as the transcript reads, the desktop app included.
+pub const NOTICE_METHODS: [&str; 3] = [
+    crate::notices::READ,
+    crate::notices::WATCH,
+    crate::notices::wakes::READ,
+];
 
 pub fn operations() -> Vec<ManagementOperation> {
     METHODS
@@ -535,6 +540,13 @@ impl AppReader {
             let reference = self.session_reference(&params).await?;
             return notices
                 .read(&reference.runner, &reference.session, &params)
+                .await;
+        }
+        if method == crate::notices::wakes::READ {
+            let notices = self.notices()?;
+            let reference = self.session_reference(&params).await?;
+            return notices
+                .wake_records(&reference.runner, &reference.session, &params)
                 .await;
         }
         if method == STOP {

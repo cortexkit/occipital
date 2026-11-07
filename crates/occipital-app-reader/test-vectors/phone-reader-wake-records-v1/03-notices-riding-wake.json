@@ -1,0 +1,1 @@
+{"result":{"calls":{"ck_one":[{"deliveredAs":"tool_result","sender":"prefrontal-core","text":"<system-reminder>\nInbox: 1 notice.\n</system-reminder>","wake":{"items":[{"at":1793599990000,"excerpt":"Delivered: the flaky test is fixed.","kind":"work_result","refs":{"task":"bg_example"}}]}}]}}}

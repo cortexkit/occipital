@@ -22,6 +22,11 @@
 //! Page building and the live stream never wait on this: notices go to a task
 //! through a bounded queue, and a batch that doesn't fit is dropped. Its
 //! notices are kept the next time a page listing them is read.
+//!
+//! The same file keeps wake records, which say what a wake held
+//! ([`wakes`]).
+
+pub mod wakes;
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -90,7 +95,11 @@ CREATE INDEX notices_age ON notices (seen_at_ms);";
 /// asks about.
 const BY_SESSION: &str = "CREATE INDEX notices_session ON notices (session, call_key);";
 
-/// How long a notice is kept: as long as a tool display record.
+// Version 5 adds the wake records and the sends page reads named
+// ([`wakes::TABLES`]).
+
+/// How long a notice, a wake record and a message's send are kept: as long as
+/// a tool display record.
 const KEEP_MS: i64 = crate::display::store::Retention::DEFAULT.record_age_ms;
 
 /// How often old notices are dropped. The first run is at startup.
@@ -192,6 +201,8 @@ pub struct Kept {
     pub text: String,
     pub delivered_as: String,
     pub speaks_for: Option<String>,
+    /// The send that delivered it, whose wake record the read serves beside it.
+    pub send_id: String,
 }
 
 /// `notices.db`.
@@ -207,7 +218,13 @@ impl NoticeStore {
             data_root,
             NAMESPACE,
             FILE,
-            &[&[NOTICES], &[SPEAKS_FOR], &[BY_SENDER], &[BY_SESSION]],
+            &[
+                &[NOTICES],
+                &[SPEAKS_FOR],
+                &[BY_SENDER],
+                &[BY_SESSION],
+                &[wakes::TABLES],
+            ],
         )?;
         Ok(Self { file })
     }
@@ -291,7 +308,7 @@ impl NoticeStore {
     ) -> Result<Vec<Kept>, StoreError> {
         let found: Vec<(String, Kept)> = self.file.with_conn(|conn| {
             let mut statement = conn.prepare(
-                "SELECT runner, sender, text, delivered_as, speaks_for FROM notices
+                "SELECT runner, sender, text, delivered_as, speaks_for, send_id FROM notices
                  WHERE session = ?1 AND call_key = ?2
                  ORDER BY position IS NULL, position, seen_at_ms, send_id",
             )?;
@@ -304,6 +321,7 @@ impl NoticeStore {
                             text: row.get(2)?,
                             delivered_as: row.get(3)?,
                             speaks_for: row.get(4)?,
+                            send_id: row.get(5)?,
                         },
                     ))
                 })?
@@ -327,11 +345,13 @@ impl NoticeStore {
             .collect())
     }
 
-    /// Drop the notices first seen before `cutoff_ms`. Returns how many went.
+    /// Drop the notices first seen, and the wake records written, before
+    /// `cutoff_ms`. Returns how many went.
     pub fn prune(&self, cutoff_ms: i64) -> Result<usize, StoreError> {
-        self.file.with_conn_fenced(|tx| {
+        let notices = self.file.with_conn_fenced(|tx| {
             tx.execute("DELETE FROM notices WHERE seen_at_ms < ?1", [cutoff_ms])
-        })
+        })?;
+        Ok(notices + self.prune_wakes(cutoff_ms)?)
     }
 }
 
@@ -347,17 +367,28 @@ pub struct Arrived {
     pub call_key: String,
 }
 
+/// What reporters queue for the task that writes the file.
+enum Batch {
+    Notices(Vec<Notice>),
+    Sends(Vec<wakes::Sent>),
+}
+
 /// Where page reads and the live stream report notices, once the file is open.
 pub type NoticeSlot = Arc<OnceLock<Arc<Notices>>>;
 
 /// Keeping and serving riding notices.
 pub struct Notices {
     store: Arc<NoticeStore>,
-    queue: mpsc::Sender<Vec<Notice>>,
+    queue: mpsc::Sender<Batch>,
     /// Each notice already queued, by runner, call key, sender, send and session, with
     /// whether it had its place: a page read's place still has to reach a
     /// notice first seen on the live stream.
     queued: Mutex<HashMap<QueuedKey, bool>>,
+    /// The send each message a page read named came from, by runner, session
+    /// and message id, with whether it has been queued for the file. A wake
+    /// records read looks here first, so it finds a send the file doesn't
+    /// hold yet.
+    sends: Mutex<wakes::Remembered>,
     arrivals: broadcast::Sender<Arrived>,
 }
 
@@ -365,12 +396,13 @@ impl Notices {
     /// Serve `store`, and start the task that keeps reported notices in it,
     /// announces each new one, and drops old ones.
     pub fn start(store: Arc<NoticeStore>) -> (Arc<Self>, tokio::task::JoinHandle<()>) {
-        let (queue, mut batches) = mpsc::channel::<Vec<Notice>>(QUEUE);
+        let (queue, mut batches) = mpsc::channel::<Batch>(QUEUE);
         let arrivals = broadcast::channel(ARRIVALS).0;
         let notices = Arc::new(Self {
             store: store.clone(),
             queue,
             queued: Mutex::new(HashMap::new()),
+            sends: Mutex::new(HashMap::new()),
             arrivals: arrivals.clone(),
         });
         let task = tokio::spawn(async move {
@@ -393,9 +425,26 @@ impl Notices {
                 // Every reporter holds the sender through `Notices`, so this
                 // ends only when the module does.
                 let Some(first) = batch else { break };
-                let mut notices = first;
-                while let Ok(next) = batches.try_recv() {
-                    notices.extend(next);
+                let (mut notices, mut sends) = (Vec::new(), Vec::new());
+                for batch in
+                    std::iter::once(first).chain(std::iter::from_fn(|| batches.try_recv().ok()))
+                {
+                    match batch {
+                        Batch::Notices(batch) => notices.extend(batch),
+                        Batch::Sends(batch) => sends.extend(batch),
+                    }
+                }
+                if !sends.is_empty() {
+                    let store = store.clone();
+                    let kept =
+                        tokio::task::spawn_blocking(move || store.keep_sends(&sends, now_ms()));
+                    match kept.await {
+                        Ok(Ok(())) => {}
+                        Ok(Err(error)) => tracing::warn!(%error, "cannot keep messages' sends"),
+                        Err(error) => {
+                            tracing::warn!(%error, "keeping messages' sends stopped early")
+                        }
+                    }
                 }
                 let store = store.clone();
                 let kept = tokio::task::spawn_blocking(move || store.keep(&notices, now_ms()));
@@ -457,8 +506,49 @@ impl Notices {
             .map(|notice| (key(notice), notice.position.is_some()))
             .collect();
         // Remembered only once queued, so a dropped batch is reported again.
-        if self.queue.try_send(fresh).is_ok() {
+        if self.queue.try_send(Batch::Notices(fresh)).is_ok() {
             queued.extend(keys);
+        }
+    }
+
+    /// Report the sends a page read's messages came from. Each is remembered
+    /// at once, and queued for the file unless it was already queued. Never waits.
+    pub fn sent(&self, sends: Vec<wakes::Sent>) {
+        if sends.is_empty() {
+            return;
+        }
+        let Ok(mut remembered) = self.sends.lock() else {
+            return;
+        };
+        let fresh: Vec<wakes::Sent> = sends
+            .into_iter()
+            .filter(|sent| {
+                !remembered
+                    .get(&sent.key())
+                    .is_some_and(|(_, queued)| *queued)
+            })
+            .collect();
+        if fresh.is_empty() {
+            return;
+        }
+        if remembered.len() + fresh.len() > REMEMBERED {
+            remembered.clear();
+        }
+        for sent in &fresh {
+            remembered.insert(
+                sent.key(),
+                ((sent.sender.clone(), sent.send_id.clone()), false),
+            );
+        }
+        let keys: Vec<_> = fresh.iter().map(wakes::Sent::key).collect();
+        // Marked queued only once queued, so a dropped batch is queued again
+        // by the next page read naming it.
+        if self.queue.try_send(Batch::Sends(fresh)).is_ok() {
+            for key in keys {
+                if let Some((_, queued)) = remembered.get_mut(&key) {
+                    *queued = true;
+                }
+            }
         }
     }
 
@@ -470,7 +560,8 @@ impl Notices {
     /// `session.notices {callKeys}`: for each call of `runner`'s `session`
     /// that a notice rode, its notices as `{sender, text, deliveredAs}`, in
     /// order, with `speaksFor: {agentId}` on one that carries another agent's
-    /// words. A call no notice rode is left out.
+    /// words and `wake` on one whose send has a wake record. A call no notice
+    /// rode is left out.
     pub async fn read(
         &self,
         runner: &str,
@@ -488,20 +579,24 @@ impl Notices {
                 if kept.is_empty() {
                     continue;
                 }
-                let notices: Vec<Value> = kept
-                    .into_iter()
-                    .map(|kept| {
-                        let mut notice = json!({
-                            "sender": kept.sender,
-                            "text": kept.text,
-                            "deliveredAs": kept.delivered_as,
-                        });
-                        if let Some(agent) = kept.speaks_for {
-                            notice["speaksFor"] = json!({ "agentId": agent });
-                        }
-                        notice
-                    })
-                    .collect();
+                let mut notices = Vec::with_capacity(kept.len());
+                for kept in kept {
+                    let wake = store
+                        .wake_of(&session, &kept.sender, &kept.send_id)
+                        .map_err(unavailable)?;
+                    let mut notice = json!({
+                        "sender": kept.sender,
+                        "text": kept.text,
+                        "deliveredAs": kept.delivered_as,
+                    });
+                    if let Some(agent) = kept.speaks_for {
+                        notice["speaksFor"] = json!({ "agentId": agent });
+                    }
+                    if let Some(wake) = wake {
+                        notice["wake"] = wake;
+                    }
+                    notices.push(notice);
+                }
                 calls.insert(call_key, Value::Array(notices));
             }
             Ok(json!({ "calls": calls }))

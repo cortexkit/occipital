@@ -19,7 +19,7 @@ name = "occipital_registry"
 # stay pure Rust, need no C toolchain and perform no I/O.
 [dependencies]
 # The record schema a view declares, which types a template's `view`.
-cortexkit-role-tool-display = "=0.1.3"
+cortexkit-role-tool-display = "=0.1.4"
 # Dependency-free, pure-Rust SHA-256 for template digests on every target,
 # the same implementation occipital-lang uses.
 hmac-sha256 = { version = "1", default-features = false }

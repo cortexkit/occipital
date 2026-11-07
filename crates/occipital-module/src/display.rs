@@ -113,7 +113,7 @@ fn params(arguments: &Value) -> Result<DisplayWrite, ErrorBody> {
     ))
 }
 
-fn refused(error: ErrorBody) -> HandlerOutcome {
+pub(crate) fn refused(error: ErrorBody) -> HandlerOutcome {
     match error.detail {
         Some(detail) => HandlerOutcome::ErrorWithDetail {
             code: error.code,

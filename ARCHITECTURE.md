@@ -67,6 +67,8 @@ An uploaded file goes into the model's prompt or into the session's project fold
 
 Occipital keeps each riding notice it learns of, from a page read's notices fact or the runner's live event, under its call (the runner that minted the call's key, and the key) and its sender and send id. The apps read a call's notices with `session.notices` and hear of new ones from `session.notices_watch`. A notice sent as its own message stays a chat row, marked so the apps draw it as a notice rather than the person's words.
 
+**Wake records** say what a wake held, so the apps draw it as chips rather than the prompt text. The waking module (core) writes each record before it sends the wake, with `display.write` and `kind: "wake"`, keyed by its own send id; the sender is the route's attested writer. Occipital keeps it once per session, sender and send id, never changed. A row names its send only through the runner's read facts, so every page read records which send each message came from, in memory at once and in the file. The apps read the records of the rows they draw with `session.wake_records {messageIds}`, and a riding notice carries its send's record in `session.notices`. A row whose history moved from another session takes the one record its send has in any session, and none when two sessions hold one. There is no watch: the apps fetch a row's record before inserting the row, and a record that arrives later never replaces its plain card.
+
 ## Reply teaching and the interface language
 
 The language library parses, checks, evaluates and lays out the closed interface language: the tags a head's reply may hold, `show_ui` programs and tool templates. It has no panic paths, because apps embed it. Its catalogs are pinned by publication digest; when a catalog's text changes, the previous digest stays an accepted alias, so a stored reply keeps drawing.
@@ -85,7 +87,7 @@ All stores sit in Occipital's data folder, normally `<data home>/cortexkit/occip
 | `store.db` | native `show_ui` records, send receipts, held sends, the state of uploads in progress | yes |
 | `display.db` | tool records, completions, views, call pins | yes |
 | `display-details.db` | tool details (large, may hold file contents) | no |
-| `notices.db` | riding notices | yes |
+| `notices.db` | riding notices, wake records, the send each read message came from | yes |
 | `upload-blobs/` | partial upload contents | no |
 
 - **One writer:** `store.db` is opened with cortexkit-store, which holds a single-writer lease; every write is fenced.

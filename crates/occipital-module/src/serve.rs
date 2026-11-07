@@ -419,6 +419,16 @@ impl ModuleHandler for OccipitalHandler {
             if let Ok(named) = serde_json::from_slice::<Named>(&body) {
                 if named.name == cortexkit_role_tool_display::DISPLAY_WRITE {
                     let writer = binding.and_then(|(principal, ..)| principal);
+                    // A wake record is kept with the notices, not the
+                    // display data (`crate::notices::wakes`).
+                    if named.arguments.get("kind").and_then(Value::as_str) == Some("wake") {
+                        return crate::notices::wakes::write(
+                            self.notices.get(),
+                            writer,
+                            &named.arguments,
+                        )
+                        .await;
+                    }
                     return crate::display::write(
                         self.display.get(),
                         self.display_views.get(),

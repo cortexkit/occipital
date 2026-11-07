@@ -151,6 +151,11 @@ pub fn manifest() -> Result<ModuleManifest, String> {
                 // providers find it by this capability and send it their calls'
                 // records, details and completions (`display.write`), and it
                 // fetches their views (see `crate::display`).
+                //
+                // `wake-record-display/v1` tells a module that wakes agents,
+                // such as core, that it may write each wake's record here
+                // (`display.write` with `kind: "wake"`, see
+                // `crate::notices::wakes`).
                 provides: vec![
                     cortexkit_role_tool_provider::PROVIDES.into(),
                     cortexkit_role_tool_provider::SYSTEM_TEXT_DEFAULT.into(),
@@ -158,6 +163,7 @@ pub fn manifest() -> Result<ModuleManifest, String> {
                     APP_SERVER_CAPABILITY.into(),
                     subc_protocol::peer::OPERATOR_APP_CAPABILITY.into(),
                     cortexkit_role_tool_display::TOOL_DISPLAY_CAPABILITY.into(),
+                    cortexkit_role_tool_display::WAKE_RECORD_DISPLAY_CAPABILITY.into(),
                 ],
                 requires: vec![],
                 must_never_reach: vec![],
@@ -265,6 +271,7 @@ mod tests {
                 ("session.tool_records_watch", "query"),
                 ("session.transcript_page", "query"),
                 ("session.transcript_watch", "query"),
+                ("session.wake_records", "query"),
                 ("upload.abort", "mutate"),
                 ("upload.begin", "mutate"),
                 ("upload.chunk", "mutate"),
@@ -303,7 +310,8 @@ mod tests {
                 "bind-no-project/v1",
                 "app-server/v1",
                 "operator-app/v1",
-                "tool-display/v1"
+                "tool-display/v1",
+                "wake-record-display/v1"
             ])
         );
         assert!(value.get("rich_ui").is_none());

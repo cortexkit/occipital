@@ -977,6 +977,11 @@ impl BrocaSource {
                 &reference.runner,
                 &reference.session,
             ));
+            notices.sent(crate::notices::wakes::sends_of(
+                entries,
+                &reference.runner,
+                &reference.session,
+            ));
         }
         mark_module_messages(&mut rows, entries);
         Ok(rows)
@@ -4296,6 +4301,7 @@ pub(crate) mod tests {
     mod moved_calls;
     mod notice_writer_1107;
     mod unreadable_samples;
+    mod wake_records_samples;
 
     /// The chat's activity follows the llm-runner role crate's `RunState`: a
     /// running or paused run keeps it busy, every terminal state leaves it idle,
