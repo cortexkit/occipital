@@ -1500,6 +1500,49 @@ async fn stop_cancels_the_named_run_and_answers_repeats_the_same() {
     );
 }
 
+/// A Stop's log line names the runner calls it made and what it answered, so the
+/// log alone shows whether `run.cancel` went out, for which run, and how it came
+/// back. A repeat answered from the kept first answer is marked `(repeat)`.
+#[tokio::test]
+async fn stop_logs_its_runner_calls_and_answer() {
+    let f = fixture(Kind::Head);
+    f.runner.captured.lock().unwrap().insert(
+        "role.describe",
+        json!({"result": {"capabilities": ["run_cancel", "delivery_order", "run_cancel_by_interrupt"]}}),
+    );
+    f.runner
+        .captured
+        .lock()
+        .unwrap()
+        .insert("run.cancel", json!({"result": "not_active"}));
+    f.runner
+        .captured
+        .lock()
+        .unwrap()
+        .insert("run.status", json!({"result": {"state": "completed"}}));
+    let stop = json!({"session": "s", "runId": "run_old", "clientRequestId": "stop-1"});
+    for (correlation, answer) in [
+        ("1:1:1", "answer=\"not_active run=run_old\""),
+        ("1:1:2", "answer=\"not_active run=run_old (repeat)\""),
+    ] {
+        let (log, _guard) = crate::app_reader::observe::tests::capture();
+        crate::app_reader::observe::request("session.stop", "s", correlation.into(), async {
+            f.sender.stop(stop.clone()).await.unwrap();
+        })
+        .await;
+        let text = log.text();
+        assert!(text.contains(answer), "{text}");
+        if correlation == "1:1:1" {
+            assert!(
+                text.contains(
+                    "remote_calls={\"broca.role.describe\": 1, \"broca.run.cancel\": 1, \"broca.run.status\": 1}"
+                ),
+                "{text}"
+            );
+        }
+    }
+}
+
 /// A runner that doesn't declare `run_cancel_by_interrupt` can't be stopped by a sender,
 /// so Stop is refused `unsupported` without calling `run.cancel`; a malformed request is
 /// refused naming its field.

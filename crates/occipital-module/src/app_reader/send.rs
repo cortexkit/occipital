@@ -149,6 +149,45 @@ pub trait SendTargets: Send + Sync {
     ) -> Result<Arc<dyn SendTarget>, occipital_app_reader::source::ReadError>;
 }
 
+/// The send path's targets, each runner call counted and timed in the request log
+/// (`remote_calls`, `steps`) as a read's runner calls are, so the log shows what a
+/// send, Stop or upload asked the runner and how long it took.
+struct Observed(Arc<dyn SendTargets>);
+
+#[async_trait]
+impl SendTargets for Observed {
+    async fn validate(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+    ) -> Result<(), occipital_app_reader::source::ReadError> {
+        self.0.validate(session, harness).await
+    }
+
+    async fn open(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+    ) -> Result<Arc<dyn SendTarget>, occipital_app_reader::source::ReadError> {
+        let target = self.0.open(session, harness).await?;
+        Ok(Arc::new(ObservedTarget(target)))
+    }
+}
+
+struct ObservedTarget(Arc<dyn SendTarget>);
+
+#[async_trait]
+impl SendTarget for ObservedTarget {
+    fn reference(&self) -> &SessionRef {
+        self.0.reference()
+    }
+
+    async fn call(&self, method: &'static str, params: Value) -> Result<Value, RunnerError> {
+        let runner = self.0.reference().runner.clone();
+        super::observe::remote(&runner, method, self.0.call(method, params)).await
+    }
+}
+
 /// A send's late outcome, put on the session's transcript watches. Today the only
 /// one is a worker steer that expired before a run took it.
 #[derive(Debug, Clone, PartialEq)]
@@ -197,7 +236,7 @@ impl Sender {
         clock: Clock,
     ) -> Self {
         Self {
-            targets,
+            targets: Arc::new(Observed(targets)),
             receipts,
             uploads: None,
             clock,

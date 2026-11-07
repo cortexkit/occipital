@@ -34,6 +34,10 @@ struct Trace {
     /// The refusal's message, for a request refused: what the code alone
     /// doesn't say, such as a runner's own reason.
     refusal: Option<String>,
+    /// What a request that changed something answered, in states and ids only,
+    /// such as a Stop's `not_active run=<id>`: the outcome alone says only that
+    /// it wasn't refused.
+    answer: Option<String>,
 }
 
 struct Step {
@@ -84,6 +88,7 @@ impl Drop for RequestLog {
             ($level:expr) => {
                 tracing::event!($level, method = %self.method, session = %self.session, correlation = %self.correlation,
                     duration_ms = millis(self.started), outcome, refusal = trace.refusal.as_deref(),
+                    answer = trace.answer.as_deref(),
                     pending_step = pending.map(|step| step.step), remote_calls = ?trace.calls, steps = ?steps,
                     "app reader request finished")
             };
@@ -211,6 +216,12 @@ pub(super) fn refused(code: &'static str, message: &str) {
         trace.outcome = Some(code);
         trace.refusal = Some(message);
     });
+}
+
+/// Record what the request answered, for its log line: states and ids, never
+/// message text or paths.
+pub(super) fn answer(text: String) {
+    let _ = REQUEST.try_with(|trace| trace.guard().answer = Some(text));
 }
 
 fn begin(name: &str) -> Option<usize> {

@@ -120,11 +120,17 @@ impl Sender {
             .map_err(runner_refusal)?;
         // Checked against the contract's shape, then passed on unchanged, so a provider's
         // item members and outcomes this module doesn't know still reach the app.
-        if let Err(error) = serde_json::from_value::<StopAllReply>(reply.clone()) {
-            return Err(unreachable(format!(
+        let checked = serde_json::from_value::<StopAllReply>(reply.clone()).map_err(|error| {
+            unreachable(format!(
                 "the runner's session.stop_all reply is malformed: {error}"
-            )));
-        }
+            ))
+        })?;
+        let outcomes: Vec<String> = checked
+            .providers
+            .iter()
+            .map(|provider| format!("{}={}", provider.provider, provider.outcome))
+            .collect();
+        crate::app_reader::observe::answer(outcomes.join(" "));
         Ok(reply)
     }
 }

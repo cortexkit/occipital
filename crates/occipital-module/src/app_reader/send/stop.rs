@@ -68,6 +68,11 @@ impl Sender {
         let request = StopRequest::parse(&params)?;
         let key = (request.session.clone(), request.client_request_id.clone());
         if let Some(answer) = self.stops.guard().get(&key).cloned() {
+            crate::app_reader::observe::answer(format!(
+                "{} run={} (repeat)",
+                answer["state"].as_str().unwrap_or_default(),
+                request.run_id
+            ));
             return Ok(answer);
         }
         let target = self
@@ -140,6 +145,7 @@ impl Sender {
                 detail,
             }) => return Err(refused(&code, &message, detail.as_ref())),
         };
+        crate::app_reader::observe::answer(format!("{state} run={}", request.run_id));
         let answer = json!({"state": state, "runId": request.run_id});
         let mut stops = self.stops.guard();
         if stops.len() >= REMEMBERED_STOPS {
