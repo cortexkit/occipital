@@ -430,3 +430,44 @@ fn a_claude_code_tool_result_is_the_tools_not_the_persons() {
     let full = display_rows(&entries, true, DisplayProfile::ClaudeCode, &[]).unwrap();
     assert_eq!(full[1].display["parts"][1]["content"], "line one");
 }
+
+/// A tool that returns an image, as OpenCode 2 stores it and a runner serves it
+/// under photo references: the image's `uri` holds the reference in place of
+/// its data URL. The row reads as the call with its result's text, not as an
+/// unreadable entry. The case is the contract's own, from cortexkit-role-llm-runner
+/// 0.8.21's `display-opencode-v2.json`, copied with its checksum into
+/// `tests/fixtures/llm-runner-0.8.21/`.
+#[test]
+fn a_tool_result_with_a_referenced_image_reads_as_its_text() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/llm-runner-0.8.21");
+    let sums = std::fs::read_to_string(root.join("SHA256SUMS")).unwrap();
+    let (expected, name) = sums.trim_end().split_once("  ").unwrap();
+    let bytes = std::fs::read(root.join(name)).unwrap();
+    assert_eq!(format!("{:x}", Sha256::digest(&bytes)), expected, "{name}");
+    let set: Value = serde_json::from_slice(&bytes).unwrap();
+    let case = set["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "synthetic-described-tool-image")
+        .unwrap();
+    let entry = json!({"mid": "m1", "ordinal": 1, "written_at": 1_000, "message": case["body"]});
+    for full in [false, true] {
+        let row = &display_rows(
+            std::slice::from_ref(&entry),
+            full,
+            DisplayProfile::OpenCode2,
+            &[],
+        )
+        .unwrap()[0];
+        assert!(row.display.get("unreadable").is_none(), "{}", row.display);
+        let parts = row.display["parts"].as_array().unwrap();
+        assert_eq!(parts.len(), 1, "{}", row.display);
+        assert_eq!(parts[0]["type"], "tool");
+        assert_eq!(parts[0][CALL_ID], "described-image-call");
+        assert_eq!(parts[0]["outputBytes"], "An invented image result".len());
+        if full {
+            assert_eq!(parts[0]["content"], "An invented image result");
+        }
+    }
+}

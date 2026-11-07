@@ -206,6 +206,7 @@ pub fn rows_with_pruned_reasoning(
 ) -> Result<Vec<Row>, ReadError> {
     let mut parsed = Vec::with_capacity(entries.len());
     let mut failures = HashMap::new();
+    let mut why = Unreadable::default();
     for (index, raw) in entries.iter().enumerate() {
         match serde_json::from_value::<Entry>(raw.clone()) {
             Ok(mut entry) if !entry.mid.is_empty() => {
@@ -252,12 +253,19 @@ pub fn rows_with_pruned_reasoning(
                     written_when_finished: true,
                 }));
             }
-            _ => {
+            Ok(_) => {
                 failures.insert(index, unreadable(raw, "Broca")?);
                 parsed.push(None);
+                why.note(raw, || "it has an empty mid".into());
+            }
+            Err(error) => {
+                failures.insert(index, unreadable(raw, "Broca")?);
+                parsed.push(None);
+                why.note(raw, || format!("its entry doesn't decode: {error}"));
             }
         }
     }
+    why.log("broca");
     Ok(assemble(parsed, failures, full))
 }
 
@@ -361,20 +369,26 @@ pub fn display_rows(
 ) -> Result<Vec<Row>, ReadError> {
     let mut parsed = Vec::with_capacity(entries.len());
     let mut failures = HashMap::new();
+    let mut why = Unreadable::default();
     for (index, raw) in entries.iter().enumerate() {
         let relay = raw
             .get("attribution")
             .and_then(|fact| serde_json::from_value::<Attribution>(fact.clone()).ok());
-        let projected = profile.project(&raw["message"], relay.as_ref()).ok();
-        let facts = serde_json::from_value::<EntryFacts>(raw.clone()).ok();
-        let (Some(mut row), Some(facts), Some(mid)) = (
-            projected,
-            facts,
-            raw["mid"].as_str().filter(|mid| !mid.is_empty()),
-        ) else {
-            failures.insert(index, unreadable(raw, profile.name())?);
-            parsed.push(None);
-            continue;
+        let projected = profile.project(&raw["message"], relay.as_ref());
+        let facts = serde_json::from_value::<EntryFacts>(raw.clone());
+        let mid = raw["mid"].as_str().filter(|mid| !mid.is_empty());
+        let (mut row, facts, mid) = match (projected, facts, mid) {
+            (Ok(row), Ok(facts), Some(mid)) => (row, facts, mid),
+            (projected, facts, _) => {
+                failures.insert(index, unreadable(raw, profile.name())?);
+                parsed.push(None);
+                why.note(raw, || match (projected, facts) {
+                    (Err(error), _) => format!("its body doesn't project: {}", error.message),
+                    (_, Err(error)) => format!("its display facts don't decode: {error}"),
+                    _ => "it has no mid".into(),
+                });
+                continue;
+            }
         };
         let (_, ordinal) = identity(raw, profile.name())?;
         // Set only when the contract verified the header and cut it.
@@ -458,6 +472,7 @@ pub fn display_rows(
             written_when_finished: profile.written_when_finished(),
         }));
     }
+    why.log(profile.name());
     Ok(assemble(parsed, failures, full))
 }
 
@@ -602,6 +617,60 @@ fn identity(raw: &Value, runner: &str) -> Result<(String, Option<u64>), ReadErro
         })?),
     };
     Ok((mid.to_owned(), ordinal))
+}
+
+/// Why a read's entries became unreadable placeholders, logged once per read
+/// so a broken entry is diagnosed from the log rather than from the runner's
+/// store. Quoted values are cut from the reasons: a decode error can quote the
+/// stored text.
+#[derive(Default)]
+struct Unreadable {
+    count: usize,
+    first: Option<(String, Option<u64>, String)>,
+}
+
+impl Unreadable {
+    fn note(&mut self, raw: &Value, reason: impl FnOnce() -> String) {
+        self.count += 1;
+        if self.first.is_none() {
+            let mid = raw["mid"].as_str().unwrap_or_default().to_owned();
+            self.first = Some((mid, raw["ordinal"].as_u64(), without_quoted(&reason())));
+        }
+    }
+
+    fn log(self, harness: &str) {
+        if let Some((mid, ordinal, reason)) = self.first {
+            tracing::warn!(
+                harness,
+                count = self.count,
+                mid,
+                ?ordinal,
+                reason,
+                "stored entries can't be read and show as unreadable; the first is named"
+            );
+        }
+    }
+}
+
+/// `text` with every double-quoted stretch replaced by `"…"`.
+fn without_quoted(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut quoted = false;
+    for character in text.chars() {
+        match (character, quoted) {
+            ('"', false) => {
+                out.push_str("\"…");
+                quoted = true;
+            }
+            ('"', true) => {
+                out.push('"');
+                quoted = false;
+            }
+            (_, false) => out.push(character),
+            (_, true) => {}
+        }
+    }
+    out
 }
 
 /// The placeholder row for an entry whose payload can't be read. A broken
@@ -1551,5 +1620,21 @@ mod tests {
                 {"type":"tool", "arguments":{"parts":[{PART_KEY:"kept"}]}},
             ], "toolCalls":[{"name":"read"}]}]})
         );
+    }
+
+    /// A decode error can quote the stored text, so a logged reason keeps the
+    /// error's words and field names but none of its quoted values.
+    #[test]
+    fn a_logged_reason_cuts_quoted_values() {
+        let error = serde_json::from_value::<Entry>(json!({
+            "mid": "m1", "message": {"role": "user", "content": "the person's words"}}))
+        .err()
+        .unwrap()
+        .to_string();
+        assert!(error.contains("the person's words"), "{error}");
+        let logged = without_quoted(&format!("its entry doesn't decode: {error}"));
+        assert!(!logged.contains("person"), "{logged}");
+        assert!(logged.contains("invalid type: string \"…\""), "{logged}");
+        assert_eq!(without_quoted("unknown field `x`"), "unknown field `x`");
     }
 }
