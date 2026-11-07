@@ -107,12 +107,12 @@ impl DisplayHub {
                     });
                 }
             }
-            DisplayInput::Gap | DisplayInput::Reset => {
+            DisplayInput::Gap | DisplayInput::Reset | DisplayInput::Restart => {
                 state.batcher.discard_session(session);
-                if matches!(input, DisplayInput::Reset) {
-                    projection.reattach_display();
-                } else {
-                    projection.observe_display_gap();
+                match input {
+                    DisplayInput::Restart => projection.reattach_display(),
+                    DisplayInput::Reset => projection.reset_display(),
+                    _ => projection.observe_display_gap(),
                 }
             }
             DisplayInput::TurnStart => projection.start_display(),

@@ -1176,7 +1176,7 @@ impl BrocaSource {
         self.feed_live.store(true, Ordering::Release);
         self.live.send_replace(true);
         self.bump();
-        self.display_input(DisplayInput::Reset);
+        self.display_input(DisplayInput::Restart);
         // Events queued since the subscribe come after this, so a run that started or
         // ended after the cold read still sets or clears the stamp in order.
         let running = self.running_rich_ui.guard().clone();
@@ -1254,7 +1254,7 @@ impl BrocaSource {
         self.feed_live.store(false, Ordering::Release);
         self.live.send_replace(false);
         *self.activity.guard() = None;
-        self.display_input(DisplayInput::Reset);
+        self.display_input(DisplayInput::Restart);
         for (session, target) in self.display_targets.guard().drain(..) {
             if let Some(hub) = target.upgrade() {
                 hub.remove(&session);
@@ -3020,7 +3020,7 @@ pub(crate) mod tests {
         let route = FakeRoute::new();
         let source = BrocaSource::new(resolved(), route.clone());
         let mut lease = source.acquire().await.unwrap();
-        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Reset);
+        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Restart);
         for id in ["", "provider-message-id", "new-unpersisted-id"] {
             route.emit(json!({"kind":"display", "event":{"type":"text_delta", "message_id":id, "text":"must not appear"}})).await;
         }
@@ -3078,7 +3078,7 @@ pub(crate) mod tests {
         let source = BrocaSource::new(resolved(), route.clone());
         let mut lease = source.acquire().await.unwrap();
         assert_eq!(*route.live_ids.lock().unwrap(), [true]);
-        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Reset);
+        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Restart);
         route
             .emit(json!({"kind":"display", "event":{"type":"text_delta", "live_id":"live-1", "delta":"hi"}}))
             .await;
@@ -3138,7 +3138,7 @@ pub(crate) mod tests {
             .send(Err(ReadError::new("provider_unavailable", "route closed")))
             .await
             .unwrap();
-        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Reset);
+        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Restart);
         changes.changed().await.unwrap();
         assert!(!source.activity_feed_live());
         assert_eq!(source.activity(), None);
@@ -3168,7 +3168,7 @@ pub(crate) mod tests {
         );
         let source = BrocaSource::new(resolved(), route.clone());
         let mut lease = source.acquire().await.unwrap();
-        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Reset);
+        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Restart);
         // The seed is sent before the feed task starts, so it is already queued.
         assert_eq!(
             lease.events.try_recv().ok(),
@@ -3189,7 +3189,7 @@ pub(crate) mod tests {
         );
         let source = BrocaSource::new(resolved(), route.clone());
         let mut lease = source.acquire().await.unwrap();
-        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Reset);
+        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Restart);
         assert!(lease.events.try_recv().is_err());
     }
 
@@ -3331,9 +3331,9 @@ pub(crate) mod tests {
         let route = FakeRoute::new();
         let source = BrocaSource::new(resolved(), route.clone());
         let mut lease = source.acquire().await.unwrap();
-        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Reset);
+        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Restart);
         route.emit(json!({"kind":"display", "event":[]})).await;
-        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Reset);
+        assert_eq!(lease.events.recv().await.unwrap(), DisplayInput::Restart);
         assert!(!source.activity_feed_live());
         assert_eq!(route.detaches.load(Ordering::Relaxed), 1);
     }

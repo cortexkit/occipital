@@ -14,7 +14,13 @@ pub enum DisplayInput {
         part_type: DisplayPartType,
     },
     Gap,
+    /// The runner reset its display lane (`display_reset`, or an event type
+    /// this reader doesn't know): the live words and reasoning are gone, while
+    /// the calls and run it already reported stand (runner contract 0.8.24).
     Reset,
+    /// The session is followed afresh, on a new subscription or after losing
+    /// one: nothing that was live is known any more, running calls included.
+    Restart,
     TurnStart,
     /// The runner stored the message it streamed under `live_id` as `mid`
     /// (`message_started` carrying both).
@@ -261,6 +267,11 @@ pub(crate) mod test_support {
                     None
                 }
                 DisplayInput::Reset => {
+                    self.batcher.discard_session(&self.session);
+                    self.projection.reset_display();
+                    None
+                }
+                DisplayInput::Restart => {
                     self.batcher.discard_session(&self.session);
                     self.projection.reattach_display();
                     None

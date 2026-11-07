@@ -773,9 +773,32 @@ impl DisplayProjection {
         self.signal_display_changed();
     }
 
-    /// The live state restarts: the runner reset it, or the session is followed
-    /// afresh. Which calls still run is no longer known, so none is kept; the stored
-    /// page shows each call's phase.
+    /// The runner reset its display lane: the live words go, and a new turn's
+    /// words can follow. Calls it already reported still run, since a reset never
+    /// un-starts one (runner contract 0.8.24), so a reader of tool frames gets
+    /// each again after the gap, as after a [`Self::observe_display_gap`]. Before
+    /// 0.8.24 a reset cleared them too, which lost the running calls a runner
+    /// replays before the snapshot's reset when a reader attaches mid-step.
+    pub fn reset_display(&self) {
+        let mut state = self.state.lock().expect("display projection poisoned");
+        state.display_turn_open = true;
+        state.display_end_emitted = false;
+        state.live = None;
+        state.display_ring.push(DisplayStreamFrame::DisplayGap);
+        if state.tool_ring.push(DisplayStreamFrame::DisplayGap) {
+            for call in state.running.clone() {
+                state
+                    .tool_ring
+                    .push(DisplayStreamFrame::Tool(Box::new(call)));
+            }
+        }
+        drop(state);
+        self.signal_display_changed();
+    }
+
+    /// The session is followed afresh, on a new subscription or after losing one.
+    /// Which calls still run is no longer known, so none is kept until the runner
+    /// reports them again; the stored page shows each call's phase.
     pub fn reattach_display(&self) {
         let mut state = self.state.lock().expect("display projection poisoned");
         state.display_turn_open = true;

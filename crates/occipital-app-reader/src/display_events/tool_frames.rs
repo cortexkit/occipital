@@ -193,38 +193,69 @@ fn a_baseline_carries_the_calls_still_running() {
     assert_eq!(running[0]["callId"], "c2");
 }
 
-/// A display gap loses text, never calls: each running call is sent again after
-/// it. A reset forgets them, since the stored page then shows each call's phase.
+/// A display gap, and a runner's reset of its display lane, lose text, never
+/// calls: each running call is sent again after them, and its later end still
+/// reaches the reader (runner contract 0.8.24). Following the session afresh
+/// forgets them, since which calls still run is then unknown.
 #[test]
-fn a_gap_resends_running_calls_and_a_reset_forgets_them() {
+fn a_gap_or_reset_resends_running_calls_and_following_afresh_forgets_them() {
     let session = FakeSession::new("ses", 64);
     run(&session, &[started("c1", "{}")]);
-    let before = with_tools(&session, None)["seq"].as_u64().unwrap();
-    run(
-        &session,
-        &[json!({"kind":"display", "event":{"type":"display_gap"}})],
-    );
-    let after_gap = with_tools(&session, Some(before));
-    assert_eq!(
-        kinds(&after_gap),
-        ["display_gap", "tool c1 running"],
-        "{after_gap}"
-    );
-
-    let seq = after_gap["seq"].as_u64().unwrap();
-    run(
-        &session,
-        &[json!({"kind":"display", "event":{"type":"display_reset"}})],
-    );
-    assert_eq!(kinds(&with_tools(&session, Some(seq))), ["display_gap"]);
-    assert!(with_tools(&session, None).get("tools").is_none());
-    // An end for a call no longer known sends nothing.
+    for lost in ["display_gap", "display_reset"] {
+        let before = with_tools(&session, None)["seq"].as_u64().unwrap();
+        run(
+            &session,
+            &[json!({"kind":"display", "event":{"type":lost}})],
+        );
+        let after = with_tools(&session, Some(before));
+        assert_eq!(
+            kinds(&after),
+            ["display_gap", "tool c1 running"],
+            "{lost}: {after}"
+        );
+    }
     let seq = with_tools(&session, None)["seq"].as_u64().unwrap();
     run(&session, &[finished("c1", "ok")]);
     assert_eq!(
         kinds(&with_tools(&session, Some(seq))),
+        ["tool c1 answered"]
+    );
+
+    run(&session, &[started("c2", "{}")]);
+    let seq = with_tools(&session, None)["seq"].as_u64().unwrap();
+    session.projection.reattach_display();
+    assert_eq!(kinds(&with_tools(&session, Some(seq))), ["display_gap"]);
+    assert!(with_tools(&session, None).get("tools").is_none());
+    // An end for a call no longer known sends nothing.
+    let seq = with_tools(&session, None)["seq"].as_u64().unwrap();
+    run(&session, &[finished("c2", "ok")]);
+    assert_eq!(
+        kinds(&with_tools(&session, Some(seq))),
         Vec::<String>::new()
     );
+}
+
+/// A reader that attaches while a step runs gets the step's controls first,
+/// then the display snapshot (runner contract 0.8.24): the call that was
+/// already running survives the snapshot's reset and is in the baseline.
+#[test]
+fn a_call_replayed_before_the_attach_snapshot_stays_running() {
+    let session = FakeSession::new("ses", 64);
+    session.projection.reattach_display();
+    run(
+        &session,
+        &[
+            control(json!({"type":"message_started", "mid":"m1"})),
+            started("c1", "{\"command\":\"sleep 20\"}"),
+            json!({"kind":"display", "event":{"type":"display_reset"}}),
+            delta("m1", "Waiting for the tests."),
+        ],
+    );
+    let baseline = with_tools(&session, None);
+    let tools = baseline["tools"].as_array().unwrap();
+    assert_eq!(tools.len(), 1, "{baseline}");
+    assert_eq!(tools[0]["callId"], "c1");
+    assert_eq!(tools[0]["phase"], "running");
 }
 
 /// A run that ends with a call still running ends it, so no reader shows it
