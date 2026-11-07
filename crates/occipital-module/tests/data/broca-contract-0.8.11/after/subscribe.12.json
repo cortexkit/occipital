@@ -1,1 +1,1 @@
-{"cursor":{"digest":"90b841165781e7cf","incarnation":"3032d37b-1fc9-44c8-a32b-882150f0b9f8","sub_index":0,"wal_seq":12},"event":{"mid":"m3","type":"message_started"},"kind":"control","seq":13,"unit":{"step_id":2,"type":"step_started"}}
+{"cursor":{"digest":"90b841165781e7cf","incarnation":"13e13726-e8a3-4fef-917e-a410c1332c77","sub_index":0,"wal_seq":12},"event":{"mid":"m3","type":"message_started"},"kind":"control","seq":13,"unit":{"step_id":2,"type":"step_started"}}

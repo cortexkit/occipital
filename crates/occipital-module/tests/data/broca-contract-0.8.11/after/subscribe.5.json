@@ -1,1 +1,1 @@
-{"cursor":{"digest":"33fe0b29fbf8b176","incarnation":"3032d37b-1fc9-44c8-a32b-882150f0b9f8","sub_index":1,"wal_seq":3},"event":{"type":"display_reset"},"kind":"control","seq":6,"unit":{"call":{"input":{},"tool_call_id":"sample-carrying-call","tool_name":"work"},"type":"tool_call"}}
+{"cursor":{"digest":"5cf675e99586c1af","incarnation":"13e13726-e8a3-4fef-917e-a410c1332c77","sub_index":1,"wal_seq":3},"event":{"type":"display_reset"},"kind":"control","seq":6,"unit":{"call":{"input":{},"tool_call_id":"sample-carrying-call","tool_name":"work"},"type":"tool_call"}}

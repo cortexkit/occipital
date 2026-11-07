@@ -1,7 +1,7 @@
 //! Broca's replies after it adopts runner contract 0.8.11, recorded from its
 //! serve path, through every reader path that decodes them. Copied unchanged
 //! into `tests/data/broca-contract-0.8.11/` from the set Broca published for
-//! its readers (its `SHA256SUMS` hashes to `61993a1122bb5179…`), with Broca's
+//! its readers (its `SHA256SUMS` hashes to `f3dbaa3d32ae396c…`), with Broca's
 //! README, which says how each pair was captured. Before and after the change:
 //! - `role.describe` declares `notices`.
 //! - Cursors on reads, heads and the live stream carry the log's incarnation
@@ -10,6 +10,10 @@
 //!   message lists the notice that rode the call, and a denied call carries its
 //!   call key.
 //! - The live stream sends `notice_delivered` with the notice's text.
+//! - A tool result a notice rode serves the tool's own output, with the
+//!   notice only in the `notices` fact. A ride recorded before the change
+//!   keeps the notice joined into the output, with no fact, so it never
+//!   shows twice.
 
 use super::*;
 use cortexkit_test_support::ScratchDir;
@@ -30,12 +34,12 @@ fn result(side: &str, name: &str) -> Value {
 }
 
 /// The call key Broca minted for the call a notice rode, in the main pair.
-const CARRYING_CALL: &str = "3032d37b-1fc9-44c8-a32b-882150f0b9f8:5";
+const CARRYING_CALL: &str = "13e13726-e8a3-4fef-917e-a410c1332c77:5";
 
 #[test]
 fn the_contract_0811_samples_keep_their_checksums() {
     let sums = std::fs::read_to_string(root().join("SHA256SUMS")).unwrap();
-    assert_eq!(sums.lines().count(), 57);
+    assert_eq!(sums.lines().count(), 77);
     for line in sums.lines() {
         let (expected, name) = line.split_once("  ").unwrap();
         let bytes = std::fs::read(root().join(name)).unwrap();
@@ -181,11 +185,11 @@ fn broca_0811_a_denied_call_carries_its_key() {
         calls("after-denied"),
         [
             (
-                json!("582515cc-1489-4df6-8eee-b4dd0a716d11:5"),
+                json!("d31de8a0-d92e-4df9-b2c1-340422759703:5"),
                 json!("denied")
             ),
             (
-                json!("582515cc-1489-4df6-8eee-b4dd0a716d11:6"),
+                json!("d31de8a0-d92e-4df9-b2c1-340422759703:6"),
                 json!("denied")
             ),
         ]
@@ -284,4 +288,27 @@ async fn a_tool_result_that_carried_a_notice_stays_on_pages() {
     let cut = source.newest(2).await.unwrap();
     let kept: Vec<_> = cut.rows.iter().map(|row| row.mid.as_str()).collect();
     assert_eq!(kept, ["m2", "m3"], "{kept:?}");
+}
+
+/// The call a notice rode answers with the tool's own output, `worked`, on
+/// every read once the notice is recorded the new way, so the notice shows
+/// once, folded under the call from the `notices` fact. A ride recorded before
+/// keeps the notice joined into the output and has no fact, so it shows once
+/// there too. `outputBytes` measures the stored output as served: 31 bytes
+/// for `worked` alone, 55 with the notice joined.
+#[test]
+fn a_notice_riding_a_call_is_never_joined_into_its_output_and_fact_both() {
+    let source = BrocaSource::new(resolved(), FakeRoute::new());
+    for (side, bytes) in [("after", 31), ("before", 55)] {
+        for name in [
+            "session.read.default.json",
+            "session.read.facts.json",
+            "session.history.raw.json",
+        ] {
+            let page: RawPage = serde_json::from_value(result(side, name)).unwrap();
+            let rows = source.rows(&page.messages, false, &[]).unwrap();
+            let call = &rows[1].display["parts"][0];
+            assert_eq!(call["outputBytes"], bytes, "{side}/{name}: {call}");
+        }
+    }
 }

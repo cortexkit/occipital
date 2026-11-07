@@ -1,0 +1,1 @@
+{"result":{"usage":{"steps":1,"unreported_steps":1,"by_model":[{"provider":"fake","model":"fake","steps":1,"unreported_steps":1}]},"run_id":"run-sid-a958gH19NvGWseBfsZagy5","state":"completed","final_message":{"ordinal":2,"mid":"m1","text":"first answer"}}}
