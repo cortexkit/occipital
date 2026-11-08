@@ -1,0 +1,1 @@
+{"result":{"calls":{"ck_one":[{"deliveredAs":"tool_result","sender":"magic-context","text":"Context is at 62%. Drop tool outputs you no longer need."}],"ck_two":[{"deliveredAs":"turn_system_cleared","sender":"magic-context","text":"Reminder: 3 spent tool outputs can be dropped."}]}}}
