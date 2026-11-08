@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":5,"sub_index":0,"incarnation":"a344d19d-bc19-4443-960b-93d76ff53f8c","digest":"9c80e5deb0c85249"},"unit":{"type":"message_boundary","mid":"m1"},"seq":9,"event":{"type":"tool_started","mid":"m1","tool_call_id":"role-call","name":"work","arguments":"{}","started_at":1794166830452,"call_key":"a344d19d-bc19-4443-960b-93d76ff53f8c:5"}}

@@ -4328,6 +4328,7 @@ pub(crate) mod tests {
     mod head_selection_samples;
     mod moved_calls;
     mod notice_writer_1107;
+    mod read_role_samples;
     mod text_upload_1108;
     mod unreadable_samples;
     mod wake_records_samples;

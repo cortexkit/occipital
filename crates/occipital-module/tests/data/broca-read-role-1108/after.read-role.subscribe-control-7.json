@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":4,"sub_index":0,"incarnation":"4ab8d437-5813-4f5f-a4f6-6f348bb32804","digest":"4aac4ff8a105eaec"},"unit":{"type":"message_boundary","mid":"m2"},"seq":8,"event":{"type":"message_started","mid":"m2"}}
