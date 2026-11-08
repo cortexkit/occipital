@@ -4286,6 +4286,27 @@ pub(crate) mod tests {
         );
     }
 
+    /// A runner listing the turn-scoped system form of runner contract 0.8.29
+    /// (`turn_system_cleared`) among its delivery modes still passes the
+    /// describe check. An earlier contract refused any mode it didn't know, and
+    /// the reader then treated the runner as describing nothing: no media
+    /// references, no notices and an unknown send grant for all its chats.
+    #[test]
+    fn a_runner_listing_the_cleared_turn_form_is_still_described() {
+        let mut value = describe_with(&[
+            "attachments",
+            "transcript_reads",
+            "media_refs",
+            "delivery_order",
+            "steer",
+            "queue",
+        ]);
+        value["delivery_order_modes"] =
+            json!(["turn_system_cleared", "tool_result", "steer", "idle_start"]);
+        let describe = check_describe(&value).unwrap();
+        assert!(stored_media(Some(&describe)).is_some());
+    }
+
     mod bounded_reads;
     mod call_pins;
     mod client_message_ids;
