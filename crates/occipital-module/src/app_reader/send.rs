@@ -406,6 +406,10 @@ impl Sender {
                 if stored.digest != digest || stored.mode != requested.as_str() {
                     return Err(conflict());
                 }
+                crate::app_reader::observe::answer(format!(
+                    "mode={} duplicate",
+                    requested.as_str()
+                ));
                 let mut receipt = stored.receipt;
                 receipt["duplicate"] = json!(true);
                 return Ok(receipt);
@@ -579,6 +583,19 @@ impl Sender {
             }),
             _ => accepted(&send_id, &request),
         };
+        // The log line names the mode the app asked for, how it went out (to a
+        // head, or as a worker's steer) and the runner's state, so a trace of
+        // "did this steer reach a running turn" doesn't need the runner's store.
+        crate::app_reader::observe::answer(format!(
+            "mode={} as={} state={}",
+            requested.as_str(),
+            if follow_until.is_some() {
+                "worker_steer"
+            } else {
+                "head"
+            },
+            reply.state
+        ));
         if receipt["ok"] == true {
             self.mark_sent(request.attachments()).await;
         }

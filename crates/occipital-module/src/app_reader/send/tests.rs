@@ -1543,6 +1543,34 @@ async fn stop_logs_its_runner_calls_and_answer() {
     }
 }
 
+/// A send's log line names the mode the app asked for, how it went out and the
+/// runner's state, so a trace can tell a steer from a queue from the log alone.
+/// A repeat answered from the kept receipt is marked `duplicate`.
+#[tokio::test]
+async fn a_send_logs_its_mode_route_and_runner_state() {
+    let head = fixture(Kind::Head);
+    let worker = fixture(Kind::Worker);
+    let mut steer = message("m1", "hello");
+    steer["mode"] = json!("steer");
+    for (correlation, f, answer) in [
+        ("1:1:1", &head, "answer=\"mode=steer as=head state=active\""),
+        ("1:1:2", &head, "answer=\"mode=steer duplicate\""),
+        (
+            "1:1:3",
+            &worker,
+            "answer=\"mode=steer as=worker_steer state=pending\"",
+        ),
+    ] {
+        let (log, _guard) = crate::app_reader::observe::tests::capture();
+        crate::app_reader::observe::request(super::super::SEND, "s", correlation.into(), async {
+            f.sender.send(steer.clone()).await.unwrap();
+        })
+        .await;
+        let text = log.text();
+        assert!(text.contains(answer), "{text}");
+    }
+}
+
 /// A runner that doesn't declare `run_cancel_by_interrupt` can't be stopped by a sender,
 /// so Stop is refused `unsupported` without calling `run.cancel`; a malformed request is
 /// refused naming its field.
