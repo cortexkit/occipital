@@ -4287,12 +4287,13 @@ pub(crate) mod tests {
     }
 
     /// A runner listing the turn-scoped system form of runner contract 0.8.29
-    /// (`turn_system_cleared`) among its delivery modes still passes the
-    /// describe check. An earlier contract refused any mode it didn't know, and
-    /// the reader then treated the runner as describing nothing: no media
-    /// references, no notices and an unknown send grant for all its chats.
+    /// (`turn_system_cleared`), or a delivery mode no contract names yet, still
+    /// passes the describe check. Before 0.8.30 the check refused any mode it
+    /// didn't know, and the reader then treated the runner as describing
+    /// nothing: no media references, no notices and an unknown send grant for
+    /// all its chats.
     #[test]
-    fn a_runner_listing_the_cleared_turn_form_is_still_described() {
+    fn a_runner_listing_a_newer_delivery_mode_is_still_described() {
         let mut value = describe_with(&[
             "attachments",
             "transcript_reads",
@@ -4301,10 +4302,14 @@ pub(crate) mod tests {
             "steer",
             "queue",
         ]);
-        value["delivery_order_modes"] =
-            json!(["turn_system_cleared", "tool_result", "steer", "idle_start"]);
-        let describe = check_describe(&value).unwrap();
-        assert!(stored_media(Some(&describe)).is_some());
+        for modes in [
+            json!(["turn_system_cleared", "tool_result", "steer", "idle_start"]),
+            json!(["a_mode_from_a_later_contract", "steer", "idle_start"]),
+        ] {
+            value["delivery_order_modes"] = modes;
+            let describe = check_describe(&value).unwrap();
+            assert!(stored_media(Some(&describe)).is_some());
+        }
     }
 
     mod bounded_reads;
