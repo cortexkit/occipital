@@ -4292,6 +4292,7 @@ pub(crate) mod tests {
     mod contract_0085_samples;
     mod contract_0748_samples;
     mod contract_0811_samples;
+    mod contract_0821_writer_samples;
     mod contract_goldens;
     mod contract_heads;
     mod describe_samples;
