@@ -233,6 +233,13 @@ impl NoticeStore {
     /// kept again keeps its text; a place from a page read fills in one the
     /// live stream left out. One seen in another session than before moved
     /// with its call's history, follows it, and counts as new there.
+    ///
+    /// A page read also settles how the notice was delivered. A live
+    /// `notice_delivered` from a runner older than llm-runner 0.8.28 names no
+    /// form, which reads as `tool_result`, while the read fact names the form
+    /// the runner stored, such as a turn-scoped system note. So a page read's
+    /// form replaces a different one kept, and the notice counts as new, so the
+    /// apps watching its call read it again.
     pub fn keep(&self, notices: &[Notice], now_ms: i64) -> Result<Vec<Notice>, StoreError> {
         if notices.is_empty() {
             return Ok(Vec::new());
@@ -252,6 +259,11 @@ impl NoticeStore {
                 "UPDATE notices SET session = ?5
                  WHERE runner = ?1 AND call_key = ?2 AND sender = ?3 AND send_id = ?4
                    AND session != ?5",
+            )?;
+            let mut settled = tx.prepare(
+                "UPDATE notices SET delivered_as = ?5
+                 WHERE runner = ?1 AND call_key = ?2 AND sender = ?3 AND send_id = ?4
+                   AND delivered_as != ?5",
             )?;
             let mut fresh = Vec::new();
             for notice in notices {
@@ -278,7 +290,17 @@ impl NoticeStore {
                     notice.send_id,
                     notice.session
                 ])?;
-                if followed == 1 {
+                // Only a page read places a notice, so a place marks the form
+                // the runner stored.
+                let corrected = notice.position.is_some()
+                    && settled.execute(rusqlite::params![
+                        notice.runner,
+                        notice.call_key,
+                        notice.sender,
+                        notice.send_id,
+                        notice.delivered_as
+                    ])? == 1;
+                if followed == 1 || corrected {
                     fresh.push(notice.clone());
                 }
                 if let Some(position) = notice.position {
@@ -679,6 +701,44 @@ mod tests {
         assert!(store.for_call("broca", "other", "ck").unwrap().is_empty());
         assert_eq!(store.prune(150).unwrap(), 1);
         assert_eq!(texts(&store), ["second"]);
+    }
+
+    /// A live event from a runner older than llm-runner 0.8.28 names no form,
+    /// so a turn note seen live is kept as a ride. The page read that lists it
+    /// settles the form the runner stored and counts it as new, so the apps
+    /// read it again; a later live event can't undo that.
+    #[test]
+    fn a_page_read_settles_how_a_notice_was_delivered() {
+        let dir = ScratchDir::new("occipital-notices-form");
+        let (_main, store) = opened(&dir);
+        let forms = |store: &NoticeStore| -> Vec<String> {
+            store
+                .for_call("broca", "s", "ck")
+                .unwrap()
+                .into_iter()
+                .map(|kept| kept.delivered_as)
+                .collect()
+        };
+        let live = notice("send-1", "note", None);
+        assert_eq!(
+            store.keep(std::slice::from_ref(&live), 100).unwrap().len(),
+            1
+        );
+        assert_eq!(forms(&store), [TOOL_RESULT]);
+        let mut read = notice("send-1", "note", Some(0));
+        read.delivered_as = "turn_system".into();
+        assert_eq!(
+            store.keep(std::slice::from_ref(&read), 200).unwrap(),
+            [read.clone()]
+        );
+        assert_eq!(forms(&store), ["turn_system"]);
+        // Read again, nothing is new; seen live again, the stored form stands.
+        assert!(store
+            .keep(std::slice::from_ref(&read), 300)
+            .unwrap()
+            .is_empty());
+        assert!(store.keep(&[live], 400).unwrap().is_empty());
+        assert_eq!(forms(&store), ["turn_system"]);
     }
 
     /// A page's facts are placed per call in the order each entry lists them,

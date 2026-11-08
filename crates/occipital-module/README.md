@@ -158,7 +158,10 @@ result, which makes no entry. Occipital keeps each riding notice it learns of,
 from a page read's `notices` fact or the runner's `notice_delivered` event, in
 `notices.db` beside the store. The apps read a call's notices with
 `session.notices` and learn of new ones from `session.notices_watch`, beside
-the pages, as `{sender, text, deliveredAs}` in delivery order. They are not
+the pages, as `{sender, text, deliveredAs}` in delivery order. `deliveredAs`
+is the runner's own name for the form, such as `tool_result` for a ride or a
+turn-scoped system note; a page read's form replaces one a live event left at
+its default. They are not
 tool records: no tool provider writes them. Engram backs up `notices.db`,
 since a runner may prune its own record of a notice. Notices are kept 180
 days. The apps' wire is pinned by the sample set
