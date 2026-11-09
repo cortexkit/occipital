@@ -59,13 +59,25 @@ fn the_contract_display_vectors_keep_their_checksums() {
 
 /// The app role a contract display row becomes: Pi's `toolResult`, and a Claude
 /// Code user message holding only tool results, are the apps' `tool` role.
+/// OpenCode 2's `synthetic` message is host text, served as a `user` row.
 fn app_role(profile: DisplayProfile, row: &Value) -> String {
     let parts = row["parts"].as_array().unwrap();
     let only_results = !parts.is_empty() && parts.iter().all(|part| part["type"] == "tool_result");
     match (profile, row["role"].as_str().unwrap()) {
         (_, "toolResult") => "tool".into(),
         (DisplayProfile::ClaudeCode, "user") if only_results => "tool".into(),
+        (DisplayProfile::OpenCode2, "synthetic") => "user".into(),
         (_, role) => role.into(),
+    }
+}
+
+/// The app row's `text` for a contract display row: the row's text, except
+/// for OpenCode 2's `synthetic` message, whose text is host text and so is
+/// never in the row's `text`.
+fn app_text(profile: DisplayProfile, row: &Value) -> Value {
+    match (profile, row["role"].as_str().unwrap()) {
+        (DisplayProfile::OpenCode2, "synthetic") => Value::from(""),
+        _ => row["text"].clone(),
     }
 }
 
@@ -104,7 +116,7 @@ fn every_contract_case_becomes_an_app_row() {
                 assert_app_shape(&row.display, &name);
                 let want = &case["row"];
                 assert_eq!(row.display["role"], app_role(profile, want), "{name}");
-                assert_eq!(row.display["text"], want["text"], "{name}");
+                assert_eq!(row.display["text"], app_text(profile, want), "{name}");
                 if let Some(model) = want.get("model") {
                     // A served model isn't an app row member today.
                     assert!(model.is_string(), "{name}");

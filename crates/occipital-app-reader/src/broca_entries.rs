@@ -412,7 +412,10 @@ struct EntryFacts {
 ///   Claude Code `user` message holding only tool results: the Messages API
 ///   carries a tool's answer in a user message, but nobody typed it. A user
 ///   message that also has text or files stays the person's. Every other role
-///   is passed on as the runner names it.
+///   is passed on as the runner names it, except OpenCode 2's `synthetic`:
+///   text OpenCode wrote in the conversation itself, which the runner contract
+///   counts as host text whole. It is a `user` row whose parts are all host
+///   parts, with no code, so its text is never drawn as anyone's words.
 ///
 /// An entry whose body doesn't project stays visible as the unreadable
 /// placeholder, as on Broca.
@@ -455,9 +458,11 @@ pub fn display_rows(
                 .parts
                 .iter()
                 .all(|part| matches!(part, DisplayPart::ToolResult(_)));
+        let synthetic = profile == DisplayProfile::OpenCode2 && row.role == "synthetic";
         let role = match (profile, row.role.as_str()) {
             (_, "toolResult") => "tool".to_owned(),
             (DisplayProfile::ClaudeCode, "user") if only_results => "tool".to_owned(),
+            _ if synthetic => "user".to_owned(),
             (_, role) => role.to_owned(),
         };
         let entry = Entry {
@@ -516,7 +521,12 @@ pub fn display_rows(
             if matches!(part, Part::Reasoning(_)) && pruned(&entry, stored, pruned_reasoning) {
                 continue;
             }
-            let part = entry.host_part(part, &[key.as_str()]);
+            let part = match part {
+                Part::Text(text) | Part::Injected(text) if synthetic => {
+                    Part::Host { text, code: None }
+                }
+                part => entry.host_part(part, &[key.as_str()]),
+            };
             parts.push(Decoded {
                 stored,
                 key,

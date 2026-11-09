@@ -117,6 +117,48 @@ fn broca_entries_take_the_fact_by_part_key() {
     );
 }
 
+/// OpenCode 2 writes some text into a conversation itself, as its own native
+/// `synthetic` message, which the runner contract counts as host text whole:
+/// it carries no `host_parts` fact. The apps get it in the shape of a person's
+/// message that holds only host text: a `user` row with empty `text` whose
+/// only part is a host `injected` part, with no code. The phone draws nothing
+/// for that row and the desktop hides it, so the text is never anyone's words.
+/// OpenCode 2's other native roles keep their names.
+#[test]
+fn an_opencode2_synthetic_message_is_host_text() {
+    let entry = |kind: &str| {
+        json!({"ordinal": 1, "mid": "m1",
+            "message": {"id": "msg_1", "type": kind, "text": "Continue if you have next steps."}})
+    };
+    let row = |kind: &str| {
+        broca_entries::display_rows(
+            &[entry(kind)],
+            false,
+            broca_entries::DisplayProfile::OpenCode2,
+            &[],
+        )
+        .unwrap()
+        .remove(0)
+        .display
+    };
+    let synthetic = row("synthetic");
+    assert_eq!(
+        (&synthetic["role"], &synthetic["text"]),
+        (&json!("user"), &json!("")),
+        "{synthetic}"
+    );
+    assert_eq!(
+        synthetic["parts"],
+        json!([{"type": "injected", "text": "Continue if you have next steps.",
+            "host": true, "partIndex": 0, "partKey": "0"}])
+    );
+    for kind in ["system", "skill"] {
+        let row = row(kind);
+        assert_eq!(row["role"], kind, "{row}");
+        assert_eq!(row["parts"][0]["type"], "text", "{row}");
+    }
+}
+
 /// In a real Claude Code session (Thalamus's recorded `runner-pages-claude-code-v1`
 /// set, which `claude_code_pages` checks), the interrupt marker Claude Code
 /// wrote before the person's next message leaves the bubble once the runner
