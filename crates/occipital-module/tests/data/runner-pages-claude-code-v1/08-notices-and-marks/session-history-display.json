@@ -1,0 +1,177 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_b9c864f422bf4c04966dd4540ac0be36",
+  "messages": [
+    {
+      "mid": "9399972a93426e32f3d3e5e2a644219faf539940386e3dc2033d298a653afbde",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Call echo.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Call echo."
+      },
+      "written_at": 1794208708943
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208708943
+    },
+    {
+      "mid": "msg_notices_call",
+      "ordinal": 3,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "arguments": "{\"text\":\"hi\"}",
+            "call_key": "msg_notices_call/toolu_notices_echo",
+            "finished_at": 1794208709402,
+            "name": "echo",
+            "part": "1",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208709332,
+            "tool_call_id": "toolu_notices_echo",
+            "type": "tool_call"
+          }
+        ],
+        "role": "assistant",
+        "text": "Calling echo."
+      },
+      "written_at": 1794208709506
+    },
+    {
+      "mid": "933bcead7d2e69ce76a6892204647d5b42435b281e5f6f8c6cc7f1d8a8803281",
+      "ordinal": 4,
+      "row": {
+        "notices": [
+          {
+            "call_key": "msg_notices_call/toolu_notices_echo",
+            "delivered_as": "tool_result",
+            "part": 0,
+            "send_id": "ride-1",
+            "sender": "magic-context",
+            "text": "A note that rides the tool's result."
+          }
+        ],
+        "parts": [
+          {
+            "content": "echo: hi",
+            "part": "0",
+            "tool_call_id": "toolu_notices_echo",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user",
+        "text": ""
+      },
+      "written_at": 1794208709506
+    },
+    {
+      "mid": "msg_notices_done",
+      "ordinal": 5,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Echo said hi, and a note came with it.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Echo said hi, and a note came with it."
+      },
+      "written_at": 1794208709730
+    },
+    {
+      "mid": "b20e5f86bc01234937b504c4ddfc5182870fda215d2b275ee2e27ab1acd99e3c",
+      "ordinal": 6,
+      "row": {
+        "notice": true,
+        "parts": [
+          {
+            "part": "0",
+            "text": "A notice from core: the build is green.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "A notice from core: the build is green."
+      },
+      "written_at": 1794208711972
+    },
+    {
+      "mid": "msg_notices_core_notice",
+      "ordinal": 7,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Noted.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Noted."
+      },
+      "written_at": 1794208712280
+    },
+    {
+      "mid": "2ab6ca620943b6a5eb2e1d21a757aafd66f894cb175c6ba7a3a7dfc13d09ca8e",
+      "ordinal": 8,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Words agent-a asked core to pass on.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "speaks_for": {
+          "agent_id": "agent-a"
+        },
+        "text": "Words agent-a asked core to pass on."
+      },
+      "written_at": 1794208714433
+    },
+    {
+      "mid": "msg_notices_core_speaks_for",
+      "ordinal": 9,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Noted.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Noted."
+      },
+      "written_at": 1794208714740
+    }
+  ]
+}

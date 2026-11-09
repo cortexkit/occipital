@@ -1,0 +1,177 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_e2c4a5fd8b2048e7a9f598a79af3ef1b",
+  "messages": [
+    {
+      "mid": "4b2286176586150851c49f28abca189b0aca9e9c2cadf54a2918ee60d5b761c8",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Call echo with a long argument.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Call echo with a long argument."
+      },
+      "written_at": 1794208729950
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208729950
+    },
+    {
+      "mid": "msg_long_args",
+      "ordinal": 3,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "arguments": "{\"text\":\"a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word;",
+            "arguments_truncated": true,
+            "call_key": "msg_long_args/toolu_long_args",
+            "finished_at": 1794208730350,
+            "name": "echo",
+            "part": "1",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208730336,
+            "tool_call_id": "toolu_long_args",
+            "type": "tool_call"
+          }
+        ],
+        "role": "assistant",
+        "text": "Calling echo."
+      },
+      "written_at": 1794208730528
+    },
+    {
+      "mid": "41bf48ba730d7182b1a46f66fc7651b206974f1e88ad205aa6aa72f5689b9991",
+      "ordinal": 4,
+      "row": {
+        "parts": [
+          {
+            "content": "{\"code\":\"tool_result_too_large\",\"detail\":{\"bytes\":101903,\"limit\":65536,\"reason\":\"tool_result_too_large\"},\"message\":\"The tool ran, but its output exceeded 64 KiB and was discarded. The call must not be repeated just to see the output.\",\"outcome\":\"provider_error\"}",
+            "is_error": true,
+            "part": "0",
+            "tool_call_id": "toolu_long_args",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user",
+        "text": ""
+      },
+      "written_at": 1794208730528
+    },
+    {
+      "mid": "msg_long_args_read",
+      "ordinal": 5,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "That output was long.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "That output was long."
+      },
+      "written_at": 1794208730733
+    },
+    {
+      "mid": "5b715ddd4510124dac6b8a7168ecfdcd6f91c030c72aea29b27c70bf69a6c6a9",
+      "ordinal": 6,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Call echo for a long output.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Call echo for a long output."
+      },
+      "written_at": 1794208732887
+    },
+    {
+      "mid": "msg_long_output",
+      "ordinal": 7,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "arguments": "{\"text\":\"print a lot\"}",
+            "call_key": "msg_long_output/toolu_long_output",
+            "finished_at": 1794208733280,
+            "name": "echo",
+            "part": "1",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208733269,
+            "tool_call_id": "toolu_long_output",
+            "type": "tool_call"
+          }
+        ],
+        "role": "assistant",
+        "text": "Calling echo."
+      },
+      "written_at": 1794208733430
+    },
+    {
+      "mid": "79f5067f2615165a10e7a0141d8a98347b085a72118ab047e75f8a7db2af145d",
+      "ordinal": 8,
+      "row": {
+        "parts": [
+          {
+            "content": "line 00001: the tool's output goes on, and on, and on.\nline 00002: the tool's output goes on, and on, and on.\nline 00003: the tool's output goes on, and on, and on.\nline 00004: the tool's output goes on, and on, and on.\nline 00005: the tool's output goes on, and on, and on.\nline 00006: the tool's output goes on, and on, and on.\nline 00007: the tool's output goes on, and on, and on.\nline 00008: the tool's output goes on, and on, and on.\nline 00009: the tool's output goes on, and on, and on.\nline 00010: the tool's output goes on, and on, and on.\nline 00011: the tool's output goes on, and on, and on.\nline 00012: the tool's output goes on, and on, and on.\nline 00013: the tool's output goes on, and on, and on.\nline 00014: the tool's output goes on, and on, and on.\nline 00015: the tool's output goes on, and on, and on.\nline 00016: the tool's output goes on, and on, and on.\nline 00017: the tool's output goes on, and on, and on.\nline 00018: the tool's output goes on, and on, and on.\nline 00019: the tool's output goes on, and on, and on.\nline 00020: the tool's output goes on, and on, and on.\nline 00021: the tool's output goes on, and on, and on.\nline 00022: the tool's output goes on, and on, and on.\nline 00023: the tool's output goes on, and on, and on.\nline 00024: the tool's output goes on, and on, and on.\nline 00025: the tool's output goes on, and on, and on.\nline 00026: the tool's output goes on, and on, and on.\nline 00027: the tool's output goes on, and on, and on.\nline 00028: the tool's output goes on, and on, and on.\nline 00029: the tool's output goes on, and on, and on.\nline 00030: the tool's output goes on, and on, and on.\nline 00031: the tool's output goes on, and on, and on.\nline 00032: the tool's output goes on, and on, and on.\nline 00033: the tool's output goes on, and on, and on.\nline 00034: the tool's output goes on, and on, and on.\nline 00035: the tool's output goes on, and on, and on.\nline 00036: the tool's output goes on, and on, and on.\nline 00037: the tool's output goes on, and on, and on.\nline 00038: the tool's output goes on, and on, and on.\nline 00039: the tool's output goes on, and on, and on.\nline 00040: the tool's output goes on, and on, and on.\nline 00041: the tool's output goes on, and on, and on.\nline 00042: the tool's output goes on, and on, and on.\nline 00043: the tool's output goes on, and on, and on.\nline 00044: the tool's output goes on, and on, and on.\nline 00045: the tool's output goes on, and on, and on.\nline 00046: the tool's output goes on, and on, and on.\nline 00047: the tool's output goes on, and on, and on.\nline 00048: the tool's output goes on, and on, and on.\nline 00049: the tool's output goes on, and on, and on.\nline 00050: the tool's output goes on, and on, and on.\nline 00051: the tool's output goes on, and on, and on.\nline 00052: the tool's output goes on, and on, and on.\nline 00053: the tool's output goes on, and on, and on.\nline 00054: the tool's output goes on, and on, and on.\nline 00055: the tool's output goes on, and on, and on.\nline 00056: the tool's output goes on, and on, and on.\nline 00057: the tool's output goes on, and on, and on.\nline 00058: the tool's output goes on, and on, and on.\nline 00059: the tool's output goes on, and on, and on.\nline 00060: the tool's output goes on, and on, and on.\nline 00061: the tool's output goes on, and on, and on.\nline 00062: the tool's output goes on, and on, and on.\nline 00063: the tool's output goes on, and on, and on.\nline 00064: the tool's output goes on, and on, and on.\nline 00065: the tool's output goes on, and on, and on.\nline 00066: the tool's output goes on, and on, and on.\nline 00067: the tool's output goes on, and on, and on.\nline 00068: the tool's output goes on, and on, and on.\nline 00069: the tool's output goes on, and on, and on.\nline 00070: the tool's output goes on, and on, and on.\nline 00071: the tool's output goes on, and on, and on.\nline 00072: the tool's output goes on, and on, and on.\nline 00073: the tool's output goes on, and on, and on.\nline 00074: the tool's output goes on, and on, and on.\nline 00075: the tool's output goes on, and on, and on.\nline 00076: the tool's output goes on, and on, and on.\nline 00077: the tool's output goes on, and on, and on.\nline 00078: the tool's output goes on, and on, and on.\nline 00079: the tool's output goes on, and on, and on.\nline 00080: the tool's output goes on, and on, and on.\nline 00081: the tool's output goes on, and on, and on.\nline 00082: the tool's output goes on, and on, and on.\nline 00083: the tool's output goes on, and on, and on.\nline 00084: the tool's output goes on, and on, and on.\nline 00085: the tool's output goes on, and on, and on.\nline 00086: the tool's output goes on, and on, and on.\nline 00087: the tool's output goes on, and on, and on.\nline 00088: the tool's output goes on, and on, and on.\nline 00089: the tool's output goes on, and on, and on.\nline 00090: the tool's output goes on, and on, and on.\nline 00091: the tool's output goes on, and on, and on.\nline 00092: the tool's output goes on, and on, and on.\nline 00093: the tool's output goes on, and on, and on.\nline 00094: the tool's output goes on, and on, and on.\nline 00095: the tool's output goes on, and on, and on.\nline 00096: the tool's output goes on, and on, and on.\nline 00097: the tool's output goes on, and on, and on.\nline 00098: the tool's output goes on, and on, and on.\nline 00099: the tool's output goes on, and on, and on.\nline 00100: the tool's output goes on, and on, and on.\nline 00101: the tool's output goes on, and on, and on.\nline 00102: the tool's output goes on, and on, and on.\nline 00103: the tool's output goes on, and on, and on.\nline 00104: the tool's output goes on, and on, and on.\nline 00105: the tool's output goes on, and on, and on.\nline 00106: the tool's output goes on, and on, and on.\nline 00107: the tool's output goes on, and on, and on.\nline 00108: the tool's output goes on, and on, and on.\nline 00109: the tool's output goes on, and on, and on.\nline 00110: the tool's output goes on, and on, and on.\nline 00111: the tool's output goes on, and on, and on.\nline 00112: the tool's output goes on, and on, and on.\nline 00113: the tool's output goes on, and on, and on.\nline 00114: the tool's output goes on, and on, and on.\nline 00115: the tool's output goes on, and on, and on.\nline 00116: the tool's output goes on, and on, and on.\nline 00117: the tool's output goes on, and on, and on.\nline 00118: the tool's output goes on, and on, and on.\nline 00119: the tool's output goes on, and on, and on.\nline 00120: the tool's output goes on, and on, and on.\nline 00121: the tool's output goes on, and on, and on.\nline 00122: the tool's output goes on, and on, and on.\nline 00123: the tool's output goes on, and on, and on.\nline 00124: the tool's output goes on, and on, and on.\nline 00125: the tool's output goes on, and on, and on.\nline 00126: the tool's output goes on, and on, and on.\nline 00127: the tool's output goes on, and on, and on.\nline 00128: the tool's output goes on, and on, and on.\nline 00129: the tool's output goes on, and on, and on.\nline 00130: the tool's output goes on, and on, and on.\nline 00131: the tool's output goes on, and on, and on.\nline 00132: the tool's output goes on, and on, and on.\nline 00133: the tool's output goes on, and on, and on.\nline 00134: the tool's output goes on, and on, and on.\nline 00135: the tool's output goes on, and on, and on.\nline 00136: the tool's output goes on, and on, and on.\nline 00137: the tool's output goes on, and on, and on.\nline 00138: the tool's output goes on, and on, and on.\nline 00139: the tool's output goes on, and on, and on.\nline 00140: the tool's output goes on, and on, and on.\nline 00141: the tool's output goes on, and on, and on.\nline 00142: the tool's output goes on, and on, and on.\nline 00143: the tool's output goes on, and on, and on.\nline 00144: the tool's output goes on, and on, and on.\nline 00145: the tool's output goes on, and on, and on.\nline 00146: the tool's output goes on, and on, and on.\nline 00147: the tool's output goes on, and on, and on.\nline 00148: the tool's output goes on, and on, and on.\nline 00149: the tool's output goes on, and on, and on.\nline 00150: the tool's output goes on, and on, and on.\nline 00151: the tool's output goes on, and on, and on.\nline 00152: the tool's output goes on, and on, and on.\nline 00153: the tool's output goes on, and on, and on.\nline 00154: the tool's output goes on, and on, and on.\nline 00155: the tool's output goes on, and on, and on.\nline 00156: the tool's output goes on, and on, and on.\nline 00157: the tool's output goes on, and on, and on.\nline 00158: the tool's output goes on, and on, and on.\nline 00159: the tool's output goes on, and on, and on.\nline 00160: the tool's output goes on, and on, and on.\nline 00161: the tool's output goes on, and on, and on.\nline 00162: the tool's output goes on, and on, and on.\nline 00163: the tool's output goes on, and on, and on.\nline 00164: the tool's output goes on, and on, and on.\nline 00165: the tool's output goes on, and on, and on.\nline 00166: the tool's output goes on, and on, and on.\nline 00167: the tool's output goes on, and on, and on.\nline 00168: the tool's output goes on, and on, and on.\nline 00169: the tool's output goes on, and on, and on.\nline 00170: the tool's output goes on, and on, and on.\nline 00171: the tool's output goes on, and on, and on.\nline 00172: the tool's output goes on, and on, and on.\nline 00173: the tool's output goes on, and on, and on.\nline 00174: the tool's output goes on, and on, and on.\nline 00175: the tool's output goes on, and on, and on.\nline 00176: the tool's output goes on, and on, and on.\nline 00177: the tool's output goes on, and on, and on.\nline 00178: the tool's output goes on, and on, and on.\nline 00179: the tool's output goes on, and on, and on.\nline 00180: the tool's output goes on, and on, and on.\nline 00181: the tool's output goes on, and on, and on.\nline 00182: the tool's output goes on, and on, and on.\nline 00183: the tool's output goes on, and on, and on.\nline 00184: the tool's output goes on, and on, and on.\nline 00185: the tool's output goes on, and on, and on.\nline 00186: the tool's output goes on, and on, and on.\nline 00187: the tool's output goes on, and on, and on.\nline 00188: the tool's output goes on, and on, and on.\nline 00189: the tool's output goes on, and on, and on.\nline 00190: the tool's output goes on, and on, and on.\nline 00191: the tool's output goes on, and on, and on.\nline 00192: the tool's output goes on, and on, and on.\nline 00193: the tool's output goes on, and on, and on.\nline 00194: the tool's output goes on, and on, and on.\nline 00195: the tool's output goes on, and on, and on.\nline 00196: the tool's output goes on, and on, and on.\nline 00197: the tool's output goes on, and on, and on.\nline 00198: the tool's output goes on, and on, and on.\nline 00199: the tool's output goes on, and on, and on.\nline 00200: the tool's output goes on, and on, and on.\nline 00201: the tool's output goes on, and on, and on.\nline 00202: the tool's output goes on, and on, and on.\nline 00203: the tool's output goes on, and on, and on.\nline 00204: the tool's output goes on, and on, and on.\nline 00205: the tool's output goes on, and on, and on.\nline 00206: the tool's output goes on, and on, and on.\nline 00207: the tool's output goes on, and on, and on.\nline 00208: the tool's output goes on, and on, and on.\nline 00209: the tool's output goes on, and on, and on.\nline 00210: the tool's output goes on, and on, and on.\nline 00211: the tool's output goes on, and on, and on.\nline 00212: the tool's output goes on, and on, and on.\nline 00213: the tool's output goes on, and on, and on.\nline 00214: the tool's output goes on, and on, and on.\nline 00215: the tool's output goes on, and on, and on.\nline 00216: the tool's output goes on, and on, and on.\nline 00217: the tool's output goes on, and on, and on.\nline 00218: the tool's output goes on, and on, and on.\nline 00219: the tool's output goes on, and on, and on.\nline 00220: the tool's output goes on, and on, and on.\nline 00221: the tool's output goes on, and on, and on.\nline 00222: the tool's output goes on, and on, and on.\nline 00223: the tool's output goes on, and on, and on.\nline 00224: the tool's output goes on, and on, and on.\nline 00225: the tool's output goes on, and on, and on.\nline 00226: the tool's output goes on, and on, and on.\nline 00227: the tool's output goes on, and on, and on.\nline 00228: the tool's output goes on, and on, and on.\nline 00229: the tool's output goes on, and on, and on.\nline 00230: the tool's output goes on, and on, and on.\nline 00231: the tool's output goes on, and on, and on.\nline 00232: the tool's output goes on, and on, and on.\nline 00233: the tool's output goes on, and on, and on.\nline 00234: the tool's output goes on, and on, and on.\nline 00235: the tool's output goes on, and on, and on.\nline 00236: the tool's output goes on, and on, and on.\nline 00237: the tool's output goes on, and on, and on.\nline 00238: the tool's output goes on, and on, and on.\nline 00239: the tool's output goes on, and on, and on.\nline 00240: the tool's output goes on, and on, and on.\nline 00241: the tool's output goes on, and on, and on.\nline 00242: the tool's output goes on, and on, and on.\nline 00243: the tool's output goes on, and on, and on.\nline 00244: the tool's output goes on, and on, and on.\nline 00245: the tool's output goes on, and on, and on.\nline 00246: the tool's output goes on, and on, and on.\nline 00247: the tool's output goes on, and on, and on.\nline 00248: the tool's output goes on, and on, and on.\nline 00249: the tool's output goes on, and on, and on.\nline 00250: the tool's output goes on, and on, and on.\nline 00251: the tool's output goes on, and on, and on.\nline 00252: the tool's output goes on, and on, and on.\nline 00253: the tool's output goes on, and on, and on.\nline 00254: the tool's output goes on, and on, and on.\nline 00255: the tool's output goes on, and on, and on.\nline 00256: the tool's output goes on, and on, and on.\nline 00257: the tool's output goes on, and on, and on.\nline 00258: the tool's output goes on, and on, and on.\nline 00259: the tool's output goes on, and on, and on.\nline 00260: the tool's output goes on, and on, and on.\nline 00261: the tool's output goes on, and on, and on.\nline 00262: the tool's output goes on, and on, and on.\nline 00263: the tool's output goes on, and on, and on.\nline 00264: the tool's output goes on, and on, and on.\nline 00265: the tool's output goes on, and on, and on.\nline 00266: the tool's output goes on, and on, and on.\nline 00267: the tool's output goes on, and on, and on.\nline 00268: the tool's output goes on, and on, and on.\nline 00269: the tool's output goes on, and on, and on.\nline 00270: the tool's output goes on, and on, and on.\nline 00271: the tool's output goes on, and on, and on.\nline 00272: the tool's output goes on, and on, and on.\nline 00273: the tool's output goes on, and on, and on.\nline 00274: the tool's output goes on, and on, and on.\nline 00275: the tool's output goes on, and on, and on.\nline 00276: the tool's output goes on, and on, and on.\nline 00277: the tool's output goes on, and on, and on.\nline 00278: the tool's output goes on, and on, and on.\nline 00279: the tool's output goes on, and on, and on.\nline 00280: the tool's output goes on, and on, and on.\nline 00281: the tool's output goes on, and on, and on.\nline 00282: the tool's output goes on, and on, and on.\nline 00283: the tool's output goes on, and on, and on.\nline 00284: the tool's output goes on, and on, and on.\nline 00285: the tool's output goes on, and on, and on.\nline 00286: the tool's output goes on, and on, and on.\nline 00287: the tool's output goes on, and on, and on.\nline 00288: the tool's output goes on, and on, and on.\nline 00289: the tool's output goes on, and on, and on.\nline 00290: the tool's output goes on, and on, and on.\nline 00291: the tool's output goes on, and on, and on.\nline 00292: the tool's output goes on, and on, and on.\nline 00293: the tool's output goes on, and on, and on.\nline 00294: the tool's output goes on, and on, and on.\nline 00295: the tool's output goes on, and on, and on.\nline 00296: the tool's output goes on, and on, and on.\nline 00297: the tool's output goes on, and on, and on.\nline 00298: the tool's output goes on, and on, an",
+            "part": "0",
+            "tool_call_id": "toolu_long_output",
+            "truncated": true,
+            "type": "tool_result"
+          }
+        ],
+        "role": "user",
+        "text": ""
+      },
+      "written_at": 1794208733430
+    },
+    {
+      "mid": "msg_long_output_read",
+      "ordinal": 9,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "That output was long.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "That output was long."
+      },
+      "written_at": 1794208733662
+    }
+  ]
+}

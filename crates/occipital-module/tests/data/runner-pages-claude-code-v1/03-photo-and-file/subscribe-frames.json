@@ -1,0 +1,471 @@
+{
+  "subscriptions": [
+    {
+      "ended": null,
+      "frames": [
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 1
+          },
+          "kind": "control",
+          "lineage_id": "lin_e5e7b6655157be578dd33e98",
+          "runner_event": "admitted",
+          "seq": 1
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 1,
+            "wal_seq": 1
+          },
+          "delivery": "queue",
+          "kind": "control",
+          "run_id": "run_5a4c1be7b8f63ad25fb75da7",
+          "runner_event": "send_accepted",
+          "send_id": "[\"prefrontal-core\",\"media-hello\"]",
+          "seq": 2
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "bfa9fab6c500d40d09ad1b5639594eaef359a6d4f014872b4a3c7440987c5ffd",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 3
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 1,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "bfa9fab6c500d40d09ad1b5639594eaef359a6d4f014872b4a3c7440987c5ffd",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "bfa9fab6c500d40d09ad1b5639594eaef359a6d4f014872b4a3c7440987c5ffd",
+          "ordinal": 1,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 4
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 2,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 5
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 3,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+          "ordinal": 2,
+          "role": "system",
+          "runner_event": "message",
+          "seq": 6
+        },
+        {
+          "as": "turn",
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 3
+          },
+          "kind": "control",
+          "ref": "run_5a4c1be7b8f63ad25fb75da7",
+          "runner_event": "delivered",
+          "send_id": "[\"prefrontal-core\",\"media-hello\"]",
+          "seq": 7
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 1,
+            "wal_seq": 3
+          },
+          "event": {
+            "run_id": "run_5a4c1be7b8f63ad25fb75da7",
+            "type": "run_started"
+          },
+          "kind": "control",
+          "run_id": "run_5a4c1be7b8f63ad25fb75da7",
+          "runner_event": "run_started",
+          "seq": 8
+        },
+        {
+          "event": {
+            "delta": "Hello. Send me a",
+            "message_id": "",
+            "mid": "msg_media_hello",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 9
+        },
+        {
+          "event": {
+            "delta": " photo or a file.",
+            "message_id": "",
+            "mid": "msg_media_hello",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 10
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "msg_media_hello",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 11
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 1,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "msg_media_hello",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_media_hello",
+          "ordinal": 3,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 12
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 5
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_5a4c1be7b8f63ad25fb75da7",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_5a4c1be7b8f63ad25fb75da7",
+          "runner_event": "run_ended",
+          "seq": 13,
+          "state": "completed"
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 6
+          },
+          "delivery": "queue",
+          "kind": "control",
+          "run_id": "run_0f90988af3672e67439c53dd",
+          "runner_event": "send_accepted",
+          "send_id": "[\"prefrontal-core\",\"media-photo\"]",
+          "seq": 14
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 7
+          },
+          "event": {
+            "mid": "0462253a38eb9d7c111fae0eba3b7ddea651a0799c014eee7345875bef30e846",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 15
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 1,
+            "wal_seq": 7
+          },
+          "event": {
+            "mid": "0462253a38eb9d7c111fae0eba3b7ddea651a0799c014eee7345875bef30e846",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "0462253a38eb9d7c111fae0eba3b7ddea651a0799c014eee7345875bef30e846",
+          "ordinal": 4,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 16
+        },
+        {
+          "as": "turn",
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 8
+          },
+          "kind": "control",
+          "ref": "run_0f90988af3672e67439c53dd",
+          "runner_event": "delivered",
+          "send_id": "[\"prefrontal-core\",\"media-photo\"]",
+          "seq": 17
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 1,
+            "wal_seq": 8
+          },
+          "event": {
+            "run_id": "run_0f90988af3672e67439c53dd",
+            "type": "run_started"
+          },
+          "kind": "control",
+          "run_id": "run_0f90988af3672e67439c53dd",
+          "runner_event": "run_started",
+          "seq": 18
+        },
+        {
+          "event": {
+            "delta": "A tiny test image,",
+            "message_id": "",
+            "mid": "msg_media_photo",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 19
+        },
+        {
+          "event": {
+            "delta": " two pixels square.",
+            "message_id": "",
+            "mid": "msg_media_photo",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 20
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 9
+          },
+          "event": {
+            "mid": "msg_media_photo",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 21
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 1,
+            "wal_seq": 9
+          },
+          "event": {
+            "mid": "msg_media_photo",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_media_photo",
+          "ordinal": 5,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 22
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 10
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_0f90988af3672e67439c53dd",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_0f90988af3672e67439c53dd",
+          "runner_event": "run_ended",
+          "seq": 23,
+          "state": "completed"
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 11
+          },
+          "delivery": "queue",
+          "kind": "control",
+          "run_id": "run_5c8b0e4ee6fe95f770b50f55",
+          "runner_event": "send_accepted",
+          "send_id": "[\"prefrontal-core\",\"media-file\"]",
+          "seq": 24
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 12
+          },
+          "event": {
+            "mid": "e1967886de1ec22bfa7b2f63e2cffbf582d16e48047f4e5b42d962d78c1d099d",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 25
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 1,
+            "wal_seq": 12
+          },
+          "event": {
+            "mid": "e1967886de1ec22bfa7b2f63e2cffbf582d16e48047f4e5b42d962d78c1d099d",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "e1967886de1ec22bfa7b2f63e2cffbf582d16e48047f4e5b42d962d78c1d099d",
+          "ordinal": 6,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 26
+        },
+        {
+          "as": "turn",
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 13
+          },
+          "kind": "control",
+          "ref": "run_5c8b0e4ee6fe95f770b50f55",
+          "runner_event": "delivered",
+          "send_id": "[\"prefrontal-core\",\"media-file\"]",
+          "seq": 27
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 1,
+            "wal_seq": 13
+          },
+          "event": {
+            "run_id": "run_5c8b0e4ee6fe95f770b50f55",
+            "type": "run_started"
+          },
+          "kind": "control",
+          "run_id": "run_5c8b0e4ee6fe95f770b50f55",
+          "runner_event": "run_started",
+          "seq": 28
+        },
+        {
+          "event": {
+            "delta": "A one-page PDF wi",
+            "message_id": "",
+            "mid": "msg_media_file",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 29
+        },
+        {
+          "event": {
+            "delta": "th no text on it.",
+            "message_id": "",
+            "mid": "msg_media_file",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 30
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 14
+          },
+          "event": {
+            "mid": "msg_media_file",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 31
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 1,
+            "wal_seq": 14
+          },
+          "event": {
+            "mid": "msg_media_file",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_media_file",
+          "ordinal": 7,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 32
+        },
+        {
+          "cursor": {
+            "session": "37505f06ccea3db7",
+            "sub_index": 0,
+            "wal_seq": 15
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_5c8b0e4ee6fe95f770b50f55",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_5c8b0e4ee6fe95f770b50f55",
+          "runner_event": "run_ended",
+          "seq": 33,
+          "state": "completed"
+        }
+      ],
+      "params": {}
+    }
+  ]
+}

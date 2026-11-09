@@ -1,0 +1,113 @@
+{
+  "history_version": 1,
+  "incarnation": "inc_d0e5b77f233b413cbbe605ca6e6eeab8",
+  "messages": [
+    {
+      "mid": "769c4b534ea32b16423d81b03b8d6f76cf6df2134f7ff99c78383791d87ede16",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Run 1 of three.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Run 1 of three."
+      },
+      "written_at": 1794208697603
+    },
+    {
+      "mid": "msg_switch_haiku",
+      "ordinal": 2,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Answered on claude-haiku-5-5.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Answered on claude-haiku-5-5."
+      },
+      "written_at": 1794208698081
+    },
+    {
+      "mid": "44bbb18601cd4b0ee33046dd1c891a5469dd42458743610a99afdf5963b733ea",
+      "ordinal": 3,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Run 2 of three.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Run 2 of three."
+      },
+      "written_at": 1794208700246
+    },
+    {
+      "mid": "msg_switch_high",
+      "ordinal": 4,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Answered on claude-haiku-5-5 at high effort.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Answered on claude-haiku-5-5 at high effort."
+      },
+      "written_at": 1794208700720
+    },
+    {
+      "mid": "4d08c8aef431aec239306c4430f84a796cb6f259a609b2b55b6ad671f7295874",
+      "ordinal": 5,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Run 3 of three.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Run 3 of three."
+      },
+      "written_at": 1794208702894
+    },
+    {
+      "mid": "msg_switch_opus",
+      "ordinal": 6,
+      "row": {
+        "model": "claude-opus-4-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Thinking it over on this model.",
+            "type": "reasoning"
+          },
+          {
+            "part": "1",
+            "text": "Answered on claude-opus-4-5 at low effort.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Answered on claude-opus-4-5 at low effort."
+      },
+      "written_at": 1794208703366
+    }
+  ]
+}

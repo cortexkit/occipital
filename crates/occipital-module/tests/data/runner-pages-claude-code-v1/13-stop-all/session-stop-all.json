@@ -1,0 +1,19 @@
+{
+  "providers": [
+    {
+      "items": [
+        {
+          "id": "consult-1",
+          "kind": "consult",
+          "label": "Asking the reviewer",
+          "outcome": "stopped"
+        }
+      ],
+      "outcome": "answered",
+      "provider": "prefrontal-core"
+    }
+  ],
+  "runner": {
+    "items": []
+  }
+}

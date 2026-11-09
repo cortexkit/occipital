@@ -1,0 +1,199 @@
+{
+  "frames_while_call_ran": 2,
+  "subscriptions": [
+    {
+      "ended": null,
+      "frames": [
+        {
+          "event": {
+            "type": "display_reset"
+          },
+          "kind": "display",
+          "seq": 1
+        },
+        {
+          "event": {
+            "delta": "Calling echo; it runs a while.",
+            "message_id": "",
+            "mid": "msg_long_call",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 2
+        },
+        {
+          "cursor": {
+            "session": "0e358f20787ac8ba",
+            "sub_index": 0,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "msg_long_call",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 3
+        },
+        {
+          "cursor": {
+            "session": "0e358f20787ac8ba",
+            "sub_index": 1,
+            "wal_seq": 4
+          },
+          "event": {
+            "arguments": "{\"text\":\"slow\"}",
+            "arguments_truncated": false,
+            "call_key": "msg_long_call/toolu_long_call",
+            "mid": "msg_long_call",
+            "name": "echo",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208722966,
+            "tool_call_id": "toolu_long_call",
+            "type": "tool_started"
+          },
+          "kind": "control",
+          "seq": 4
+        },
+        {
+          "cursor": {
+            "session": "0e358f20787ac8ba",
+            "sub_index": 2,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "msg_long_call",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_long_call",
+          "ordinal": 3,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 5
+        },
+        {
+          "cursor": {
+            "session": "0e358f20787ac8ba",
+            "sub_index": 3,
+            "wal_seq": 4
+          },
+          "event": {
+            "call_key": "msg_long_call/toolu_long_call",
+            "finished_at": 1794208725045,
+            "mid": "msg_long_call",
+            "outcome": "ok",
+            "output_bytes": 80,
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "tool_call_id": "toolu_long_call",
+            "type": "tool_finished"
+          },
+          "kind": "control",
+          "seq": 6
+        },
+        {
+          "cursor": {
+            "session": "0e358f20787ac8ba",
+            "sub_index": 4,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "2ae1d3b9060186ca14df7dd48520ee4b0ba88c8deeaad37c24d5bc41eafc602f",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 7
+        },
+        {
+          "cursor": {
+            "session": "0e358f20787ac8ba",
+            "sub_index": 5,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "2ae1d3b9060186ca14df7dd48520ee4b0ba88c8deeaad37c24d5bc41eafc602f",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "2ae1d3b9060186ca14df7dd48520ee4b0ba88c8deeaad37c24d5bc41eafc602f",
+          "ordinal": 4,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 8
+        },
+        {
+          "event": {
+            "delta": "Echo final",
+            "message_id": "",
+            "mid": "msg_long_call_done",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 9
+        },
+        {
+          "event": {
+            "delta": "ly said hi.",
+            "message_id": "",
+            "mid": "msg_long_call_done",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 10
+        },
+        {
+          "cursor": {
+            "session": "0e358f20787ac8ba",
+            "sub_index": 0,
+            "wal_seq": 5
+          },
+          "event": {
+            "mid": "msg_long_call_done",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 11
+        },
+        {
+          "cursor": {
+            "session": "0e358f20787ac8ba",
+            "sub_index": 1,
+            "wal_seq": 5
+          },
+          "event": {
+            "mid": "msg_long_call_done",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_long_call_done",
+          "ordinal": 5,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 12
+        },
+        {
+          "cursor": {
+            "session": "0e358f20787ac8ba",
+            "sub_index": 0,
+            "wal_seq": 6
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_0acfd4a640e817db5bdc8d0c",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_0acfd4a640e817db5bdc8d0c",
+          "runner_event": "run_ended",
+          "seq": 13,
+          "state": "completed"
+        }
+      ],
+      "params": {
+        "from": "live"
+      }
+    }
+  ]
+}

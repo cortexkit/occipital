@@ -1,0 +1,96 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_7e0d048a45c8468cb0bc72102d94e63f",
+  "messages": [
+    {
+      "mid": "056be32037d695b4de773a4bdbb791e9a8276dff47691a246e6d58ca83902daf",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Get ready.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Get ready."
+      },
+      "written_at": 1794208746784
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208746784
+    },
+    {
+      "mid": "msg_stop_ready",
+      "ordinal": 3,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Ready.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Ready."
+      },
+      "written_at": 1794208747106
+    },
+    {
+      "mid": "b59332bcc72d8da000d7208c80b8881f1e03871278c456b6868f8c9d86c27c31",
+      "ordinal": 4,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Call echo, then stop everything.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Call echo, then stop everything."
+      },
+      "written_at": 1794208749341
+    },
+    {
+      "mid": "msg_stop_call",
+      "ordinal": 5,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Calling echo; it takes a while.",
+            "type": "text"
+          },
+          {
+            "arguments": "{\"text\":\"slow\"}",
+            "call_key": "msg_stop_call/toolu_stop_call",
+            "finished_at": 1794208749835,
+            "name": "echo",
+            "part": "1",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208749723,
+            "tool_call_id": "toolu_stop_call",
+            "type": "tool_call",
+            "unanswered": "cancelled"
+          }
+        ],
+        "role": "assistant",
+        "text": "Calling echo; it takes a while."
+      },
+      "written_at": 1794208749845
+    }
+  ]
+}

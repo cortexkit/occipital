@@ -1,0 +1,122 @@
+{
+  "head": {
+    "session": "0baf4668bc783e1a",
+    "sub_index": 0,
+    "wal_seq": 10
+  },
+  "history_version": 0,
+  "incarnation": "inc_bed3222ceab44631934ef0c16d522d77",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "A module's send.",
+        "role": "user"
+      },
+      "mid": "3830a6f39803789a5bc8d85760a203e3e0c16287bf9ebac16d14e5373288466a",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_67b62471e7e818e1e94bf357"
+      },
+      "send_id": "core-send-1",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208717212
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_67b62471e7e818e1e94bf357"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208717212
+    },
+    {
+      "completed_at": 1794208717433,
+      "message": {
+        "content": [
+          {
+            "text": "Core's send, answered.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_ids_core",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_67b62471e7e818e1e94bf357"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208717526
+    },
+    {
+      "client_message_id": "phone-message-1",
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Sent from the phone.",
+        "role": "user"
+      },
+      "mid": "b34b84f8d3798d2e80e2f402bd8796d1721da156393f5d3d1835db7db8b4d16d",
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_7026b1fc067e05e34fd94f37"
+      },
+      "send_id": "phone-send-1",
+      "sender": "occipital",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208719736
+    },
+    {
+      "completed_at": 1794208719953,
+      "message": {
+        "content": [
+          {
+            "text": "The phone's send, answered.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_ids_phone",
+      "ordinal": 5,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_7026b1fc067e05e34fd94f37"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208720041
+    }
+  ]
+}

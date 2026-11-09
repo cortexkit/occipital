@@ -1,0 +1,50 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_c4c64cbd57ce4c5c842b8f72d16d082e",
+  "messages": [
+    {
+      "mid": "e771efc76c0cde91d6aa720b05d9a657178da342a3e9a5a96b78a5e3f84fa054",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Say hello.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Say hello."
+      },
+      "written_at": 1794208706076
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208706076
+    },
+    {
+      "mid": "msg_head_hello",
+      "ordinal": 3,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Hello.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Hello."
+      },
+      "written_at": 1794208706394
+    }
+  ]
+}

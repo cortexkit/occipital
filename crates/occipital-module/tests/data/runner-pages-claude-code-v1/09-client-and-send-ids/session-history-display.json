@@ -1,0 +1,85 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_bed3222ceab44631934ef0c16d522d77",
+  "messages": [
+    {
+      "mid": "3830a6f39803789a5bc8d85760a203e3e0c16287bf9ebac16d14e5373288466a",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "A module's send.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "A module's send."
+      },
+      "written_at": 1794208717212
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208717212
+    },
+    {
+      "mid": "msg_ids_core",
+      "ordinal": 3,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Core's send, answered.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Core's send, answered."
+      },
+      "written_at": 1794208717526
+    },
+    {
+      "mid": "b34b84f8d3798d2e80e2f402bd8796d1721da156393f5d3d1835db7db8b4d16d",
+      "ordinal": 4,
+      "row": {
+        "client_message_id": "phone-message-1",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Sent from the phone.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "occipital",
+        "text": "Sent from the phone."
+      },
+      "written_at": 1794208719736
+    },
+    {
+      "mid": "msg_ids_phone",
+      "ordinal": 5,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "The phone's send, answered.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "The phone's send, answered."
+      },
+      "written_at": 1794208720041
+    }
+  ]
+}

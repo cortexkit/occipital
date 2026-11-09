@@ -1,0 +1,19 @@
+{
+  "calls": [
+    {
+      "args": {
+        "text": "hi"
+      },
+      "call_key": "msg_tools_echo/toolu_tools_echo",
+      "dispatched_to": "prefrontal-core",
+      "name": "echo",
+      "ordinal": 3,
+      "outcome": "succeeded",
+      "position": 0,
+      "result_bytes": 35,
+      "result_ordinal": 4,
+      "tool_call_id": "toolu_tools_echo"
+    }
+  ],
+  "run_id": "run_aacbc306b028a66b2e2faa43"
+}

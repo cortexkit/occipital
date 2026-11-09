@@ -1,0 +1,20 @@
+{
+  "state": "cancelled",
+  "undelivered_steers": [],
+  "usage": {
+    "by_model": [
+      {
+        "input_tokens": 10,
+        "model": "claude-haiku-5-5",
+        "output_tokens": 1,
+        "provider": "anthropic",
+        "steps": 1,
+        "unreported_steps": 0
+      }
+    ],
+    "input_tokens": 10,
+    "output_tokens": 1,
+    "steps": 1,
+    "unreported_steps": 0
+  }
+}

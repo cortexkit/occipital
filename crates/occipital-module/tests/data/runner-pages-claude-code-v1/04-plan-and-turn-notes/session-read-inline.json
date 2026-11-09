@@ -1,0 +1,205 @@
+{
+  "head": {
+    "session": "5717f52d7aa063ee",
+    "sub_index": 0,
+    "wal_seq": 14
+  },
+  "history_version": 0,
+  "incarnation": "inc_1821ee4450ad433f8a39423f5d1a0ea6",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Get ready.",
+        "role": "user"
+      },
+      "mid": "056be32037d695b4de773a4bdbb791e9a8276dff47691a246e6d58ca83902daf",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_f7bb0bb3465c78d8d22a71a5"
+      },
+      "send_id": "notes-ready",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208752261
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_f7bb0bb3465c78d8d22a71a5"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208752261
+    },
+    {
+      "completed_at": 1794208752495,
+      "message": {
+        "content": [
+          {
+            "text": "Ready.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notes_ready",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_f7bb0bb3465c78d8d22a71a5"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208752584
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Call echo.",
+        "role": "user"
+      },
+      "mid": "9399972a93426e32f3d3e5e2a644219faf539940386e3dc2033d298a653afbde",
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_336c54f3c1d3777caeac1f04"
+      },
+      "send_id": "notes-run",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208754787
+    },
+    {
+      "completed_at": 1794208755173,
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_notes_echo",
+            "input": {
+              "text": "hi"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notes_call",
+      "ordinal": 5,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_336c54f3c1d3777caeac1f04"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_notes_call/toolu_notes_echo",
+          "indeterminate": false,
+          "tool_call_id": "toolu_notes_echo"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_notes_call/toolu_notes_echo",
+          "finished_at": 1794208755290,
+          "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1794208755173,
+          "tool_call_id": "toolu_notes_echo"
+        }
+      ],
+      "written_at": 1794208755347
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "echo: hi",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_notes_echo",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "a4ab54385852fd37de18a7705dd5351ee57b3331aff44e6cd9f4fb76abf25092",
+      "notices": [
+        {
+          "call_key": "msg_notes_call/toolu_notes_echo",
+          "delivered_as": "turn_system",
+          "part": 0,
+          "send_id": "note-1",
+          "sender": "magic-context",
+          "text": "NOTE 1"
+        }
+      ],
+      "ordinal": 6,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_336c54f3c1d3777caeac1f04"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208755347
+    },
+    {
+      "completed_at": 1794208755511,
+      "message": {
+        "content": [
+          {
+            "text": "Echo said hi, and I have the note.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notes_done",
+      "ordinal": 7,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_336c54f3c1d3777caeac1f04"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208755597
+    }
+  ]
+}

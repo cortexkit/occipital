@@ -1,0 +1,211 @@
+{
+  "history_version": 1,
+  "incarnation": "inc_384a46e5a85240b2aa7b2f2cd460a2c9",
+  "messages": [
+    {
+      "mid": "c2da736612d30a771d847c13add6e2c383fcaeef4e7e1fcc9772d2649ddc2440",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Just answer.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Just answer."
+      },
+      "written_at": 1794208736298
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208736298
+    },
+    {
+      "mid": "msg_endings_completed",
+      "ordinal": 3,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Done.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Done."
+      },
+      "written_at": 1794208736610
+    },
+    {
+      "mid": "b393b3c9bb969f7b61ad5af5fe6dd5895089f39501306ee48aebb5e53a670e15",
+      "ordinal": 4,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Answer, if the provider lets you.\n",
+            "type": "text"
+          },
+          {
+            "part": "1",
+            "text": "Call echo, then wait for it.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Answer, if the provider lets you.\nCall echo, then wait for it."
+      },
+      "written_at": 1794208741037
+    },
+    {
+      "mid": "msg_endings_held",
+      "ordinal": 5,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Calling echo; it takes a while.",
+            "type": "text"
+          },
+          {
+            "arguments": "{\"text\":\"slow\"}",
+            "call_key": "msg_endings_held/toolu_endings_held",
+            "finished_at": 1794208741536,
+            "name": "echo",
+            "part": "1",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208741428,
+            "tool_call_id": "toolu_endings_held",
+            "type": "tool_call",
+            "unanswered": "cancelled"
+          }
+        ],
+        "role": "assistant",
+        "text": "Calling echo; it takes a while."
+      },
+      "written_at": 1794208741552
+    },
+    {
+      "mid": "1ab8408b4a4000a91a6925fc70c4182f01be235c4a46b6d20891641d6a923d52",
+      "ordinal": 6,
+      "row": {
+        "parts": [
+          {
+            "content": "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed. Correction to the text above: this call was stopped while running, not refused before it ran. It may have run in part or in full, and its changes may have been written. No permission prompt was involved. Work it started elsewhere (a remote command, a background process) may still be running, so check before starting the same work again. The instruction to stop and wait still stands.",
+            "is_error": true,
+            "part": "0",
+            "tool_call_id": "toolu_endings_held",
+            "type": "tool_result"
+          },
+          {
+            "part": "1",
+            "text": "[Request interrupted by user for tool use]\n",
+            "type": "text"
+          },
+          {
+            "part": "2",
+            "text": "Call echo as often as you can.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "[Request interrupted by user for tool use]\nCall echo as often as you can."
+      },
+      "written_at": 1794208743787
+    },
+    {
+      "mid": "msg_endings_step_one",
+      "ordinal": 7,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "arguments": "{\"text\":\"one\"}",
+            "call_key": "msg_endings_step_one/toolu_endings_step_one",
+            "finished_at": 1794208743911,
+            "name": "echo",
+            "part": "0",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208743902,
+            "tool_call_id": "toolu_endings_step_one",
+            "type": "tool_call"
+          }
+        ],
+        "role": "assistant",
+        "text": ""
+      },
+      "written_at": 1794208744091
+    },
+    {
+      "mid": "ec4b365f5478f48f4e97f883ca4574b85309c8d328242f95bb2fa57165efcbc1",
+      "ordinal": 8,
+      "row": {
+        "parts": [
+          {
+            "content": "echo: hi",
+            "part": "0",
+            "tool_call_id": "toolu_endings_step_one",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user",
+        "text": ""
+      },
+      "written_at": 1794208744091
+    },
+    {
+      "mid": "msg_endings_step_two",
+      "ordinal": 9,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "arguments": "{\"text\":\"two\"}",
+            "call_key": "msg_endings_step_two/toolu_endings_step_two",
+            "finished_at": 1794208744208,
+            "name": "echo",
+            "part": "0",
+            "started_at": 1794208744201,
+            "tool_call_id": "toolu_endings_step_two",
+            "type": "tool_call",
+            "unanswered": "not_executed"
+          }
+        ],
+        "role": "assistant",
+        "text": ""
+      },
+      "written_at": 1794208744301
+    },
+    {
+      "mid": "c84d1075d56edf653bb4d81dfcb38573d2ec9085ec40760781fcb1a3d8ff4b46",
+      "ordinal": 10,
+      "row": {
+        "parts": [
+          {
+            "content": "not_executed_at_step_limit",
+            "is_error": true,
+            "part": "0",
+            "tool_call_id": "toolu_endings_step_two",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user",
+        "text": ""
+      },
+      "written_at": 1794208744301
+    }
+  ]
+}

@@ -1,0 +1,342 @@
+{
+  "subscriptions": [
+    {
+      "ended": null,
+      "frames": [
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 0,
+            "wal_seq": 1
+          },
+          "kind": "control",
+          "lineage_id": "lin_de1fae01f1b286b0fb3ab1f6",
+          "runner_event": "admitted",
+          "seq": 1
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 1,
+            "wal_seq": 1
+          },
+          "delivery": "queue",
+          "kind": "control",
+          "run_id": "run_bc62fe7b609d0e386956526d",
+          "runner_event": "send_accepted",
+          "send_id": "[\"prefrontal-core\",\"text-1\"]",
+          "seq": 2
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 0,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "c97b7f74ccd3a86cf9e72fc88693b1c23d477fb1aa176dcfbb029fdfde3c7fa3",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 3
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 1,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "c97b7f74ccd3a86cf9e72fc88693b1c23d477fb1aa176dcfbb029fdfde3c7fa3",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "c97b7f74ccd3a86cf9e72fc88693b1c23d477fb1aa176dcfbb029fdfde3c7fa3",
+          "ordinal": 1,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 4
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 2,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 5
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 3,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+          "ordinal": 2,
+          "role": "system",
+          "runner_event": "message",
+          "seq": 6
+        },
+        {
+          "as": "turn",
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 0,
+            "wal_seq": 3
+          },
+          "kind": "control",
+          "ref": "run_bc62fe7b609d0e386956526d",
+          "runner_event": "delivered",
+          "send_id": "[\"prefrontal-core\",\"text-1\"]",
+          "seq": 7
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 1,
+            "wal_seq": 3
+          },
+          "event": {
+            "run_id": "run_bc62fe7b609d0e386956526d",
+            "type": "run_started"
+          },
+          "kind": "control",
+          "run_id": "run_bc62fe7b609d0e386956526d",
+          "runner_event": "run_started",
+          "seq": 8
+        },
+        {
+          "event": {
+            "delta": "Weighing the question before answering.",
+            "message_id": "",
+            "mid": "msg_text_reasoned",
+            "part": "0",
+            "type": "reasoning_delta"
+          },
+          "kind": "display",
+          "seq": 9
+        },
+        {
+          "event": {
+            "delta": "Here is the answer, a",
+            "message_id": "",
+            "mid": "msg_text_reasoned",
+            "part": "1",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 10
+        },
+        {
+          "event": {
+            "delta": "fter thinking it over.",
+            "message_id": "",
+            "mid": "msg_text_reasoned",
+            "part": "1",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 11
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 0,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "msg_text_reasoned",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 12
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 1,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "msg_text_reasoned",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_text_reasoned",
+          "ordinal": 3,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 13
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 0,
+            "wal_seq": 5
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_bc62fe7b609d0e386956526d",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_bc62fe7b609d0e386956526d",
+          "runner_event": "run_ended",
+          "seq": 14,
+          "state": "completed"
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 0,
+            "wal_seq": 6
+          },
+          "delivery": "queue",
+          "kind": "control",
+          "run_id": "run_585761bc572f88b41837f1f8",
+          "runner_event": "send_accepted",
+          "send_id": "[\"prefrontal-core\",\"text-2\"]",
+          "seq": 15
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 0,
+            "wal_seq": 7
+          },
+          "event": {
+            "mid": "41ec4878e5ce8e0b7eabd33b5dbd225decaeeb7a5d3cbd5220eb57128ad79907",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 16
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 1,
+            "wal_seq": 7
+          },
+          "event": {
+            "mid": "41ec4878e5ce8e0b7eabd33b5dbd225decaeeb7a5d3cbd5220eb57128ad79907",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "41ec4878e5ce8e0b7eabd33b5dbd225decaeeb7a5d3cbd5220eb57128ad79907",
+          "ordinal": 4,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 17
+        },
+        {
+          "as": "turn",
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 0,
+            "wal_seq": 8
+          },
+          "kind": "control",
+          "ref": "run_585761bc572f88b41837f1f8",
+          "runner_event": "delivered",
+          "send_id": "[\"prefrontal-core\",\"text-2\"]",
+          "seq": 18
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 1,
+            "wal_seq": 8
+          },
+          "event": {
+            "run_id": "run_585761bc572f88b41837f1f8",
+            "type": "run_started"
+          },
+          "kind": "control",
+          "run_id": "run_585761bc572f88b41837f1f8",
+          "runner_event": "run_started",
+          "seq": 19
+        },
+        {
+          "event": {
+            "delta": "Briefl",
+            "message_id": "",
+            "mid": "msg_text_unshown",
+            "part": "1",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 20
+        },
+        {
+          "event": {
+            "delta": "y: yes.",
+            "message_id": "",
+            "mid": "msg_text_unshown",
+            "part": "1",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 21
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 0,
+            "wal_seq": 9
+          },
+          "event": {
+            "mid": "msg_text_unshown",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 22
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 1,
+            "wal_seq": 9
+          },
+          "event": {
+            "mid": "msg_text_unshown",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_text_unshown",
+          "ordinal": 5,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 23
+        },
+        {
+          "cursor": {
+            "session": "351d28fcdf84b136",
+            "sub_index": 0,
+            "wal_seq": 10
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_585761bc572f88b41837f1f8",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_585761bc572f88b41837f1f8",
+          "runner_event": "run_ended",
+          "seq": 24,
+          "state": "completed"
+        }
+      ],
+      "params": {}
+    }
+  ]
+}

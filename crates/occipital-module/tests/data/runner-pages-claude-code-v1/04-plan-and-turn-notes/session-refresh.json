@@ -1,0 +1,9 @@
+{
+  "accepted_generation": 1,
+  "applies_from_next_run": false,
+  "pending": {
+    "generation": 1,
+    "policy": "notes_until_rebuild"
+  },
+  "run_in_progress": false
+}

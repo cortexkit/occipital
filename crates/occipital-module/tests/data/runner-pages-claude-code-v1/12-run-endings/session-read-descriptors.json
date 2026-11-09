@@ -1,0 +1,408 @@
+{
+  "head": {
+    "session": "217d66c101e98913",
+    "sub_index": 0,
+    "wal_seq": 20
+  },
+  "history_version": 1,
+  "incarnation": "inc_384a46e5a85240b2aa7b2f2cd460a2c9",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "b10cef4a719988cfd8c476ca1aef23b7f0dc764e651edd19c0239dbeca01f759",
+      "message": {
+        "content": "Just answer.",
+        "role": "user"
+      },
+      "mid": "c2da736612d30a771d847c13add6e2c383fcaeef4e7e1fcc9772d2649ddc2440",
+      "ordinal": 1,
+      "part_digests": [
+        {
+          "digest": "63bdf00dd43f21b5ac4eb2d0b19d1ae3b08779fa13dccf8b9919b1f9b0568653",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_2542db458f02cc8fa3a00932"
+      },
+      "send_id": "endings-completed",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208736298
+    },
+    {
+      "digest": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "part_digests": [],
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_2542db458f02cc8fa3a00932"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208736298
+    },
+    {
+      "completed_at": 1794208736518,
+      "digest": "eda831241ba04673ae838f81b67a9a001461f9b02221df9f1d7d3e728f59030b",
+      "message": {
+        "content": [
+          {
+            "text": "Done.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_endings_completed",
+      "ordinal": 3,
+      "part_digests": [
+        {
+          "digest": "0a6430a5b06bc4a47140ebb681ae0044791b7cd9c8b59ccb8c6370e764050ed8",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_2542db458f02cc8fa3a00932"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208736610
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "b393b3c9bb969f7b61ad5af5fe6dd5895089f39501306ee48aebb5e53a670e15",
+      "message": {
+        "content": [
+          {
+            "text": "Answer, if the provider lets you.\n",
+            "type": "text"
+          },
+          {
+            "text": "Call echo, then wait for it.",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "b393b3c9bb969f7b61ad5af5fe6dd5895089f39501306ee48aebb5e53a670e15",
+      "ordinal": 4,
+      "part_digests": [
+        {
+          "digest": "99dc4f2c17e9623714ad555a6fbb528d6fda5c9f2012f1ba7e6c45f9da676631",
+          "part": "0"
+        },
+        {
+          "digest": "5f63dc37f1d9228a16300d780c961d35ecc9950e838fd75403ee181c98f8dbf0",
+          "part": "1"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_b08f16adcd31819ba0d4a86c"
+      },
+      "send_id": "endings-stopped",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208741037
+    },
+    {
+      "completed_at": 1794208741428,
+      "digest": "e28980861e410b27cda480bba98054988bda59b0741cdf8b8f07e51ee03f78ef",
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo; it takes a while.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_endings_held",
+            "input": {
+              "text": "slow"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_endings_held",
+      "ordinal": 5,
+      "part_digests": [
+        {
+          "digest": "b8178e7fceda251891e64329e65b2abc82f328107c27a7de3d9b6f035f163e8f",
+          "part": "0"
+        },
+        {
+          "digest": "6c03ded7111510e2f7328522b90f184751937ffa88e9ab1b52fdab32a5f5b4ed",
+          "part": "1"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_b08f16adcd31819ba0d4a86c"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_endings_held/toolu_endings_held",
+          "indeterminate": false,
+          "tool_call_id": "toolu_endings_held"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_endings_held/toolu_endings_held",
+          "finished_at": 1794208741536,
+          "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1794208741428,
+          "tool_call_id": "toolu_endings_held",
+          "unanswered": "cancelled"
+        }
+      ],
+      "written_at": 1794208741552
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "1ab8408b4a4000a91a6925fc70c4182f01be235c4a46b6d20891641d6a923d52",
+      "message": {
+        "content": [
+          {
+            "content": "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed. Correction to the text above: this call was stopped while running, not refused before it ran. It may have run in part or in full, and its changes may have been written. No permission prompt was involved. Work it started elsewhere (a remote command, a background process) may still be running, so check before starting the same work again. The instruction to stop and wait still stands.",
+            "is_error": true,
+            "tool_use_id": "toolu_endings_held",
+            "type": "tool_result"
+          },
+          {
+            "text": "[Request interrupted by user for tool use]\n",
+            "type": "text"
+          },
+          {
+            "text": "Call echo as often as you can.",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "1ab8408b4a4000a91a6925fc70c4182f01be235c4a46b6d20891641d6a923d52",
+      "ordinal": 6,
+      "part_digests": [
+        {
+          "digest": "48f999e281d97b89d673c577efc574659a8f4eeb7b7d79371fb45ba97b1f8077",
+          "part": "0"
+        },
+        {
+          "digest": "ab4efe4ff75d52c78f4e7b48c65cb7fd2c604358ec5333f7b35fd260e8121868",
+          "part": "1"
+        },
+        {
+          "digest": "a340344aa655154f5f654b88781b1164bd31ea0bfb425764cc499aa740fc0cfd",
+          "part": "2"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_c16d6bd76e5036d1455ed0bf"
+      },
+      "send_id": "endings-step-limit",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208743787
+    },
+    {
+      "completed_at": 1794208743902,
+      "digest": "476f0a11dfa026365b947757f5e4c98b5d11f3d6f3955cc85e35a3d2fb8667dc",
+      "message": {
+        "content": [
+          {
+            "id": "toolu_endings_step_one",
+            "input": {
+              "text": "one"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_endings_step_one",
+      "ordinal": 7,
+      "part_digests": [
+        {
+          "digest": "b81b77b3912e2605de35dbaa34ba5650c4a55a07c40818aa5bee82499bab2d85",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_c16d6bd76e5036d1455ed0bf"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_endings_step_one/toolu_endings_step_one",
+          "indeterminate": false,
+          "tool_call_id": "toolu_endings_step_one"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_endings_step_one/toolu_endings_step_one",
+          "finished_at": 1794208743911,
+          "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1794208743902,
+          "tool_call_id": "toolu_endings_step_one"
+        }
+      ],
+      "written_at": 1794208744091
+    },
+    {
+      "digest": "ec4b365f5478f48f4e97f883ca4574b85309c8d328242f95bb2fa57165efcbc1",
+      "message": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "echo: hi",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_endings_step_one",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "ec4b365f5478f48f4e97f883ca4574b85309c8d328242f95bb2fa57165efcbc1",
+      "ordinal": 8,
+      "part_digests": [
+        {
+          "digest": "b299aa4e0a43f22f7cd02e854bcebcd53a2da975d772e3b2e3f0d47d752f35e7",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_c16d6bd76e5036d1455ed0bf"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208744091
+    },
+    {
+      "completed_at": 1794208744201,
+      "digest": "7a7b0c3db708a4e1749c8d6136380190379b158669389e75d7c8ded800323736",
+      "message": {
+        "content": [
+          {
+            "id": "toolu_endings_step_two",
+            "input": {
+              "text": "two"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_endings_step_two",
+      "ordinal": 9,
+      "part_digests": [
+        {
+          "digest": "560573aaa7bfb022bd57ccf2ddb7eadf15bfe95cd30c241a44264a4196ee6cc4",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_c16d6bd76e5036d1455ed0bf"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_endings_step_two/toolu_endings_step_two",
+          "indeterminate": false,
+          "tool_call_id": "toolu_endings_step_two"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_endings_step_two/toolu_endings_step_two",
+          "finished_at": 1794208744208,
+          "started_at": 1794208744201,
+          "tool_call_id": "toolu_endings_step_two",
+          "unanswered": "not_executed"
+        }
+      ],
+      "written_at": 1794208744301
+    },
+    {
+      "digest": "c84d1075d56edf653bb4d81dfcb38573d2ec9085ec40760781fcb1a3d8ff4b46",
+      "message": {
+        "content": [
+          {
+            "content": "not_executed_at_step_limit",
+            "is_error": true,
+            "tool_use_id": "toolu_endings_step_two",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "c84d1075d56edf653bb4d81dfcb38573d2ec9085ec40760781fcb1a3d8ff4b46",
+      "ordinal": 10,
+      "part_digests": [
+        {
+          "digest": "bbae0cda90825bbbbd32954585656dbd086afd2f48e9c766a5c5f19cb6a38cd4",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_c16d6bd76e5036d1455ed0bf"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208744301
+    }
+  ]
+}

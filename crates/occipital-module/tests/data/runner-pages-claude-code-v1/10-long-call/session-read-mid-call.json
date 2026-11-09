@@ -1,0 +1,53 @@
+{
+  "head": {
+    "session": "0e358f20787ac8ba",
+    "sub_index": 1,
+    "wal_seq": 3
+  },
+  "history_version": 0,
+  "incarnation": "inc_2d260ad7392b4bd0b671753d9f64ea73",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Call echo and wait for it.",
+        "role": "user"
+      },
+      "mid": "c7a04adb91c6eb6b60e4090fc40c2982177f220c01129396ecf2dc65626bd8c2",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_0acfd4a640e817db5bdc8d0c"
+      },
+      "send_id": "long-call",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208722585
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_0acfd4a640e817db5bdc8d0c"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208722585
+    }
+  ]
+}

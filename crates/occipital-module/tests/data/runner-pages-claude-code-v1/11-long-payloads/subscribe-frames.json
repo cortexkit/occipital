@@ -1,0 +1,573 @@
+{
+  "subscriptions": [
+    {
+      "ended": null,
+      "frames": [
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 1
+          },
+          "kind": "control",
+          "lineage_id": "lin_9d50bae70e36a29d31d41c2c",
+          "runner_event": "admitted",
+          "seq": 1
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 1,
+            "wal_seq": 1
+          },
+          "delivery": "queue",
+          "kind": "control",
+          "run_id": "run_a43272c543bb8e2f345004ba",
+          "runner_event": "send_accepted",
+          "send_id": "[\"prefrontal-core\",\"long-args\"]",
+          "seq": 2
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "4b2286176586150851c49f28abca189b0aca9e9c2cadf54a2918ee60d5b761c8",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 3
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 1,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "4b2286176586150851c49f28abca189b0aca9e9c2cadf54a2918ee60d5b761c8",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "4b2286176586150851c49f28abca189b0aca9e9c2cadf54a2918ee60d5b761c8",
+          "ordinal": 1,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 4
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 2,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 5
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 3,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+          "ordinal": 2,
+          "role": "system",
+          "runner_event": "message",
+          "seq": 6
+        },
+        {
+          "as": "turn",
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 3
+          },
+          "kind": "control",
+          "ref": "run_a43272c543bb8e2f345004ba",
+          "runner_event": "delivered",
+          "send_id": "[\"prefrontal-core\",\"long-args\"]",
+          "seq": 7
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 1,
+            "wal_seq": 3
+          },
+          "event": {
+            "run_id": "run_a43272c543bb8e2f345004ba",
+            "type": "run_started"
+          },
+          "kind": "control",
+          "run_id": "run_a43272c543bb8e2f345004ba",
+          "runner_event": "run_started",
+          "seq": 8
+        },
+        {
+          "event": {
+            "delta": "Callin",
+            "message_id": "",
+            "mid": "msg_long_args",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 9
+        },
+        {
+          "event": {
+            "delta": "g echo.",
+            "message_id": "",
+            "mid": "msg_long_args",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 10
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "msg_long_args",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 11
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 1,
+            "wal_seq": 4
+          },
+          "event": {
+            "arguments": "{\"text\":\"a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; \"}",
+            "arguments_truncated": false,
+            "call_key": "msg_long_args/toolu_long_args",
+            "mid": "msg_long_args",
+            "name": "echo",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208730336,
+            "tool_call_id": "toolu_long_args",
+            "type": "tool_started"
+          },
+          "kind": "control",
+          "seq": 12
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 2,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "msg_long_args",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_long_args",
+          "ordinal": 3,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 13
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 3,
+            "wal_seq": 4
+          },
+          "event": {
+            "call_key": "msg_long_args/toolu_long_args",
+            "finished_at": 1794208730350,
+            "mid": "msg_long_args",
+            "outcome": "error",
+            "output_bytes": 262,
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "tool_call_id": "toolu_long_args",
+            "type": "tool_finished"
+          },
+          "kind": "control",
+          "seq": 14
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 4,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "41bf48ba730d7182b1a46f66fc7651b206974f1e88ad205aa6aa72f5689b9991",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 15
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 5,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "41bf48ba730d7182b1a46f66fc7651b206974f1e88ad205aa6aa72f5689b9991",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "41bf48ba730d7182b1a46f66fc7651b206974f1e88ad205aa6aa72f5689b9991",
+          "ordinal": 4,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 16
+        },
+        {
+          "event": {
+            "delta": "That outpu",
+            "message_id": "",
+            "mid": "msg_long_args_read",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 17
+        },
+        {
+          "event": {
+            "delta": "t was long.",
+            "message_id": "",
+            "mid": "msg_long_args_read",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 18
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 5
+          },
+          "event": {
+            "mid": "msg_long_args_read",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 19
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 1,
+            "wal_seq": 5
+          },
+          "event": {
+            "mid": "msg_long_args_read",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_long_args_read",
+          "ordinal": 5,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 20
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 6
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_a43272c543bb8e2f345004ba",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_a43272c543bb8e2f345004ba",
+          "runner_event": "run_ended",
+          "seq": 21,
+          "state": "completed"
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 7
+          },
+          "delivery": "queue",
+          "kind": "control",
+          "run_id": "run_1fec40b0db93d408a2dda960",
+          "runner_event": "send_accepted",
+          "send_id": "[\"prefrontal-core\",\"long-output\"]",
+          "seq": 22
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 8
+          },
+          "event": {
+            "mid": "5b715ddd4510124dac6b8a7168ecfdcd6f91c030c72aea29b27c70bf69a6c6a9",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 23
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 1,
+            "wal_seq": 8
+          },
+          "event": {
+            "mid": "5b715ddd4510124dac6b8a7168ecfdcd6f91c030c72aea29b27c70bf69a6c6a9",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "5b715ddd4510124dac6b8a7168ecfdcd6f91c030c72aea29b27c70bf69a6c6a9",
+          "ordinal": 6,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 24
+        },
+        {
+          "as": "turn",
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 9
+          },
+          "kind": "control",
+          "ref": "run_1fec40b0db93d408a2dda960",
+          "runner_event": "delivered",
+          "send_id": "[\"prefrontal-core\",\"long-output\"]",
+          "seq": 25
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 1,
+            "wal_seq": 9
+          },
+          "event": {
+            "run_id": "run_1fec40b0db93d408a2dda960",
+            "type": "run_started"
+          },
+          "kind": "control",
+          "run_id": "run_1fec40b0db93d408a2dda960",
+          "runner_event": "run_started",
+          "seq": 26
+        },
+        {
+          "event": {
+            "delta": "Callin",
+            "message_id": "",
+            "mid": "msg_long_output",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 27
+        },
+        {
+          "event": {
+            "delta": "g echo.",
+            "message_id": "",
+            "mid": "msg_long_output",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 28
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 10
+          },
+          "event": {
+            "mid": "msg_long_output",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 29
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 1,
+            "wal_seq": 10
+          },
+          "event": {
+            "arguments": "{\"text\":\"print a lot\"}",
+            "arguments_truncated": false,
+            "call_key": "msg_long_output/toolu_long_output",
+            "mid": "msg_long_output",
+            "name": "echo",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208733269,
+            "tool_call_id": "toolu_long_output",
+            "type": "tool_started"
+          },
+          "kind": "control",
+          "seq": 30
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 2,
+            "wal_seq": 10
+          },
+          "event": {
+            "mid": "msg_long_output",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_long_output",
+          "ordinal": 7,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 31
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 3,
+            "wal_seq": 10
+          },
+          "event": {
+            "call_key": "msg_long_output/toolu_long_output",
+            "finished_at": 1794208733280,
+            "mid": "msg_long_output",
+            "outcome": "ok",
+            "output_bytes": 61168,
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "tool_call_id": "toolu_long_output",
+            "type": "tool_finished"
+          },
+          "kind": "control",
+          "seq": 32
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 4,
+            "wal_seq": 10
+          },
+          "event": {
+            "mid": "79f5067f2615165a10e7a0141d8a98347b085a72118ab047e75f8a7db2af145d",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 33
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 5,
+            "wal_seq": 10
+          },
+          "event": {
+            "mid": "79f5067f2615165a10e7a0141d8a98347b085a72118ab047e75f8a7db2af145d",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "79f5067f2615165a10e7a0141d8a98347b085a72118ab047e75f8a7db2af145d",
+          "ordinal": 8,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 34
+        },
+        {
+          "event": {
+            "delta": "That outpu",
+            "message_id": "",
+            "mid": "msg_long_output_read",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 35
+        },
+        {
+          "event": {
+            "delta": "t was long.",
+            "message_id": "",
+            "mid": "msg_long_output_read",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 36
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 11
+          },
+          "event": {
+            "mid": "msg_long_output_read",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 37
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 1,
+            "wal_seq": 11
+          },
+          "event": {
+            "mid": "msg_long_output_read",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_long_output_read",
+          "ordinal": 9,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 38
+        },
+        {
+          "cursor": {
+            "session": "630c5af29bde4cf7",
+            "sub_index": 0,
+            "wal_seq": 12
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_1fec40b0db93d408a2dda960",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_1fec40b0db93d408a2dda960",
+          "runner_event": "run_ended",
+          "seq": 39,
+          "state": "completed"
+        }
+      ],
+      "params": {}
+    }
+  ]
+}

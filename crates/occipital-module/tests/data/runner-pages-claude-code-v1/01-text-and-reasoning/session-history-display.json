@@ -1,0 +1,94 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_877027b797154bf78b9ef70d402842e1",
+  "messages": [
+    {
+      "mid": "c97b7f74ccd3a86cf9e72fc88693b1c23d477fb1aa176dcfbb029fdfde3c7fa3",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Think it over, then answer.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Think it over, then answer."
+      },
+      "written_at": 1794208670234
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208670234
+    },
+    {
+      "mid": "msg_text_reasoned",
+      "ordinal": 3,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Weighing the question before answering.",
+            "type": "reasoning"
+          },
+          {
+            "part": "1",
+            "text": "Here is the answer, after thinking it over.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Here is the answer, after thinking it over."
+      },
+      "written_at": 1794208670710
+    },
+    {
+      "mid": "41ec4878e5ce8e0b7eabd33b5dbd225decaeeb7a5d3cbd5220eb57128ad79907",
+      "ordinal": 4,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Answer again, briefly.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Answer again, briefly."
+      },
+      "written_at": 1794208672923
+    },
+    {
+      "mid": "msg_text_unshown",
+      "ordinal": 5,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "",
+            "type": "reasoning"
+          },
+          {
+            "part": "1",
+            "text": "Briefly: yes.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Briefly: yes."
+      },
+      "written_at": 1794208673350
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_2d260ad7392b4bd0b671753d9f64ea73",
+  "messages": [
+    {
+      "mid": "c7a04adb91c6eb6b60e4090fc40c2982177f220c01129396ecf2dc65626bd8c2",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Call echo and wait for it.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Call echo and wait for it."
+      },
+      "written_at": 1794208722585
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208722585
+    },
+    {
+      "mid": "msg_long_call",
+      "ordinal": 3,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Calling echo; it runs a while.",
+            "type": "text"
+          },
+          {
+            "arguments": "{\"text\":\"slow\"}",
+            "call_key": "msg_long_call/toolu_long_call",
+            "finished_at": 1794208725045,
+            "name": "echo",
+            "part": "1",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208722966,
+            "tool_call_id": "toolu_long_call",
+            "type": "tool_call"
+          }
+        ],
+        "role": "assistant",
+        "text": "Calling echo; it runs a while."
+      },
+      "written_at": 1794208725160
+    },
+    {
+      "mid": "2ae1d3b9060186ca14df7dd48520ee4b0ba88c8deeaad37c24d5bc41eafc602f",
+      "ordinal": 4,
+      "row": {
+        "parts": [
+          {
+            "content": "echo: hi",
+            "part": "0",
+            "tool_call_id": "toolu_long_call",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user",
+        "text": ""
+      },
+      "written_at": 1794208725160
+    },
+    {
+      "mid": "msg_long_call_done",
+      "ordinal": 5,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Echo finally said hi.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Echo finally said hi."
+      },
+      "written_at": 1794208725359
+    }
+  ]
+}

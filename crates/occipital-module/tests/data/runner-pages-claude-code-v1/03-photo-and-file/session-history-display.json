@@ -1,0 +1,133 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_d0e5c77f989344e4a7d3ed2c722db6a8",
+  "messages": [
+    {
+      "mid": "bfa9fab6c500d40d09ad1b5639594eaef359a6d4f014872b4a3c7440987c5ffd",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Hello.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Hello."
+      },
+      "written_at": 1794208689871
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208689871
+    },
+    {
+      "mid": "msg_media_hello",
+      "ordinal": 3,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Hello. Send me a photo or a file.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Hello. Send me a photo or a file."
+      },
+      "written_at": 1794208690181
+    },
+    {
+      "mid": "0462253a38eb9d7c111fae0eba3b7ddea651a0799c014eee7345875bef30e846",
+      "ordinal": 4,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "What is in this photo?",
+            "type": "text"
+          },
+          {
+            "part": "1",
+            "text": "[media not shown: kind=image mime=image/png bytes=75 sha256=59b380a5bf9b reason=not_requested]",
+            "type": "text"
+          },
+          {
+            "part": "2",
+            "text": "[Image: source: /scratch/claude-code/sessions/a5c04652-9352-401b-a8e8-3527dc1b7c38/tmp/claude-999/-scratch-project-cc-pages-media/a5c04652-9352-401b-a8e8-3527dc1b7c38/images/1.png]",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "What is in this photo?[media not shown: kind=image mime=image/png bytes=75 sha256=59b380a5bf9b reason=not_requested][Image: source: /scratch/claude-code/sessions/a5c04652-9352-401b-a8e8-3527dc1b7c38/tmp/claude-999/-scratch-project-cc-pages-media/a5c04652-9352-401b-a8e8-3527dc1b7c38/images/1.png]"
+      },
+      "written_at": 1794208692389
+    },
+    {
+      "mid": "msg_media_photo",
+      "ordinal": 5,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "A tiny test image, two pixels square.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "A tiny test image, two pixels square."
+      },
+      "written_at": 1794208692697
+    },
+    {
+      "mid": "e1967886de1ec22bfa7b2f63e2cffbf582d16e48047f4e5b42d962d78c1d099d",
+      "ordinal": 6,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Read this file.",
+            "type": "text"
+          },
+          {
+            "part": "1",
+            "text": "[media not shown: kind=pdf mime=application/pdf bytes=189 sha256=54d4dc510da8 reason=not_requested]",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Read this file.[media not shown: kind=pdf mime=application/pdf bytes=189 sha256=54d4dc510da8 reason=not_requested]"
+      },
+      "written_at": 1794208694856
+    },
+    {
+      "mid": "msg_media_file",
+      "ordinal": 7,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "A one-page PDF with no text on it.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "A one-page PDF with no text on it."
+      },
+      "written_at": 1794208695161
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "calls": [
+    {
+      "args": {
+        "text": "one"
+      },
+      "call_key": "msg_tools_step_one/toolu_tools_step_one",
+      "dispatched_to": "prefrontal-core",
+      "name": "echo",
+      "ordinal": 11,
+      "outcome": "succeeded",
+      "position": 0,
+      "result_bytes": 35,
+      "result_ordinal": 12,
+      "tool_call_id": "toolu_tools_step_one"
+    },
+    {
+      "args": {
+        "text": "two"
+      },
+      "call_key": "msg_tools_step_two/toolu_tools_step_two",
+      "name": "echo",
+      "ordinal": 13,
+      "outcome": "not_executed",
+      "position": 0,
+      "result_bytes": 28,
+      "result_ordinal": 14,
+      "tool_call_id": "toolu_tools_step_two"
+    }
+  ],
+  "run_id": "run_e6fe7a916e98f3f9aa7cb6b9"
+}

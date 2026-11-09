@@ -1,0 +1,92 @@
+{
+  "head": {
+    "session": "83f21c057966c3e6",
+    "sub_index": 0,
+    "wal_seq": 5
+  },
+  "history_version": 0,
+  "incarnation": "inc_c4c64cbd57ce4c5c842b8f72d16d082e",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "db4fb36bf92b8b1300dc3037ebbdab1b5f709f8141372c46c67bc5a5f54adffd",
+      "message": {
+        "content": "Say hello.",
+        "role": "user"
+      },
+      "mid": "e771efc76c0cde91d6aa720b05d9a657178da342a3e9a5a96b78a5e3f84fa054",
+      "ordinal": 1,
+      "part_digests": [
+        {
+          "digest": "c6bb2af0ba33039d3c92ed30c8c60d64661c6cf203ff1a3d18530d105293a528",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_1c732590aad25e8a96d3515b"
+      },
+      "send_id": "head-1",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208706076
+    },
+    {
+      "digest": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "part_digests": [],
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_1c732590aad25e8a96d3515b"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208706076
+    },
+    {
+      "completed_at": 1794208706301,
+      "digest": "8064786e0d41e01558d2725f3da5f8d75caebe74263a54a7a69725b60a678aa2",
+      "message": {
+        "content": [
+          {
+            "text": "Hello.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_head_hello",
+      "ordinal": 3,
+      "part_digests": [
+        {
+          "digest": "e962e865ce6af31d1633475f73a618505c0a3fec18daddf59d36e60627fbf4f2",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_1c732590aad25e8a96d3515b"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208706394
+    }
+  ]
+}

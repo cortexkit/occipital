@@ -1,0 +1,44 @@
+{
+  "first_ordinal": 1,
+  "head": {
+    "session": "0e358f20787ac8ba",
+    "sub_index": 1,
+    "wal_seq": 3
+  },
+  "history_version": 0,
+  "incarnation": "inc_2d260ad7392b4bd0b671753d9f64ea73",
+  "input": {
+    "attachments": "yes",
+    "mime_types": [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "application/pdf"
+    ],
+    "modalities": [
+      "text",
+      "image",
+      "pdf"
+    ]
+  },
+  "last_ordinal": 2,
+  "last_run_state": {
+    "run_id": "run_0acfd4a640e817db5bdc8d0c",
+    "state": "active"
+  },
+  "model": {
+    "model": "claude-haiku-5-5",
+    "provider": "anthropic"
+  },
+  "sender": {
+    "interrupt": true,
+    "modes": [
+      "tool_result",
+      "turn_system",
+      "steer",
+      "idle_start"
+    ],
+    "owner": true
+  },
+  "updated_at": 1794208722189
+}

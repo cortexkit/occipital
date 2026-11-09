@@ -1,0 +1,58 @@
+{
+  "head": {
+    "session": "630c5af29bde4cf7",
+    "sub_index": 0,
+    "wal_seq": 12
+  },
+  "history_version": 0,
+  "incarnation": "inc_e2c4a5fd8b2048e7a9f598a79af3ef1b",
+  "messages": [
+    {
+      "completed_at": 1794208730336,
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_long_args",
+            "input": {
+              "text": "a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; a long argument, word after word; "
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_long_args",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_a43272c543bb8e2f345004ba"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_long_args/toolu_long_args",
+          "indeterminate": false,
+          "tool_call_id": "toolu_long_args"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_long_args/toolu_long_args",
+          "finished_at": 1794208730350,
+          "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1794208730336,
+          "tool_call_id": "toolu_long_args"
+        }
+      ],
+      "written_at": 1794208730528
+    }
+  ],
+  "next_from_ordinal": 4
+}

@@ -1,0 +1,179 @@
+{
+  "head": {
+    "session": "4a06c719c4543915",
+    "sub_index": 1,
+    "wal_seq": 10
+  },
+  "history_version": 0,
+  "incarnation": "inc_7e0d048a45c8468cb0bc72102d94e63f",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "c31a2f781db8a77980bed05da622b8edec83ddcb6eceddfa33d212a7cbe80900",
+      "message": {
+        "content": "Get ready.",
+        "role": "user"
+      },
+      "mid": "056be32037d695b4de773a4bdbb791e9a8276dff47691a246e6d58ca83902daf",
+      "ordinal": 1,
+      "part_digests": [
+        {
+          "digest": "6e5c015c0ca584aed677a13f6685f3202e3748d1668beab8236fb910f477601b",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_57b17bfc4a1bf4f1f7243361"
+      },
+      "send_id": "stop-ready",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208746784
+    },
+    {
+      "digest": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "part_digests": [],
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_57b17bfc4a1bf4f1f7243361"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208746784
+    },
+    {
+      "completed_at": 1794208747016,
+      "digest": "83a4165bdf53983957e9285e7d9e1b04786de8e9f0b81615eba8d3be4ae9c7be",
+      "message": {
+        "content": [
+          {
+            "text": "Ready.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_stop_ready",
+      "ordinal": 3,
+      "part_digests": [
+        {
+          "digest": "3771a1a89abe0e9094bb2105e82d00658754d6afc8b7ae8f9fcba15a2a0b9db2",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_57b17bfc4a1bf4f1f7243361"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208747106
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "c5e7b8acb56370b3e281def531343f5d2396d6b4011742587681f1f108d7ff85",
+      "message": {
+        "content": "Call echo, then stop everything.",
+        "role": "user"
+      },
+      "mid": "b59332bcc72d8da000d7208c80b8881f1e03871278c456b6868f8c9d86c27c31",
+      "ordinal": 4,
+      "part_digests": [
+        {
+          "digest": "9eea68fbf63caacd58561b4507764b1276280b81779da79a3ce834acfd3976b6",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_ff1ece02929950092dc082ba"
+      },
+      "send_id": "stop-run",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208749341
+    },
+    {
+      "completed_at": 1794208749723,
+      "digest": "4ffb60b4f9a97af908149b95f41842bdc165f3c3eab72cbb84be591e35e7476d",
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo; it takes a while.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_stop_call",
+            "input": {
+              "text": "slow"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_stop_call",
+      "ordinal": 5,
+      "part_digests": [
+        {
+          "digest": "b8178e7fceda251891e64329e65b2abc82f328107c27a7de3d9b6f035f163e8f",
+          "part": "0"
+        },
+        {
+          "digest": "edb7f43654dfcbf325ed7aae388a1ac27a37c00941f37c5f70bc05df174085af",
+          "part": "1"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_ff1ece02929950092dc082ba"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_stop_call/toolu_stop_call",
+          "indeterminate": false,
+          "tool_call_id": "toolu_stop_call"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_stop_call/toolu_stop_call",
+          "finished_at": 1794208749835,
+          "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1794208749723,
+          "tool_call_id": "toolu_stop_call",
+          "unanswered": "cancelled"
+        }
+      ],
+      "written_at": 1794208749845
+    }
+  ]
+}

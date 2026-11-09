@@ -1,0 +1,253 @@
+{
+  "head": {
+    "session": "5717f52d7aa063ee",
+    "sub_index": 0,
+    "wal_seq": 14
+  },
+  "history_version": 0,
+  "incarnation": "inc_1821ee4450ad433f8a39423f5d1a0ea6",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "c31a2f781db8a77980bed05da622b8edec83ddcb6eceddfa33d212a7cbe80900",
+      "message": {
+        "content": "Get ready.",
+        "role": "user"
+      },
+      "mid": "056be32037d695b4de773a4bdbb791e9a8276dff47691a246e6d58ca83902daf",
+      "ordinal": 1,
+      "part_digests": [
+        {
+          "digest": "6e5c015c0ca584aed677a13f6685f3202e3748d1668beab8236fb910f477601b",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_f7bb0bb3465c78d8d22a71a5"
+      },
+      "send_id": "notes-ready",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208752261
+    },
+    {
+      "digest": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "part_digests": [],
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_f7bb0bb3465c78d8d22a71a5"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208752261
+    },
+    {
+      "completed_at": 1794208752495,
+      "digest": "83a4165bdf53983957e9285e7d9e1b04786de8e9f0b81615eba8d3be4ae9c7be",
+      "message": {
+        "content": [
+          {
+            "text": "Ready.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notes_ready",
+      "ordinal": 3,
+      "part_digests": [
+        {
+          "digest": "3771a1a89abe0e9094bb2105e82d00658754d6afc8b7ae8f9fcba15a2a0b9db2",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_f7bb0bb3465c78d8d22a71a5"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208752584
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "0fdc91b633d1d551921d27b48614ba5e3130d6e34f8fa62706f119cea43f0478",
+      "message": {
+        "content": "Call echo.",
+        "role": "user"
+      },
+      "mid": "9399972a93426e32f3d3e5e2a644219faf539940386e3dc2033d298a653afbde",
+      "ordinal": 4,
+      "part_digests": [
+        {
+          "digest": "66d332d4cf9b94b9416736d850c85fdc52b939b5174468ef353e5ae94e600947",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_336c54f3c1d3777caeac1f04"
+      },
+      "send_id": "notes-run",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208754787
+    },
+    {
+      "completed_at": 1794208755173,
+      "digest": "82f54aad0f0f2ca9b2c05cf8697275dbcd414c1061645183d7ab44ba5450002d",
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_notes_echo",
+            "input": {
+              "text": "hi"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notes_call",
+      "ordinal": 5,
+      "part_digests": [
+        {
+          "digest": "8f682ab33f9d1db7ee8da5f80cc5428ebb6442394de4e81b6e5df6fcd8d044b8",
+          "part": "0"
+        },
+        {
+          "digest": "503920e5df2aca4267e8b4d385dae1a59a51d72e94b40daa332f662f3deb3306",
+          "part": "1"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_336c54f3c1d3777caeac1f04"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_notes_call/toolu_notes_echo",
+          "indeterminate": false,
+          "tool_call_id": "toolu_notes_echo"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_notes_call/toolu_notes_echo",
+          "finished_at": 1794208755290,
+          "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1794208755173,
+          "tool_call_id": "toolu_notes_echo"
+        }
+      ],
+      "written_at": 1794208755347
+    },
+    {
+      "digest": "a4ab54385852fd37de18a7705dd5351ee57b3331aff44e6cd9f4fb76abf25092",
+      "message": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "echo: hi",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_notes_echo",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "a4ab54385852fd37de18a7705dd5351ee57b3331aff44e6cd9f4fb76abf25092",
+      "notices": [
+        {
+          "call_key": "msg_notes_call/toolu_notes_echo",
+          "delivered_as": "turn_system",
+          "part": 0,
+          "send_id": "note-1",
+          "sender": "magic-context",
+          "text": "NOTE 1"
+        }
+      ],
+      "ordinal": 6,
+      "part_digests": [
+        {
+          "digest": "b4d58c360ca1595690a3056f1aefd751cebfc0899b1372bc2a79e58c60418d26",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_336c54f3c1d3777caeac1f04"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208755347
+    },
+    {
+      "completed_at": 1794208755511,
+      "digest": "395cb5ad475cb60f5be24e86cda4423fe4b5cc69e2c2a10f76a20313b3f2c38a",
+      "message": {
+        "content": [
+          {
+            "text": "Echo said hi, and I have the note.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notes_done",
+      "ordinal": 7,
+      "part_digests": [
+        {
+          "digest": "4c461d965000146d7aa6d5b6cbcd3dc2217fd290558f0ee392b9ffde4bec9cac",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_336c54f3c1d3777caeac1f04"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208755597
+    }
+  ]
+}

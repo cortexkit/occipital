@@ -1,0 +1,119 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_7e0d048a45c8468cb0bc72102d94e63f",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Get ready.",
+        "role": "user"
+      },
+      "mid": "056be32037d695b4de773a4bdbb791e9a8276dff47691a246e6d58ca83902daf",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_57b17bfc4a1bf4f1f7243361"
+      },
+      "send_id": "stop-ready",
+      "sender": "prefrontal-core",
+      "written_at": 1794208746784
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_57b17bfc4a1bf4f1f7243361"
+      },
+      "written_at": 1794208746784
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "Ready.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_stop_ready",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_57b17bfc4a1bf4f1f7243361"
+      },
+      "written_at": 1794208747106
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Call echo, then stop everything.",
+        "role": "user"
+      },
+      "mid": "b59332bcc72d8da000d7208c80b8881f1e03871278c456b6868f8c9d86c27c31",
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_ff1ece02929950092dc082ba"
+      },
+      "send_id": "stop-run",
+      "sender": "prefrontal-core",
+      "written_at": 1794208749341
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo; it takes a while.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_stop_call",
+            "input": {
+              "text": "slow"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_stop_call",
+      "ordinal": 5,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_ff1ece02929950092dc082ba"
+      },
+      "tool_calls": [
+        {
+          "call_key": "msg_stop_call/toolu_stop_call",
+          "indeterminate": false,
+          "tool_call_id": "toolu_stop_call"
+        }
+      ],
+      "written_at": 1794208749845
+    }
+  ]
+}

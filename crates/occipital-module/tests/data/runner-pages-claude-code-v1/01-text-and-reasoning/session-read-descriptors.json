@@ -1,0 +1,169 @@
+{
+  "head": {
+    "session": "351d28fcdf84b136",
+    "sub_index": 0,
+    "wal_seq": 10
+  },
+  "history_version": 0,
+  "incarnation": "inc_877027b797154bf78b9ef70d402842e1",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "f4609a509e9fdd040b8a03a96926446b746c1a23539f975647338ef119f1e074",
+      "message": {
+        "content": "Think it over, then answer.",
+        "role": "user"
+      },
+      "mid": "c97b7f74ccd3a86cf9e72fc88693b1c23d477fb1aa176dcfbb029fdfde3c7fa3",
+      "ordinal": 1,
+      "part_digests": [
+        {
+          "digest": "759045dc6cdb7278d07f09484b6a194d07e437b868bcdb511e9142d6508eae22",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_bc62fe7b609d0e386956526d"
+      },
+      "send_id": "text-1",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208670234
+    },
+    {
+      "digest": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "part_digests": [],
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_bc62fe7b609d0e386956526d"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208670234
+    },
+    {
+      "completed_at": 1794208670621,
+      "digest": "f212e9773b60032e2f6c3cec8137ad47216ca9701a3c7049b29735fb0bc40642",
+      "message": {
+        "content": [
+          {
+            "signature": "standin-signature-msg_text_reasoned",
+            "thinking": "Weighing the question before answering.",
+            "type": "thinking"
+          },
+          {
+            "text": "Here is the answer, after thinking it over.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_text_reasoned",
+      "ordinal": 3,
+      "part_digests": [
+        {
+          "digest": "16feb8a37a0a5294f925a1ac6083751042e17bde6814de5d26b27c95a17337f1",
+          "part": "0"
+        },
+        {
+          "digest": "18d62894d95281ab427e29bafae70ef293d13c90d2f25f6250687defda8befff",
+          "part": "1"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_bc62fe7b609d0e386956526d"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208670710
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "b7d53ab4283b1891372ee55f5de7ecf4745b5ca5c32020edd5ab49f17bcae2a7",
+      "message": {
+        "content": "Answer again, briefly.",
+        "role": "user"
+      },
+      "mid": "41ec4878e5ce8e0b7eabd33b5dbd225decaeeb7a5d3cbd5220eb57128ad79907",
+      "ordinal": 4,
+      "part_digests": [
+        {
+          "digest": "6bd332446299d0148964fcb1abb09237c5fae2e9df2268b310a8700b57dc6d48",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_585761bc572f88b41837f1f8"
+      },
+      "send_id": "text-2",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208672923
+    },
+    {
+      "completed_at": 1794208673264,
+      "digest": "c34a01950a65fc2340b31ac7542a0771e35e6776ac2867f979f93ac45f27836f",
+      "message": {
+        "content": [
+          {
+            "signature": "standin-signature-msg_text_unshown",
+            "thinking": "",
+            "type": "thinking"
+          },
+          {
+            "text": "Briefly: yes.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_text_unshown",
+      "ordinal": 5,
+      "part_digests": [
+        {
+          "digest": "74cb7ea6b52cf2c6b4b01b57cc84de6b6900c3dcc09d16a01c8d7bc8b34ea0b4",
+          "part": "0"
+        },
+        {
+          "digest": "e65c22ec53fef5094bd2c4c34a9a57f40273f7d2eb53e65acc46fc9aef169fd3",
+          "part": "1"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_585761bc572f88b41837f1f8"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208673350
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+{
+  "subscriptions": [
+    {
+      "ended": null,
+      "frames": [
+        {
+          "cursor": {
+            "session": "83f21c057966c3e6",
+            "sub_index": 0,
+            "wal_seq": 1
+          },
+          "kind": "control",
+          "lineage_id": "lin_fad3646e18250ae57c9b4c5a",
+          "runner_event": "admitted",
+          "seq": 1
+        },
+        {
+          "cursor": {
+            "session": "83f21c057966c3e6",
+            "sub_index": 1,
+            "wal_seq": 1
+          },
+          "delivery": "queue",
+          "kind": "control",
+          "run_id": "run_1c732590aad25e8a96d3515b",
+          "runner_event": "send_accepted",
+          "send_id": "[\"prefrontal-core\",\"head-1\"]",
+          "seq": 2
+        },
+        {
+          "cursor": {
+            "session": "83f21c057966c3e6",
+            "sub_index": 0,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "e771efc76c0cde91d6aa720b05d9a657178da342a3e9a5a96b78a5e3f84fa054",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 3
+        },
+        {
+          "cursor": {
+            "session": "83f21c057966c3e6",
+            "sub_index": 1,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "e771efc76c0cde91d6aa720b05d9a657178da342a3e9a5a96b78a5e3f84fa054",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "e771efc76c0cde91d6aa720b05d9a657178da342a3e9a5a96b78a5e3f84fa054",
+          "ordinal": 1,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 4
+        },
+        {
+          "cursor": {
+            "session": "83f21c057966c3e6",
+            "sub_index": 2,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 5
+        },
+        {
+          "cursor": {
+            "session": "83f21c057966c3e6",
+            "sub_index": 3,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+          "ordinal": 2,
+          "role": "system",
+          "runner_event": "message",
+          "seq": 6
+        },
+        {
+          "as": "turn",
+          "cursor": {
+            "session": "83f21c057966c3e6",
+            "sub_index": 0,
+            "wal_seq": 3
+          },
+          "kind": "control",
+          "ref": "run_1c732590aad25e8a96d3515b",
+          "runner_event": "delivered",
+          "send_id": "[\"prefrontal-core\",\"head-1\"]",
+          "seq": 7
+        },
+        {
+          "cursor": {
+            "session": "83f21c057966c3e6",
+            "sub_index": 1,
+            "wal_seq": 3
+          },
+          "event": {
+            "run_id": "run_1c732590aad25e8a96d3515b",
+            "type": "run_started"
+          },
+          "kind": "control",
+          "run_id": "run_1c732590aad25e8a96d3515b",
+          "runner_event": "run_started",
+          "seq": 8
+        },
+        {
+          "event": {
+            "delta": "Hel",
+            "message_id": "",
+            "mid": "msg_head_hello",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 9
+        },
+        {
+          "event": {
+            "delta": "lo.",
+            "message_id": "",
+            "mid": "msg_head_hello",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 10
+        },
+        {
+          "cursor": {
+            "session": "83f21c057966c3e6",
+            "sub_index": 0,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "msg_head_hello",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 11
+        },
+        {
+          "cursor": {
+            "session": "83f21c057966c3e6",
+            "sub_index": 1,
+            "wal_seq": 4
+          },
+          "event": {
+            "mid": "msg_head_hello",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_head_hello",
+          "ordinal": 3,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 12
+        },
+        {
+          "cursor": {
+            "session": "83f21c057966c3e6",
+            "sub_index": 0,
+            "wal_seq": 5
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_1c732590aad25e8a96d3515b",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_1c732590aad25e8a96d3515b",
+          "runner_event": "run_ended",
+          "seq": 13,
+          "state": "completed"
+        }
+      ],
+      "params": {}
+    }
+  ]
+}

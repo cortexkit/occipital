@@ -1,0 +1,19 @@
+{
+  "calls": [
+    {
+      "args": {
+        "text": "slow"
+      },
+      "call_key": "msg_tools_held/toolu_tools_held",
+      "dispatched_to": "prefrontal-core",
+      "name": "echo",
+      "ordinal": 15,
+      "outcome": "failed",
+      "position": 0,
+      "result_bytes": 23,
+      "result_ordinal": 16,
+      "tool_call_id": "toolu_tools_held"
+    }
+  ],
+  "run_id": "run_6ef5761096cc8cf9f2ae99cc"
+}

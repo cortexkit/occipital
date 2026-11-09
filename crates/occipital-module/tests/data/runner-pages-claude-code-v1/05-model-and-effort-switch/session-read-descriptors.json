@@ -1,0 +1,197 @@
+{
+  "head": {
+    "session": "2199ea42a83aabea",
+    "sub_index": 0,
+    "wal_seq": 15
+  },
+  "history_version": 1,
+  "incarnation": "inc_d0e5b77f233b413cbbe605ca6e6eeab8",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "47b93b35076af5403d971c4e0666a53500a4f42c9ee57c802e0d63915394e730",
+      "message": {
+        "content": "Run 1 of three.",
+        "role": "user"
+      },
+      "mid": "769c4b534ea32b16423d81b03b8d6f76cf6df2134f7ff99c78383791d87ede16",
+      "ordinal": 1,
+      "part_digests": [
+        {
+          "digest": "ae6bf864488ee8aa01be79e18e8080bca59c2b2941afb59de37c134fa2b4d2ce",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_a4ca2615872b781b89cc13a7"
+      },
+      "send_id": "switch-1",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208697603
+    },
+    {
+      "completed_at": 1794208697989,
+      "digest": "67161b39a32cc78e24fe87aad9e4dfe630fc84521b9325df685b4fdeb647c89c",
+      "message": {
+        "content": [
+          {
+            "text": "Answered on claude-haiku-5-5.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_switch_haiku",
+      "ordinal": 2,
+      "part_digests": [
+        {
+          "digest": "13af81051e42bfb4db21a64e95bd257ef1cb7e1d7ddc3472896dc8c41d9aa1f5",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_a4ca2615872b781b89cc13a7"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208698081
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "177fb4a04067ee53a57a0f7d82d7dd9bb017dd4b9d4cfc037a3691ad6bc605db",
+      "message": {
+        "content": "Run 2 of three.",
+        "role": "user"
+      },
+      "mid": "44bbb18601cd4b0ee33046dd1c891a5469dd42458743610a99afdf5963b733ea",
+      "ordinal": 3,
+      "part_digests": [
+        {
+          "digest": "c770a40d18ca0f2151d68f19bd3d8a4fe33b641b21f1cee4ae8a7cf474b2b88f",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_3bf26c92143fe5aa34ace2d9"
+      },
+      "send_id": "switch-2",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208700246
+    },
+    {
+      "completed_at": 1794208700632,
+      "digest": "74ebb21740fb71c53be4695e3fc8a752e035fc89c6be519499dca4b5fd431ff4",
+      "message": {
+        "content": [
+          {
+            "text": "Answered on claude-haiku-5-5 at high effort.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_switch_high",
+      "ordinal": 4,
+      "part_digests": [
+        {
+          "digest": "5211c3aa3976583e164042b8a2d5229d2ba44d290c2244f092e6247ebaeb6262",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_3bf26c92143fe5aa34ace2d9"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208700720
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "1b559b0a4570a07aac0d48ed0c223d15479f5bccb8109d139cb2b3b38c9d5ec4",
+      "message": {
+        "content": "Run 3 of three.",
+        "role": "user"
+      },
+      "mid": "4d08c8aef431aec239306c4430f84a796cb6f259a609b2b55b6ad671f7295874",
+      "ordinal": 5,
+      "part_digests": [
+        {
+          "digest": "6d89676a34dc09cc6bb3964d12afc7118737d39fb03ee5e040c322b34573f105",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e2b5ad3f6058a4f4552958cd"
+      },
+      "send_id": "switch-3",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208702894
+    },
+    {
+      "completed_at": 1794208703278,
+      "digest": "4d99ba66905d8f2793177e9e9e0229dc5aff9a43e6cc785341903c699435a5c8",
+      "message": {
+        "content": [
+          {
+            "signature": "standin-signature-msg_switch_opus",
+            "thinking": "Thinking it over on this model.",
+            "type": "thinking"
+          },
+          {
+            "text": "Answered on claude-opus-4-5 at low effort.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_switch_opus",
+      "ordinal": 6,
+      "part_digests": [
+        {
+          "digest": "7f70904877c7dc6ab9d18ae585523e4419f8e597690e298c7eaadb5ac185ab28",
+          "part": "0"
+        },
+        {
+          "digest": "2f2b5b1af2841595c94545f8a7266d646886fb572402214e4f0f30eb51c2b7de",
+          "part": "1"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_e2b5ad3f6058a4f4552958cd"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208703366
+    }
+  ]
+}

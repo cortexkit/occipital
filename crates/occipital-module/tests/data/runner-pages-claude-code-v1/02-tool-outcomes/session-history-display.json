@@ -1,0 +1,358 @@
+{
+  "history_version": 1,
+  "incarnation": "inc_8169c79d7a9249658cc8360caffe1c1e",
+  "messages": [
+    {
+      "mid": "9399972a93426e32f3d3e5e2a644219faf539940386e3dc2033d298a653afbde",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Call echo.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Call echo."
+      },
+      "written_at": 1794208675859
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208675859
+    },
+    {
+      "mid": "msg_tools_echo",
+      "ordinal": 3,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "arguments": "{\"text\":\"hi\"}",
+            "call_key": "msg_tools_echo/toolu_tools_echo",
+            "finished_at": 1794208676257,
+            "name": "echo",
+            "part": "1",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208676242,
+            "tool_call_id": "toolu_tools_echo",
+            "type": "tool_call"
+          }
+        ],
+        "role": "assistant",
+        "text": "Calling echo."
+      },
+      "written_at": 1794208676436
+    },
+    {
+      "mid": "26cbed9560d756cf5c0f94e8e65bc795538125fdb81fd83e521e1d1e9d40a48e",
+      "ordinal": 4,
+      "row": {
+        "parts": [
+          {
+            "content": "echo: hi",
+            "part": "0",
+            "tool_call_id": "toolu_tools_echo",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user",
+        "text": ""
+      },
+      "written_at": 1794208676436
+    },
+    {
+      "mid": "msg_tools_echo_done",
+      "ordinal": 5,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Echo said hi.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Echo said hi."
+      },
+      "written_at": 1794208676635
+    },
+    {
+      "mid": "401879f62c2fc43b383cc7926c0e65a9acf48461ade1ef884f6c8830cb1ad394",
+      "ordinal": 6,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "List the folder.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "List the folder."
+      },
+      "written_at": 1794208678802
+    },
+    {
+      "mid": "msg_tools_missing",
+      "ordinal": 7,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Running a tool this session doesn't offer.",
+            "type": "text"
+          },
+          {
+            "arguments": "{\"command\":\"ls\"}",
+            "call_key": "msg_tools_missing/toolu_tools_missing",
+            "finished_at": 1794208679192,
+            "name": "Bash",
+            "part": "1",
+            "started_at": 1794208679188,
+            "tool_call_id": "toolu_tools_missing",
+            "type": "tool_call"
+          }
+        ],
+        "role": "assistant",
+        "text": "Running a tool this session doesn't offer."
+      },
+      "written_at": 1794208679353
+    },
+    {
+      "mid": "4af359c07c3c2e7e89f7654304526d9da110eed54fb9d5156b2311cd7d79a2d8",
+      "ordinal": 8,
+      "row": {
+        "parts": [
+          {
+            "content": "<tool_use_error>Error: No such tool available: Bash. Bash is disabled for this session, in subagents as well as here.</tool_use_error>",
+            "is_error": true,
+            "part": "0",
+            "tool_call_id": "toolu_tools_missing",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user",
+        "text": ""
+      },
+      "written_at": 1794208679353
+    },
+    {
+      "mid": "msg_tools_missing_done",
+      "ordinal": 9,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "That tool isn't available here.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "That tool isn't available here."
+      },
+      "written_at": 1794208679580
+    },
+    {
+      "mid": "133e0b178c9a61e704917a19c0f901f68604d6fb66604cbd213eac9bd6dfc881",
+      "ordinal": 10,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Call echo as often as you can.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Call echo as often as you can."
+      },
+      "written_at": 1794208681821
+    },
+    {
+      "mid": "msg_tools_step_one",
+      "ordinal": 11,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "arguments": "{\"text\":\"one\"}",
+            "call_key": "msg_tools_step_one/toolu_tools_step_one",
+            "finished_at": 1794208682050,
+            "name": "echo",
+            "part": "0",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208682039,
+            "tool_call_id": "toolu_tools_step_one",
+            "type": "tool_call"
+          }
+        ],
+        "role": "assistant",
+        "text": ""
+      },
+      "written_at": 1794208682229
+    },
+    {
+      "mid": "f036bc37c4cfae47eac960ca59fbf97cd000c3653a7668109cbe132aab10c11c",
+      "ordinal": 12,
+      "row": {
+        "parts": [
+          {
+            "content": "echo: hi",
+            "part": "0",
+            "tool_call_id": "toolu_tools_step_one",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user",
+        "text": ""
+      },
+      "written_at": 1794208682229
+    },
+    {
+      "mid": "msg_tools_step_two",
+      "ordinal": 13,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "arguments": "{\"text\":\"two\"}",
+            "call_key": "msg_tools_step_two/toolu_tools_step_two",
+            "finished_at": 1794208682349,
+            "name": "echo",
+            "part": "0",
+            "started_at": 1794208682341,
+            "tool_call_id": "toolu_tools_step_two",
+            "type": "tool_call",
+            "unanswered": "not_executed"
+          }
+        ],
+        "role": "assistant",
+        "text": ""
+      },
+      "written_at": 1794208682441
+    },
+    {
+      "mid": "23a54285098e97f3452a0c37527222c2d7ea9e73be2e1e07193cb1f2ed824781",
+      "ordinal": 14,
+      "row": {
+        "parts": [
+          {
+            "content": "not_executed_at_step_limit",
+            "is_error": true,
+            "part": "0",
+            "tool_call_id": "toolu_tools_step_two",
+            "type": "tool_result"
+          },
+          {
+            "part": "1",
+            "text": "[Request interrupted by user]\n",
+            "type": "text"
+          },
+          {
+            "part": "2",
+            "text": "Call echo, then wait for it.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "[Request interrupted by user]\nCall echo, then wait for it."
+      },
+      "written_at": 1794208684610
+    },
+    {
+      "mid": "msg_tools_held",
+      "ordinal": 15,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Calling echo; it takes a while.",
+            "type": "text"
+          },
+          {
+            "arguments": "{\"text\":\"slow\"}",
+            "call_key": "msg_tools_held/toolu_tools_held",
+            "finished_at": 1794208684904,
+            "name": "echo",
+            "part": "1",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208684885,
+            "tool_call_id": "toolu_tools_held",
+            "type": "tool_call",
+            "unanswered": "cancelled"
+          }
+        ],
+        "role": "assistant",
+        "text": "Calling echo; it takes a while."
+      },
+      "written_at": 1794208684915
+    },
+    {
+      "mid": "957ae6c0941475fd958c581d854ad6c1ad651801fe3301fe3069cfb651c1bc01",
+      "ordinal": 16,
+      "row": {
+        "parts": [
+          {
+            "content": "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed. Correction to the text above: this call was stopped while running, not refused before it ran. It may have run in part or in full, and its changes may have been written. No permission prompt was involved. Work it started elsewhere (a remote command, a background process) may still be running, so check before starting the same work again. The instruction to stop and wait still stands.",
+            "is_error": true,
+            "part": "0",
+            "tool_call_id": "toolu_tools_held",
+            "type": "tool_result"
+          },
+          {
+            "part": "1",
+            "text": "[Request interrupted by user]\n",
+            "type": "text"
+          },
+          {
+            "part": "2",
+            "text": "Did that stop?",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "[Request interrupted by user]\nDid that stop?"
+      },
+      "written_at": 1794208687159
+    },
+    {
+      "mid": "msg_tools_after_stop",
+      "ordinal": 17,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Stopped, as asked.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Stopped, as asked."
+      },
+      "written_at": 1794208687357
+    }
+  ]
+}

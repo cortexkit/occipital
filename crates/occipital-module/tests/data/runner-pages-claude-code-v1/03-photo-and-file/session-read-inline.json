@@ -1,0 +1,188 @@
+{
+  "head": {
+    "session": "37505f06ccea3db7",
+    "sub_index": 0,
+    "wal_seq": 15
+  },
+  "history_version": 0,
+  "incarnation": "inc_d0e5c77f989344e4a7d3ed2c722db6a8",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Hello.",
+        "role": "user"
+      },
+      "mid": "bfa9fab6c500d40d09ad1b5639594eaef359a6d4f014872b4a3c7440987c5ffd",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_5a4c1be7b8f63ad25fb75da7"
+      },
+      "send_id": "media-hello",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208689871
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_5a4c1be7b8f63ad25fb75da7"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208689871
+    },
+    {
+      "completed_at": 1794208690090,
+      "message": {
+        "content": [
+          {
+            "text": "Hello. Send me a photo or a file.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_media_hello",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_5a4c1be7b8f63ad25fb75da7"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208690181
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": [
+          {
+            "text": "What is in this photo?",
+            "type": "text"
+          },
+          {
+            "text": "[media not shown: kind=image mime=image/png bytes=75 sha256=59b380a5bf9b reason=not_requested]",
+            "type": "text"
+          },
+          {
+            "text": "[Image: source: /scratch/claude-code/sessions/a5c04652-9352-401b-a8e8-3527dc1b7c38/tmp/claude-999/-scratch-project-cc-pages-media/a5c04652-9352-401b-a8e8-3527dc1b7c38/images/1.png]",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "0462253a38eb9d7c111fae0eba3b7ddea651a0799c014eee7345875bef30e846",
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_0f90988af3672e67439c53dd"
+      },
+      "send_id": "media-photo",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208692389
+    },
+    {
+      "completed_at": 1794208692609,
+      "message": {
+        "content": [
+          {
+            "text": "A tiny test image, two pixels square.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_media_photo",
+      "ordinal": 5,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_0f90988af3672e67439c53dd"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208692697
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": [
+          {
+            "text": "Read this file.",
+            "type": "text"
+          },
+          {
+            "text": "[media not shown: kind=pdf mime=application/pdf bytes=189 sha256=54d4dc510da8 reason=not_requested]",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "e1967886de1ec22bfa7b2f63e2cffbf582d16e48047f4e5b42d962d78c1d099d",
+      "ordinal": 6,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_5c8b0e4ee6fe95f770b50f55"
+      },
+      "send_id": "media-file",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208694856
+    },
+    {
+      "completed_at": 1794208695074,
+      "message": {
+        "content": [
+          {
+            "text": "A one-page PDF with no text on it.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_media_file",
+      "ordinal": 7,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_5c8b0e4ee6fe95f770b50f55"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208695161
+    }
+  ]
+}

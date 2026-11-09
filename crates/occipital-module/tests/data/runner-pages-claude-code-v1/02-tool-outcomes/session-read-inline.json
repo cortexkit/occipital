@@ -1,0 +1,542 @@
+{
+  "head": {
+    "session": "6af027b74f2fc092",
+    "sub_index": 0,
+    "wal_seq": 28
+  },
+  "history_version": 1,
+  "incarnation": "inc_8169c79d7a9249658cc8360caffe1c1e",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Call echo.",
+        "role": "user"
+      },
+      "mid": "9399972a93426e32f3d3e5e2a644219faf539940386e3dc2033d298a653afbde",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_aacbc306b028a66b2e2faa43"
+      },
+      "send_id": "tools-succeeded",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208675859
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_aacbc306b028a66b2e2faa43"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208675859
+    },
+    {
+      "completed_at": 1794208676242,
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_tools_echo",
+            "input": {
+              "text": "hi"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_tools_echo",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_aacbc306b028a66b2e2faa43"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_tools_echo/toolu_tools_echo",
+          "indeterminate": false,
+          "tool_call_id": "toolu_tools_echo"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_tools_echo/toolu_tools_echo",
+          "finished_at": 1794208676257,
+          "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1794208676242,
+          "tool_call_id": "toolu_tools_echo"
+        }
+      ],
+      "written_at": 1794208676436
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "echo: hi",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_tools_echo",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "26cbed9560d756cf5c0f94e8e65bc795538125fdb81fd83e521e1d1e9d40a48e",
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_aacbc306b028a66b2e2faa43"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208676436
+    },
+    {
+      "completed_at": 1794208676546,
+      "message": {
+        "content": [
+          {
+            "text": "Echo said hi.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_tools_echo_done",
+      "ordinal": 5,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_aacbc306b028a66b2e2faa43"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208676635
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "List the folder.",
+        "role": "user"
+      },
+      "mid": "401879f62c2fc43b383cc7926c0e65a9acf48461ade1ef884f6c8830cb1ad394",
+      "ordinal": 6,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e0b5556a83a427e859476ba4"
+      },
+      "send_id": "tools-failed",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208678802
+    },
+    {
+      "completed_at": 1794208679188,
+      "message": {
+        "content": [
+          {
+            "text": "Running a tool this session doesn't offer.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_tools_missing",
+            "input": {
+              "command": "ls"
+            },
+            "name": "Bash",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_tools_missing",
+      "ordinal": 7,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e0b5556a83a427e859476ba4"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_tools_missing/toolu_tools_missing",
+          "indeterminate": false,
+          "tool_call_id": "toolu_tools_missing"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_tools_missing/toolu_tools_missing",
+          "finished_at": 1794208679192,
+          "started_at": 1794208679188,
+          "tool_call_id": "toolu_tools_missing"
+        }
+      ],
+      "written_at": 1794208679353
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "content": "<tool_use_error>Error: No such tool available: Bash. Bash is disabled for this session, in subagents as well as here.</tool_use_error>",
+            "is_error": true,
+            "tool_use_id": "toolu_tools_missing",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "4af359c07c3c2e7e89f7654304526d9da110eed54fb9d5156b2311cd7d79a2d8",
+      "ordinal": 8,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e0b5556a83a427e859476ba4"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208679353
+    },
+    {
+      "completed_at": 1794208679499,
+      "message": {
+        "content": [
+          {
+            "text": "That tool isn't available here.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_tools_missing_done",
+      "ordinal": 9,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_e0b5556a83a427e859476ba4"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208679580
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Call echo as often as you can.",
+        "role": "user"
+      },
+      "mid": "133e0b178c9a61e704917a19c0f901f68604d6fb66604cbd213eac9bd6dfc881",
+      "ordinal": 10,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e6fe7a916e98f3f9aa7cb6b9"
+      },
+      "send_id": "tools-step-limit",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208681821
+    },
+    {
+      "completed_at": 1794208682039,
+      "message": {
+        "content": [
+          {
+            "id": "toolu_tools_step_one",
+            "input": {
+              "text": "one"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_tools_step_one",
+      "ordinal": 11,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e6fe7a916e98f3f9aa7cb6b9"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_tools_step_one/toolu_tools_step_one",
+          "indeterminate": false,
+          "tool_call_id": "toolu_tools_step_one"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_tools_step_one/toolu_tools_step_one",
+          "finished_at": 1794208682050,
+          "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1794208682039,
+          "tool_call_id": "toolu_tools_step_one"
+        }
+      ],
+      "written_at": 1794208682229
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "echo: hi",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_tools_step_one",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "f036bc37c4cfae47eac960ca59fbf97cd000c3653a7668109cbe132aab10c11c",
+      "ordinal": 12,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e6fe7a916e98f3f9aa7cb6b9"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208682229
+    },
+    {
+      "completed_at": 1794208682341,
+      "message": {
+        "content": [
+          {
+            "id": "toolu_tools_step_two",
+            "input": {
+              "text": "two"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_tools_step_two",
+      "ordinal": 13,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_e6fe7a916e98f3f9aa7cb6b9"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_tools_step_two/toolu_tools_step_two",
+          "indeterminate": false,
+          "tool_call_id": "toolu_tools_step_two"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_tools_step_two/toolu_tools_step_two",
+          "finished_at": 1794208682349,
+          "started_at": 1794208682341,
+          "tool_call_id": "toolu_tools_step_two",
+          "unanswered": "not_executed"
+        }
+      ],
+      "written_at": 1794208682441
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": [
+          {
+            "content": "not_executed_at_step_limit",
+            "is_error": true,
+            "tool_use_id": "toolu_tools_step_two",
+            "type": "tool_result"
+          },
+          {
+            "text": "[Request interrupted by user]\n",
+            "type": "text"
+          },
+          {
+            "text": "Call echo, then wait for it.",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "23a54285098e97f3452a0c37527222c2d7ea9e73be2e1e07193cb1f2ed824781",
+      "ordinal": 14,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_6ef5761096cc8cf9f2ae99cc"
+      },
+      "send_id": "tools-stopped",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208684610
+    },
+    {
+      "completed_at": 1794208684885,
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo; it takes a while.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_tools_held",
+            "input": {
+              "text": "slow"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_tools_held",
+      "ordinal": 15,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_6ef5761096cc8cf9f2ae99cc"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_tools_held/toolu_tools_held",
+          "indeterminate": false,
+          "tool_call_id": "toolu_tools_held"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_tools_held/toolu_tools_held",
+          "finished_at": 1794208684904,
+          "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1794208684885,
+          "tool_call_id": "toolu_tools_held",
+          "unanswered": "cancelled"
+        }
+      ],
+      "written_at": 1794208684915
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": [
+          {
+            "content": "The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed. Correction to the text above: this call was stopped while running, not refused before it ran. It may have run in part or in full, and its changes may have been written. No permission prompt was involved. Work it started elsewhere (a remote command, a background process) may still be running, so check before starting the same work again. The instruction to stop and wait still stands.",
+            "is_error": true,
+            "tool_use_id": "toolu_tools_held",
+            "type": "tool_result"
+          },
+          {
+            "text": "[Request interrupted by user]\n",
+            "type": "text"
+          },
+          {
+            "text": "Did that stop?",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "957ae6c0941475fd958c581d854ad6c1ad651801fe3301fe3069cfb651c1bc01",
+      "ordinal": 16,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_8e2687201795f77f8ab2a001"
+      },
+      "send_id": "tools-after-stop",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208687159
+    },
+    {
+      "completed_at": 1794208687270,
+      "message": {
+        "content": [
+          {
+            "text": "Stopped, as asked.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_tools_after_stop",
+      "ordinal": 17,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_8e2687201795f77f8ab2a001"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208687357
+    }
+  ]
+}

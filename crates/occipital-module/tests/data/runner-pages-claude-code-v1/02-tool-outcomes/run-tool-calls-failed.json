@@ -1,0 +1,18 @@
+{
+  "calls": [
+    {
+      "args": {
+        "command": "ls"
+      },
+      "call_key": "msg_tools_missing/toolu_tools_missing",
+      "name": "Bash",
+      "ordinal": 7,
+      "outcome": "failed",
+      "position": 0,
+      "result_bytes": 136,
+      "result_ordinal": 8,
+      "tool_call_id": "toolu_tools_missing"
+    }
+  ],
+  "run_id": "run_e0b5556a83a427e859476ba4"
+}

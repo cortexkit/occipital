@@ -1,0 +1,254 @@
+{
+  "head": {
+    "session": "02e365eda2fda6bf",
+    "sub_index": 0,
+    "wal_seq": 18
+  },
+  "history_version": 0,
+  "incarnation": "inc_b9c864f422bf4c04966dd4540ac0be36",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Call echo.",
+        "role": "user"
+      },
+      "mid": "9399972a93426e32f3d3e5e2a644219faf539940386e3dc2033d298a653afbde",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_355baf2435a54c2ea24e46c4"
+      },
+      "send_id": "notices-run",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208708943
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_355baf2435a54c2ea24e46c4"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208708943
+    },
+    {
+      "completed_at": 1794208709332,
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_notices_echo",
+            "input": {
+              "text": "hi"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notices_call",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_355baf2435a54c2ea24e46c4"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_notices_call/toolu_notices_echo",
+          "indeterminate": false,
+          "tool_call_id": "toolu_notices_echo"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_notices_call/toolu_notices_echo",
+          "finished_at": 1794208709402,
+          "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1794208709332,
+          "tool_call_id": "toolu_notices_echo"
+        }
+      ],
+      "written_at": 1794208709506
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "echo: hi",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_notices_echo",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "933bcead7d2e69ce76a6892204647d5b42435b281e5f6f8c6cc7f1d8a8803281",
+      "notices": [
+        {
+          "call_key": "msg_notices_call/toolu_notices_echo",
+          "delivered_as": "tool_result",
+          "part": 0,
+          "send_id": "ride-1",
+          "sender": "magic-context",
+          "text": "A note that rides the tool's result."
+        }
+      ],
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_355baf2435a54c2ea24e46c4"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208709506
+    },
+    {
+      "completed_at": 1794208709648,
+      "message": {
+        "content": [
+          {
+            "text": "Echo said hi, and a note came with it.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notices_done",
+      "ordinal": 5,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_355baf2435a54c2ea24e46c4"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208709730
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "A notice from core: the build is green.",
+        "role": "user"
+      },
+      "mid": "b20e5f86bc01234937b504c4ddfc5182870fda215d2b275ee2e27ab1acd99e3c",
+      "notice": true,
+      "ordinal": 6,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_77f378eaca847fefb4ec7675"
+      },
+      "send_id": "core-notice",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208711972
+    },
+    {
+      "completed_at": 1794208712194,
+      "message": {
+        "content": [
+          {
+            "text": "Noted.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notices_core_notice",
+      "ordinal": 7,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_77f378eaca847fefb4ec7675"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208712280
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Words agent-a asked core to pass on.",
+        "role": "user"
+      },
+      "mid": "2ab6ca620943b6a5eb2e1d21a757aafd66f894cb175c6ba7a3a7dfc13d09ca8e",
+      "ordinal": 8,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_6f6ae914e5e711bde22e1171"
+      },
+      "send_id": "core-speaks-for",
+      "sender": "prefrontal-core",
+      "speaks_for": {
+        "agent_id": "agent-a"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208714433
+    },
+    {
+      "completed_at": 1794208714653,
+      "message": {
+        "content": [
+          {
+            "text": "Noted.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notices_core_speaks_for",
+      "ordinal": 9,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_6f6ae914e5e711bde22e1171"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208714740
+    }
+  ]
+}

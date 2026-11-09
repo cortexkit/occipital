@@ -1,0 +1,184 @@
+{
+  "head": {
+    "session": "0e358f20787ac8ba",
+    "sub_index": 0,
+    "wal_seq": 6
+  },
+  "history_version": 0,
+  "incarnation": "inc_2d260ad7392b4bd0b671753d9f64ea73",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "9b33c79c2d866235962bb6918930329eec30033fc5710bac06c2941339c2f541",
+      "message": {
+        "content": "Call echo and wait for it.",
+        "role": "user"
+      },
+      "mid": "c7a04adb91c6eb6b60e4090fc40c2982177f220c01129396ecf2dc65626bd8c2",
+      "ordinal": 1,
+      "part_digests": [
+        {
+          "digest": "2e5b989811623cce407f30403a38f90f942216ea020db2c38920d4ff495ad2cb",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_0acfd4a640e817db5bdc8d0c"
+      },
+      "send_id": "long-call",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208722585
+    },
+    {
+      "digest": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "part_digests": [],
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_0acfd4a640e817db5bdc8d0c"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208722585
+    },
+    {
+      "completed_at": 1794208722966,
+      "digest": "7f7c8a997da2bad51d92418c109d9fca7986bafeb64d895d1ccc14964e5c1f25",
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo; it runs a while.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_long_call",
+            "input": {
+              "text": "slow"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_long_call",
+      "ordinal": 3,
+      "part_digests": [
+        {
+          "digest": "83de9becc5452179efdd16ba4a7652dda8d427c580eaf9e9e7a95bb45902d270",
+          "part": "0"
+        },
+        {
+          "digest": "15ee25047aa4f41018491a5004941207119f41af338c90f68b23489242cab941",
+          "part": "1"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_0acfd4a640e817db5bdc8d0c"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_long_call/toolu_long_call",
+          "indeterminate": false,
+          "tool_call_id": "toolu_long_call"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_long_call/toolu_long_call",
+          "finished_at": 1794208725045,
+          "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1794208722966,
+          "tool_call_id": "toolu_long_call"
+        }
+      ],
+      "written_at": 1794208725160
+    },
+    {
+      "digest": "2ae1d3b9060186ca14df7dd48520ee4b0ba88c8deeaad37c24d5bc41eafc602f",
+      "message": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "echo: hi",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_long_call",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "2ae1d3b9060186ca14df7dd48520ee4b0ba88c8deeaad37c24d5bc41eafc602f",
+      "ordinal": 4,
+      "part_digests": [
+        {
+          "digest": "6fb1679cf49c71620f94d39d60bbfc3079a859882549deda78bf338af38e9ae1",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_0acfd4a640e817db5bdc8d0c"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208725160
+    },
+    {
+      "completed_at": 1794208725272,
+      "digest": "a9354360bbfcb4bad45af6544713a810f3e99fb131ca91f65ffa580c52039309",
+      "message": {
+        "content": [
+          {
+            "text": "Echo finally said hi.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_long_call_done",
+      "ordinal": 5,
+      "part_digests": [
+        {
+          "digest": "041d72d4891fb01edf17596e54cf2cef90eb98a7aa0db12bfc6b2a0a0d572471",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_0acfd4a640e817db5bdc8d0c"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208725359
+    }
+  ]
+}

@@ -1,0 +1,636 @@
+{
+  "subscriptions": [
+    {
+      "ended": null,
+      "frames": [
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 1
+          },
+          "kind": "control",
+          "lineage_id": "lin_56e008d45abd4d4f8d156429",
+          "runner_event": "admitted",
+          "seq": 1
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 1
+          },
+          "delivery": "queue",
+          "kind": "control",
+          "run_id": "run_355baf2435a54c2ea24e46c4",
+          "runner_event": "send_accepted",
+          "send_id": "[\"prefrontal-core\",\"notices-run\"]",
+          "seq": 2
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "9399972a93426e32f3d3e5e2a644219faf539940386e3dc2033d298a653afbde",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 3
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "9399972a93426e32f3d3e5e2a644219faf539940386e3dc2033d298a653afbde",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "9399972a93426e32f3d3e5e2a644219faf539940386e3dc2033d298a653afbde",
+          "ordinal": 1,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 4
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 2,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 5
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 3,
+            "wal_seq": 2
+          },
+          "event": {
+            "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+          "ordinal": 2,
+          "role": "system",
+          "runner_event": "message",
+          "seq": 6
+        },
+        {
+          "as": "turn",
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 3
+          },
+          "kind": "control",
+          "ref": "run_355baf2435a54c2ea24e46c4",
+          "runner_event": "delivered",
+          "send_id": "[\"prefrontal-core\",\"notices-run\"]",
+          "seq": 7
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 3
+          },
+          "event": {
+            "run_id": "run_355baf2435a54c2ea24e46c4",
+            "type": "run_started"
+          },
+          "kind": "control",
+          "run_id": "run_355baf2435a54c2ea24e46c4",
+          "runner_event": "run_started",
+          "seq": 8
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 4
+          },
+          "delivery": "",
+          "kind": "control",
+          "run_id": "run_79c8374a02db0c579d37bd58",
+          "runner_event": "send_accepted",
+          "send_id": "[\"magic-context\",\"ride-1\"]",
+          "seq": 9
+        },
+        {
+          "event": {
+            "delta": "Callin",
+            "message_id": "",
+            "mid": "msg_notices_call",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 10
+        },
+        {
+          "event": {
+            "delta": "g echo.",
+            "message_id": "",
+            "mid": "msg_notices_call",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 11
+        },
+        {
+          "as": "step",
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 5
+          },
+          "kind": "control",
+          "ref": "msg_notices_call/toolu_notices_echo",
+          "runner_event": "delivered",
+          "send_id": "[\"magic-context\",\"ride-1\"]",
+          "seq": 12
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 5
+          },
+          "event": {
+            "call_key": "msg_notices_call/toolu_notices_echo",
+            "mid": "933bcead7d2e69ce76a6892204647d5b42435b281e5f6f8c6cc7f1d8a8803281",
+            "part": 0,
+            "send_id": "ride-1",
+            "sender": "magic-context",
+            "text": "A note that rides the tool's result.",
+            "type": "notice_delivered"
+          },
+          "kind": "control",
+          "seq": 13
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 6
+          },
+          "event": {
+            "mid": "msg_notices_call",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 14
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 6
+          },
+          "event": {
+            "arguments": "{\"text\":\"hi\"}",
+            "arguments_truncated": false,
+            "call_key": "msg_notices_call/toolu_notices_echo",
+            "mid": "msg_notices_call",
+            "name": "echo",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208709332,
+            "tool_call_id": "toolu_notices_echo",
+            "type": "tool_started"
+          },
+          "kind": "control",
+          "seq": 15
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 2,
+            "wal_seq": 6
+          },
+          "event": {
+            "mid": "msg_notices_call",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_notices_call",
+          "ordinal": 3,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 16
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 3,
+            "wal_seq": 6
+          },
+          "event": {
+            "call_key": "msg_notices_call/toolu_notices_echo",
+            "finished_at": 1794208709402,
+            "mid": "msg_notices_call",
+            "outcome": "ok",
+            "output_bytes": 80,
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "tool_call_id": "toolu_notices_echo",
+            "type": "tool_finished"
+          },
+          "kind": "control",
+          "seq": 17
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 4,
+            "wal_seq": 6
+          },
+          "event": {
+            "mid": "933bcead7d2e69ce76a6892204647d5b42435b281e5f6f8c6cc7f1d8a8803281",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 18
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 5,
+            "wal_seq": 6
+          },
+          "event": {
+            "mid": "933bcead7d2e69ce76a6892204647d5b42435b281e5f6f8c6cc7f1d8a8803281",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "933bcead7d2e69ce76a6892204647d5b42435b281e5f6f8c6cc7f1d8a8803281",
+          "ordinal": 4,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 19
+        },
+        {
+          "event": {
+            "delta": "Echo said hi, and a",
+            "message_id": "",
+            "mid": "msg_notices_done",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 20
+        },
+        {
+          "event": {
+            "delta": " note came with it.",
+            "message_id": "",
+            "mid": "msg_notices_done",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 21
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 7
+          },
+          "event": {
+            "mid": "msg_notices_done",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 22
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 7
+          },
+          "event": {
+            "mid": "msg_notices_done",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_notices_done",
+          "ordinal": 5,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 23
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 8
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_355baf2435a54c2ea24e46c4",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_355baf2435a54c2ea24e46c4",
+          "runner_event": "run_ended",
+          "seq": 24,
+          "state": "completed"
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 9
+          },
+          "delivery": "queue",
+          "kind": "control",
+          "run_id": "run_77f378eaca847fefb4ec7675",
+          "runner_event": "send_accepted",
+          "send_id": "[\"prefrontal-core\",\"core-notice\"]",
+          "seq": 25
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 10
+          },
+          "event": {
+            "mid": "b20e5f86bc01234937b504c4ddfc5182870fda215d2b275ee2e27ab1acd99e3c",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 26
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 10
+          },
+          "event": {
+            "mid": "b20e5f86bc01234937b504c4ddfc5182870fda215d2b275ee2e27ab1acd99e3c",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "b20e5f86bc01234937b504c4ddfc5182870fda215d2b275ee2e27ab1acd99e3c",
+          "ordinal": 6,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 27
+        },
+        {
+          "as": "turn",
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 11
+          },
+          "kind": "control",
+          "ref": "run_77f378eaca847fefb4ec7675",
+          "runner_event": "delivered",
+          "send_id": "[\"prefrontal-core\",\"core-notice\"]",
+          "seq": 28
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 11
+          },
+          "event": {
+            "run_id": "run_77f378eaca847fefb4ec7675",
+            "type": "run_started"
+          },
+          "kind": "control",
+          "run_id": "run_77f378eaca847fefb4ec7675",
+          "runner_event": "run_started",
+          "seq": 29
+        },
+        {
+          "event": {
+            "delta": "Not",
+            "message_id": "",
+            "mid": "msg_notices_core_notice",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 30
+        },
+        {
+          "event": {
+            "delta": "ed.",
+            "message_id": "",
+            "mid": "msg_notices_core_notice",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 31
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 12
+          },
+          "event": {
+            "mid": "msg_notices_core_notice",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 32
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 12
+          },
+          "event": {
+            "mid": "msg_notices_core_notice",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_notices_core_notice",
+          "ordinal": 7,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 33
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 13
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_77f378eaca847fefb4ec7675",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_77f378eaca847fefb4ec7675",
+          "runner_event": "run_ended",
+          "seq": 34,
+          "state": "completed"
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 14
+          },
+          "delivery": "queue",
+          "kind": "control",
+          "run_id": "run_6f6ae914e5e711bde22e1171",
+          "runner_event": "send_accepted",
+          "send_id": "[\"prefrontal-core\",\"core-speaks-for\"]",
+          "seq": 35
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 15
+          },
+          "event": {
+            "mid": "2ab6ca620943b6a5eb2e1d21a757aafd66f894cb175c6ba7a3a7dfc13d09ca8e",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 36
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 15
+          },
+          "event": {
+            "mid": "2ab6ca620943b6a5eb2e1d21a757aafd66f894cb175c6ba7a3a7dfc13d09ca8e",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "2ab6ca620943b6a5eb2e1d21a757aafd66f894cb175c6ba7a3a7dfc13d09ca8e",
+          "ordinal": 8,
+          "role": "user",
+          "runner_event": "message",
+          "seq": 37
+        },
+        {
+          "as": "turn",
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 16
+          },
+          "kind": "control",
+          "ref": "run_6f6ae914e5e711bde22e1171",
+          "runner_event": "delivered",
+          "send_id": "[\"prefrontal-core\",\"core-speaks-for\"]",
+          "seq": 38
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 16
+          },
+          "event": {
+            "run_id": "run_6f6ae914e5e711bde22e1171",
+            "type": "run_started"
+          },
+          "kind": "control",
+          "run_id": "run_6f6ae914e5e711bde22e1171",
+          "runner_event": "run_started",
+          "seq": 39
+        },
+        {
+          "event": {
+            "delta": "Not",
+            "message_id": "",
+            "mid": "msg_notices_core_speaks_for",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 40
+        },
+        {
+          "event": {
+            "delta": "ed.",
+            "message_id": "",
+            "mid": "msg_notices_core_speaks_for",
+            "part": "0",
+            "type": "text_delta"
+          },
+          "kind": "display",
+          "seq": 41
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 17
+          },
+          "event": {
+            "mid": "msg_notices_core_speaks_for",
+            "type": "message_started"
+          },
+          "kind": "control",
+          "seq": 42
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 1,
+            "wal_seq": 17
+          },
+          "event": {
+            "mid": "msg_notices_core_speaks_for",
+            "type": "message_finished"
+          },
+          "kind": "control",
+          "mid": "msg_notices_core_speaks_for",
+          "ordinal": 9,
+          "role": "assistant",
+          "runner_event": "message",
+          "seq": 43
+        },
+        {
+          "cursor": {
+            "session": "02e365eda2fda6bf",
+            "sub_index": 0,
+            "wal_seq": 18
+          },
+          "event": {
+            "reason": "completed",
+            "run_id": "run_6f6ae914e5e711bde22e1171",
+            "type": "run_finished"
+          },
+          "kind": "control",
+          "run_id": "run_6f6ae914e5e711bde22e1171",
+          "runner_event": "run_ended",
+          "seq": 44,
+          "state": "completed"
+        }
+      ],
+      "params": {}
+    }
+  ]
+}

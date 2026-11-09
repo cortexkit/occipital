@@ -1,0 +1,139 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_1821ee4450ad433f8a39423f5d1a0ea6",
+  "messages": [
+    {
+      "mid": "056be32037d695b4de773a4bdbb791e9a8276dff47691a246e6d58ca83902daf",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Get ready.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Get ready."
+      },
+      "written_at": 1794208752261
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208752261
+    },
+    {
+      "mid": "msg_notes_ready",
+      "ordinal": 3,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Ready.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Ready."
+      },
+      "written_at": 1794208752584
+    },
+    {
+      "mid": "9399972a93426e32f3d3e5e2a644219faf539940386e3dc2033d298a653afbde",
+      "ordinal": 4,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Call echo.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Call echo."
+      },
+      "written_at": 1794208754787
+    },
+    {
+      "mid": "msg_notes_call",
+      "ordinal": 5,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "arguments": "{\"text\":\"hi\"}",
+            "call_key": "msg_notes_call/toolu_notes_echo",
+            "finished_at": 1794208755290,
+            "name": "echo",
+            "part": "1",
+            "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1794208755173,
+            "tool_call_id": "toolu_notes_echo",
+            "type": "tool_call"
+          }
+        ],
+        "role": "assistant",
+        "text": "Calling echo."
+      },
+      "written_at": 1794208755347
+    },
+    {
+      "mid": "a4ab54385852fd37de18a7705dd5351ee57b3331aff44e6cd9f4fb76abf25092",
+      "ordinal": 6,
+      "row": {
+        "notices": [
+          {
+            "call_key": "msg_notes_call/toolu_notes_echo",
+            "delivered_as": "turn_system",
+            "part": 0,
+            "send_id": "note-1",
+            "sender": "magic-context",
+            "text": "NOTE 1"
+          }
+        ],
+        "parts": [
+          {
+            "content": "echo: hi",
+            "part": "0",
+            "tool_call_id": "toolu_notes_echo",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user",
+        "text": ""
+      },
+      "written_at": 1794208755347
+    },
+    {
+      "mid": "msg_notes_done",
+      "ordinal": 7,
+      "row": {
+        "model": "claude-haiku-5-5",
+        "parts": [
+          {
+            "part": "0",
+            "text": "Echo said hi, and I have the note.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "Echo said hi, and I have the note."
+      },
+      "written_at": 1794208755597
+    }
+  ]
+}

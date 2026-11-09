@@ -1,0 +1,271 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_b9c864f422bf4c04966dd4540ac0be36",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "0fdc91b633d1d551921d27b48614ba5e3130d6e34f8fa62706f119cea43f0478",
+      "message": {
+        "content": "Call echo.",
+        "role": "user"
+      },
+      "mid": "9399972a93426e32f3d3e5e2a644219faf539940386e3dc2033d298a653afbde",
+      "ordinal": 1,
+      "part_digests": [
+        {
+          "digest": "66d332d4cf9b94b9416736d850c85fdc52b939b5174468ef353e5ae94e600947",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_355baf2435a54c2ea24e46c4"
+      },
+      "send_id": "notices-run",
+      "sender": "prefrontal-core",
+      "written_at": 1794208708943
+    },
+    {
+      "digest": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "part_digests": [],
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_355baf2435a54c2ea24e46c4"
+      },
+      "written_at": 1794208708943
+    },
+    {
+      "digest": "160c545942e3a8c310b93b3ca36eae13dafbc66a95f7b6a0f607a832e925552d",
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_notices_echo",
+            "input": {
+              "text": "hi"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notices_call",
+      "ordinal": 3,
+      "part_digests": [
+        {
+          "digest": "8f682ab33f9d1db7ee8da5f80cc5428ebb6442394de4e81b6e5df6fcd8d044b8",
+          "part": "0"
+        },
+        {
+          "digest": "f7187f5a80545a855092f2ea08349653514b852be2dd51c80554fd744b9eadbd",
+          "part": "1"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_355baf2435a54c2ea24e46c4"
+      },
+      "tool_calls": [
+        {
+          "call_key": "msg_notices_call/toolu_notices_echo",
+          "indeterminate": false,
+          "tool_call_id": "toolu_notices_echo"
+        }
+      ],
+      "written_at": 1794208709506
+    },
+    {
+      "digest": "933bcead7d2e69ce76a6892204647d5b42435b281e5f6f8c6cc7f1d8a8803281",
+      "message": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "echo: hi",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_notices_echo",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "933bcead7d2e69ce76a6892204647d5b42435b281e5f6f8c6cc7f1d8a8803281",
+      "ordinal": 4,
+      "part_digests": [
+        {
+          "digest": "3c88901b20861eacb4be35b1d9c64c58c876934ad95d3e6b5850bfe30afe6385",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_355baf2435a54c2ea24e46c4"
+      },
+      "written_at": 1794208709506
+    },
+    {
+      "digest": "cb9ae3eb68d2d1543975e7ffa1d9640402a645c3f5f42b5fd2a5b1f318e6a06f",
+      "message": {
+        "content": [
+          {
+            "text": "Echo said hi, and a note came with it.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notices_done",
+      "ordinal": 5,
+      "part_digests": [
+        {
+          "digest": "a18c09894fe72b9d6d52e005e2fd4321e0ca5964aa4c559a7a30c37e420e2cfe",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_355baf2435a54c2ea24e46c4"
+      },
+      "written_at": 1794208709730
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "f73221de11a3f2180f3e2bed5dec7424ab4fcca0a20c9d646d5e4fa8566f324f",
+      "message": {
+        "content": "A notice from core: the build is green.",
+        "role": "user"
+      },
+      "mid": "b20e5f86bc01234937b504c4ddfc5182870fda215d2b275ee2e27ab1acd99e3c",
+      "notice": true,
+      "ordinal": 6,
+      "part_digests": [
+        {
+          "digest": "66d13d971bff347de042eef80b8331f2fed79e4c115e3894ccb2999b7490be10",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_77f378eaca847fefb4ec7675"
+      },
+      "send_id": "core-notice",
+      "sender": "prefrontal-core",
+      "written_at": 1794208711972
+    },
+    {
+      "digest": "142157d37218cb94c547e3bfd92c94431fb32c20891a9d8d13e1a04a2bd1e70a",
+      "message": {
+        "content": [
+          {
+            "text": "Noted.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notices_core_notice",
+      "ordinal": 7,
+      "part_digests": [
+        {
+          "digest": "6fbf05b2cbaf434d991c21e6c518228762ec41ad85b2f5f6b2e99cd7a71a6d52",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_77f378eaca847fefb4ec7675"
+      },
+      "written_at": 1794208712280
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "digest": "86b2ceb7e88a5f8bd87fd18b21f2255f7900e1c5b048f739c5d53b6ddaa82d58",
+      "message": {
+        "content": "Words agent-a asked core to pass on.",
+        "role": "user"
+      },
+      "mid": "2ab6ca620943b6a5eb2e1d21a757aafd66f894cb175c6ba7a3a7dfc13d09ca8e",
+      "ordinal": 8,
+      "part_digests": [
+        {
+          "digest": "1be2f414daf41a1c260b00690b5e5b50857ddde9d614a731fe9b1d453fd7c4cc",
+          "part": "0"
+        }
+      ],
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_6f6ae914e5e711bde22e1171"
+      },
+      "send_id": "core-speaks-for",
+      "sender": "prefrontal-core",
+      "speaks_for": {
+        "agent_id": "agent-a"
+      },
+      "written_at": 1794208714433
+    },
+    {
+      "digest": "142157d37218cb94c547e3bfd92c94431fb32c20891a9d8d13e1a04a2bd1e70a",
+      "message": {
+        "content": [
+          {
+            "text": "Noted.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_notices_core_speaks_for",
+      "ordinal": 9,
+      "part_digests": [
+        {
+          "digest": "6fbf05b2cbaf434d991c21e6c518228762ec41ad85b2f5f6b2e99cd7a71a6d52",
+          "part": "0"
+        }
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_6f6ae914e5e711bde22e1171"
+      },
+      "written_at": 1794208714740
+    }
+  ]
+}

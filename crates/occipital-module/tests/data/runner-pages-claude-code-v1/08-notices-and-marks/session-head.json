@@ -1,0 +1,67 @@
+{
+  "first_ordinal": 1,
+  "head": {
+    "session": "02e365eda2fda6bf",
+    "sub_index": 0,
+    "wal_seq": 18
+  },
+  "history_version": 0,
+  "incarnation": "inc_b9c864f422bf4c04966dd4540ac0be36",
+  "input": {
+    "attachments": "yes",
+    "mime_types": [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "application/pdf"
+    ],
+    "modalities": [
+      "text",
+      "image",
+      "pdf"
+    ]
+  },
+  "last_ordinal": 9,
+  "last_run_state": {
+    "run_id": "run_6f6ae914e5e711bde22e1171",
+    "state": "completed"
+  },
+  "model": {
+    "model": "claude-haiku-5-5",
+    "provider": "anthropic"
+  },
+  "sender": {
+    "interrupt": true,
+    "modes": [
+      "tool_result",
+      "turn_system",
+      "steer",
+      "idle_start"
+    ],
+    "owner": true
+  },
+  "updated_at": 1794208714744,
+  "usage": {
+    "by_model": [
+      {
+        "cache_write_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 40,
+        "model": "claude-haiku-5-5",
+        "output_tokens": 20,
+        "provider": "anthropic",
+        "reasoning_tokens": 0,
+        "steps": 4,
+        "unreported_steps": 0
+      }
+    ],
+    "cache_write_tokens": 0,
+    "cached_input_tokens": 0,
+    "input_tokens": 40,
+    "output_tokens": 20,
+    "reasoning_tokens": 0,
+    "since": "run_355baf2435a54c2ea24e46c4",
+    "steps": 4,
+    "unreported_steps": 0
+  }
+}

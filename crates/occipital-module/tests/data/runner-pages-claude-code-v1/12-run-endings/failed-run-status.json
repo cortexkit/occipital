@@ -1,0 +1,17 @@
+{
+  "error": {
+    "class": "transient",
+    "message": "API Error: Request rejected (429) · stand-in rate_limit_error",
+    "provider_code": "rate_limit",
+    "provider_detail_code": "api_error",
+    "retry_after_secs": 1.0,
+    "status": 429
+  },
+  "state": "error",
+  "undelivered_steers": [],
+  "usage": {
+    "by_model": [],
+    "steps": 0,
+    "unreported_steps": 0
+  }
+}

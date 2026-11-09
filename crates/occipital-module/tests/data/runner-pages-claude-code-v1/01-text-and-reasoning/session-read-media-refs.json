@@ -1,0 +1,131 @@
+{
+  "head": {
+    "session": "351d28fcdf84b136",
+    "sub_index": 0,
+    "wal_seq": 10
+  },
+  "history_version": 0,
+  "incarnation": "inc_877027b797154bf78b9ef70d402842e1",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Think it over, then answer.",
+        "role": "user"
+      },
+      "mid": "c97b7f74ccd3a86cf9e72fc88693b1c23d477fb1aa176dcfbb029fdfde3c7fa3",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_bc62fe7b609d0e386956526d"
+      },
+      "send_id": "text-1",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208670234
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_bc62fe7b609d0e386956526d"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208670234
+    },
+    {
+      "completed_at": 1794208670621,
+      "message": {
+        "content": [
+          {
+            "signature": "standin-signature-msg_text_reasoned",
+            "thinking": "Weighing the question before answering.",
+            "type": "thinking"
+          },
+          {
+            "text": "Here is the answer, after thinking it over.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_text_reasoned",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_bc62fe7b609d0e386956526d"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208670710
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Answer again, briefly.",
+        "role": "user"
+      },
+      "mid": "41ec4878e5ce8e0b7eabd33b5dbd225decaeeb7a5d3cbd5220eb57128ad79907",
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_585761bc572f88b41837f1f8"
+      },
+      "send_id": "text-2",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208672923
+    },
+    {
+      "completed_at": 1794208673264,
+      "message": {
+        "content": [
+          {
+            "signature": "standin-signature-msg_text_unshown",
+            "thinking": "",
+            "type": "thinking"
+          },
+          {
+            "text": "Briefly: yes.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_text_unshown",
+      "ordinal": 5,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_585761bc572f88b41837f1f8"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1794208673350
+    }
+  ]
+}

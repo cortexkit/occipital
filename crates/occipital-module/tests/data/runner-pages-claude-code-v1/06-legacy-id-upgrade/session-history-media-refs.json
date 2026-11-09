@@ -1,0 +1,165 @@
+{
+  "history_version": 1,
+  "incarnation": "inc_2155c50ac4704df2b81a2b3fe2dbe2c3",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "[[script:cc-echo]] Call echo, please.",
+        "role": "user"
+      },
+      "mid": "37373a9c7311e2dcd0cf008d170972d493b8bf65ef4ccc55fa0ef4b4436bd10d",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_4cd9c70cb3c91d21a436e0dd"
+      },
+      "send_id": "legacy-1",
+      "sender": "prefrontal-core",
+      "written_at": 1794208763746
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_4cd9c70cb3c91d21a436e0dd"
+      },
+      "written_at": 1794208763746
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "Calling echo.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_standin_0001_0",
+            "input": {
+              "text": "hi"
+            },
+            "name": "echo",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_standin_0001",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_4cd9c70cb3c91d21a436e0dd"
+      },
+      "tool_calls": [
+        {
+          "call_key": "msg_standin_0001/toolu_standin_0001_0",
+          "indeterminate": false,
+          "tool_call_id": "toolu_standin_0001_0"
+        }
+      ],
+      "written_at": 1794208763766
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "echo: hi",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_standin_0001_0",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "505babdca08a0df0c13f37427d86d93185f3e16c08dcba7b69b73a0006631d9e",
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_4cd9c70cb3c91d21a436e0dd"
+      },
+      "written_at": 1794208763766
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "Echo said hi.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_standin_0002",
+      "ordinal": 5,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_4cd9c70cb3c91d21a436e0dd"
+      },
+      "written_at": 1794208763766
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "[[script:plain]] Now answer plainly.",
+        "role": "user"
+      },
+      "mid": "bb8e4b9cb67cb4d5e0877489fc0484ab8af6e05368ee0b35a4f366684c605582",
+      "ordinal": 6,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_11e023a03040c206d7c2d897"
+      },
+      "send_id": "legacy-2",
+      "sender": "prefrontal-core",
+      "written_at": 1794208765870
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "Plain answer.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_standin_0003",
+      "ordinal": 7,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_11e023a03040c206d7c2d897"
+      },
+      "written_at": 1794208765870
+    }
+  ]
+}

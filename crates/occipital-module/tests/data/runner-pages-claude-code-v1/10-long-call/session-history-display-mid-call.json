@@ -1,0 +1,33 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_2d260ad7392b4bd0b671753d9f64ea73",
+  "messages": [
+    {
+      "mid": "c7a04adb91c6eb6b60e4090fc40c2982177f220c01129396ecf2dc65626bd8c2",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "Call echo and wait for it.",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "Call echo and wait for it."
+      },
+      "written_at": 1794208722585
+    },
+    {
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "row": {
+        "parts": [],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1794208722585
+    }
+  ]
+}

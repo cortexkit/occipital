@@ -1,0 +1,64 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_c4c64cbd57ce4c5c842b8f72d16d082e",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "Say hello.",
+        "role": "user"
+      },
+      "mid": "e771efc76c0cde91d6aa720b05d9a657178da342a3e9a5a96b78a5e3f84fa054",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_1c732590aad25e8a96d3515b"
+      },
+      "send_id": "head-1",
+      "sender": "prefrontal-core",
+      "written_at": 1794208706076
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_1c732590aad25e8a96d3515b"
+      },
+      "written_at": 1794208706076
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "Hello.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_head_hello",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_1c732590aad25e8a96d3515b"
+      },
+      "written_at": 1794208706394
+    }
+  ]
+}
