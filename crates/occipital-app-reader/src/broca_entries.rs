@@ -40,6 +40,7 @@ use std::collections::{HashMap, VecDeque};
 use cortexkit_role_llm_runner::archive_prunes_reasoning::{kinds, PrunedReasoning};
 use cortexkit_role_llm_runner::attribution::{self, Attribution};
 use cortexkit_role_llm_runner::display::{self, DisplayPart, DisplayRow, ProjectionError};
+use cortexkit_role_llm_runner::read::HostPart;
 use cortexkit_role_llm_runner::serializer_profile;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -98,6 +99,10 @@ struct Entry {
     /// when the read asks for display facts. The block itself stays private.
     #[serde(default)]
     reasoning_summaries: Vec<ReasoningSummary>,
+    /// The parts of a user message the host wrote rather than the sender, by
+    /// part key, which a runner adds when the read asks for display facts.
+    #[serde(default)]
+    host_parts: Vec<HostPart>,
     /// The module that relayed this message, once its header is verified and
     /// cut. Never read from the entry itself.
     #[serde(skip)]
@@ -121,6 +126,31 @@ impl Entry {
         match self.part_digests.get(stored) {
             Some(digest) => Some(digest.part.as_str()),
             None => self.part_keys.get(stored).map(String::as_str),
+        }
+    }
+
+    /// `part` as the apps get it: text the host wrote into a user message,
+    /// such as Claude Code's `[Request interrupted by user]`, becomes a host
+    /// part, so it is never drawn as the person's words. The runner names those
+    /// parts by key (`host_parts`), and only on a user entry; a fact on any
+    /// other entry is ignored.
+    fn host_part(&self, part: Part, keys: &[&str]) -> Part {
+        if self.message.role != "user" {
+            return part;
+        }
+        let Some(fact) = self
+            .host_parts
+            .iter()
+            .find(|fact| keys.contains(&fact.part.as_str()))
+        else {
+            return part;
+        };
+        match part {
+            Part::Text(text) | Part::Injected(text) => Part::Host {
+                text,
+                code: fact.host_code.clone(),
+            },
+            other => other,
         }
     }
 }
@@ -149,6 +179,15 @@ enum Part {
     Text(String),
     Reasoning(String),
     Injected(String),
+    /// Text the host wrote into a user message rather than the sender, with
+    /// the runner's code for it when it matched a known marker. The apps get
+    /// an `injected` part marked `host` (and `hostCode`), which they draw as a
+    /// note or hide, and it adds nothing to the row's text: the phone draws a
+    /// person's bubble from that text.
+    Host {
+        text: String,
+        code: Option<String>,
+    },
     /// A tool call. `provider_executed` marks a tool the model's provider ran
     /// itself, such as a hosted web search, so nothing on this computer ran it.
     Call {
@@ -242,6 +281,15 @@ pub fn rows_with_pruned_reasoning(
                     if let Some(part) = decode_part(value).or(summary) {
                         let call_id = call_id
                             .filter(|_| matches!(part, Part::Call { .. } | Part::Result { .. }));
+                        // Broca keys a part by its served part key, falling back
+                        // to its stored position.
+                        let position = stored.to_string();
+                        let keys: Vec<&str> = entry
+                            .part_key(stored)
+                            .into_iter()
+                            .chain([position.as_str()])
+                            .collect();
+                        let part = entry.host_part(part, &keys);
                         parts.push(Decoded {
                             stored,
                             key: stored.to_string(),
@@ -345,6 +393,8 @@ struct EntryFacts {
     part_digests: Vec<PartDigest>,
     #[serde(default)]
     part_keys: Vec<String>,
+    #[serde(default)]
+    host_parts: Vec<HostPart>,
 }
 
 /// The apps' rows for the read entries of a runner whose bodies the contract
@@ -431,6 +481,7 @@ pub fn display_rows(
             tool_times,
             part_digests: facts.part_digests,
             part_keys: facts.part_keys,
+            host_parts: facts.host_parts,
             // The contract's projection already shows each reasoning summary as
             // a reasoning part of the display row.
             reasoning_summaries: Vec::new(),
@@ -465,6 +516,7 @@ pub fn display_rows(
             if matches!(part, Part::Reasoning(_)) && pruned(&entry, stored, pruned_reasoning) {
                 continue;
             }
+            let part = entry.host_part(part, &[key.as_str()]);
             parts.push(Decoded {
                 stored,
                 key,
@@ -971,6 +1023,13 @@ fn project(
             Part::Text(text) => json!({"type":"text", "text":text}),
             Part::Reasoning(text) => json!({"type":"reasoning", "text":text}),
             Part::Injected(text) => json!({"type":"injected", "text":text}),
+            Part::Host { text, code } => {
+                let mut value = json!({"type":"injected", "text":text, "host":true});
+                if let Some(code) = code {
+                    value["hostCode"] = json!(code);
+                }
+                value
+            }
             Part::Call {
                 name,
                 input,

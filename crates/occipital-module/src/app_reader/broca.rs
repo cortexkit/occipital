@@ -4356,6 +4356,7 @@ pub(crate) mod tests {
         assert_eq!(activity_for(None), None);
     }
     mod history_intake_samples;
+    mod host_parts;
     mod host_unknown_samples;
     mod model_names_samples;
     mod notices_samples;
