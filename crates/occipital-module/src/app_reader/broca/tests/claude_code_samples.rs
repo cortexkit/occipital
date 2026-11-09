@@ -107,6 +107,93 @@ async fn notices(served: &mut Served) -> Vec<Vec<u8>> {
     bodies
 }
 
+/// `phone-reader-host-notes-v1`: a page of the runner contract's own host-part
+/// cases (`display-host-codes.json`, numbered from ordinal 1 as runners do) on a
+/// Claude Code chat. Three of the person's messages hold only text the host
+/// wrote, each with a code (one an app won't know); the fourth holds a host part
+/// with no code before the person's own words. A message with only host parts is
+/// a `user` row with empty `text` whose only parts are host `injected` ones: the
+/// shape the apps must draw as a note, or not at all, never as a sent message.
+/// A part as the host-note test compares it: type, `host`, `hostCode`.
+type ShownPart = (Value, Value, Value);
+
+#[tokio::test]
+async fn the_host_note_samples_are_what_the_reader_serves() {
+    let file: Value = serde_json::from_str(
+        cortexkit_role_llm_runner::vectors::file("display-host-codes.json").unwrap(),
+    )
+    .unwrap();
+    let chat: Vec<Value> = file["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .enumerate()
+        .map(|(index, case)| {
+            let mut entry = case["read"].clone();
+            entry["ordinal"] = json!(index + 1);
+            entry
+        })
+        .collect();
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = chat;
+    *route.run_state.lock().unwrap() = Value::Null;
+    let app = Arc::new(super::super::super::AppReader::new(Arc::new(
+        BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(ClaudeCodeHead))),
+            Arc::new(AnyHarness(route.clone())),
+        ),
+    )));
+    let mut served = Served::new("phone-reader-host-notes-v1", app);
+    let request = json!({"method": super::super::super::TRANSCRIPT_PAGE,
+        "params": {"session": "ses_head", "harness": "claude-code", "limit": 50}});
+    let reply = served.read(1, &request).await;
+    let rows = decoded(&reply)["result"]["messages"].clone();
+    let shown: Vec<(Value, Value, Vec<ShownPart>)> = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| {
+            let parts = row["parts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|part| {
+                    (
+                        part["type"].clone(),
+                        part["host"].clone(),
+                        part["hostCode"].clone(),
+                    )
+                })
+                .collect();
+            (row["role"].clone(), row["text"].clone(), parts)
+        })
+        .collect();
+    let host = |code: Value| (json!("injected"), json!(true), code);
+    assert_eq!(
+        shown,
+        [
+            (json!("user"), json!(""), vec![host(json!("interrupted"))]),
+            (
+                json!("user"),
+                json!(""),
+                vec![host(json!("interrupted_for_tool_use"))]
+            ),
+            (
+                json!("user"),
+                json!(""),
+                vec![host(json!("future_notice_7"))]
+            ),
+            (
+                json!("user"),
+                json!("Person's words."),
+                vec![host(Value::Null), (json!("text"), Value::Null, Value::Null)]
+            ),
+        ]
+    );
+    served.keep("01-page-host-notes", &request, reply);
+    served.check();
+}
+
 #[tokio::test(start_paused = true)]
 async fn the_claude_code_samples_are_what_the_reader_serves() {
     let dir = ScratchDir::new("occipital-claude-code-samples");
