@@ -4315,6 +4315,7 @@ pub(crate) mod tests {
     mod bounded_reads;
     mod call_pins;
     mod claude_code_pages;
+    mod claude_code_samples;
     mod client_message_ids;
     mod contract_0085_samples;
     mod contract_0748_samples;
