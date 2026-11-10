@@ -4,12 +4,18 @@
 //! from held-material comparisons, so changing page ordinals alone does not change the comparison.
 
 use std::collections::{HashMap, VecDeque};
+use std::sync::Arc;
 
 use serde_json::{json, Map, Value};
 
 // A slow client can retain several versions while turns arrive, but process-local history must not
 // grow without bound. Missing evicted versions honestly evaluate as cursor_expired.
 const MAX_SNAPSHOTS_PER_SESSION: usize = 256;
+
+/// How many sessions keep snapshots. Past this, the session whose snapshots were recorded
+/// longest ago loses them all, and a claim on it evaluates as cursor_expired, as for any
+/// evicted version.
+const MAX_SESSIONS: usize = 64;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TranscriptClaim {
@@ -253,8 +259,12 @@ pub fn runner_claim_reply(
 pub struct TranscriptPageSnapshot {
     version: String,
     lineage_id: Option<String>,
+    /// The page's members other than `messages`, which `rows` holds instead.
     page: Value,
-    rows: Vec<TranscriptRow>,
+    /// Shared with the session's earlier snapshots wherever a row is unchanged, so the
+    /// snapshots of a session cost about one page plus what changed between them
+    /// (`TranscriptClaimState::record`).
+    rows: Vec<Arc<TranscriptRow>>,
     /// True when older rows of the observed newest page were dropped so the page fits a
     /// size bound. Claim lookup (`TranscriptClaimState::held_snapshot`) uses a trimmed
     /// snapshot only for a claim whose heldFloorMessageId is one of the snapshot's rows.
@@ -304,14 +314,16 @@ impl TranscriptPageSnapshot {
     pub fn from_page(
         version: impl Into<String>,
         lineage_id: Option<String>,
-        page: Value,
+        mut page: Value,
     ) -> Result<Self, InvalidTranscriptPage> {
-        let messages = page
-            .get("messages")
-            .and_then(Value::as_array)
-            .ok_or(InvalidTranscriptPage)?;
+        let Some(Value::Array(messages)) = page
+            .as_object_mut()
+            .and_then(|object| object.remove("messages"))
+        else {
+            return Err(InvalidTranscriptPage);
+        };
         let mut rows = Vec::with_capacity(messages.len());
-        for message in messages {
+        for mut message in messages {
             let object = message.as_object().ok_or(InvalidTranscriptPage)?;
             let message_id = object
                 .get("messageId")
@@ -332,15 +344,14 @@ impl TranscriptPageSnapshot {
             }
             // Identity and content determine whether held material changed. The ordinal is retained
             // for response ordering but cannot participate in the comparison.
-            let mut body = message.clone();
-            body.as_object_mut()
-                .expect("checked above")
-                .remove("ordinal");
-            rows.push(TranscriptRow {
+            if let Some(object) = message.as_object_mut() {
+                object.remove("ordinal");
+            }
+            rows.push(Arc::new(TranscriptRow {
                 message_id,
                 ordinal,
-                body,
-            });
+                body: message,
+            }));
         }
         rows.sort_by_key(|row| row.ordinal);
         Ok(Self {
@@ -418,7 +429,7 @@ impl TranscriptPageSnapshot {
             OlderPageCursor::BelowOldestRetained => rows[0].ordinal,
             OlderPageCursor::FromOldestTrimmed => self.rows[0].ordinal,
         };
-        let mut page = self.page_with_rows(&rows);
+        let mut page = self.page.clone();
         if let Some(object) = page.as_object_mut() {
             object.remove("olderUnavailable");
             object.remove("emptyReason");
@@ -467,7 +478,7 @@ impl TranscriptPageSnapshot {
             .collect()
     }
 
-    fn page_with_rows(&self, rows: &[TranscriptRow]) -> Value {
+    fn page_with_rows(&self, rows: &[Arc<TranscriptRow>]) -> Value {
         let mut page = self.page.clone();
         page["messages"] = Value::Array(
             rows.iter()
@@ -484,7 +495,17 @@ impl TranscriptPageSnapshot {
 
 #[derive(Debug, Default)]
 pub struct TranscriptClaimState {
-    snapshots: HashMap<String, VecDeque<TranscriptPageSnapshot>>,
+    sessions: HashMap<String, SessionSnapshots>,
+    /// Counts records, so the session recorded longest ago is the one with the lowest
+    /// `recorded`.
+    records: u64,
+}
+
+#[derive(Debug, Default)]
+struct SessionSnapshots {
+    snapshots: VecDeque<TranscriptPageSnapshot>,
+    /// The `records` count at this session's latest record.
+    recorded: u64,
 }
 
 impl TranscriptClaimState {
@@ -496,8 +517,9 @@ impl TranscriptClaimState {
         version: &str,
         since_message_id: Option<&str>,
     ) -> Option<TranscriptPageSnapshot> {
-        self.snapshots
+        self.sessions
             .get(session_id)?
+            .snapshots
             .iter()
             .rev()
             .find(|snapshot| {
@@ -518,8 +540,9 @@ impl TranscriptClaimState {
         session_id: &str,
         claim: &TranscriptClaim,
     ) -> Option<TranscriptPageSnapshot> {
-        self.snapshots
+        self.sessions
             .get(session_id)?
+            .snapshots
             .iter()
             .rev()
             .find(|snapshot| {
@@ -537,8 +560,37 @@ impl TranscriptClaimState {
             })
     }
 
-    pub fn record(&mut self, session_id: &str, snapshot: TranscriptPageSnapshot) {
-        let snapshots = self.snapshots.entry(session_id.to_string()).or_default();
+    pub fn record(&mut self, session_id: &str, mut snapshot: TranscriptPageSnapshot) {
+        self.records = self.records.wrapping_add(1);
+        if !self.sessions.contains_key(session_id) && self.sessions.len() >= MAX_SESSIONS {
+            let oldest = self
+                .sessions
+                .iter()
+                .min_by_key(|(_, session)| session.recorded)
+                .map(|(id, _)| id.clone());
+            if let Some(oldest) = oldest {
+                self.sessions.remove(&oldest);
+            }
+        }
+        let session = self.sessions.entry(session_id.to_string()).or_default();
+        session.recorded = self.records;
+        let snapshots = &mut session.snapshots;
+        // Successive pages of a session differ in a few rows at most, so each row the newest
+        // snapshot holds unchanged is shared rather than kept again.
+        if let Some(newest) = snapshots.back() {
+            let kept: HashMap<&str, &Arc<TranscriptRow>> = newest
+                .rows
+                .iter()
+                .map(|row| (row.message_id.as_str(), row))
+                .collect();
+            for row in &mut snapshot.rows {
+                if let Some(&kept) = kept.get(row.message_id.as_str()) {
+                    if **kept == **row {
+                        *row = Arc::clone(kept);
+                    }
+                }
+            }
+        }
         // The same version, lineage, and row material make this snapshot redundant, unless only
         // a trimmed copy is recorded: lookup without a floor match needs the untrimmed copy.
         if snapshots.iter().any(|existing| {
@@ -555,7 +607,7 @@ impl TranscriptClaimState {
     }
 
     pub fn remove_session(&mut self, session_id: &str) {
-        self.snapshots.remove(session_id);
+        self.sessions.remove(session_id);
     }
 }
 
@@ -986,6 +1038,72 @@ mod tests {
         assert!(state.snapshot("other", "v", None).is_some());
     }
 
+    /// Past `MAX_SESSIONS`, the session recorded longest ago loses its snapshots; one that
+    /// was recorded again since keeps them.
+    #[test]
+    fn the_session_recorded_longest_ago_is_evicted_past_the_session_cap() {
+        let mut state = TranscriptClaimState::default();
+        let page = || snapshot("v", 1, vec![message(1, "a", "one")]);
+        for index in 0..MAX_SESSIONS {
+            state.record(&format!("s{index}"), page());
+        }
+        // Recording s0 again, even a page it already holds, makes s1 the oldest.
+        state.record("s0", page());
+        state.record("new", page());
+        assert_eq!(state.sessions.len(), MAX_SESSIONS);
+        assert!(state.snapshot("s1", "v", None).is_none());
+        for kept in ["s0", "s2", "new"] {
+            assert!(state.snapshot(kept, "v", None).is_some(), "{kept}");
+        }
+    }
+
+    /// A row a session's newest snapshot already holds, unchanged, is shared rather than
+    /// kept twice; a changed row and a new one are the new snapshot's own. Claims read
+    /// the same either way.
+    #[test]
+    fn unchanged_rows_are_shared_between_a_sessions_snapshots() {
+        let mut state = TranscriptClaimState::default();
+        state.record(
+            "s",
+            snapshot(
+                "v1",
+                1,
+                vec![message(1, "a", "one"), message(2, "b", "two")],
+            ),
+        );
+        state.record(
+            "s",
+            snapshot(
+                "v2",
+                1,
+                vec![
+                    message(1, "a", "one"),
+                    message(2, "b", "two, edited"),
+                    message(3, "c", "three"),
+                ],
+            ),
+        );
+        let snapshots = &state.sessions["s"].snapshots;
+        let (first, second) = (&snapshots[0].rows, &snapshots[1].rows);
+        assert!(Arc::ptr_eq(&first[0], &second[0]));
+        assert!(!Arc::ptr_eq(&first[1], &second[1]));
+        assert_eq!(second[1].body["text"], "two, edited");
+        // The page each snapshot serves is whole, though only the rows hold its messages.
+        assert!(snapshots[1].page.get("messages").is_none());
+        assert_eq!(
+            snapshots[1].resync_page()["messages"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|row| (
+                    row["messageId"].as_str().unwrap(),
+                    row["ordinal"].as_i64().unwrap()
+                ))
+                .collect::<Vec<_>>(),
+            [("a", 1), ("b", 2), ("c", 3)]
+        );
+    }
+
     #[test]
     fn trimming_a_boundary_page_replaces_the_cursor_and_reached_start_marker() {
         let mut raw = page(vec![message(1, "a", "one"), message(2, "b", "two")]);
@@ -1388,7 +1506,7 @@ mod tests {
         state.record(session, trimmed.clone());
         state.record(session, untrimmed.clone());
         state.record(session, trimmed);
-        assert_eq!(state.snapshots[session].len(), 2);
+        assert_eq!(state.sessions[session].snapshots.len(), 2);
         assert_eq!(
             state.snapshot(session, "version-v", Some("D")),
             Some(untrimmed)
