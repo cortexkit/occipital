@@ -4324,6 +4324,7 @@ pub(crate) mod tests {
     mod contract_goldens;
     mod contract_heads;
     mod describe_samples;
+    mod describe_step_events_samples;
     mod empty_claim_samples;
     mod exact_read_samples;
     mod files_samples;
