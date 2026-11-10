@@ -9,12 +9,21 @@
 //! notices that rode it. Occipital files such a call's notices under that
 //! runner and key, so the apps find them by the new session and the key.
 //!
-//! The exports carry no schema pins or call times, so neither do Broca's
-//! reads: an imported call reaches the apps with its key but no `schemaPin`
-//! or times. Without a pin a call can't be joined to a tool view, and draws as
-//! a plain chip, as these tests pin.
+//! Those first exports carry no schema pins or call times, so neither do
+//! Broca's reads: an imported call reaches the apps with its key but no
+//! `schemaPin` or times, and without a pin it can't be joined to a tool view.
+//! The second set, `tests/data/broca-imported-heads-v2-1110/`, comes from
+//! exports that list each call's pin and times beside the history (runner
+//! contract §9.16: an imported call keeps every fact the minting runner
+//! recorded). There the pinned call reaches the apps with its pin and times,
+//! and the record its tool provider wrote under the minting runner joins it in
+//! the chat's new session.
 
+use super::tool_display_samples::{pin, reserved};
 use super::*;
+use crate::display::app::ToolDisplay;
+use crate::display::store::{DisplayStore, ViewState};
+use cortexkit_role_tool_display::{DisplayKind, DisplayWrite};
 use cortexkit_test_support::ScratchDir;
 use std::path::{Path, PathBuf};
 
@@ -22,8 +31,16 @@ fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/broca-imported-heads-1110")
 }
 
+fn root_v2() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/broca-imported-heads-v2-1110")
+}
+
 fn result(host: &str, name: &str) -> Value {
-    let bytes = std::fs::read(root().join(host).join(format!("{name}.json"))).unwrap();
+    read_result(&root(), host, name)
+}
+
+fn read_result(root: &Path, host: &str, name: &str) -> Value {
+    let bytes = std::fs::read(root.join(host).join(format!("{name}.json"))).unwrap();
     runner_result(serde_json::from_slice(&bytes).unwrap())
         .unwrap_or_else(|error| panic!("{host}/{name}: {error:?}"))
 }
@@ -53,12 +70,151 @@ const CHATS: [(&str, &str, &[&str], &str, &str); 2] = [
 
 #[test]
 fn the_imported_head_samples_keep_their_checksums() {
-    let sums = std::fs::read_to_string(root().join("SHA256SUMS")).unwrap();
-    assert_eq!(sums.lines().count(), 7);
-    for line in sums.lines() {
-        let (expected, name) = line.split_once("  ").unwrap();
-        let bytes = std::fs::read(root().join(name)).unwrap();
-        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    for root in [root(), root_v2()] {
+        let sums = std::fs::read_to_string(root.join("SHA256SUMS")).unwrap();
+        assert_eq!(sums.lines().count(), 7);
+        for line in sums.lines() {
+            let (expected, name) = line.split_once("  ").unwrap();
+            let bytes = std::fs::read(root.join(name)).unwrap();
+            assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+        }
+    }
+}
+
+/// The pin the minting runner recorded for each set's pinned `bash` call.
+const PIN_V2: &str = "tp1:bash:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1";
+
+/// The second set's calls, each `(host, call key, served pin)`: one call per
+/// host whose pin the minting runner recorded, and one it recorded none for.
+const CALLS_V2: [(&str, &str, Option<&str>); 4] = [
+    (
+        "opencode2",
+        "msg_1c3a28ed1001vuQMbrQVVCiZ1S/call_probe",
+        None,
+    ),
+    (
+        "opencode2",
+        "msg_1c3a29e37001AjEeHT8n9cQUdO/call_each",
+        Some(PIN_V2),
+    ),
+    (
+        "pi",
+        "01a1c3a2-83cc-718b-bcb8-06f631d16cd7/9e044dcd/call_probe_1",
+        None,
+    ),
+    (
+        "pi",
+        "01a1c3a2-83cc-718b-bcb8-06f631d16cd7/5639ca60/call_probe_7",
+        Some(PIN_V2),
+    ),
+];
+
+/// With the second set's facts, each imported call reaches the apps with the
+/// times the minting runner recorded, and with its pin where it recorded one.
+/// The pinned call is filed under the minting runner in the chat's new
+/// session, so the record its tool provider (here `aft`, which serves the
+/// `bash` view) wrote for it under that runner joins it there.
+#[tokio::test]
+async fn an_imported_call_keeps_its_pin_times_and_record() {
+    assert_eq!(pin("bash", 'a'), PIN_V2);
+    for host in ["opencode2", "pi"] {
+        let dir = ScratchDir::new("occipital-imported-heads-v2");
+        let descriptor = crate::store::tests::descriptor(&dir);
+        let store = Arc::new(DisplayStore::open(&descriptor, dir.path()).unwrap());
+        let (call_pins, _pin_task) = crate::display::call_pins::start(store.clone(), None);
+        let pins = crate::display::call_pins::CallPinSlot::default();
+        let _ = pins.set(call_pins);
+        let hints = tokio::sync::broadcast::channel(crate::display::app::HINTS).0;
+        let tool = Arc::new(ToolDisplay::new(store.clone(), None, hints));
+        let manifest = super::tool_display_samples::view("aft.bash", json!({}), "", "", 0);
+        let input_schema = super::tool_display_samples::input_schema(
+            "command",
+            json!({"command": {"type": "string"}}),
+        );
+        store
+            .keep_view(
+                "aft",
+                PIN_V2,
+                &ViewState::View {
+                    manifest,
+                    input_schema,
+                },
+                "1.0",
+                1,
+            )
+            .unwrap();
+        let (_, pinned, _) = CALLS_V2
+            .into_iter()
+            .find(|(of, _, served)| *of == host && served.is_some())
+            .unwrap();
+        let record = json!({"durationMs": 75, "outcome": "success"});
+        let write = DisplayWrite::new(
+            reserved(THALAMUS_RUNNER_MODULE_ID),
+            pinned,
+            DisplayKind::Record,
+            PIN_V2.to_owned(),
+            record.as_object().unwrap().clone(),
+        );
+        store.write(&reserved("aft"), &write, 1).unwrap();
+
+        let page: RawPage =
+            serde_json::from_value(read_result(&root_v2(), host, "read-display-facts-1")).unwrap();
+        let route = FakeRoute::new();
+        *route.entries.lock().unwrap() = page.messages;
+        *route.run_state.lock().unwrap() = Value::Null;
+        let app = Arc::new(super::super::super::AppReader::new(Arc::new(
+            BrocaSources::new(
+                Arc::new(Resolver::new(Arc::new(Lookup))),
+                Arc::new(Routes(route)),
+            )
+            .with_call_pins(pins),
+        )));
+        app.set_tool_display(tool);
+        let mut params = params();
+        params["limit"] = json!(50);
+        let page = app
+            .read(super::super::super::TRANSCRIPT_PAGE, params)
+            .await
+            .unwrap();
+        let calls: Vec<&Value> = page["messages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|row| row["parts"].as_array().unwrap())
+            .filter(|part| part["type"] == "tool")
+            .collect();
+        for (_, key, served) in CALLS_V2.into_iter().filter(|(of, ..)| *of == host) {
+            let call = calls
+                .iter()
+                .find(|call| call["callKey"] == key)
+                .unwrap_or_else(|| panic!("{host}: no call {key}"));
+            assert_eq!(call["schemaPin"].as_str(), served, "{host}: {call}");
+            assert!(call["startedAtMs"].is_u64(), "{host}: {call}");
+            assert!(call["finishedAtMs"].is_u64(), "{host}: {call}");
+            assert!(call.get("callCarrier").is_none(), "{host}: {call}");
+        }
+
+        let ask = json!({"session": "alfonso:s1", "harness": "broca", "callKeys": [pinned]});
+        let mut records = Value::Null;
+        for _ in 0..1_000 {
+            records = app
+                .read(crate::display::app::RECORDS, ask.clone())
+                .await
+                .unwrap();
+            if records["calls"][pinned].get("record").is_some() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+        assert_eq!(
+            records["calls"][pinned]["record"], record,
+            "{host}: {records}"
+        );
+        assert_eq!(
+            store.call_pin(THALAMUS_RUNNER_MODULE_ID, pinned).unwrap(),
+            Some(("alfonso:s1".to_owned(), PIN_V2.to_owned())),
+            "{host}"
+        );
     }
 }
 
