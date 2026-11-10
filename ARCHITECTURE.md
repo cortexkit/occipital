@@ -51,6 +51,8 @@ Watches run in a long-held pool of handler slots, so open chats never hold up re
 
 An uploaded file goes into the model's prompt or into the session's project folder. An app that asks for the prompt gets it when the session's runner takes uploads and its model accepts the file's type; the send naming the file copies it to the runner. Otherwise the file is placed in the project and the message names its path. When the runner refuses a prompt file anyway (`media_unsupported`, `media_too_large`), the app asks Occipital to place it in the project (`upload.place`) and sends the path instead. Partial uploads wait in `upload-blobs/` and resume from the bytes already written.
 
+How many files a message may carry follows the session's model: `session.details` reports it as `attachments` to an app that asks (images from Fusiform's `limit.images_per_request`, else 4; other files 4; each image bound the stricter of the catalog's and the runner's), and a send naming more is refused `too_many_files` before anything is copied. Both come from one function, so the details and the send never disagree.
+
 `session.media` reads an image a chat references: a thumbnail Occipital makes from the runner's bytes (at most 1024 pixels on the longest side, upright), or the original in pieces. Page reads ask runners that support it for photo references, so no page brings image bytes with it; an image reaches the apps as a file part with its digest and size, and its bytes only through `session.media`.
 
 ## Tool display
@@ -61,7 +63,7 @@ An uploaded file goes into the model's prompt or into the session's project fold
 - **Reading:** the apps read views, templates, records and details beside the pages (`display.views`, `display.template`, `session.tool_records`, `session.tool_detail`), cache them for good, and hear of new ones from `session.tool_records_watch`. Keeping them beside the pages keeps page versions the runner's alone: a record that lands after its row never reloads a chat.
 - **Moved calls:** Occipital files a call under the runner that minted its key and finds it by the session and key the app asks about, so a chat moved to another runner keeps its tool rows and notices.
 
-`display.model_names` resolves model ids to the names the apps show, from Fusiform's catalog and core's provider aliases, cached for 30 minutes (60 seconds when the aliases couldn't be read).
+`display.model_names` resolves model ids to the names the apps show, from Fusiform's catalog and core's provider aliases, cached for 30 minutes (60 seconds when the aliases couldn't be read). The same read takes each model's attachment limits.
 
 ## Notices
 

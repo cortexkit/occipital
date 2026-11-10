@@ -191,13 +191,6 @@ fn malformed_requests_get_cores_codes_in_cores_order() {
             "attachment a is named twice",
         ),
         (
-            json!({"session": "s", "text": "t", "parts": (0..11)
-                .map(|i| json!({"type": "file", "attachment_id": format!("a{i}")}))
-                .collect::<Vec<_>>()}),
-            "invalid_request",
-            "a message may name at most 10 files",
-        ),
-        (
             json!({"session": "s", "text": "  "}),
             "invalid_request",
             "message must include non-empty text or at least one file part",
@@ -244,6 +237,18 @@ fn file_parts_name_their_uploads_in_order() {
     let request = SendRequest::parse(&json!({"session": "s", "text": "", "parts": parts})).unwrap();
     assert_eq!(request.attachments(), ["b", "a"]);
     assert_eq!(request.content(), json!({"text": "", "parts": parts}));
+}
+
+/// The request sets no count of its own: how many files a message may carry
+/// depends on the session's model, which the module checks when it sends.
+#[test]
+fn a_request_may_name_more_files_than_any_fixed_count() {
+    let parts: Vec<Value> = (0..40)
+        .map(|i| json!({"type": "file", "attachment_id": format!("a{i}")}))
+        .collect();
+    let request =
+        SendRequest::parse(&json!({"session": "s", "text": "t", "parts": parts})).unwrap();
+    assert_eq!(request.attachments().len(), 40);
 }
 
 /// Core's `send_id_validation_accepts_only_the_bounded_opaque_charset`.

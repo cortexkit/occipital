@@ -345,3 +345,95 @@ async fn malformed_ids_are_refused() {
     }
     assert!(fake.asked.lock().unwrap().is_empty(), "nothing was read");
 }
+
+/// The limits on fusiform's own replies: a first-party model's stated count
+/// and image bounds, found under its key or a credential provider routing maps
+/// to it; a gateway row with no bounds, and a model the catalog doesn't know,
+/// get the fallbacks. Each image bound is the stricter of the catalog's and the
+/// runner's.
+#[tokio::test(start_paused = true)]
+async fn attachment_limits_come_from_the_model_row() {
+    let fake = Arc::new(Fake::default());
+    let mut page = fixture("fusiform-attachment-bounds.json");
+    let gateway = fixture("fusiform-gateway-without-bounds.json");
+    for (key, facts) in gateway["models"].as_object().unwrap() {
+        page["models"][key] = facts.clone();
+    }
+    fake.page(Ok(page));
+    fake.targets(Ok(fixture("routing-resolved.json")));
+    let names = Arc::new(names(&fake));
+    let model = |provider: &str, model: &str| json!({"provider": provider, "model": model, "variant": "high"});
+
+    let opus = names
+        .attachments(Some(&model("anthropic", "claude-opus-5-5")), None, None)
+        .await;
+    assert_eq!(
+        opus.to_json(),
+        json!({"maxImages": 600, "maxFiles": 4, "imageBytes": 7_500_000, "imageLongEdgePx": 3000})
+    );
+    // Through routing's map, and held to a runner stricter on bytes only.
+    let mapped = names
+        .attachments(
+            Some(&model("anthropic-platform", "claude-opus-5-5")),
+            Some(5_242_880),
+            Some(8000),
+        )
+        .await;
+    assert_eq!(
+        mapped.to_json(),
+        json!({"maxImages": 600, "maxFiles": 4, "imageBytes": 5_242_880, "imageLongEdgePx": 3000})
+    );
+    for unbounded in [
+        Some(model("anyapi", "anthropic/claude-opus-4-6")),
+        Some(model("example", "unknown-model")),
+        None,
+    ] {
+        assert_eq!(
+            names.attachments(unbounded.as_ref(), None, None).await,
+            AttachmentLimits::fallback(),
+            "{unbounded:?}"
+        );
+    }
+    // A model with limits and no name still answers `{}` for its name.
+    assert_eq!(
+        ask(&names, &["anthropic/claude-opus-5-5"]).await["anthropic/claude-opus-5-5"],
+        json!({})
+    );
+    assert_eq!(
+        fake.asked.lock().unwrap().len(),
+        1,
+        "one catalog read serves them all"
+    );
+
+    // Thirty minutes on, the limits are answered at once from the names held,
+    // while a read in the background tries to replace them.
+    tokio::time::advance(FRESH + Duration::from_secs(1)).await;
+    let stale = tokio::time::timeout(
+        Duration::from_millis(1),
+        names.attachments(Some(&model("anthropic", "claude-opus-5-5")), None, None),
+    )
+    .await
+    .expect("old names answer without waiting on the read");
+    assert_eq!(stale.max_images, 600);
+}
+
+/// With no catalog read to be had, the fallbacks apply, keeping the runner's
+/// own image bounds, rather than the details or the send failing.
+#[tokio::test(start_paused = true)]
+async fn attachment_limits_fall_back_without_a_catalog() {
+    let fake = Arc::new(Fake::default());
+    fake.page(Err(refused(None, "fusiform is restarting")));
+    let names = Arc::new(names(&fake));
+    let model = json!({"provider": "anthropic", "model": "claude-opus-5-5"});
+    let limits = names.attachments(Some(&model), Some(5_242_880), None).await;
+    assert_eq!(
+        limits.to_json(),
+        json!({"maxImages": 4, "maxFiles": 4, "imageBytes": 5_242_880})
+    );
+    assert_eq!(
+        attachment_limits(None, Some(&model), None, Some(8000))
+            .await
+            .to_json(),
+        json!({"maxImages": 4, "maxFiles": 4, "imageLongEdgePx": 8000})
+    );
+}

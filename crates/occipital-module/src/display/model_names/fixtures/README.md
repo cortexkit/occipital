@@ -18,6 +18,13 @@ actually serve.
     model", a hand-added model with no `provider.name`.
   - `fusiform-named-retired-model.json`: "catalog.get — a named read of a
     retired model", whose `models` is empty.
+- `fusiform-attachment-bounds.json` and `fusiform-gateway-without-bounds.json`:
+  the `response` of "catalog.get — first-party attachment bounds"
+  (`anthropic/claude-opus-5-5` with `limit.images_per_request`,
+  `limit.image_bytes` and `limit.image_long_edge_px`) and "catalog.get — a
+  gateway without attachment bounds" (`anyapi/anthropic/claude-opus-4-6`), from
+  the same file at commit `b98cdd2c92e2b3e8223c99e25418bf6478d4649b`, written
+  the same way.
 - `routing-resolved.json` and `routing-warming.json`: `resolved.json` and
   `warming.json` from prefrontal's tag `route-catalog-targets-vectors-v1`
   (commit `0afec2ec0c1206057656bd97a6980e6b1e435d90`), folder

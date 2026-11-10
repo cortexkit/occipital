@@ -6,6 +6,7 @@ use super::*;
 use crate::app_reader::{uploads, Caller, SourceResolver};
 use std::{path::PathBuf, sync::atomic::AtomicU64};
 
+mod attachments_samples;
 mod samples;
 
 const PHONE: &str = "0123456789abcdef0123456789abcdef";
@@ -26,6 +27,8 @@ struct UploadRunner {
     /// Whether it also declares `media_only_send`, storing a message of files alone.
     media_only: AtomicBool,
     input: Mutex<Option<Value>>,
+    /// The head's model, `{provider, model, variant?}`, when it names one.
+    model: Mutex<Option<Value>>,
     /// Each upload by its runner id.
     uploads: Mutex<HashMap<String, Held>>,
     next: AtomicU64,
@@ -39,6 +42,7 @@ impl UploadRunner {
             attachments: AtomicBool::new(true),
             media_only: AtomicBool::new(false),
             input: Mutex::default(),
+            model: Mutex::default(),
             uploads: Mutex::default(),
             next: AtomicU64::new(1),
             calls: Mutex::default(),
@@ -102,6 +106,9 @@ impl SendTarget for UploadTarget {
                 });
                 if let Some(input) = runner.input.lock().unwrap().clone() {
                     head["input"] = input;
+                }
+                if let Some(model) = runner.model.lock().unwrap().clone() {
+                    head["model"] = model;
                 }
                 Ok(head)
             }
@@ -183,8 +190,80 @@ impl SendTargets for UploadTargets {
 }
 
 /// Where uploads are placed, and a model that takes images and nothing else,
-/// as the fit says.
-struct Project(PathBuf, Mutex<crate::app_reader::PromptFit>);
+/// as the fit says, or every file when the fourth member is set. The third is
+/// the session's head for `session.details`, when a test reads them.
+struct Project(
+    PathBuf,
+    Mutex<crate::app_reader::PromptFit>,
+    Mutex<Option<Arc<HeadSource>>>,
+    AtomicBool,
+);
+
+/// The session's head as `session.details` reads it: the same model and image
+/// bounds the runner's `session.head` gives the send path. Nothing else is read.
+struct HeadSource(Arc<UploadRunner>, tokio::sync::watch::Sender<u64>);
+
+#[async_trait]
+impl occipital_app_reader::source::TranscriptSource for HeadSource {
+    fn harness(&self) -> &'static str {
+        "broca"
+    }
+    async fn head(&self) -> Result<occipital_app_reader::source::Head, ReadError> {
+        let input = self.0.input.lock().unwrap().clone().unwrap_or_default();
+        Ok(occipital_app_reader::source::Head {
+            history_version: Some(1),
+            incarnation: Some("inc-a".into()),
+            model: self.0.model.lock().unwrap().clone(),
+            input: occipital_app_reader::source::InputCapability {
+                max_image_bytes: input["max_image_bytes"].as_u64(),
+                max_image_dimension: input["max_image_dimension"].as_u64(),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+    }
+    async fn newest(&self, _: u32) -> Result<occipital_app_reader::source::HistoryPage, ReadError> {
+        Err(ReadError::new(
+            "provider_unavailable",
+            "only the head is read here",
+        ))
+    }
+    async fn older(
+        &self,
+        _: &occipital_app_reader::source::Anchor,
+        _: u32,
+    ) -> Result<occipital_app_reader::source::HistoryPage, ReadError> {
+        Err(ReadError::new(
+            "provider_unavailable",
+            "only the head is read here",
+        ))
+    }
+    async fn newer(
+        &self,
+        _: &str,
+        _: u32,
+    ) -> Result<occipital_app_reader::source::HistoryPage, ReadError> {
+        Err(ReadError::new(
+            "provider_unavailable",
+            "only the head is read here",
+        ))
+    }
+    async fn exact(
+        &self,
+        _: &occipital_app_reader::source::Anchor,
+    ) -> Result<Option<occipital_app_reader::source::Row>, ReadError> {
+        Err(ReadError::new(
+            "provider_unavailable",
+            "only the head is read here",
+        ))
+    }
+    fn changes(&self) -> tokio::sync::watch::Receiver<u64> {
+        self.1.subscribe()
+    }
+    fn activity(&self) -> Option<(&'static str, i64)> {
+        None
+    }
+}
 
 #[async_trait]
 impl SourceResolver for Project {
@@ -193,7 +272,12 @@ impl SourceResolver for Project {
         _: &str,
         _: Option<&str>,
     ) -> Result<Option<Arc<dyn occipital_app_reader::source::TranscriptSource>>, ReadError> {
-        Ok(None)
+        Ok(self
+            .2
+            .lock()
+            .unwrap()
+            .clone()
+            .map(|head| head as Arc<dyn occipital_app_reader::source::TranscriptSource>))
     }
 
     async fn project_root(&self, _: &str, _: Option<&str>) -> Result<PathBuf, ReadError> {
@@ -206,9 +290,10 @@ impl SourceResolver for Project {
         _: Option<&str>,
         mime: &str,
     ) -> Result<Option<crate::app_reader::PromptFit>, ReadError> {
-        Ok(mime
-            .starts_with("image/")
-            .then(|| self.1.lock().unwrap().clone()))
+        Ok(
+            (mime.starts_with("image/") || self.3.load(Ordering::SeqCst))
+                .then(|| self.1.lock().unwrap().clone()),
+        )
     }
 }
 
@@ -259,7 +344,12 @@ impl Prompt {
             _dir: dir,
             runner,
             uploads,
-            resolver: Arc::new(Project(project, Mutex::new(fit))),
+            resolver: Arc::new(Project(
+                project,
+                Mutex::new(fit),
+                Mutex::default(),
+                AtomicBool::new(false),
+            )),
             sender: Arc::new(sender),
             now,
         }

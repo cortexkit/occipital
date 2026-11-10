@@ -20,10 +20,6 @@ pub const OPERATION: &str = "session.enqueue_user_message";
 /// `ENQUEUE_SEND_ID_MAX_CHARS`).
 pub const ENQUEUE_SEND_ID_MAX_CHARS: usize = 128;
 
-/// The most files one message may name. The runner contract sets no limit; this
-/// keeps one send's uploads to the runner bounded.
-pub const MAX_ATTACHMENTS: usize = 10;
-
 /// A named refusal for a malformed send. Nothing is resolved or sent for it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SendRefusal {
@@ -180,11 +176,6 @@ fn attachment_ids(parts: &Value) -> Result<Vec<String>, SendRefusal> {
         Value::Array(parts) => parts,
         _ => return Err(SendRefusal::invalid("parts must be an array of file parts")),
     };
-    if parts.len() > MAX_ATTACHMENTS {
-        return Err(SendRefusal::invalid(format!(
-            "a message may name at most {MAX_ATTACHMENTS} files"
-        )));
-    }
     let mut ids = Vec::with_capacity(parts.len());
     for part in parts {
         let id = (part["type"] == "file")

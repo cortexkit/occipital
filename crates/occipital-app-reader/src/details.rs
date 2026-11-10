@@ -11,7 +11,7 @@
 use serde_json::{json, Value};
 
 use crate::page::{self, PageRefusal};
-use crate::source::{ReadError, TranscriptSource};
+use crate::source::{Head, ReadError, TranscriptSource};
 
 pub const OPERATION: &str = "session.details";
 
@@ -46,6 +46,17 @@ pub async fn read(
     source: Option<&dyn TranscriptSource>,
     request: &DetailsRequest,
 ) -> Result<Value, ReadError> {
+    read_with_head(source, request)
+        .await
+        .map(|(reply, _)| reply)
+}
+
+/// [`read`], with the head the reply was built from, for a caller that adds
+/// facts of its own from the same head.
+pub async fn read_with_head(
+    source: Option<&dyn TranscriptSource>,
+    request: &DetailsRequest,
+) -> Result<(Value, Head), ReadError> {
     let Some(source) = source else {
         return Err(ReadError::new(
             "session_unknown",
@@ -62,7 +73,7 @@ pub async fn read(
         reply["incarnation"] = json!(incarnation);
     }
     head.describe_session(&mut reply);
-    Ok(reply)
+    Ok((reply, head))
 }
 
 #[cfg(test)]

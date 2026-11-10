@@ -373,6 +373,21 @@ pub struct AppReader {
     notices: std::sync::OnceLock<Arc<crate::notices::Notices>>,
 }
 
+/// What a message to the session `head` describes may carry, as its details
+/// report it (`crate::display::model_names::attachment_limits`).
+async fn attachment_limits(
+    names: Option<&Arc<crate::display::model_names::ModelNames>>,
+    head: &occipital_app_reader::source::Head,
+) -> crate::display::model_names::AttachmentLimits {
+    crate::display::model_names::attachment_limits(
+        names,
+        head.model.as_ref(),
+        head.input.max_image_bytes,
+        head.input.max_image_dimension,
+    )
+    .await
+}
+
 impl Default for AppReader {
     fn default() -> Self {
         Self::new(Arc::new(UnwiredResolver))
@@ -418,8 +433,10 @@ impl AppReader {
         })
     }
 
-    /// Serve `display.model_names` from `names`, once.
+    /// Serve `display.model_names` from `names`, once, and hold sends to the
+    /// attachment limits it reads.
     pub fn set_model_names(&self, names: Arc<crate::display::model_names::ModelNames>) {
+        self.sends.set_model_names(names.clone());
         let _ = self.model_names.set(names);
     }
 
@@ -619,8 +636,18 @@ impl AppReader {
                     .resolve(&request.session, request.harness.as_deref()),
             )
             .await?;
-            let mut reply =
-                occipital_app_reader::details::read(source.as_deref(), &request).await?;
+            let (mut reply, head) =
+                occipital_app_reader::details::read_with_head(source.as_deref(), &request).await?;
+            // Only for an app that asks, so the details every other app reads
+            // keep their bytes.
+            if params["attachmentLimits"] == true {
+                let limits = observe::step(
+                    "attachment_limits",
+                    attachment_limits(self.model_names.get(), &head),
+                )
+                .await;
+                reply["attachments"] = limits.to_json();
+            }
             self.sends.attach_queued(&mut reply, &request.session).await;
             return Ok(reply);
         }

@@ -18,13 +18,13 @@ const SET: &str = "phone-uploads-prompt-v2";
 /// The image limits the test session's model reports.
 const MAX_IMAGE_BYTES: u64 = 5_242_880;
 const MAX_IMAGE_DIMENSION: u64 = 8_000;
-const PROJECT: &str = "/path/to/project";
+pub(super) const PROJECT: &str = "/path/to/project";
 const SCREENSHOT: &[u8] = b"a screenshot, as a phone would send its bytes\n";
 const PHOTO: &[u8] = b"a second photo\n";
 const CLIP: &[u8] = b"a screen recording\n";
 
 /// The paired phone's route, as Callosum binds it.
-fn phone_route() -> crate::app_reader::RouteBinding {
+pub(super) fn phone_route() -> crate::app_reader::RouteBinding {
     (
         Some(Principal::Reserved {
             module_id: "callosum".into(),
@@ -38,16 +38,16 @@ fn phone_route() -> crate::app_reader::RouteBinding {
     )
 }
 
-struct Recorder {
-    served: Served,
-    root: String,
-    corr: u64,
+pub(super) struct Recorder {
+    pub(super) served: Served,
+    pub(super) root: String,
+    pub(super) corr: u64,
 }
 
 impl Recorder {
     /// Serve `method` with `params`, keep request and reply as sample `name`, and
     /// answer the reply's `result`, or its refusal.
-    async fn keep(&mut self, name: &str, method: &str, params: Value) -> Value {
+    pub(super) async fn keep(&mut self, name: &str, method: &str, params: Value) -> Value {
         self.corr += 1;
         let request = json!({"method": method, "params": params});
         self.served.send(self.corr, &request).await;
@@ -69,7 +69,7 @@ impl Recorder {
     }
 }
 
-fn file_part(id: &str, mime: &str, filename: &str) -> Value {
+pub(super) fn file_part(id: &str, mime: &str, filename: &str) -> Value {
     json!({"type": "file", "attachment_id": id, "mime": mime, "filename": filename})
 }
 

@@ -83,6 +83,11 @@ pub const MEDIA_UNSUPPORTED: &str = "media_unsupported";
 /// An image the send names is above the model's limit (`detail` names it). Nothing
 /// was sent.
 pub const MEDIA_TOO_LARGE: &str = "media_too_large";
+/// The send names more images, or more other files, than a message to this
+/// session may carry (`detail`: `maxImages`, `maxFiles`, and the send's `images`
+/// and `files`). Nothing was sent. The limits are the ones `session.details`
+/// reports as `attachments`.
+pub const TOO_MANY_FILES: &str = "too_many_files";
 /// The runner lost a file this module copied to it before the send named it.
 /// Nothing was sent; a resend copies the file again.
 pub const UPLOAD_GONE: &str = "upload_gone";
@@ -217,6 +222,9 @@ pub struct Sender {
     tasks: Mutex<tokio::task::JoinSet<()>>,
     /// Stop answers by session and `clientRequestId`, so a repeat gets the first answer.
     stops: Mutex<HashMap<(String, String), Value>>,
+    /// The model catalog that bounds how many files a message carries. Until
+    /// `set_model_names` supplies it, the fallback limits apply.
+    model_names: std::sync::OnceLock<Arc<crate::display::model_names::ModelNames>>,
 }
 
 fn wall_clock() -> i64 {
@@ -246,12 +254,18 @@ impl Sender {
             following: Arc::default(),
             tasks: Mutex::default(),
             stops: Mutex::default(),
+            model_names: std::sync::OnceLock::new(),
         }
     }
 
     pub fn with_uploads(mut self, uploads: Option<Arc<Uploads>>) -> Self {
         self.uploads = uploads;
         self
+    }
+
+    /// Hold sends to the attachment limits `names` reads, once.
+    pub fn set_model_names(&self, names: Arc<crate::display::model_names::ModelNames>) {
+        let _ = self.model_names.set(names);
     }
 
     /// Late outcomes for every session; a transcript watch keeps those for its own.
@@ -765,6 +779,40 @@ impl Sender {
                 });
             }
             files.push(file);
+        }
+        // Counted over the files this send names, all of them already uploaded,
+        // before anything is copied to the runner.
+        let model = meta
+            .model
+            .as_ref()
+            .and_then(|model| serde_json::to_value(model).ok());
+        let limits = crate::display::model_names::attachment_limits(
+            self.model_names.get(),
+            model.as_ref(),
+            meta.input.as_ref().and_then(|input| input.max_image_bytes),
+            meta.input
+                .as_ref()
+                .and_then(|input| input.max_image_dimension)
+                .map(u64::from),
+        )
+        .await;
+        let images = files
+            .iter()
+            .filter(|file| file.mime.starts_with("image/"))
+            .count() as u64;
+        let others = files.len() as u64 - images;
+        if images > limits.max_images || others > limits.max_files {
+            return Err(SendRefusal {
+                detail: Some(json!({"maxImages": limits.max_images,
+                    "maxFiles": limits.max_files, "images": images, "files": others})),
+                ..SendRefusal::new(
+                    TOO_MANY_FILES,
+                    format!(
+                        "a message to this session may carry {} images and {} other files",
+                        limits.max_images, limits.max_files
+                    ),
+                )
+            });
         }
         let reference = target.reference();
         let runner = format!("{}/{}", reference.runner, reference.session);

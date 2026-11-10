@@ -101,6 +101,15 @@ that names the file copies it to the runner. Otherwise the file is placed in the
 project, and the app puts its path in the message text. `upload.place` is the
 app's fallback when a send naming a prompt file is refused.
 
+How many files one message may carry follows the session's model.
+`session.details` reports it as `attachments` when the request carries
+`attachmentLimits: true`: `maxImages` (files whose mime
+starts with `image/`), from the model catalog's `limit.images_per_request`,
+else 4; `maxFiles` (all other files), always 4; and, when known, `imageBytes`
+and `imageLongEdgePx`, each the stricter of the catalog's and the runner's own
+bound. A send naming more images or more other files is refused
+`too_many_files` before anything is copied, with those limits in its `detail`.
+
 An image a chat references is read with `session.media`: a thumbnail Occipital
 makes from the runner's bytes (at most 1024 pixels on its longest side, upright),
 or the original in pieces. Image file parts on a page carry the image's digest and,

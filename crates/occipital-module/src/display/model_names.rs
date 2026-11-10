@@ -24,6 +24,9 @@
 //! fusiform's `catalog_version` doesn't move when only curated names change,
 //! so the age alone decides when to read again. A failed read keeps serving the
 //! names already held.
+//!
+//! The same read takes each model's attachment limits, which a session's
+//! details report and its sends are held to ([`ModelNames::attachments`]).
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -58,6 +61,28 @@ const MAX_PAGES: usize = 1_000;
 
 /// How many times a read starts over after the catalog changed under it.
 const MAX_RESTARTS: usize = 3;
+
+/// How long a session's details or a send waits for the first catalog read
+/// after the module starts, before taking the fallback limits. Later reads
+/// happen in the background, so only that first one is ever waited for.
+const FIRST_READ_WAIT: Duration = Duration::from_secs(2);
+
+/// The facts one read of the catalog asks for: the names, and the attachment
+/// limits.
+const FACTS: [&str; 5] = [
+    "model.name",
+    "provider.name",
+    IMAGES_PER_REQUEST,
+    IMAGE_BYTES,
+    IMAGE_LONG_EDGE_PX,
+];
+const IMAGES_PER_REQUEST: &str = "limit.images_per_request";
+const IMAGE_BYTES: &str = "limit.image_bytes";
+const IMAGE_LONG_EDGE_PX: &str = "limit.image_long_edge_px";
+
+/// How many images, and how many other files, a message may carry when the
+/// catalog states no count for its model. The apps use the same numbers.
+pub const FALLBACK_FILES: u64 = 4;
 
 /// Routing's module ids: the one it serves under today, then the one it is
 /// moving to. Until the move only the first exists; after it, only the second.
@@ -107,7 +132,7 @@ fn absent(failure: &CallFailure) -> bool {
 /// Where the names and the provider map come from.
 #[async_trait]
 pub trait NameSources: Send + Sync {
-    /// One page of fusiform's `catalog.get` reply for the two name facts,
+    /// One page of fusiform's `catalog.get` reply for the facts in `FACTS`,
     /// starting at `page_token`.
     async fn names_page(&self, page_token: Option<&str>) -> Result<Value, CallFailure>;
     /// Routing's `route.catalog_targets` reply, `{"result": {targets, …}}`.
@@ -116,16 +141,94 @@ pub trait NameSources: Send + Sync {
 
 /// The names as one read of the catalog left them.
 struct Names {
-    /// `<provider>/<model>` to the model's name and its provider's name.
-    models: HashMap<String, (String, Option<String>)>,
+    /// `<provider>/<model>` to what the catalog says of the model.
+    models: HashMap<String, Model>,
     /// Credential provider to catalog provider.
     aliases: HashMap<String, String>,
     fresh_until: Instant,
 }
 
+/// One model's row: its name and its provider's, when served, and its
+/// attachment limits, each absent when the catalog states none.
+#[derive(Debug, Default)]
+struct Model {
+    name: Option<String>,
+    provider: Option<String>,
+    images_per_request: Option<u64>,
+    image_bytes: Option<u64>,
+    image_long_edge_px: Option<u64>,
+}
+
+/// What a message to a session may carry: `max_images` files whose mime
+/// starts with `image/`, and `max_files` others, counted separately; and, when
+/// known, the most bytes and the longest edge in pixels of each image.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttachmentLimits {
+    pub max_images: u64,
+    pub max_files: u64,
+    pub image_bytes: Option<u64>,
+    pub image_long_edge_px: Option<u64>,
+}
+
+impl AttachmentLimits {
+    /// The limits when nothing is known of the model.
+    pub fn fallback() -> Self {
+        Self {
+            max_images: FALLBACK_FILES,
+            max_files: FALLBACK_FILES,
+            image_bytes: None,
+            image_long_edge_px: None,
+        }
+    }
+
+    /// As `session.details` carries it: both counts always, each image bound
+    /// only when known.
+    pub fn to_json(&self) -> Value {
+        let mut value = json!({"maxImages": self.max_images, "maxFiles": self.max_files});
+        if let Some(bytes) = self.image_bytes {
+            value["imageBytes"] = json!(bytes);
+        }
+        if let Some(edge) = self.image_long_edge_px {
+            value["imageLongEdgePx"] = json!(edge);
+        }
+        value
+    }
+}
+
+/// [`ModelNames::attachments`] when the catalog can be read, and otherwise
+/// the fallbacks with the runner's own image bounds. The one place the session
+/// details and the send path get their limits, so the two always agree.
+pub async fn attachment_limits(
+    names: Option<&Arc<ModelNames>>,
+    model: Option<&Value>,
+    runner_image_bytes: Option<u64>,
+    runner_image_edge: Option<u64>,
+) -> AttachmentLimits {
+    match names {
+        Some(names) => {
+            names
+                .attachments(model, runner_image_bytes, runner_image_edge)
+                .await
+        }
+        None => limits(None, runner_image_bytes, runner_image_edge),
+    }
+}
+
+/// The smaller of two bounds, either of which may be unknown.
+fn stricter(a: Option<u64>, b: Option<u64>) -> Option<u64> {
+    match (a, b) {
+        (Some(a), Some(b)) => Some(a.min(b)),
+        (a, b) => a.or(b),
+    }
+}
+
 pub struct ModelNames {
     sources: Arc<dyn NameSources>,
+    /// The names held, locked for the whole of a read, so only one read runs.
     held: tokio::sync::Mutex<Option<Arc<Names>>>,
+    /// The latest names a read left, for the attachment limits, which never
+    /// wait on a read in progress once one has finished.
+    latest: tokio::sync::watch::Sender<Option<Arc<Names>>>,
 }
 
 impl ModelNames {
@@ -133,6 +236,7 @@ impl ModelNames {
         Self {
             sources,
             held: tokio::sync::Mutex::new(None),
+            latest: tokio::sync::watch::channel(None).0,
         }
     }
 
@@ -152,6 +256,63 @@ impl ModelNames {
         Ok(json!({ "models": models }))
     }
 
+    /// What a message to a session whose head names `model` (`{provider,
+    /// model, variant?}`) may carry. The image count comes from the catalog's
+    /// `limit.images_per_request` for the model, else [`FALLBACK_FILES`];
+    /// other files are always held to [`FALLBACK_FILES`], since the catalog
+    /// states no count for them. Each image bound is the stricter of the
+    /// catalog's and the runner's own (`runner_image_bytes` and
+    /// `runner_image_edge`, from the head's `input`), because the runner refuses
+    /// an image above its own limit whatever the catalog says.
+    ///
+    /// It never fails, and it never waits on a catalog read once one has
+    /// finished: old names are used while a read in the background replaces
+    /// them. Before the first read finishes it waits up to [`FIRST_READ_WAIT`];
+    /// with no names by then, the fallbacks apply, the same limits the apps
+    /// assume for a model they know nothing of.
+    pub async fn attachments(
+        self: &Arc<Self>,
+        model: Option<&Value>,
+        runner_image_bytes: Option<u64>,
+        runner_image_edge: Option<u64>,
+    ) -> AttachmentLimits {
+        let mut latest = self.latest.subscribe();
+        let current = latest.borrow_and_update().clone();
+        let old = current
+            .as_ref()
+            .is_none_or(|names| Instant::now() >= names.fresh_until);
+        // A held lock is a read already running; it will publish its names.
+        if old && self.held.try_lock().is_ok() {
+            let names = Arc::clone(self);
+            tokio::spawn(async move {
+                if let Err(error) = names.names().await {
+                    tracing::warn!(error = %error.message, "cannot read the model catalog for attachment limits");
+                }
+            });
+        }
+        let names = match current {
+            Some(names) => Some(names),
+            None => tokio::time::timeout(FIRST_READ_WAIT, latest.wait_for(Option::is_some))
+                .await
+                .ok()
+                .and_then(Result::ok)
+                .and_then(|names| (*names).clone()),
+        };
+        if names.is_none() {
+            tracing::warn!("no model catalog read yet; using the fallback attachment limits");
+        }
+        let row = names.as_deref().and_then(|names| {
+            let model = model?;
+            let id = format!(
+                "{}/{}",
+                model["provider"].as_str()?,
+                model["model"].as_str()?
+            );
+            names.find(&id)
+        });
+        limits(row, runner_image_bytes, runner_image_edge)
+    }
+
     /// The names held, read again first when they are old. A read that fails
     /// keeps serving the names held, which are only ever old, never wrong.
     async fn names(&self) -> Result<Arc<Names>, ReadError> {
@@ -166,6 +327,7 @@ impl ModelNames {
             Ok(names) => {
                 let names = Arc::new(names);
                 *held = Some(names.clone());
+                self.latest.send_replace(Some(names.clone()));
                 Ok(names)
             }
             Err(failure) => match held.as_ref() {
@@ -217,7 +379,7 @@ impl ModelNames {
         })
     }
 
-    async fn read_pages(&self) -> Result<HashMap<String, (String, Option<String>)>, CallFailure> {
+    async fn read_pages(&self) -> Result<HashMap<String, Model>, CallFailure> {
         let mut models = HashMap::new();
         let mut token: Option<String> = None;
         for _ in 0..MAX_PAGES {
@@ -227,9 +389,16 @@ impl ModelNames {
                 message: "catalog.get replied without `models`".into(),
             })?;
             for (key, facts) in rows {
-                if let Some(name) = text(&facts["model.name"]) {
-                    models.insert(key.clone(), (name, text(&facts["provider.name"])));
-                }
+                models.insert(
+                    key.clone(),
+                    Model {
+                        name: text(&facts["model.name"]),
+                        provider: text(&facts["provider.name"]),
+                        images_per_request: facts[IMAGES_PER_REQUEST].as_u64(),
+                        image_bytes: facts[IMAGE_BYTES].as_u64(),
+                        image_long_edge_px: facts[IMAGE_LONG_EDGE_PX].as_u64(),
+                    },
+                );
             }
             match page["next_page_token"].as_str() {
                 Some(next) => token = Some(next.to_owned()),
@@ -259,21 +428,46 @@ impl Names {
         json!({})
     }
 
-    fn named(&self, id: &str, variant: Option<&str>) -> Option<Value> {
+    /// The row a `<provider>/<model>` id names: the id itself, or with its
+    /// provider mapped to the catalog's by routing.
+    fn find(&self, id: &str) -> Option<&Model> {
         let (provider, model) = id.split_once('/')?;
-        let found = self.models.get(id).or_else(|| {
+        self.models.get(id).or_else(|| {
             let target = self.aliases.get(provider)?;
             self.models.get(&format!("{target}/{model}"))
-        })?;
-        let (name, provider_name) = found;
-        let mut answer = json!({ "name": name });
-        if let Some(provider_name) = provider_name {
+        })
+    }
+
+    fn named(&self, id: &str, variant: Option<&str>) -> Option<Value> {
+        let found = self.find(id)?;
+        let mut answer = json!({ "name": found.name.as_ref()? });
+        if let Some(provider_name) = &found.provider {
             answer["provider"] = json!(provider_name);
         }
         if let Some(variant) = variant.filter(|variant| !variant.is_empty()) {
             answer["variant"] = json!(variant);
         }
         Some(answer)
+    }
+}
+
+/// The limits for a model whose catalog row is `row`, if known, and whose
+/// runner bounds each image as given.
+fn limits(
+    row: Option<&Model>,
+    runner_image_bytes: Option<u64>,
+    runner_image_edge: Option<u64>,
+) -> AttachmentLimits {
+    AttachmentLimits {
+        max_images: row
+            .and_then(|row| row.images_per_request)
+            .unwrap_or(FALLBACK_FILES),
+        max_files: FALLBACK_FILES,
+        image_bytes: stricter(row.and_then(|row| row.image_bytes), runner_image_bytes),
+        image_long_edge_px: stricter(
+            row.and_then(|row| row.image_long_edge_px),
+            runner_image_edge,
+        ),
     }
 }
 
@@ -338,8 +532,7 @@ impl NameSources for DaemonNameSources {
     async fn names_page(&self, page_token: Option<&str>) -> Result<Value, CallFailure> {
         // A paged read, since an unpaged one over 4 MiB is refused, and no
         // `at_ms`, since a dated read leaves out the hand-added models.
-        let mut arguments =
-            json!({"fact_prefixes": ["model.name", "provider.name"], "paged": true});
+        let mut arguments = json!({"fact_prefixes": FACTS, "paged": true});
         if let Some(token) = page_token {
             arguments["page_token"] = json!(token);
         }
