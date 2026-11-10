@@ -918,3 +918,25 @@ fn opaque_reply_write_span_composes_byte_offsets_into_scalar_positions() {
         }))
     );
 }
+
+/// The checker folds a number only when every build reads its JSON form back
+/// as the same decimal, so its findings never depend on whether an app's
+/// serde_json keeps exact numbers.
+#[test]
+fn only_numbers_every_build_reads_exactly_are_folded() {
+    let d = |text: &str| Decimal::parse_text(text).unwrap();
+    for (text, folded) in [
+        ("0.5625", true),
+        ("-2.5", true),
+        ("18446744073709551615", true),
+        ("0.1", true),
+        ("12345678901234567890.5", false),
+        ("0.123456789012345678", false),
+    ] {
+        let number = folded_number(d(text));
+        assert_eq!(number.is_some(), folded, "{text}: {number:?}");
+        if let Some(Json::Number(number)) = number {
+            assert_eq!(Decimal::parse_text(&number.to_string()).unwrap(), d(text));
+        }
+    }
+}

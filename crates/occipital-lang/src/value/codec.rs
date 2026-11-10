@@ -184,16 +184,18 @@ impl Value {
     /// The final emitter is shared with catalog digest calculation, including
     /// exact numbers, scalar-sorted keys and minimal string escaping.
     pub fn canonical_json(&self) -> Result<String, CodecError> {
-        Ok(canonical::json(&self.identity_json()?)?)
+        Ok(canonical::exact(&self.identity_json()?)?)
     }
 
-    fn identity_json(&self) -> Result<Json, CodecError> {
+    /// Numbers go in as their decimal text, never through a binary float.
+    fn identity_json(&self) -> Result<canonical::Exact, CodecError> {
+        use canonical::Exact;
         Ok(match &self.kind {
-            ValueKind::Number(number) => serde_json::from_str(&number.to_string())?,
-            ValueKind::String(text) => Json::String(text.as_str().into()),
-            ValueKind::Boolean(value) => Json::Bool(*value),
-            ValueKind::Null | ValueKind::Missing => Json::Null,
-            ValueKind::List(values) => Json::Array(
+            ValueKind::Number(number) => Exact::Number(number.to_string()),
+            ValueKind::String(text) => Exact::String(text.as_str().into()),
+            ValueKind::Boolean(value) => Exact::Bool(*value),
+            ValueKind::Null | ValueKind::Missing => Exact::Null,
+            ValueKind::List(values) => Exact::Array(
                 values
                     .iter()
                     .map(Self::identity_json)
@@ -206,7 +208,7 @@ impl Value {
                     .filter(|(_, value)| value.value_type() != ValueType::Missing)
                     .map(|(key, value)| Ok((key.as_str().into(), value.identity_json()?)))
                     .collect();
-                Json::Object(fields?)
+                Exact::Object(fields?)
             }
             _ => return Err(CodecError::UnsupportedKind(self.value_type())),
         })

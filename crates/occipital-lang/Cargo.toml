@@ -1,6 +1,6 @@
 [package]
 name = "cortexkit-occipital-lang"
-version = "0.1.3"
+version = "0.1.4"
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
@@ -29,8 +29,10 @@ cortexkit-rich-ui-syntax = "=0.3.0"
 # Dependency-free, pure-Rust SHA-256 for catalog and table digests on every target.
 hmac-sha256 = { version = "1", default-features = false }
 serde = { version = "1", features = ["derive"] }
-# Keep decimal source tokens exact while canonicalizing identity JSON (§14.3).
-serde_json = { version = "1", features = ["arbitrary_precision"] }
+# No `arbitrary_precision`: Cargo would turn it on for every serde_json user in
+# an app that embeds this library, changing how the app decodes numbers. Exact
+# decimals are kept by the library itself (`canonical::Exact`).
+serde_json = "1"
 
 [features]
 # Compiles the committed §16 golden traces and their builders into the library
@@ -41,3 +43,5 @@ traces = []
 [dev-dependencies]
 # Thread-local requested-byte measurements without unsafe allocator code in this crate.
 allocation-counter = "0.8.1"
+# Tests read number tokens exactly from JSON text through `RawValue`.
+serde_json = { version = "1", features = ["raw_value"] }

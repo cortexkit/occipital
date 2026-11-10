@@ -398,7 +398,7 @@ mod tests {
         // §4.2 range has no canonical form, so there is no digest, and asking
         // for one must not panic.
         let mut json: serde_json::Value = serde_json::from_slice(CATALOG_BYTES).unwrap();
-        json["layouts"]["1"]["huge"] = serde_json::from_str("1e400").unwrap();
+        json["layouts"]["1"]["huge"] = serde_json::json!(1e30);
         let catalog = serde_json::from_value::<Catalog>(json).unwrap();
         assert_eq!(catalog.publication_digest(), None);
         assert!(!catalog.is_embedded());

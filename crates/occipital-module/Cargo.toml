@@ -46,7 +46,10 @@ libc = "0.2"
 rand = "0.8"
 rusqlite = "0.32"
 serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", features = ["raw_value"] }
+# `arbitrary_precision` keeps every number a runner or provider sends exactly as
+# written when rows and records pass through. occipital-lang used to turn it on
+# for this module; it is named here now that the library leaves it off.
+serde_json = { version = "1", features = ["raw_value", "arbitrary_precision"] }
 # RFC 8785 canonical JSON, the form display writes are keyed and compared in.
 serde_jcs = "0.2"
 sha2 = "0.10"

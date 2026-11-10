@@ -29,5 +29,11 @@ assert!(result.ok());
   once with a call's input and view.
 - **Checking tool templates in CI:** the `occipital-check` command in
   `cortexkit-occipital-registry`.
+- **Numbers:** the language's decimals are exact. The crate doesn't turn on
+  serde_json's `arbitrary_precision`, which Cargo would apply to every
+  serde_json user in your app. Numbers the crate reads from source text stay
+  exact. A number your app passes in a `serde_json::Value` is taken as
+  serde_json holds it, so it is exact only if your app's serde_json keeps
+  exact numbers.
 
 Licensed under MIT.

@@ -181,7 +181,7 @@ impl Checker<'_> {
         *remaining = remaining.checked_sub(1)?;
         let node = self.definition(node);
         let value = match &node.kind {
-            Kind::Expression(E::Number(n)) => serde_json::from_str(n).ok()?,
+            Kind::Expression(E::Number(n)) => folded_number(Decimal::from_literal(n).ok()?)?,
             Kind::Expression(E::String(s)) => {
                 *bytes = bytes.checked_sub(s.len())?;
                 Json::String(s.clone())
@@ -205,7 +205,7 @@ impl Checker<'_> {
             ),
             Kind::Expression(E::Unary(op)) if op == "-" => {
                 let value = decimal(&self.fold(&node.children[0], remaining, bytes)?)?;
-                serde_json::from_str(&(-value).to_string()).ok()?
+                folded_number(-value)?
             }
             Kind::Expression(E::Binary(op)) => {
                 let a = decimal(&self.fold(&node.children[0], remaining, bytes)?)?;
@@ -219,7 +219,7 @@ impl Checker<'_> {
                     _ => return None,
                 }
                 .ok()?;
-                serde_json::from_str(&value.to_string()).ok()?
+                folded_number(value)?
             }
             _ => return None,
         };
@@ -391,6 +391,22 @@ fn changing_declarations(resolved: &Resolved) -> std::collections::BTreeSet<Stri
 
 fn prop<'a>(props: &'a [Prop], name: &str) -> Option<&'a Node> {
     props.iter().find(|p| p.name == name).map(|p| &p.value)
+}
+
+/// `value` as a folded JSON number, only when the JSON number reads back as
+/// the same decimal: always for integers in 64 bits and for decimals a binary
+/// float holds exactly, never for longer ones. serde_json keeps a number's
+/// exact text only under its global `arbitrary_precision` feature, which this
+/// library doesn't turn on, so a longer number is left unknown here, the same
+/// whatever an app's build turns on, and is checked when evaluated instead.
+fn folded_number(value: Decimal) -> Option<Json> {
+    let text = value.to_string();
+    let number = match (text.parse::<i64>(), text.parse::<u64>()) {
+        (Ok(n), _) => serde_json::Number::from(n),
+        (_, Ok(n)) => serde_json::Number::from(n),
+        _ => serde_json::Number::from_f64(text.parse().ok()?)?,
+    };
+    (Decimal::parse_text(&number.to_string()).ok()? == value).then_some(Json::Number(number))
 }
 
 fn decimal(value: &Json) -> Option<Decimal> {
