@@ -5,6 +5,7 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 
 use serde_json::Value;
 use subc_client_rs::{CallOptions, ConsumerIdentity, ConsumerOptions, SubcConsumer};
@@ -75,6 +76,24 @@ impl DaemonCalls {
         body: &Value,
         role_versions: Option<BTreeMap<String, String>>,
     ) -> Result<Value, CallFailure> {
+        let open_within = CallOptions::default().route_retry_deadline;
+        self.call_within(target, purpose, body, role_versions, open_within)
+            .await
+    }
+
+    /// [`Self::call`], giving the route at most `open_within` to open. A
+    /// target no module is registered as is refused at once whatever the time;
+    /// one that is stopped or warming is asked again until the time is up, and
+    /// the call then fails with that refusal. The time must leave room for
+    /// one attempt: none at all means no open is tried.
+    pub async fn call_within(
+        &self,
+        target: RouteTarget,
+        purpose: &str,
+        body: &Value,
+        role_versions: Option<BTreeMap<String, String>>,
+        open_within: Duration,
+    ) -> Result<Value, CallFailure> {
         let consumer = self.consumer().await?;
         let called = consumer
             .call(
@@ -84,6 +103,7 @@ impl DaemonCalls {
                 CallOptions {
                     consumer_identity: Some(self.principal.clone()),
                     role_versions,
+                    route_retry_deadline: open_within,
                     ..Default::default()
                 },
             )
