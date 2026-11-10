@@ -396,7 +396,7 @@ impl ModelNames {
                         provider: text(&facts["provider.name"]),
                         images_per_request: facts[IMAGES_PER_REQUEST].as_u64(),
                         image_bytes: facts[IMAGE_BYTES].as_u64(),
-                        image_long_edge_px: facts[IMAGE_LONG_EDGE_PX].as_u64(),
+                        image_long_edge_px: image_edge(facts),
                     },
                 );
             }
@@ -449,6 +449,22 @@ impl Names {
         }
         Some(answer)
     }
+}
+
+/// The longest image edge a message to the model may carry whatever its image
+/// count: the smallest of `limit.image_long_edge_px` and every
+/// `limit.image_long_edge_px.above_images.<n>`, the bound once the request
+/// holds more than n images. The request counts the chat's whole history,
+/// which the apps can't see, so a send is sized for the strictest case. The
+/// catalog read asks for the base fact's prefix, so the conditions come with it.
+fn image_edge(facts: &Value) -> Option<u64> {
+    let conditions = format!("{IMAGE_LONG_EDGE_PX}.above_images.");
+    facts
+        .as_object()?
+        .iter()
+        .filter(|(key, _)| *key == IMAGE_LONG_EDGE_PX || key.starts_with(&conditions))
+        .filter_map(|(_, value)| value.as_u64())
+        .min()
 }
 
 /// The limits for a model whose catalog row is `row`, if known, and whose

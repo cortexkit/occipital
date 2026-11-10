@@ -350,7 +350,8 @@ async fn malformed_ids_are_refused() {
 /// and image bounds, found under its key or a credential provider routing maps
 /// to it; a gateway row with no bounds, and a model the catalog doesn't know,
 /// get the fallbacks. Each image bound is the stricter of the catalog's and the
-/// runner's.
+/// runner's, and the edge is the smallest of the base (8000 here) and its
+/// `above_images.20` condition (3000).
 #[tokio::test(start_paused = true)]
 async fn attachment_limits_come_from_the_model_row() {
     let fake = Arc::new(Fake::default());
@@ -436,4 +437,18 @@ async fn attachment_limits_fall_back_without_a_catalog() {
             .to_json(),
         json!({"maxImages": 4, "maxFiles": 4, "imageLongEdgePx": 8000})
     );
+}
+
+/// The edge is the smallest of the base fact and every `above_images` condition,
+/// in whatever order the row lists them, and a row with conditions only takes
+/// the smallest of those.
+#[test]
+fn the_image_edge_is_the_smallest_of_its_conditions() {
+    let facts = json!({"limit.image_long_edge_px.above_images.100": 2000,
+        "limit.image_long_edge_px": 8000, "limit.image_long_edge_px.above_images.20": 3000,
+        "limit.image_long_edge_pxx": 10, "limit.image_bytes": 1});
+    assert_eq!(image_edge(&facts), Some(2000));
+    let conditions_only = json!({"limit.image_long_edge_px.above_images.20": 3000});
+    assert_eq!(image_edge(&conditions_only), Some(3000));
+    assert_eq!(image_edge(&json!({"limit.image_bytes": 1})), None);
 }

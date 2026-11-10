@@ -1,1 +1,1 @@
-{"catalog_version":0,"models":{"anthropic/claude-opus-5-5":{"limit.document_pages":600,"limit.image_bytes":7500000,"limit.image_long_edge_px":3000,"limit.images_per_request":600}},"resolved_at_ms":-1,"source":"models.dev"}
+{"catalog_version":0,"models":{"anthropic/claude-opus-5-5":{"limit.document_pages":600,"limit.image_bytes":7500000,"limit.image_long_edge_px":8000,"limit.image_long_edge_px.above_images.20":3000,"limit.images_per_request":600}},"resolved_at_ms":-1,"source":"models.dev"}

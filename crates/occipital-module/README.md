@@ -107,7 +107,8 @@ How many files one message may carry follows the session's model.
 starts with `image/`), from the model catalog's `limit.images_per_request`,
 else 4; `maxFiles` (all other files), always 4; and, when known, `imageBytes`
 and `imageLongEdgePx`, each the stricter of the catalog's and the runner's own
-bound. A send naming more images or more other files is refused
+bound; the catalog's edge is the smallest of `limit.image_long_edge_px` and its
+`above_images.<n>` conditions, since a request counts the chat's whole history. A send naming more images or more other files is refused
 `too_many_files` before anything is copied, with those limits in its `detail`.
 
 An image a chat references is read with `session.media`: a thumbnail Occipital

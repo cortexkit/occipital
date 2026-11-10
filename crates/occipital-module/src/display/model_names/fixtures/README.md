@@ -21,9 +21,10 @@ actually serve.
 - `fusiform-attachment-bounds.json` and `fusiform-gateway-without-bounds.json`:
   the `response` of "catalog.get — first-party attachment bounds"
   (`anthropic/claude-opus-5-5` with `limit.images_per_request`,
-  `limit.image_bytes` and `limit.image_long_edge_px`) and "catalog.get — a
+  `limit.image_bytes`, `limit.image_long_edge_px` 8000 and its condition
+  `limit.image_long_edge_px.above_images.20` 3000) and "catalog.get — a
   gateway without attachment bounds" (`anyapi/anthropic/claude-opus-4-6`), from
-  the same file at commit `b98cdd2c92e2b3e8223c99e25418bf6478d4649b`, written
+  the same file at commit `c9bdf33baeacc72653bea1f65267c5c19194e1c5`, written
   the same way.
 - `routing-resolved.json` and `routing-warming.json`: `resolved.json` and
   `warming.json` from prefrontal's tag `route-catalog-targets-vectors-v1`
