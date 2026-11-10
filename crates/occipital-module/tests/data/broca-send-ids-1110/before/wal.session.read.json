@@ -1,0 +1,418 @@
+{
+  "head": {
+    "sub_index": 0,
+    "wal_seq": 36
+  },
+  "history_version": 0,
+  "incarnation": "unwritten",
+  "lineage_state": {
+    "last_run_id": "unkeyed-direct-run",
+    "reason": "completed",
+    "state": "completed",
+    "usage": {}
+  },
+  "messages": [
+    {
+      "created_at": 10,
+      "message": {
+        "content": [
+          {
+            "text": "plain user turn",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "m0",
+      "ordinal": 1,
+      "part_keys": [
+        "m0#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "plain",
+        "final": false,
+        "run_id": "plain"
+      },
+      "written_at": 10
+    },
+    {
+      "completed_at": 11,
+      "message": {
+        "content": [
+          {
+            "text": "synthetic answer",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "p"
+        },
+        "role": "assistant"
+      },
+      "mid": "m1",
+      "ordinal": 2,
+      "part_keys": [
+        "m1#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "plain",
+        "final": true,
+        "run_id": "plain"
+      },
+      "written_at": 11
+    },
+    {
+      "created_at": 10,
+      "message": {
+        "content": [
+          {
+            "text": "keyed module send",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "m2",
+      "ordinal": 3,
+      "part_keys": [
+        "m2#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "keyed-run",
+        "final": false,
+        "run_id": "keyed-run"
+      },
+      "sender": "sample-sender",
+      "written_at": 10
+    },
+    {
+      "created_at": 10,
+      "message": {
+        "content": [
+          {
+            "text": "module steer",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "m3",
+      "ordinal": 4,
+      "part_keys": [
+        "m3#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "keyed-run",
+        "final": false,
+        "run_id": "keyed-run"
+      },
+      "sender": "sample-sender",
+      "written_at": 10
+    },
+    {
+      "created_at": 10,
+      "delivered_as": {
+        "mode": "steer"
+      },
+      "message": {
+        "content": [
+          {
+            "text": "ordered module steer",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "m4",
+      "ordinal": 5,
+      "part_keys": [
+        "m4#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "keyed-run",
+        "final": false,
+        "run_id": "keyed-run"
+      },
+      "sender": "sample-sender",
+      "written_at": 10
+    },
+    {
+      "created_at": 10,
+      "delivered_as": {
+        "mode": "turn_system"
+      },
+      "message": {
+        "content": [
+          {
+            "text": "turn system delivery",
+            "type": "text"
+          }
+        ],
+        "role": "system",
+        "turn_system": true
+      },
+      "mid": "m5",
+      "ordinal": 6,
+      "part_keys": [
+        "m5#0"
+      ],
+      "role": "system",
+      "run": {
+        "episode": "keyed-run",
+        "final": false,
+        "run_id": "keyed-run"
+      },
+      "sender": "sample-sender",
+      "written_at": 10
+    },
+    {
+      "completed_at": 11,
+      "message": {
+        "content": [
+          {
+            "text": "synthetic answer",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "p"
+        },
+        "role": "assistant"
+      },
+      "mid": "m6",
+      "ordinal": 7,
+      "part_keys": [
+        "m6#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "keyed-run",
+        "final": true,
+        "run_id": "keyed-run"
+      },
+      "written_at": 11
+    },
+    {
+      "created_at": 10,
+      "message": {
+        "content": [
+          {
+            "text": "unkeyed queued module send",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "m7",
+      "ordinal": 8,
+      "part_keys": [
+        "m7#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "unkeyed-run",
+        "final": false,
+        "run_id": "unkeyed-run"
+      },
+      "sender": "sample-sender",
+      "written_at": 10
+    },
+    {
+      "completed_at": 11,
+      "message": {
+        "content": [
+          {
+            "text": "synthetic answer",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "p"
+        },
+        "role": "assistant"
+      },
+      "mid": "m8",
+      "ordinal": 9,
+      "part_keys": [
+        "m8#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "unkeyed-run",
+        "final": true,
+        "run_id": "unkeyed-run"
+      },
+      "written_at": 11
+    },
+    {
+      "created_at": 10,
+      "message": {
+        "content": [
+          {
+            "text": "keyed queued module send",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "m9",
+      "ordinal": 10,
+      "part_keys": [
+        "m9#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "queued-run",
+        "final": false,
+        "run_id": "queued-run"
+      },
+      "sender": "sample-sender",
+      "written_at": 10
+    },
+    {
+      "completed_at": 11,
+      "message": {
+        "content": [
+          {
+            "text": "synthetic answer",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "p"
+        },
+        "role": "assistant"
+      },
+      "mid": "m10",
+      "ordinal": 11,
+      "part_keys": [
+        "m10#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "queued-run",
+        "final": true,
+        "run_id": "queued-run"
+      },
+      "written_at": 11
+    },
+    {
+      "created_at": 10,
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": [
+          {
+            "text": "idle start delivery",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "m11",
+      "ordinal": 12,
+      "part_keys": [
+        "m11#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "idle-run",
+        "final": false,
+        "run_id": "idle-run"
+      },
+      "sender": "sample-sender",
+      "written_at": 10
+    },
+    {
+      "completed_at": 11,
+      "message": {
+        "content": [
+          {
+            "text": "synthetic answer",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "p"
+        },
+        "role": "assistant"
+      },
+      "mid": "m12",
+      "ordinal": 13,
+      "part_keys": [
+        "m12#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "idle-run",
+        "final": true,
+        "run_id": "idle-run"
+      },
+      "written_at": 11
+    },
+    {
+      "created_at": 10,
+      "message": {
+        "content": [
+          {
+            "text": "unkeyed direct module send",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "m13",
+      "ordinal": 14,
+      "part_keys": [
+        "m13#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "unkeyed-direct-run",
+        "final": false,
+        "run_id": "unkeyed-direct-run"
+      },
+      "sender": "sample-sender",
+      "written_at": 10
+    },
+    {
+      "completed_at": 11,
+      "message": {
+        "content": [
+          {
+            "text": "synthetic answer",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "p"
+        },
+        "role": "assistant"
+      },
+      "mid": "m14",
+      "ordinal": 15,
+      "part_keys": [
+        "m14#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "unkeyed-direct-run",
+        "final": true,
+        "run_id": "unkeyed-direct-run"
+      },
+      "written_at": 11
+    }
+  ]
+}

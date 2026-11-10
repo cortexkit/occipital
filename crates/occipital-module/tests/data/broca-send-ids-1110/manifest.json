@@ -1,0 +1,41 @@
+{
+  "before_source": "44cc5099b8c5c9c55a44123f144608f49b79eb77",
+  "merged_master": "cd30b8643958518e4aa611a45ee5b81623a9103a",
+  "body_validation": {
+    "wal.session.read.json": {
+      "entries": 15,
+      "send_ids": 7,
+      "history_version": 0
+    },
+    "store.session.read.json": {
+      "entries": 15,
+      "send_ids": 7,
+      "history_version": 0
+    },
+    "wal.session.history.json": {
+      "entries": 15,
+      "send_ids": 7,
+      "history_version": 1
+    },
+    "store.session.history.json": {
+      "entries": 15,
+      "send_ids": 7,
+      "history_version": 0
+    }
+  },
+  "describe_delta": [
+    "send_ids"
+  ],
+  "sha256": {
+    "before/wal.session.read.json": "cb996e37fde301bca2df57bc9575e9581e2bd0b096f0c9ee23676432fb3e066c",
+    "before/store.session.read.json": "d3b4cbf72e12657ae84ef4e49afceaacfc6166534cfa4751bc799d128bf2ad0d",
+    "before/wal.session.history.json": "a6a0711af4d8014f51f12103e2f981aaf801aad54078a9c76cba547b2a0a36c1",
+    "before/store.session.history.json": "bcb518ff71cd204f7dead1fe3fcae5925297fc469283b7e3e2e0cd4209ca0c0e",
+    "before/role.describe.json": "376ed53f411594e74dbd2755e68505d95350696ddfe93fb5e048625a34aeab3d",
+    "after/wal.session.read.json": "e7f75f8d0970f84c5c73a48cbf7869c8d65eb40772c8f4cede06ce37ceaadbab",
+    "after/store.session.read.json": "969f1a585a700c9091fec55874cad0a2de9fafe17bc80878097e23e7d47962a7",
+    "after/wal.session.history.json": "90cc43b4281a99ad3cee24cf2db24a1626b3db2b41bbd5cacfa1dc172311a7b5",
+    "after/store.session.history.json": "059989d2e7184c65419bdcffa4a0e3728517ca519de9793dea85354231c219ff",
+    "after/role.describe.json": "94d01611a3b9a123c0d486492554ac0c14633ba2487fdd920a4c8391599ce1ea"
+  }
+}
