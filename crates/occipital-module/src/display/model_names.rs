@@ -12,9 +12,9 @@
 //! - **Credential providers:** an id may name the provider the person's
 //!   credential is filed under, such as `anthropic-platform`. Routing's
 //!   `route.catalog_targets` maps each to its catalog provider; Occipital asks
-//!   it rather than keep a copy of the rule. Routing is moving from module id
-//!   `prefrontal-routing` to `striatum`, so it is asked under either
-//!   (`ask_routing`).
+//!   it rather than keep a copy of the rule. Routing is found by the
+//!   capability it provides (`routing/v1`), never by module id, so a rename of
+//!   its module changes nothing here.
 //!
 //! An id that still matches no model, a bare id without its provider (the
 //! same model id exists under many providers), and a retired model (its last
@@ -84,50 +84,15 @@ const IMAGE_LONG_EDGE_PX: &str = "limit.image_long_edge_px";
 /// catalog states no count for its model. The apps use the same numbers.
 pub const FALLBACK_FILES: u64 = 4;
 
-/// Routing's module ids: the one it serves under today, then the one it is
-/// moving to. Until the move only the first exists; after it, only the second.
-const ROUTING: [&str; 2] = ["prefrontal-routing", "striatum"];
+/// The capability routing provides, under whatever module id it runs.
+const ROUTING: &str = "routing/v1";
 
-/// The refusals that mean routing isn't serving under that id right now, so
-/// the other id is asked: no module has the id, or its module is stopped or
-/// warming up. Any other refusal is routing's answer.
-const ROUTING_ABSENT: [&str; 3] = ["unknown_module", "target_unavailable", "module_warming"];
-
-/// How long a route to one routing id may take to open. A stopped or warming
-/// module is asked again only within this, rather than for the daemon client's
-/// default 90 s, since the read holds up an app's request and the other id may
-/// be the one serving.
+/// How long the route to routing may take to open. A routing module that is
+/// listed but still warming up is asked again only within this, rather than
+/// for the daemon client's default 90 s, since the read holds up an app's
+/// request; the names are read again a minute later
+/// (`FRESH_WITHOUT_ALIASES`).
 const ROUTING_OPEN: Duration = Duration::from_secs(1);
-
-/// Ask routing under its current id, and under the id it is moving to when
-/// the first isn't serving (`ROUTING_ABSENT`). When neither is, the read fails
-/// with both refusals; the names are then read again a minute later
-/// (`FRESH_WITHOUT_ALIASES`), which is the wait before asking the pair again.
-async fn ask_routing<F, Asked>(mut ask: F) -> Result<Value, CallFailure>
-where
-    F: FnMut(&'static str) -> Asked,
-    Asked: std::future::Future<Output = Result<Value, CallFailure>>,
-{
-    let [current, moving_to] = ROUTING;
-    let first = match ask(current).await {
-        Err(failure) if absent(&failure) => failure,
-        answer => return answer,
-    };
-    ask(moving_to).await.map_err(|second| CallFailure {
-        message: format!(
-            "{current}: {}; {moving_to}: {}",
-            first.message, second.message
-        ),
-        code: second.code,
-    })
-}
-
-fn absent(failure: &CallFailure) -> bool {
-    failure
-        .code
-        .as_deref()
-        .is_some_and(|code| ROUTING_ABSENT.contains(&code))
-}
 
 /// Where the names and the provider map come from.
 #[async_trait]
@@ -565,19 +530,16 @@ impl NameSources for DaemonNameSources {
     }
 
     async fn catalog_targets(&self) -> Result<Value, CallFailure> {
-        let body = json!({"method": "route.catalog_targets", "params": {}});
-        ask_routing(|module| {
-            self.calls.call_within(
-                RouteTarget::ManagementSurface {
-                    module_id: module.into(),
-                },
+        let routing = self.calls.provider(ROUTING).await?;
+        self.calls
+            .call_within(
+                RouteTarget::ManagementSurface { module_id: routing },
                 "model-names",
-                &body,
+                &json!({"method": "route.catalog_targets", "params": {}}),
                 None,
                 ROUTING_OPEN,
             )
-        })
-        .await
+            .await
     }
 }
 

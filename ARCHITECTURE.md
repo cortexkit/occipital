@@ -63,7 +63,7 @@ How many files a message may carry follows the session's model: `session.details
 - **Reading:** the apps read views, templates, records and details beside the pages (`display.views`, `display.template`, `session.tool_records`, `session.tool_detail`), cache them for good, and hear of new ones from `session.tool_records_watch`. Keeping them beside the pages keeps page versions the runner's alone: a record that lands after its row never reloads a chat.
 - **Moved calls:** Occipital files a call under the runner that minted its key and finds it by the session and key the app asks about, so a chat moved to another runner keeps its tool rows and notices.
 
-`display.model_names` resolves model ids to the names the apps show, from Fusiform's catalog and core's provider aliases, cached for 30 minutes (60 seconds when the aliases couldn't be read). The same read takes each model's attachment limits.
+`display.model_names` resolves model ids to the names the apps show, from Fusiform's catalog and routing's credential-provider map (`route.catalog_targets`, on whichever module the daemon's catalog lists as providing `routing/v1`), cached for 30 minutes (60 seconds when the map couldn't be read). The same read takes each model's attachment limits.
 
 ## Notices
 

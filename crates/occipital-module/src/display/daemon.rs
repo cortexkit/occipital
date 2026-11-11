@@ -67,6 +67,24 @@ impl DaemonCalls {
         }
     }
 
+    /// The one module the daemon's catalog lists as providing `capability`,
+    /// whatever its module id. None listed fails `capability_unprovided`, and
+    /// more than one `capability_ambiguous`.
+    pub async fn provider(&self, capability: &str) -> Result<String, CallFailure> {
+        let consumer = self.consumer().await?;
+        match consumer.resolve_provider(capability).await {
+            Ok(module) => Ok(module),
+            Err(error) => {
+                let code = error.code().map(str::to_owned);
+                self.failed(code.as_deref()).await;
+                Err(CallFailure {
+                    code,
+                    message: error.to_string(),
+                })
+            }
+        }
+    }
+
     /// Send `body` to `target` and decode its reply. `purpose` names this
     /// module's reason in the callee's logs; callees find nothing by it.
     pub async fn call(
