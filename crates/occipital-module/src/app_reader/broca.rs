@@ -4323,6 +4323,7 @@ pub(crate) mod tests {
     mod contract_0821_writer_samples;
     mod contract_goldens;
     mod contract_heads;
+    mod credit_window_1111;
     mod describe_samples;
     mod describe_step_events_samples;
     mod empty_claim_samples;
