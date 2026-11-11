@@ -1,5 +1,5 @@
 //! The sample set the apps pin for how many files a message may carry,
-//! `phone-attachments-v1`: the `attachments` a session's details report, and
+//! `phone-attachments-v2`: the `attachments` a session's details report, and
 //! the sends held to them, each served through the reader's frame loop on a
 //! paired phone's route. Its README says what each file shows.
 //!
@@ -13,7 +13,10 @@ use super::*;
 use crate::app_reader::{broca::tests::served_samples::Served, AppReader};
 use crate::display::model_names::{tests::fixture, tests::Fake, ModelNames};
 
-const SET: &str = "phone-attachments-v1";
+// v2 names the harness on every request, as every session request must: a
+// request without one is read as a Broca session (v1's requests named none,
+// and an app that copied them lost the limits of every other harness).
+const SET: &str = "phone-attachments-v2";
 /// The runner's own image bounds on the session's head: stricter than the
 /// catalog's on bytes, looser on pixels.
 const RUNNER_IMAGE_BYTES: u64 = 5_242_880;
@@ -78,7 +81,7 @@ async fn the_attachment_samples_are_what_the_reader_serves() {
         .keep(
             "01-details",
             "session.details",
-            json!({"session": "s", "attachmentLimits": true}),
+            json!({"session": "s", "harness": "broca", "attachmentLimits": true}),
         )
         .await;
     assert_eq!(
@@ -93,7 +96,7 @@ async fn the_attachment_samples_are_what_the_reader_serves() {
         .keep(
             "02-send-twelve-photos",
             "session.enqueue_user_message",
-            json!({"session": "s", "text": "All twelve from the walk",
+            json!({"session": "s", "harness": "broca", "text": "All twelve from the walk",
                 "clientMessageId": "6f1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c01",
                 "parts": parts(&photos, "image/jpeg")}),
         )
@@ -110,7 +113,7 @@ async fn the_attachment_samples_are_what_the_reader_serves() {
         .keep(
             "refusal-too_many_files-files",
             "session.enqueue_user_message",
-            json!({"session": "s", "text": "Read these",
+            json!({"session": "s", "harness": "broca", "text": "Read these",
                 "clientMessageId": "6f1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c02",
                 "parts": parts(&papers, "application/pdf")}),
         )
@@ -128,7 +131,7 @@ async fn the_attachment_samples_are_what_the_reader_serves() {
         .keep(
             "03-details-without-catalog-limits",
             "session.details",
-            json!({"session": "s", "attachmentLimits": true}),
+            json!({"session": "s", "harness": "broca", "attachmentLimits": true}),
         )
         .await;
     assert_eq!(
@@ -142,7 +145,7 @@ async fn the_attachment_samples_are_what_the_reader_serves() {
         .keep(
             "refusal-too_many_files-images",
             "session.enqueue_user_message",
-            json!({"session": "s", "text": "And these five",
+            json!({"session": "s", "harness": "broca", "text": "And these five",
                 "clientMessageId": "6f1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c03",
                 "parts": parts(&more, "image/jpeg")}),
         )
