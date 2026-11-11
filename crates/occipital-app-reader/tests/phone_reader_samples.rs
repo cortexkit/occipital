@@ -536,6 +536,39 @@ fn the_recorded_stop_ends_the_named_run_and_keeps_its_reply() {
     );
 }
 
+/// A head's run held on a tool call, stopped with `session.stop`. Its README lists what
+/// each case shows.
+#[test]
+fn the_held_stop_samples_are_complete_and_their_checksums_verify() {
+    verify_published_set("test-vectors/phone-reader-stop-held-v1", 6);
+}
+
+/// A run paused on a held call is offered Stop by the grant, the stop names that run and
+/// answers `stopped`, and a different run is active after it.
+#[test]
+fn the_recorded_held_stop_ends_the_paused_run() {
+    let root =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test-vectors/phone-reader-stop-held-v1");
+    let read = |name: &str| -> serde_json::Value {
+        let value: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(root.join(name)).unwrap()).unwrap();
+        value.get("result").cloned().unwrap_or(value)
+    };
+    let before = read("60-held-details.json");
+    assert_eq!(before["sender"]["interrupt"], true);
+    assert_eq!(before["lastRun"]["state"], "paused");
+    assert_eq!(before["lastRun"]["reason"], "tool_held");
+    let run = before["lastRun"]["runId"].clone();
+    assert_eq!(read("61-held-stop.request.json")["runId"], run);
+    assert_eq!(
+        read("61-held-stop.json"),
+        serde_json::json!({"state": "stopped", "runId": run})
+    );
+    let after = read("62-held-details-after.json")["lastRun"].clone();
+    assert_eq!(after["state"], "active");
+    assert_ne!(after["runId"], run);
+}
+
 /// Reads around a message found by search, then older and newer pages from it. Its
 /// README lists what each case shows.
 #[test]
