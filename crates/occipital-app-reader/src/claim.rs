@@ -4,9 +4,10 @@
 //! from held-material comparisons, so changing page ordinals alone does not change the comparison.
 
 use std::collections::{HashMap, VecDeque};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use serde_json::{json, Map, Value};
+use sha2::{Digest, Sha256};
 
 // A slow client can retain several versions while turns arrive, but process-local history must not
 // grow without bound. Missing evicted versions honestly evaluate as cursor_expired.
@@ -261,9 +262,9 @@ pub struct TranscriptPageSnapshot {
     lineage_id: Option<String>,
     /// The page's members other than `messages`, which `rows` holds instead.
     page: Value,
-    /// Shared with the session's earlier snapshots wherever a row is unchanged, so the
-    /// snapshots of a session cost about one page plus what changed between them
-    /// (`TranscriptClaimState::record`).
+    /// Shared with the session's previous page wherever a row is unchanged
+    /// (`TranscriptClaimState::share_unchanged`), so a shared row keeps the fingerprint
+    /// already computed for it.
     rows: Vec<Arc<TranscriptRow>>,
     /// True when older rows of the observed newest page were dropped so the page fits a
     /// size bound. Claim lookup (`TranscriptClaimState::held_snapshot`) uses a trimmed
@@ -299,11 +300,87 @@ pub enum NewestPageFit {
     NewestTooLarge,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 struct TranscriptRow {
     message_id: String,
     ordinal: i64,
     body: Value,
+    /// [`Self::fingerprint`], computed the first time it is asked for.
+    fingerprint: OnceLock<Fingerprint>,
+}
+
+/// Rows are equal by identity, ordinal and content; whether a fingerprint has been
+/// computed yet doesn't count.
+impl PartialEq for TranscriptRow {
+    fn eq(&self, other: &Self) -> bool {
+        self.message_id == other.message_id
+            && self.ordinal == other.ordinal
+            && self.body == other.body
+    }
+}
+
+/// The first 16 bytes of the SHA-256 of a row's JSON (all of it but its ordinal). Two rows
+/// with the same fingerprint have the same content, since a collision in 128 bits doesn't
+/// happen in practice. serde_json writes object members in key order, so equal rows give
+/// equal bytes; should anything ever make equal rows serialize differently, a claim sees
+/// a change and the app reloads, which is the safe direction.
+type Fingerprint = [u8; 16];
+
+impl TranscriptRow {
+    fn fingerprint(&self) -> Fingerprint {
+        *self.fingerprint.get_or_init(|| {
+            let bytes = serde_json::to_vec(&self.body).expect("a JSON value serializes");
+            let mut fingerprint = [0; 16];
+            fingerprint.copy_from_slice(&Sha256::digest(bytes)[..16]);
+            fingerprint
+        })
+    }
+}
+
+/// One row of a [`KeptVersion`]: what a claim compares, and nothing it doesn't.
+#[derive(Debug, PartialEq, Eq)]
+struct KeptRow {
+    message_id: String,
+    ordinal: i64,
+    fingerprint: Fingerprint,
+}
+
+impl KeptRow {
+    fn of(row: &TranscriptRow) -> Self {
+        Self {
+            message_id: row.message_id.clone(),
+            ordinal: row.ordinal,
+            fingerprint: row.fingerprint(),
+        }
+    }
+}
+
+/// A version of a session's newest page as the claim cache keeps it for later claims. A
+/// claim compares the rows it holds with the current page's by message id and content and
+/// takes every row of its reply from the current page, so a kept version needs each row's
+/// id, ordinal and fingerprint and none of its content (a row in full costs about 3.6 KB;
+/// a kept row about 70 bytes, and nothing when shared with the version before it).
+#[derive(Debug, Clone, PartialEq)]
+pub struct KeptVersion {
+    version: String,
+    lineage_id: Option<String>,
+    rows: Vec<Arc<KeptRow>>,
+    /// As [`TranscriptPageSnapshot`]'s `trimmed`.
+    trimmed: bool,
+}
+
+impl KeptVersion {
+    pub fn contains(&self, message_id: &str) -> bool {
+        self.rows.iter().any(|row| row.message_id == message_id)
+    }
+
+    fn same_material(&self, other: &Self) -> bool {
+        self.lineage_id == other.lineage_id
+            && self.rows.len() == other.rows.len()
+            && self.rows.iter().zip(&other.rows).all(|(left, right)| {
+                left.message_id == right.message_id && left.fingerprint == right.fingerprint
+            })
+    }
 }
 
 /// A page without durable row identity or renderable content cannot support a claim.
@@ -351,6 +428,7 @@ impl TranscriptPageSnapshot {
                 message_id,
                 ordinal,
                 body: message,
+                fingerprint: OnceLock::new(),
             }));
         }
         rows.sort_by_key(|row| row.ordinal);
@@ -365,6 +443,20 @@ impl TranscriptPageSnapshot {
 
     pub fn lineage_id(&self) -> Option<&str> {
         self.lineage_id.as_deref()
+    }
+
+    /// This page as the claim cache keeps it, every row fingerprinted.
+    pub fn kept(&self) -> KeptVersion {
+        KeptVersion {
+            version: self.version.clone(),
+            lineage_id: self.lineage_id.clone(),
+            rows: self
+                .rows
+                .iter()
+                .map(|row| Arc::new(KeptRow::of(row)))
+                .collect(),
+            trimmed: self.trimmed,
+        }
     }
 
     pub fn is_trimmed(&self) -> bool {
@@ -493,6 +585,9 @@ impl TranscriptPageSnapshot {
     }
 }
 
+/// The versions of each session's newest page that a later claim may name. Each is kept as a
+/// [`KeptVersion`]; only the session's latest page is kept in full, so that the next page's
+/// unchanged rows can be shared with it and only its new and changed rows are fingerprinted.
 #[derive(Debug, Default)]
 pub struct TranscriptClaimState {
     sessions: HashMap<String, SessionSnapshots>,
@@ -503,52 +598,87 @@ pub struct TranscriptClaimState {
 
 #[derive(Debug, Default)]
 struct SessionSnapshots {
-    snapshots: VecDeque<TranscriptPageSnapshot>,
+    /// The page recorded last, in full, with its kept form.
+    newest: Option<Newest>,
+    /// Up to `MAX_SNAPSHOTS_PER_SESSION` versions, oldest first.
+    kept: VecDeque<KeptVersion>,
     /// The `records` count at this session's latest record.
     recorded: u64,
 }
 
+/// A page in full beside its kept form, row for row in the same order.
+#[derive(Debug)]
+struct Newest {
+    full: TranscriptPageSnapshot,
+    kept: KeptVersion,
+}
+
+/// For each of `rows`, the index of the row of `previous` it now shares: the one with the
+/// same ordinal and message id, when the two are equal (each row equal to it is replaced
+/// with it). Both lists are in ordinal order, as every snapshot's rows are, so one walk
+/// down both finds every pair without a lookup table; a message whose ordinal changed
+/// isn't shared, which costs only a fingerprint.
+fn share(previous: &[Arc<TranscriptRow>], rows: &mut [Arc<TranscriptRow>]) -> Vec<Option<usize>> {
+    let mut at = 0;
+    rows.iter_mut()
+        .map(|row| {
+            while previous
+                .get(at)
+                .is_some_and(|earlier| earlier.ordinal < row.ordinal)
+            {
+                at += 1;
+            }
+            let candidate = previous
+                .get(at)
+                .filter(|earlier| earlier.ordinal == row.ordinal)?;
+            if Arc::ptr_eq(candidate, row) {
+                return Some(at);
+            }
+            (**candidate == **row).then(|| {
+                *row = Arc::clone(candidate);
+                at
+            })
+        })
+        .collect()
+}
+
 impl TranscriptClaimState {
-    /// The newest untrimmed snapshot at `version` that contains `since_message_id`. A trimmed
-    /// snapshot lacks the older rows of its page, so it is never served without a floor check.
+    /// The newest untrimmed version at `version` that contains `since_message_id`. A trimmed
+    /// version lacks the older rows of its page, so it is never served without a floor check.
     pub fn snapshot(
         &self,
         session_id: &str,
         version: &str,
         since_message_id: Option<&str>,
-    ) -> Option<TranscriptPageSnapshot> {
+    ) -> Option<KeptVersion> {
         self.sessions
             .get(session_id)?
-            .snapshots
+            .kept
             .iter()
             .rev()
-            .find(|snapshot| {
-                !snapshot.trimmed
-                    && snapshot.version == version
-                    && since_message_id.is_none_or(|message_id| snapshot.contains(message_id))
+            .find(|kept| {
+                !kept.trimmed
+                    && kept.version == version
+                    && since_message_id.is_none_or(|message_id| kept.contains(message_id))
             })
             .cloned()
     }
 
-    /// The snapshot a claim is evaluated against: the newest snapshot at the claimed version
+    /// The version a claim is evaluated against: the newest version at the claimed version
     /// that contains both sinceMessageId and heldFloorMessageId, trimmed or not; failing that,
-    /// [`Self::snapshot`]'s choice among untrimmed snapshots. A trimmed snapshot therefore
+    /// [`Self::snapshot`]'s choice among untrimmed versions. A trimmed version therefore
     /// serves only claimants whose floor it holds, and a claimant whose floor lies below every
-    /// snapshot (history paged with beforeOrdinal) is compared against a full page.
-    pub fn held_snapshot(
-        &self,
-        session_id: &str,
-        claim: &TranscriptClaim,
-    ) -> Option<TranscriptPageSnapshot> {
+    /// version (history paged with beforeOrdinal) is compared against a full page.
+    pub fn held_snapshot(&self, session_id: &str, claim: &TranscriptClaim) -> Option<KeptVersion> {
         self.sessions
             .get(session_id)?
-            .snapshots
+            .kept
             .iter()
             .rev()
-            .find(|snapshot| {
-                snapshot.version == claim.held_version
-                    && snapshot.contains(&claim.since_message_id)
-                    && snapshot.contains(&claim.held_floor_message_id)
+            .find(|kept| {
+                kept.version == claim.held_version
+                    && kept.contains(&claim.since_message_id)
+                    && kept.contains(&claim.held_floor_message_id)
             })
             .cloned()
             .or_else(|| {
@@ -558,6 +688,20 @@ impl TranscriptClaimState {
                     Some(&claim.since_message_id),
                 )
             })
+    }
+
+    /// Replace each row of `snapshot` that equals the same message's row in the session's
+    /// latest recorded page with that row, so it keeps the fingerprint already computed for
+    /// it. Successive pages of a session differ in a few rows at most, so a claim evaluated
+    /// after this and the record that follows fingerprint only those few.
+    pub fn share_unchanged(&self, session_id: &str, snapshot: &mut TranscriptPageSnapshot) {
+        if let Some(newest) = self
+            .sessions
+            .get(session_id)
+            .and_then(|session| session.newest.as_ref())
+        {
+            share(&newest.full.rows, &mut snapshot.rows);
+        }
     }
 
     pub fn record(&mut self, session_id: &str, mut snapshot: TranscriptPageSnapshot) {
@@ -574,36 +718,46 @@ impl TranscriptClaimState {
         }
         let session = self.sessions.entry(session_id.to_string()).or_default();
         session.recorded = self.records;
-        let snapshots = &mut session.snapshots;
-        // Successive pages of a session differ in a few rows at most, so each row the newest
-        // snapshot holds unchanged is shared rather than kept again.
-        if let Some(newest) = snapshots.back() {
-            let kept: HashMap<&str, &Arc<TranscriptRow>> = newest
+        // A row shared with the latest page keeps that page's kept row too, so the rows a
+        // session's versions have in common are kept once.
+        let rows = match &session.newest {
+            Some(newest) => share(&newest.full.rows, &mut snapshot.rows)
+                .into_iter()
+                .zip(&snapshot.rows)
+                .map(|(previous, row)| match previous {
+                    Some(index) => Arc::clone(&newest.kept.rows[index]),
+                    None => Arc::new(KeptRow::of(row)),
+                })
+                .collect(),
+            None => snapshot
                 .rows
                 .iter()
-                .map(|row| (row.message_id.as_str(), row))
-                .collect();
-            for row in &mut snapshot.rows {
-                if let Some(&kept) = kept.get(row.message_id.as_str()) {
-                    if **kept == **row {
-                        *row = Arc::clone(kept);
-                    }
-                }
+                .map(|row| Arc::new(KeptRow::of(row)))
+                .collect(),
+        };
+        let kept = KeptVersion {
+            version: snapshot.version.clone(),
+            lineage_id: snapshot.lineage_id.clone(),
+            rows,
+            trimmed: snapshot.trimmed,
+        };
+        // The same version, lineage, and row material make this version redundant, unless only
+        // a trimmed copy is kept: lookup without a floor match needs the untrimmed copy.
+        let redundant = session.kept.iter().any(|existing| {
+            existing.version == kept.version
+                && existing.same_material(&kept)
+                && (!existing.trimmed || kept.trimmed)
+        });
+        if !redundant {
+            session.kept.push_back(kept.clone());
+            while session.kept.len() > MAX_SNAPSHOTS_PER_SESSION {
+                session.kept.pop_front();
             }
         }
-        // The same version, lineage, and row material make this snapshot redundant, unless only
-        // a trimmed copy is recorded: lookup without a floor match needs the untrimmed copy.
-        if snapshots.iter().any(|existing| {
-            existing.version == snapshot.version
-                && existing.same_page_material(&snapshot)
-                && (!existing.trimmed || snapshot.trimmed)
-        }) {
-            return;
-        }
-        snapshots.push_back(snapshot);
-        while snapshots.len() > MAX_SNAPSHOTS_PER_SESSION {
-            snapshots.pop_front();
-        }
+        session.newest = Some(Newest {
+            full: snapshot,
+            kept,
+        });
     }
 
     pub fn remove_session(&mut self, session_id: &str) {
@@ -634,7 +788,7 @@ pub enum ClaimEvaluation {
 
 pub fn evaluate_claim(
     claim: &TranscriptClaim,
-    held: Option<&TranscriptPageSnapshot>,
+    held: Option<&KeptVersion>,
     current: &TranscriptPageSnapshot,
 ) -> ClaimEvaluation {
     let Some(held) = held else {
@@ -695,12 +849,15 @@ pub fn evaluate_claim(
 
     let held_scope = &held.rows[held_start..=held_since];
     let current_scope = &current.rows[current_start..=current_since];
-    // Compare ids and row fields other than ordinal in conversation order. Appends after sinceMessageId
-    // are returned as newTurns and therefore never enter this held-material comparison.
+    // Compare ids and row content (everything but the ordinal, by fingerprint) in conversation
+    // order. Appends after sinceMessageId are returned as newTurns and therefore never enter
+    // this held-material comparison.
     let first_mismatch = held_scope
         .iter()
         .zip(current_scope)
-        .position(|(old, new)| old.message_id != new.message_id || old.body != new.body)
+        .position(|(old, new)| {
+            old.message_id != new.message_id || old.fingerprint != new.fingerprint()
+        })
         .or_else(|| {
             (held_scope.len() != current_scope.len())
                 .then_some(held_scope.len().min(current_scope.len()))
@@ -978,7 +1135,7 @@ mod tests {
         let ClaimEvaluation::Matched {
             new_turns,
             vouched_from_message_id,
-        } = evaluate_claim(&claim("a", "b", "old"), Some(&held), &current)
+        } = evaluate_claim(&claim("a", "b", "old"), Some(&held.kept()), &current)
         else {
             panic!("renumbering is not a content rewrite");
         };
@@ -1012,11 +1169,11 @@ mod tests {
             vec![message(1, "a", "one"), message(2, "b", "two")],
         );
         assert!(matches!(
-            evaluate_claim(&claim("a", "b", "old"), Some(&held), &current),
+            evaluate_claim(&claim("a", "b", "old"), Some(&held.kept()), &current),
             ClaimEvaluation::CursorExpired { .. }
         ));
         assert!(matches!(
-            evaluate_claim(&claim("a", "b", "old"), Some(&current), &held),
+            evaluate_claim(&claim("a", "b", "old"), Some(&current.kept()), &held),
             ClaimEvaluation::CursorExpired { .. }
         ));
     }
@@ -1057,9 +1214,9 @@ mod tests {
         }
     }
 
-    /// A row a session's newest snapshot already holds, unchanged, is shared rather than
-    /// kept twice; a changed row and a new one are the new snapshot's own. Claims read
-    /// the same either way.
+    /// A row a session's latest page already holds, unchanged, is shared rather than kept
+    /// twice, in full and in its kept form; a changed row and a new one are the new page's
+    /// own. Only the latest page is kept in full, and claims read the same either way.
     #[test]
     fn unchanged_rows_are_shared_between_a_sessions_snapshots() {
         let mut state = TranscriptClaimState::default();
@@ -1071,6 +1228,13 @@ mod tests {
                 vec![message(1, "a", "one"), message(2, "b", "two")],
             ),
         );
+        let first_full = state.sessions["s"]
+            .newest
+            .as_ref()
+            .unwrap()
+            .full
+            .rows
+            .clone();
         state.record(
             "s",
             snapshot(
@@ -1083,15 +1247,18 @@ mod tests {
                 ],
             ),
         );
-        let snapshots = &state.sessions["s"].snapshots;
-        let (first, second) = (&snapshots[0].rows, &snapshots[1].rows);
+        let session = &state.sessions["s"];
+        let (first, second) = (&session.kept[0].rows, &session.kept[1].rows);
         assert!(Arc::ptr_eq(&first[0], &second[0]));
         assert!(!Arc::ptr_eq(&first[1], &second[1]));
-        assert_eq!(second[1].body["text"], "two, edited");
-        // The page each snapshot serves is whole, though only the rows hold its messages.
-        assert!(snapshots[1].page.get("messages").is_none());
+        assert_ne!(first[1].fingerprint, second[1].fingerprint);
+        let newest = session.newest.as_ref().unwrap();
+        assert!(Arc::ptr_eq(&first_full[0], &newest.full.rows[0]));
+        assert_eq!(newest.full.rows[1].body["text"], "two, edited");
+        // The latest page is whole, though only its rows hold its messages.
+        assert!(newest.full.page.get("messages").is_none());
         assert_eq!(
-            snapshots[1].resync_page()["messages"]
+            newest.full.resync_page()["messages"]
                 .as_array()
                 .unwrap()
                 .iter()
@@ -1102,6 +1269,52 @@ mod tests {
                 .collect::<Vec<_>>(),
             [("a", 1), ("b", 2), ("c", 3)]
         );
+    }
+
+    /// A claim on a kept version compares fingerprints: an unchanged page matches and a
+    /// row whose content changed diverges at that row. A row unchanged since the last
+    /// page reaches the claim already fingerprinted, so only new and changed rows are.
+    #[test]
+    fn claims_on_kept_versions_compare_fingerprints_and_reuse_them() {
+        let mut state = TranscriptClaimState::default();
+        state.record(
+            "s",
+            snapshot(
+                "v1",
+                1,
+                vec![message(1, "a", "one"), message(2, "b", "two")],
+            ),
+        );
+        let held = claim("a", "b", "v1");
+        let mut unchanged = snapshot(
+            "v2",
+            1,
+            vec![
+                message(1, "a", "one"),
+                message(2, "b", "two"),
+                message(3, "c", "three"),
+            ],
+        );
+        state.share_unchanged("s", &mut unchanged);
+        assert!(unchanged.rows[0].fingerprint.get().is_some());
+        assert!(unchanged.rows[2].fingerprint.get().is_none());
+        assert_eq!(
+            evaluate_claim(&held, state.held_snapshot("s", &held).as_ref(), &unchanged),
+            ClaimEvaluation::Matched {
+                new_turns: vec![message(3, "c", "three")],
+                vouched_from_message_id: "a".to_string(),
+            }
+        );
+        let mut edited = snapshot(
+            "v2",
+            1,
+            vec![message(1, "a", "one"), message(2, "b", "two, edited")],
+        );
+        state.share_unchanged("s", &mut edited);
+        assert!(matches!(
+            evaluate_claim(&held, state.held_snapshot("s", &held).as_ref(), &edited),
+            ClaimEvaluation::Diverged { valid_through_message_id: Some(ref through), .. } if through == "a"
+        ));
     }
 
     #[test]
@@ -1210,7 +1423,7 @@ mod tests {
             ],
         );
         assert!(matches!(
-            evaluate_claim(&request, Some(&held), &unchanged),
+            evaluate_claim(&request, Some(&held.kept()), &unchanged),
             ClaimEvaluation::Matched { .. }
         ));
 
@@ -1224,7 +1437,7 @@ mod tests {
                 message(4, "m4", "four"),
             ],
         );
-        match evaluate_claim(&request, Some(&held), &mutated) {
+        match evaluate_claim(&request, Some(&held.kept()), &mutated) {
             ClaimEvaluation::Diverged {
                 valid_through_message_id,
                 resync,
@@ -1251,7 +1464,7 @@ mod tests {
             vec![message(1, "m1", "fresh one"), message(2, "m2", "fresh two")],
         );
         assert!(matches!(
-            evaluate_claim(&request, Some(&held), &recreated),
+            evaluate_claim(&request, Some(&held.kept()), &recreated),
             ClaimEvaluation::CursorExpired { .. }
         ));
     }
@@ -1270,7 +1483,7 @@ mod tests {
             vec![message(2, "m2", "two"), message(3, "m3", "three")],
         );
         assert_eq!(
-            evaluate_claim(&request, Some(&held), &current),
+            evaluate_claim(&request, Some(&held.kept()), &current),
             ClaimEvaluation::Matched {
                 new_turns: Vec::new(),
                 vouched_from_message_id: "m2".to_string(),
@@ -1446,7 +1659,7 @@ mod tests {
 
         // Floor A lies below both snapshots: the untrimmed page answers, vouching from B.
         let below = claim("A", "D", "version-v");
-        assert_eq!(state.held_snapshot(session, &below), Some(full.clone()));
+        assert_eq!(state.held_snapshot(session, &below), Some(full.kept()));
         assert_eq!(
             evaluate_claim(
                 &below,
@@ -1460,7 +1673,7 @@ mod tests {
         );
         // The trimmed snapshot would have reported a false divergence for that claimant.
         assert!(matches!(
-            evaluate_claim(&below, Some(&trimmed), &current),
+            evaluate_claim(&below, Some(&trimmed.kept()), &current),
             ClaimEvaluation::Diverged { .. }
         ));
 
@@ -1468,7 +1681,7 @@ mod tests {
         let trimmed_claimant = claim("C", "D", "version-v");
         assert_eq!(
             state.held_snapshot(session, &trimmed_claimant),
-            Some(trimmed.clone())
+            Some(trimmed.kept())
         );
         assert_eq!(
             evaluate_claim(
@@ -1483,7 +1696,10 @@ mod tests {
         );
         // A full-page claimant at the same version is still answered from the full page.
         let full_claimant = claim("B", "D", "version-v");
-        assert_eq!(state.held_snapshot(session, &full_claimant), Some(full));
+        assert_eq!(
+            state.held_snapshot(session, &full_claimant),
+            Some(full.kept())
+        );
 
         // With only the trimmed snapshot retained, a floor outside it finds nothing.
         let mut trimmed_only = TranscriptClaimState::default();
@@ -1492,7 +1708,7 @@ mod tests {
         assert_eq!(trimmed_only.snapshot(session, "version-v", Some("D")), None);
         assert_eq!(
             trimmed_only.held_snapshot(session, &trimmed_claimant),
-            Some(trimmed)
+            Some(trimmed.kept())
         );
     }
 
@@ -1506,10 +1722,10 @@ mod tests {
         state.record(session, trimmed.clone());
         state.record(session, untrimmed.clone());
         state.record(session, trimmed);
-        assert_eq!(state.sessions[session].snapshots.len(), 2);
+        assert_eq!(state.sessions[session].kept.len(), 2);
         assert_eq!(
             state.snapshot(session, "version-v", Some("D")),
-            Some(untrimmed)
+            Some(untrimmed.kept())
         );
     }
 
@@ -1538,7 +1754,11 @@ mod tests {
         ] {
             let reply = claim_reply(
                 "version-2",
-                evaluate_claim(&claim(floor, since, "version-1"), Some(&held), current),
+                evaluate_claim(
+                    &claim(floor, since, "version-1"),
+                    Some(&held.kept()),
+                    current,
+                ),
             );
             assert_eq!(
                 reply["claim"],
@@ -1586,7 +1806,7 @@ mod tests {
         );
         let in_window = claim_reply(
             "version-2",
-            evaluate_claim(&claim("m1", "m2", "version-1"), Some(&held), &edited),
+            evaluate_claim(&claim("m1", "m2", "version-1"), Some(&held.kept()), &edited),
         );
         assert_eq!(in_window["claim"], json!("diverged"));
         assert!(
@@ -1595,7 +1815,11 @@ mod tests {
         );
         let below_window = claim_reply(
             "version-2",
-            evaluate_claim(&claim("m-ancient", "m2", "version-1"), Some(&held), &edited),
+            evaluate_claim(
+                &claim("m-ancient", "m2", "version-1"),
+                Some(&held.kept()),
+                &edited,
+            ),
         );
         assert_eq!(below_window["claim"], json!("diverged"));
         assert_eq!(below_window["vouchedFromMessageId"], json!("m1"));
@@ -1850,7 +2074,7 @@ mod tests {
                     );
                     claim_reply(
                         "current-version",
-                        evaluate_claim(&parsed, Some(&held), &current),
+                        evaluate_claim(&parsed, Some(&held.kept()), &current),
                     )
                 }
             };

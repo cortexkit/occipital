@@ -65,8 +65,13 @@ pub struct Sent {
     pub send_id: String,
 }
 
-/// Where a message is found: its runner, session and message id.
-pub(super) type SentKey = (String, String, String);
+/// Where a message is found: the digest of its runner, session and message id
+/// ([`sent_key`]).
+pub(super) type SentKey = crate::key_digest::KeyDigest;
+
+pub(super) fn sent_key(runner: &str, session: &str, mid: &str) -> SentKey {
+    crate::key_digest::key_digest(&[runner, session, mid])
+}
 
 /// A message's send: its sender and send id.
 pub(super) type SentBy = (String, String);
@@ -77,7 +82,7 @@ pub(super) type Remembered = HashMap<SentKey, (SentBy, bool)>;
 
 impl Sent {
     pub(super) fn key(&self) -> SentKey {
-        (self.runner.clone(), self.session.clone(), self.mid.clone())
+        sent_key(&self.runner, &self.session, &self.mid)
     }
 }
 
@@ -243,8 +248,9 @@ impl Notices {
                 .unwrap_or_else(|poison| poison.into_inner());
             mids.iter()
                 .filter_map(|mid| {
-                    let key = (runner.to_owned(), session.to_owned(), mid.clone());
-                    sends.get(&key).map(|(send, _)| (mid.clone(), send.clone()))
+                    sends
+                        .get(&sent_key(runner, session, mid))
+                        .map(|(send, _)| (mid.clone(), send.clone()))
                 })
                 .collect()
         };

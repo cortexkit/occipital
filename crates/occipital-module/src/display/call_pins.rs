@@ -23,6 +23,8 @@ use std::sync::{Arc, Mutex, OnceLock};
 use occipital_app_reader::tool_times::CallIdentity;
 use tokio::sync::mpsc;
 
+use crate::key_digest::{key_digest, KeyDigest};
+
 use super::store::{now_ms, DisplayStore};
 use super::views::Fetcher;
 
@@ -45,8 +47,10 @@ pub type CallPinSlot = Arc<OnceLock<CallPins>>;
 
 pub struct CallPins {
     queue: mpsc::Sender<Sighting>,
-    /// `(minting runner, call key, session)` of each call already kept.
-    kept: Mutex<HashSet<(String, String, String)>>,
+    /// The digest of `(minting runner, call key, session)` of each call already kept. The
+    /// minting runner is the one that gave the call its key: the call's carrier when it
+    /// moved from another runner, else the runner whose page carries it.
+    kept: Mutex<HashSet<KeyDigest>>,
 }
 
 impl CallPins {
@@ -63,7 +67,7 @@ impl CallPins {
                 (minted_by, call.call_key, call.schema_pin)
             })
             .filter(|(minted_by, call_key, _)| {
-                !kept.contains(&(minted_by.clone(), call_key.clone(), session.to_owned()))
+                !kept.contains(&key_digest(&[minted_by, call_key, session]))
             })
             .collect();
         if fresh.is_empty() {
@@ -73,11 +77,9 @@ impl CallPins {
             kept.clear();
         }
         // Remembered only once queued, so a dropped sighting is reported again.
-        let remembered: Vec<(String, String, String)> = fresh
+        let remembered: Vec<KeyDigest> = fresh
             .iter()
-            .map(|(minted_by, call_key, _)| {
-                (minted_by.clone(), call_key.clone(), session.to_owned())
-            })
+            .map(|(minted_by, call_key, _)| key_digest(&[minted_by, call_key, session]))
             .collect();
         let sighting = Sighting {
             session: session.to_owned(),
@@ -204,5 +206,41 @@ mod tests {
                 super::super::views::Want::Pin("tp1:read:00:1".into())
             ]
         );
+    }
+
+    /// A call already kept in one session is kept again when a page of another session
+    /// carries it, as after its history moved, so the store follows it there.
+    #[tokio::test]
+    async fn a_call_seen_in_another_session_is_kept_again() {
+        let dir = ScratchDir::new("occipital-call-pins-moved");
+        let descriptor = crate::store::tests::descriptor(&dir);
+        let store = Arc::new(DisplayStore::open(&descriptor, dir.path()).unwrap());
+        let (pins, _task) = start(store.clone(), None);
+        let kept_in = |session: &'static str| {
+            let store = store.clone();
+            async move {
+                for _ in 0..1_000 {
+                    if store.call_pin("thalamus-harness", "ck_1").unwrap()
+                        == Some((session.into(), "tp1:bash:00:1".into()))
+                    {
+                        return true;
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+                }
+                false
+            }
+        };
+        pins.seen(
+            "thalamus-harness",
+            "ses_1",
+            vec![call("ck_1", "tp1:bash:00:1")],
+        );
+        assert!(kept_in("ses_1").await);
+        pins.seen(
+            "thalamus-harness",
+            "ses_2",
+            vec![call("ck_1", "tp1:bash:00:1")],
+        );
+        assert!(kept_in("ses_2").await);
     }
 }

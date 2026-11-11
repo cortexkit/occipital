@@ -26,6 +26,7 @@ pub mod app_reader;
 pub mod backup;
 pub mod base64;
 pub mod display;
+pub mod key_digest;
 pub mod manifest;
 pub mod media;
 #[cfg(feature = "show-ui")]

@@ -658,7 +658,7 @@ impl TranscriptReader {
                     "scan"
                 }));
             }
-            let current = match TranscriptPageSnapshot::from_page(
+            let mut current = match TranscriptPageSnapshot::from_page(
                 &version,
                 head.claim_version(),
                 mapped.clone(),
@@ -694,11 +694,13 @@ impl TranscriptReader {
                 };
                 claim::runner_claim_reply(&version, true, evaluation)
             } else {
-                let previous = self
-                    .claims
-                    .lock()
-                    .expect("transcript claims poisoned")
-                    .held_snapshot(&request.session_id, held);
+                let previous = {
+                    let claims = self.claims.lock().expect("transcript claims poisoned");
+                    // Rows unchanged since the last page keep their fingerprints, so the
+                    // comparison below fingerprints only the new and changed rows.
+                    claims.share_unchanged(&request.session_id, &mut current);
+                    claims.held_snapshot(&request.session_id, held)
+                };
                 claim::claim_reply(
                     &version,
                     claim::evaluate_claim(held, previous.as_ref(), &current),

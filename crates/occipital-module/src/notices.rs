@@ -377,8 +377,8 @@ impl NoticeStore {
     }
 }
 
-/// A queued notice's runner, call key, sender, send id and session.
-type QueuedKey = (String, String, String, String, String);
+/// The digest of a queued notice's runner, call key, sender, send id and session.
+type QueuedKey = crate::key_digest::KeyDigest;
 
 /// A notice newly kept for a call of `runner`'s `session`, announced to the
 /// notices watches.
@@ -501,14 +501,14 @@ impl Notices {
         };
         // The session too: a notice seen in another session than before has
         // moved with its call's history, and must reach the store to follow it.
-        let key = |notice: &Notice| {
-            (
-                notice.runner.clone(),
-                notice.call_key.clone(),
-                notice.sender.clone(),
-                notice.send_id.clone(),
-                notice.session.clone(),
-            )
+        let key = |notice: &Notice| -> QueuedKey {
+            crate::key_digest::key_digest(&[
+                &notice.runner,
+                &notice.call_key,
+                &notice.sender,
+                &notice.send_id,
+                &notice.session,
+            ])
         };
         let fresh: Vec<Notice> = notices
             .into_iter()
