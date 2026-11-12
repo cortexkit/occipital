@@ -42,6 +42,7 @@ mod base64;
 mod boundary;
 mod decimal;
 mod envelope;
+mod fact;
 #[cfg(any(test, feature = "test-hooks"))]
 mod hooks;
 mod measure;
@@ -60,6 +61,7 @@ mod vectors;
 mod version;
 
 pub use account::{occ_account_free, occ_account_new, OccAccount};
+pub use fact::occ_format_fact;
 #[cfg(any(test, feature = "test-hooks"))]
 pub use hooks::{occ_test_decode_layout, occ_test_force_panic};
 pub use measure::{occ_measure_block, occ_measure_tree};

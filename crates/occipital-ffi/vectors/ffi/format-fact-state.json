@@ -1,0 +1,8 @@
+{
+  "entry": "occ_format_fact",
+  "request": {
+    "fact_json": "{\"label\":\"Code map\",\"state\":\"building\",\"progress\":0.4}"
+  },
+  "status": 0,
+  "response": "{\"label\":\"Code map\",\"text\":\"Building, 40%\",\"tone\":\"info\"}"
+}

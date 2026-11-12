@@ -49,29 +49,8 @@ pub(super) fn call<E, F: FnMut(u64) -> std::result::Result<(), E>>(
                     _ => return Err(cx.error("E_TYPE")),
                 },
             };
-            let text = if let Some(d) = digits {
-                // Text may round beyond the Decimal range without creating a numeric value.
-                let rounded = round_ratio(x.coefficient().unsigned_abs(), SCALE / 10_u128.pow(d));
-                let mut text = fixed(rounded, d);
-                if x.coefficient() < 0 && rounded != 0 {
-                    text.insert(0, '-');
-                }
-                text
-            } else {
-                x.to_string()
-            };
             formatted(cx, |out| {
-                let end = text.find('.').unwrap_or(text.len());
-                for (i, ch) in text.char_indices() {
-                    if grouping
-                        && i > usize::from(text.starts_with('-'))
-                        && i < end
-                        && (end - i).is_multiple_of(3)
-                    {
-                        out.push(',');
-                    }
-                    out.push(ch);
-                }
+                number_into(out, x, digits, grouping);
                 Ok(())
             })
         }
@@ -81,38 +60,8 @@ pub(super) fn call<E, F: FnMut(u64) -> std::result::Result<(), E>>(
                 .map(|v| digits_arg(v, 3, cx))
                 .transpose()?
                 .unwrap_or(1);
-            let magnitude = x.coefficient().unsigned_abs();
-            let mut unit = 0;
-            while unit < 6 && magnitude / SCALE >= 1024_u128.pow(unit + 1) {
-                unit += 1;
-            }
-            let places = if unit == 0 { 0 } else { digits };
-            let mut rounded = round_ratio(
-                magnitude,
-                1024_u128.pow(unit) * (SCALE / 10_u128.pow(places)),
-            );
-            if unit > 0 && unit < 6 && rounded >= 1024 * 10_u128.pow(places) {
-                unit += 1;
-                rounded = round_ratio(
-                    magnitude,
-                    1024_u128.pow(unit) * (SCALE / 10_u128.pow(places)),
-                );
-            }
-            let mut text = fixed(rounded, places);
-            if places > 0 {
-                while text.ends_with('0') {
-                    text.pop();
-                }
-                if text.ends_with('.') {
-                    text.pop();
-                }
-            }
-            if x.coefficient() < 0 && rounded != 0 {
-                text.insert(0, '-');
-            }
-            const UNITS: [&str; 7] = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"];
             formatted(cx, |out| {
-                write!(out, "{text} {}", UNITS[unit as usize]);
+                bytes_into(out, x, digits);
                 Ok(())
             })
         }
@@ -123,41 +72,13 @@ pub(super) fn call<E, F: FnMut(u64) -> std::result::Result<(), E>>(
                 .transpose()?
                 .map(|s| s.as_str())
                 .unwrap_or("compact");
-            if !matches!(style, "compact" | "clock") {
-                return Err(cx.error("E_ARG"));
-            }
-            let a = x.coefficient().unsigned_abs();
+            let clock = match style {
+                "compact" => false,
+                "clock" => true,
+                _ => return Err(cx.error("E_ARG")),
+            };
             formatted(cx, |out| {
-                if x.coefficient() < 0 {
-                    out.push('-');
-                }
-                let seconds = round_ratio(a, 1000 * SCALE);
-                if style == "clock" {
-                    if seconds >= 3600 {
-                        write!(
-                            out,
-                            "{}:{:02}:{:02}",
-                            seconds / 3600,
-                            seconds % 3600 / 60,
-                            seconds % 60
-                        );
-                    } else {
-                        write!(out, "{}:{:02}", seconds / 60, seconds % 60);
-                    }
-                } else if a < 1000 * SCALE {
-                    write!(out, "{} ms", round_ratio(a, SCALE));
-                } else {
-                    let tenths = round_ratio(a, 100 * SCALE);
-                    if tenths < 600 {
-                        write!(out, "{} s", fixed(tenths, 1));
-                    } else if seconds < 3600 {
-                        write!(out, "{}m {}s", seconds / 60, seconds % 60);
-                    } else if seconds < 86400 {
-                        write!(out, "{}h {}m", seconds / 3600, seconds % 3600 / 60);
-                    } else {
-                        write!(out, "{}d {}h", seconds / 86400, seconds % 86400 / 3600);
-                    }
-                }
+                duration_into(out, x, clock);
                 Ok(())
             })
         }
@@ -218,6 +139,125 @@ pub(super) fn call<E, F: FnMut(u64) -> std::result::Result<(), E>>(
             })
         }
     }
+}
+
+/// `FormatNumber`: `x` in canonical form, or rounded to `digits` places, with
+/// thousands grouped by "," when `grouping` is on.
+fn number_into(out: &mut Sink, x: Decimal, digits: Option<u32>, grouping: bool) {
+    let text = if let Some(d) = digits {
+        // Text may round beyond the Decimal range without creating a numeric value.
+        let rounded = round_ratio(x.coefficient().unsigned_abs(), SCALE / 10_u128.pow(d));
+        let mut text = fixed(rounded, d);
+        if x.coefficient() < 0 && rounded != 0 {
+            text.insert(0, '-');
+        }
+        text
+    } else {
+        x.to_string()
+    };
+    let end = text.find('.').unwrap_or(text.len());
+    for (i, ch) in text.char_indices() {
+        if grouping
+            && i > usize::from(text.starts_with('-'))
+            && i < end
+            && (end - i).is_multiple_of(3)
+        {
+            out.push(',');
+        }
+        out.push(ch);
+    }
+}
+
+/// `FormatBytes`: binary units with at most `digits` places, trailing zeros
+/// dropped.
+fn bytes_into(out: &mut Sink, x: Decimal, digits: u32) {
+    let magnitude = x.coefficient().unsigned_abs();
+    let mut unit = 0;
+    while unit < 6 && magnitude / SCALE >= 1024_u128.pow(unit + 1) {
+        unit += 1;
+    }
+    let places = if unit == 0 { 0 } else { digits };
+    let mut rounded = round_ratio(
+        magnitude,
+        1024_u128.pow(unit) * (SCALE / 10_u128.pow(places)),
+    );
+    if unit > 0 && unit < 6 && rounded >= 1024 * 10_u128.pow(places) {
+        unit += 1;
+        rounded = round_ratio(
+            magnitude,
+            1024_u128.pow(unit) * (SCALE / 10_u128.pow(places)),
+        );
+    }
+    let mut text = fixed(rounded, places);
+    if places > 0 {
+        while text.ends_with('0') {
+            text.pop();
+        }
+        if text.ends_with('.') {
+            text.pop();
+        }
+    }
+    if x.coefficient() < 0 && rounded != 0 {
+        text.insert(0, '-');
+    }
+    const UNITS: [&str; 7] = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"];
+    write!(out, "{text} {}", UNITS[unit as usize]);
+}
+
+/// `FormatDuration` of `x` milliseconds: "m:ss" or "h:mm:ss" with `clock`,
+/// otherwise the compact form ("920 ms", "2.4 s", "1m 5s", "2h 3m", "1d 2h").
+fn duration_into(out: &mut Sink, x: Decimal, clock: bool) {
+    let a = x.coefficient().unsigned_abs();
+    if x.coefficient() < 0 {
+        out.push('-');
+    }
+    let seconds = round_ratio(a, 1000 * SCALE);
+    if clock {
+        if seconds >= 3600 {
+            write!(
+                out,
+                "{}:{:02}:{:02}",
+                seconds / 3600,
+                seconds % 3600 / 60,
+                seconds % 60
+            );
+        } else {
+            write!(out, "{}:{:02}", seconds / 60, seconds % 60);
+        }
+    } else if a < 1000 * SCALE {
+        write!(out, "{} ms", round_ratio(a, SCALE));
+    } else {
+        let tenths = round_ratio(a, 100 * SCALE);
+        if tenths < 600 {
+            write!(out, "{} s", fixed(tenths, 1));
+        } else if seconds < 3600 {
+            write!(out, "{}m {}s", seconds / 60, seconds % 60);
+        } else if seconds < 86400 {
+            write!(out, "{}h {}m", seconds / 3600, seconds % 3600 / 60);
+        } else {
+            write!(out, "{}d {}h", seconds / 86400, seconds % 86400 / 3600);
+        }
+    }
+}
+
+/// The same three formats as text, for callers outside an evaluation (the
+/// fact formatter), which have no fuel or string limit to charge.
+pub(crate) fn number_text(x: Decimal, digits: Option<u32>, grouping: bool) -> String {
+    let mut out = Sink::new(false);
+    number_into(&mut out, x, digits, grouping);
+    out.text
+}
+
+pub(crate) fn bytes_text(x: Decimal, digits: u32) -> String {
+    let mut out = Sink::new(false);
+    bytes_into(&mut out, x, digits);
+    out.text
+}
+
+pub(crate) fn duration_text(x: Decimal, clock: bool) -> String {
+    let mut out = Sink::new(false);
+    duration_into(&mut out, x, clock);
+    out.text
 }
 
 fn digits_arg<E, F: FnMut(u64) -> std::result::Result<(), E>>(

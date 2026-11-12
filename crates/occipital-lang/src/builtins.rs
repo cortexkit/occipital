@@ -1,7 +1,7 @@
 //! Metered §6.1–§6.4 primitives. Dispatch owns the single call-base charge;
 //! callers must not add expression-visit or duplicate scan/build charges.
 
-mod format;
+pub(crate) mod format;
 mod lists;
 mod strings;
 

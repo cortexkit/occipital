@@ -96,6 +96,10 @@ mod prepare;
 #[cfg_attr(not(test), allow(dead_code))]
 mod builtins;
 
+// Facts a module reports, worded and toned the same way in every app.
+mod fact;
+pub use fact::{format_fact, FactError, FormattedFact, Tone};
+
 // Program evaluation: the host state machine and public sessions will drive it.
 #[cfg_attr(not(test), allow(dead_code))]
 mod eval;

@@ -432,6 +432,25 @@ int32_t occ_text_references(const uint8_t *text, size_t len,
                             const char *project_json, char **out);
 
 /* ------------------------------------------------------------------------
+ * Facts
+ * --------------------------------------------------------------------- */
+
+/*
+ * Words one fact a module reports, such as a fact in a command's preview,
+ * so both apps draw it alike. `fact_json` is the fact as the module sent it:
+ * {"label", "value", "unit"?, "noun"?, "approx"?, "tone"?} for a number,
+ * or {"label", "state", "progress"?} for a state. The rules are those of
+ * the cortexkit-occipital-lang crate's format_fact.
+ *
+ * *out is {"label", "text", "tone"}, such as {"label": "Removes", "text":
+ * "about 18,200 tokens", "tone": "neutral"}, where "tone" is one of
+ * neutral, info, success, warning, danger. A fact the rules refuse answers
+ * {"error": "fact_malformed" | "fact_conflict" | "fact_range"}, and the
+ * app shows it as missing. Text that is not JSON is OCC_INVALID_ARGUMENT.
+ */
+int32_t occ_format_fact(const char *fact_json, char **out);
+
+/* ------------------------------------------------------------------------
  * Strings
  * --------------------------------------------------------------------- */
 

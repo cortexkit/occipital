@@ -1,0 +1,8 @@
+{
+  "entry": "occ_format_fact",
+  "request": {
+    "fact_json": "{\"label\":\"Removes\",\"value\":18200,\"unit\":\"tokens\",\"approx\":true}"
+  },
+  "status": 0,
+  "response": "{\"label\":\"Removes\",\"text\":\"about 18,200 tokens\",\"tone\":\"neutral\"}"
+}

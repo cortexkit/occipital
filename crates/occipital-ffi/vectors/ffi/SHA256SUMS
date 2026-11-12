@@ -1,4 +1,4 @@
-4f5c88746b3b42ecd79e570da854b39a0dac1727bb7e7b10f07bd1e5b83f729b  README.md
+2479a5e5f1fd4529fb7087b4de3097b403c9424ed9b7a48c6bd4c482328f3945  README.md
 7e685b0f6d08f01426081f06dd04717be067c09156d9573be3b86b86965e7d5f  check-16.01-row-bash-1-running.json
 8575f572540104d09646644c13077386e894ab647c82e65ed2a3097f5d9b5ae4  check-16.01-row-bash-2-succeeded.json
 902e4ab8ba1303b8951b261f06ae61a0dd9def7f9d5cfa9895d65a892feb6469  check-16.01-row-bash-3-failed.json
@@ -26,6 +26,9 @@ b4ca7595fe512e13c872ef945846e5c65745efe56c4b5ff52a1c6b260e9243f6  check-reserved
 c4e7a96c26c82a8421e0c4ac42e8cb0a7b7bbcd71ceddac42b4cd55f526b30ef  check-reserved-writes-tool_row-2.json
 04bccf96c84cf8e4fdad437ec77c9917b55af616ce9bb10ef281170619293f16  check-reserved-writes-tool_row-3.json
 92cddf45c6e2b6f1fafdc53e2492abe0d807b3fd3f964ca5c814233ce345794f  check-reserved-writes-tool_row-4.json
+cfe0999a0bea4a95e0adfb623c44c4ce00f97b2b54f18c0e6d8dfd9263d64ec9  format-fact-number.json
+9c6905ca786297cea974e318bcf045f0ac44333bbe93a34ddc908b94ebe4d9da  format-fact-refused.json
+c77e13e9b4c928de4a25171e714bc7b59072c93b13b3255fc94cbd256fea2bcf  format-fact-state.json
 7406b7f6447ddce843e292cdd17757ba39b6eec927d7941810a007135165e9ab  measure-block-16.08-reply-test-run-1.json
 6f529cac5f84c4aa51df3d6e733d3b0a84a93bc472391b50ff2072d7336b5bac  measure-block-16.08-reply-test-run-3.json
 35f8d6c4da0af27699618c4a1ebec79ecdb311dd601876d988d053f2cdd8bf91  measure-block-16.09-reply-places-2.json

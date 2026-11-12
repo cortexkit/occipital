@@ -57,3 +57,7 @@ issue, a pull request in another repository, and a pull request inside a
 code span, under a project record as core serves it. The rules themselves
 are pinned by the `text-references-v1` vectors of cortexkit-occipital-refs;
 this case pins the entry point's JSON.
+
+The `format-fact-*` cases are `occ_format_fact` on one fact each: a number
+with a unit and `approx`, a state with progress, and a fact the rules refuse,
+which answers its code.

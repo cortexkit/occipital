@@ -21,7 +21,8 @@
 //! with error diagnostics and a source with invalid UTF-8, have no golden
 //! trace and are checked by assertions instead, as are the tool row cases
 //! (a long command beside a Slot, evaluated and measured as a row), the
-//! version descriptor and one call of `occ_text_references`. The
+//! version descriptor, one call of `occ_text_references` and the three
+//! `occ_format_fact` calls. The
 //! scheduler traces drive a program session, which no entry point exposes, so
 //! they have no vectors.
 //!
@@ -41,6 +42,7 @@ use serde_json::{json, Value as Json};
 
 use crate::account::occ_account_free;
 use crate::base64;
+use crate::fact::occ_format_fact;
 use crate::measure::{occ_measure_block, occ_measure_tree};
 use crate::metrics::tests::{table, Script};
 use crate::occ_version;
@@ -131,6 +133,10 @@ issue, a pull request in another repository, and a pull request inside a
 code span, under a project record as core serves it. The rules themselves
 are pinned by the `text-references-v1` vectors of cortexkit-occipital-refs;
 this case pins the entry point's JSON.
+
+The `format-fact-*` cases are `occ_format_fact` on one fact each: a number
+with a unit and `approx`, a state with progress, and a fact the rules refuse,
+which answers its code.
 "#;
 
 /// One recorded call, or for a reply session the session.
@@ -921,6 +927,37 @@ fn text_references() -> Vector {
     vector
 }
 
+/// `occ_format_fact` on a number, a state and a refused fact.
+fn format_facts() -> Vec<(String, Vector)> {
+    [
+        (
+            "number",
+            r#"{"label":"Removes","value":18200,"unit":"tokens","approx":true}"#,
+            json!({"label": "Removes", "text": "about 18,200 tokens", "tone": "neutral"}),
+        ),
+        (
+            "state",
+            r#"{"label":"Code map","state":"building","progress":0.4}"#,
+            json!({"label": "Code map", "text": "Building, 40%", "tone": "info"}),
+        ),
+        (
+            "refused",
+            r#"{"label":"Code map","state":"ready","tone":"danger"}"#,
+            json!({"error": "fact_conflict"}),
+        ),
+    ]
+    .into_iter()
+    .map(|(name, fact, expected)| {
+        let fact_c = c(fact);
+        // SAFETY: `fact_c` outlives the call; `out` is the helper's.
+        let result = call(|out| unsafe { occ_format_fact(fact_c.as_ptr(), out) });
+        let vector = Vector::call("occ_format_fact", json!({ "fact_json": fact }), result);
+        assert_eq!(json(vector.ok()), expected, "{name}");
+        (format!("format-fact-{name}"), vector)
+    })
+    .collect()
+}
+
 fn generate() -> BTreeMap<String, Vec<u8>> {
     let mut vectors: Vec<(String, Vector)> = vec![];
     for case in reply_cases() {
@@ -955,6 +992,7 @@ fn generate() -> BTreeMap<String, Vec<u8>> {
     );
     vectors.push(("version".to_owned(), version));
     vectors.push(("text-references".to_owned(), text_references()));
+    vectors.extend(format_facts());
     // The acceptance cases of `occ_program_check`: error diagnostics and
     // invalid UTF-8 are results, not failed calls.
     let show_ui = json!({ "context": context("show_ui", json!({}), Json::Null) });
