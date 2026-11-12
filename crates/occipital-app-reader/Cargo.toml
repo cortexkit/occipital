@@ -12,7 +12,7 @@ description = "Transport-independent transcript claims, app page reads and live 
 # test-vectors/ by their bytes, so those files must not change.
 [dependencies]
 async-trait = "0.1"
-cortexkit-role-llm-runner = "=0.8.41"
+cortexkit-role-llm-runner = "=0.8.42"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Fingerprints of the rows the claim cache keeps (`claim::KeptVersion`).

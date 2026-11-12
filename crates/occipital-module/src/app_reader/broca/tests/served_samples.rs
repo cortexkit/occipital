@@ -57,6 +57,12 @@ impl Served {
         }
     }
 
+    /// Serve the requests that follow through `app`, keeping the files kept so
+    /// far: for a set whose cases each need a runner of their own.
+    pub(crate) fn serve_with(&mut self, app: Arc<super::super::super::AppReader>) {
+        self.connection = super::super::super::tests::Connection::new(app);
+    }
+
     /// Serve every request on `route` instead of the phone's default one.
     pub(crate) fn on_route(mut self, route: super::super::super::RouteBinding) -> Self {
         self.route = route;

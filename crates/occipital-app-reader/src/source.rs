@@ -185,6 +185,12 @@ fn last_run_with_error_value(run: &LastRunState, error: Option<&LastRunError>) -
     if let Some(reason) = &run.reason {
         value["reason"] = json!(reason);
     }
+    // While a run is paused because its account is at its limit
+    // (`reason: "account_limit"`), the earliest time the runner resumes it
+    // itself, so the app can say how long it waits.
+    if let Some(at) = run.resume_not_before_ms {
+        value["resumeNotBeforeMs"] = json!(at);
+    }
     if let Some(error) = error {
         let mut error_value = json!({"class": error.class});
         if let Some(retry) = error.retry_after_secs {

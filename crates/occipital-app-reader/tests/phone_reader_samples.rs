@@ -551,6 +551,14 @@ fn the_account_wait_v2_samples_are_complete_and_their_checksums_verify() {
     verify_published_set("test-vectors/phone-reader-account-wait-v2", 17);
 }
 
+/// What a session's model is given before the conversation, from the plan in
+/// force, and each refusal. Its README lists what each case shows; the module's
+/// request-context sample test proves each file.
+#[test]
+fn the_request_context_samples_are_complete_and_their_checksums_verify() {
+    verify_published_set("test-vectors/phone-reader-request-context-v1", 20);
+}
+
 /// A head's run held on a tool call, stopped with `session.stop`. Its README lists what
 /// each case shows.
 #[test]

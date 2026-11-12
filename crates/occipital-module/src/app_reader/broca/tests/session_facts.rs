@@ -59,7 +59,11 @@ async fn last_run_facts_are_codes_only_on_pages_claims_details_and_watches() {
     }
 }
 
-async fn assert_last_run_phone_bytes(state: Value, error: Option<Value>, expected: &str) {
+pub(super) async fn assert_last_run_phone_bytes(
+    state: Value,
+    error: Option<Value>,
+    expected: &str,
+) {
     let route = FakeRoute::new();
     *route.run_state.lock().unwrap() = state;
     if let Some(error) = error {
@@ -170,6 +174,20 @@ async fn an_account_wait_run_end_names_its_code_to_the_apps() {
         .unwrap();
         assert_eq!(app, published, "{file}");
     }
+}
+
+/// A run the runner paused because its account is at its limit, to resume
+/// itself (runner contract 0.8.42's `account_limit` and
+/// `resume_not_before_ms`), reaches the apps with the reason and the time.
+#[tokio::test]
+async fn an_account_paused_run_names_when_it_resumes() {
+    assert_last_run_phone_bytes(
+        json!({"run_id":"r-paused", "state":"paused", "reason":"account_limit",
+            "resume_not_before_ms": 1794450000000_u64}),
+        None,
+        r#"{"reason":"account_limit","resumeNotBeforeMs":1794450000000,"runId":"r-paused","state":"paused"}"#,
+    )
+    .await;
 }
 
 #[tokio::test]

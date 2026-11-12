@@ -1,0 +1,14 @@
+{
+  "admission_id": "adm-synthetic",
+  "caller": {
+    "runner": "broca"
+  },
+  "credential_id": "chatgpt:openai:synthetic",
+  "event_id": "synthetic-session:12",
+  "kind": "account_limit_exhausted",
+  "limit_window": "seven_day",
+  "observed_at_ms": 1789579322081,
+  "resets_at_ms": 1790021043000,
+  "resets_at_source": "body",
+  "served_account_id": "acct-synthetic"
+}

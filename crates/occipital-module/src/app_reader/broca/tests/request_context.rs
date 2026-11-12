@@ -131,6 +131,43 @@ async fn a_runner_without_plan_views_is_not_asked() {
     assert!(plan_view_calls(&route).is_empty());
 }
 
+/// A runner placed on a new build that now declares the plan view is asked for
+/// it from the next read, though this reader had cached the old build's
+/// description. While the build stays the same, the cached description is used
+/// and the runner isn't asked to describe itself again.
+#[tokio::test]
+async fn a_runner_on_a_new_build_is_described_again() {
+    let route = FakeRoute::new();
+    *route.build.lock().unwrap() = Some("0.4.20+aaaa".into());
+    *route.plan_view.lock().unwrap() = Some(Ok(full_view()));
+    let app = app(&route);
+    let read = || {
+        app.read(
+            super::super::super::REQUEST_CONTEXT,
+            json!({"session": "ses_head", "harness": "opencode2"}),
+        )
+    };
+    let describes = || {
+        route
+            .calls
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|call| call["method"] == "role.describe")
+            .count()
+    };
+    assert_eq!(read().await.unwrap_err().code, "unsupported");
+    let asked = describes();
+    // The runner restarts on a build that serves plan views.
+    *route.describe.lock().unwrap() = Some(describe_with(&["plan_view"]));
+    assert_eq!(read().await.unwrap_err().code, "unsupported");
+    assert_eq!(describes(), asked, "the same build is not described again");
+    *route.build.lock().unwrap() = Some("0.4.21+bbbb".into());
+    assert_eq!(read().await.unwrap()["generation"], 3);
+    assert_eq!(describes(), asked + 1);
+    assert_eq!(plan_view_calls(&route).len(), 1);
+}
+
 /// The runner's own answers that asking again can't change reach the app
 /// under their own code: no plan in force, and a plan too large for one reply.
 #[tokio::test]

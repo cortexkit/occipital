@@ -330,6 +330,12 @@ pub trait BrocaRoute: Send + Sync {
     /// With `live_ids`, a message its host names only when storing it streams
     /// under a `live_id` until then; ask for it only from a runner declaring it.
     async fn subscribe(&self, live_ids: bool) -> Result<Box<dyn EventStream>, ReadError>;
+    /// Which build of the runner serves this session, as the daemon's catalog
+    /// names it, or `None` when that isn't known. A cached `role.describe`
+    /// answer is kept only while this stays the same.
+    async fn runner_build(&self) -> Option<String> {
+        None
+    }
 }
 
 #[async_trait]
@@ -347,6 +353,7 @@ struct DaemonRoutes {
     calls: Arc<SubcConsumer>,
     streams: Arc<SubcConsumer>,
     principal: ConsumerIdentity,
+    builds: Arc<RunnerBuilds>,
 }
 
 #[async_trait]
@@ -357,6 +364,7 @@ impl BrocaRoutes for DaemonRoutes {
             streams: self.streams.clone(),
             principal: self.principal.clone(),
             resolved: resolved.clone(),
+            builds: self.builds.clone(),
         }))
     }
 
@@ -440,6 +448,69 @@ struct DaemonRoute {
     streams: Arc<SubcConsumer>,
     principal: ConsumerIdentity,
     resolved: Resolved,
+    builds: Arc<RunnerBuilds>,
+}
+
+/// How often the daemon's catalog is read again for runner builds.
+const RUNNER_BUILD_CHECK: Duration = Duration::from_secs(10);
+
+/// Each runner module's build, as the daemon's catalog lists it: its
+/// `module_version`, plus `+<commit>` when its provenance names one. Shared
+/// by every session's route and read again at most every
+/// [`RUNNER_BUILD_CHECK`].
+///
+/// A runner can't change what it declares in `role.describe` without a
+/// restart, and a new build is how it gains or loses an op or group. Nothing
+/// else tells this reader that a runner restarted: the daemon client reopens
+/// a call route silently, and a session nobody watches has no live stream to
+/// lose. So the describe cache keys on this build instead.
+#[derive(Default)]
+struct RunnerBuilds {
+    state: tokio::sync::Mutex<BuildsState>,
+}
+
+#[derive(Default)]
+struct BuildsState {
+    checked: Option<std::time::Instant>,
+    builds: HashMap<String, String>,
+}
+
+impl RunnerBuilds {
+    /// `runner`'s build, reading the catalog first when the last read is
+    /// older than [`RUNNER_BUILD_CHECK`]. A failed read keeps the builds read
+    /// before, so a daemon hiccup doesn't make every cache look stale.
+    async fn of(&self, calls: &SubcConsumer, runner: &str) -> Option<String> {
+        let mut state = self.state.lock().await;
+        if state
+            .checked
+            .is_none_or(|checked| checked.elapsed() >= RUNNER_BUILD_CHECK)
+        {
+            state.checked = Some(std::time::Instant::now());
+            match calls.catalog_list().await {
+                Ok(listed) => {
+                    state.builds = listed
+                        .modules
+                        .into_iter()
+                        .filter_map(|module| {
+                            let version = module.module_version?;
+                            let build = match module
+                                .provenance
+                                .and_then(|provenance| provenance.build_git_sha)
+                            {
+                                Some(commit) => format!("{version}+{commit}"),
+                                None => version,
+                            };
+                            Some((module.module_id, build))
+                        })
+                        .collect();
+                }
+                Err(error) => {
+                    tracing::debug!(%error, "catalog.list for runner builds failed");
+                }
+            }
+        }
+        state.builds.get(runner).cloned()
+    }
 }
 
 fn target(resolved: &Resolved) -> RouteTarget {
@@ -505,6 +576,19 @@ fn own_refusal(op: ReadOp, code: Option<&str>, detail: Option<&Value>) -> Option
     final_refusal(op, code).or_else(|| not_ready(op, code, detail))
 }
 
+/// A failed call of `op` to `runner`, as the app sees it: under its own code
+/// when [`own_refusal`] keeps one, else as [`call_error`] says.
+fn read_call_error(op: ReadOp, runner: &str, error: CallError) -> ReadError {
+    let detail = match &error {
+        CallError::Module(body) => body.detail.as_ref(),
+        _ => None,
+    };
+    match own_refusal(op, error.code(), detail) {
+        Some(code) => ReadError::new(code, format!("{runner}: {error}")),
+        None => call_error(runner, error),
+    }
+}
+
 /// A runner's reply: its result, or its refusal as the app sees it.
 fn result(value: Value) -> Result<Value, ReadError> {
     if let Some(code) = value.get("code").and_then(Value::as_str) {
@@ -541,15 +625,7 @@ impl BrocaRoute for DaemonRoute {
                     tracing::debug!(code = error.code().unwrap_or("provider_unavailable"), %error,
                         "Broca display history call failed");
                 }
-                let runner = &self.resolved.reference.runner;
-                let detail = match &error {
-                    CallError::Module(body) => body.detail.as_ref(),
-                    _ => None,
-                };
-                match own_refusal(op, error.code(), detail) {
-                    Some(code) => ReadError::new(code, format!("{runner}: {error}")),
-                    None => call_error(runner, error),
-                }
+                read_call_error(op, &self.resolved.reference.runner, error)
             })?;
         let value: Value =
             serde_json::from_slice(&bytes).map_err(|error| invalid(error.to_string()))?;
@@ -579,6 +655,12 @@ impl BrocaRoute for DaemonRoute {
             error.message = format!("{} {}", self.resolved.reference.runner, error.message);
             error
         })
+    }
+
+    async fn runner_build(&self) -> Option<String> {
+        self.builds
+            .of(&self.calls, &self.resolved.reference.runner)
+            .await
     }
 
     async fn subscribe(&self, live_ids: bool) -> Result<Box<dyn EventStream>, ReadError> {
@@ -653,10 +735,19 @@ pub struct BrocaSources {
 type SourceSlot = Arc<tokio::sync::Mutex<Weak<BrocaSource>>>;
 
 /// A session's successfully checked `role.describe` answer, cached and shared by
-/// every source built for the session until its route is lost or rebound. Two
-/// reads that miss the cache at once may each ask; either answer is kept. A plain read builds a fresh
-/// source each time, so the cache lives here rather than in the source.
-type DescribeSlot = Arc<Mutex<Option<Arc<RoleDescribe>>>>;
+/// every source built for the session until its route is lost or rebound, or
+/// the runner's build changes. Two reads that miss the cache at once may each
+/// ask; either answer is kept. A plain read builds a fresh source each time, so
+/// the cache lives here rather than in the source.
+type DescribeSlot = Arc<Mutex<Option<KeptDescribe>>>;
+
+/// A cached `role.describe` answer and the runner build it came from
+/// ([`BrocaRoute::runner_build`]).
+#[derive(Clone)]
+struct KeptDescribe {
+    describe: Arc<RoleDescribe>,
+    build: Option<String>,
+}
 
 impl BrocaSources {
     pub fn new(resolver: Arc<Resolver>, routes: Arc<dyn BrocaRoutes>) -> Self {
@@ -724,6 +815,7 @@ impl BrocaSources {
                 calls,
                 streams,
                 principal,
+                builds: Arc::default(),
             }),
         ))
     }
@@ -1433,15 +1525,24 @@ impl BrocaSource {
         })
     }
 
-    /// The runner's checked `role.describe`, cached. A failed or malformed answer
-    /// isn't kept, so the next read asks again; until then it reads as `None`.
+    /// The runner's checked `role.describe`, cached while the runner's build
+    /// stays the same: a runner placed on a new build is asked again, so an op
+    /// or group it gains or loses counts from the next read. A failed or
+    /// malformed answer isn't kept, so the next read asks again; until then it
+    /// reads as `None`, even when an answer from an earlier build is held.
     async fn describe(&self) -> Option<Arc<RoleDescribe>> {
-        if let Some(describe) = self.describe.guard().clone() {
-            return Some(describe);
+        let build = self.route.runner_build().await;
+        if let Some(kept) = self.describe.guard().clone() {
+            if kept.build == build {
+                return Some(kept.describe);
+            }
         }
         let value = self.remote_read(ReadOp::Describe, json!({})).await.ok()?;
         let describe = Arc::new(check_describe(&value).ok()?);
-        *self.describe.guard() = Some(describe.clone());
+        *self.describe.guard() = Some(KeptDescribe {
+            describe: describe.clone(),
+            build,
+        });
         Some(describe)
     }
 
@@ -2429,6 +2530,8 @@ pub(crate) mod tests {
         media: Mutex<HashMap<String, (String, Vec<u8>)>>,
         /// The `session.plan_view` answer, or its refusal; none refuses `no_plan`.
         plan_view: Mutex<Option<Result<Value, ReadError>>>,
+        /// The runner build the catalog names, or `None` for unknown.
+        build: Mutex<Option<String>>,
     }
 
     /// A `role.describe` answer that passes the contract's check, declaring `groups`.
@@ -2616,6 +2719,7 @@ pub(crate) mod tests {
                 read_entries: AtomicUsize::new(0),
                 media: Mutex::new(HashMap::new()),
                 plan_view: Mutex::new(None),
+                build: Mutex::new(None),
             })
         }
 
@@ -2662,6 +2766,10 @@ pub(crate) mod tests {
 
     #[async_trait]
     impl BrocaRoute for FakeRoute {
+        async fn runner_build(&self) -> Option<String> {
+            self.build.lock().unwrap().clone()
+        }
+
         async fn read(&self, op: ReadOp, params: Value) -> Result<Value, ReadError> {
             let request: Value = serde_json::from_slice(&body(op, params.clone())).unwrap();
             runner_accepts(op, &params);
@@ -4420,6 +4528,8 @@ pub(crate) mod tests {
     mod notice_writer_1107;
     mod read_role_samples;
     mod request_context;
+    mod request_context_samples;
+    mod runner_0842_samples;
     mod send_ids_1110;
     mod speaks_for_name_1109;
     mod text_upload_1108;

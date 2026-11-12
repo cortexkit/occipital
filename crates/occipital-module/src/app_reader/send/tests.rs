@@ -882,6 +882,61 @@ async fn a_run_error_with_account_continue_lists_as_before() {
     }
 }
 
+/// Broca's `run.status` body for a ChatGPT usage-limit refusal, before and after
+/// its error gains `limit_window: "seven_day"` read from the response's quota
+/// headers, from `tests/data/broca-chatgpt-limit-window-1112/`, copied
+/// unchanged. The queued-send follower, the one path that reads a run's error,
+/// never reads the window: both list the same code and wait until the
+/// account's reset. `run.result` and the account report Broca sends routing
+/// (`route.account_observe`) are never read here.
+#[tokio::test(start_paused = true)]
+async fn a_run_error_with_a_chatgpt_limit_window_lists_as_before() {
+    let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let samples = manifest.join("tests/data/broca-chatgpt-limit-window-1112");
+    let sums = std::fs::read_to_string(samples.join("SHA256SUMS")).unwrap();
+    // The six bodies and the README.
+    assert_eq!(sums.lines().count(), 7);
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(samples.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+    let status: Value = serde_json::from_slice(
+        &std::fs::read(manifest.join(
+            "tests/data/broca-account-wait-1112/5_queued_account_limit_exhausted.new.session_send_status.json",
+        ))
+        .unwrap(),
+    )
+    .unwrap();
+    for side in ["before", "after"] {
+        let body: Value = serde_json::from_slice(
+            &std::fs::read(samples.join(format!("{side}.run.status.json"))).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            body["error"].get("limit_window").is_some(),
+            side == "after",
+            "{side}"
+        );
+        let f = fixture(Kind::Head);
+        {
+            let mut captured = f.runner.captured.lock().unwrap();
+            captured.insert("session.send_status", status.clone());
+            captured.insert("run.status", json!({"result": body}));
+        }
+        f.sender.send(message("q1", "queued words")).await.unwrap();
+        let list = || f.receipts.queue().list("s", START).unwrap();
+        eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unsent")).await;
+        let entry = list().unwrap().0[0].clone();
+        assert_eq!(entry["runnerCode"], "account_limit_exhausted", "{side}");
+        assert_eq!(
+            entry["retryAfterMs"],
+            1_790_021_043_000_i64 - START,
+            "{side}"
+        );
+    }
+}
+
 #[tokio::test(start_paused = true)]
 async fn a_steer_a_step_takes_is_settled_without_a_late_signal() {
     let f = fixture(Kind::Worker);

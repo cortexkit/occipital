@@ -1,0 +1,17 @@
+{
+  "usage": {
+    "steps": 0,
+    "unreported_steps": 0,
+    "by_model": []
+  },
+  "run_id": "r1",
+  "state": "error",
+  "error": {
+    "class": "transient",
+    "message": "429: {\"error\":{\"type\":\"usage_limit_reached\",\"message\":\"The usage limit has been reached\",\"plan_type\":\"pro\",\"resets_at\":1790021043,\"eligible_promo\":null,\"resets_in_seconds\":441721}}",
+    "status": 429,
+    "provider_code": "account_limit_exhausted",
+    "resets_at_ms": 1790021043000,
+    "resets_at_source": "body"
+  }
+}
