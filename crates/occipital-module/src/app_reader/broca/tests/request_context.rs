@@ -64,7 +64,7 @@ fn full_view() -> Value {
                 "provider": "aft"}
         ],
         "newest_step": {"at_ms": 1_794_400_100_000_u64, "reply_mid": "msg_reply"},
-        "pending": {"generation": 4, "note": "Your tools changed."},
+        "pending": {"generation": 4, "notes": ["Your instructions changed.", "The tool `edit` was removed."]},
         "as_planned": true
     })
 }
@@ -96,7 +96,7 @@ async fn the_request_context_is_the_plan_in_force() {
                 {"name": "read", "description": "Read a file", "inputSchema": {"type": "object"},
                     "provider": "aft"}
             ],
-            "pending": {"generation": 4, "note": "Your tools changed."},
+            "pending": {"generation": 4, "notes": ["Your instructions changed.", "The tool `edit` was removed."]},
             "asPlanned": true
         })
     );
@@ -170,20 +170,27 @@ async fn a_plan_above_the_app_reply_limit_is_too_large() {
     assert_eq!(request_context(&route).await.unwrap_err().code, "too_large");
 }
 
-/// A reply that fails the runner contract's own decoding, which checks every
-/// item range against the text, is never passed on: here a range ends inside a
-/// character.
+/// A reply that fails the runner contract's own decoding is never passed on: an
+/// item range that ends inside a character, an empty list of notes, and the
+/// single `note` that runner contract 0.8.40 replaced with `notes`.
 #[tokio::test]
 async fn a_reply_outside_the_contract_is_refused() {
-    let route = FakeRoute::new();
-    *route.describe.lock().unwrap() = Some(describe_with(&["plan_view"]));
-    let mut view = full_view();
-    view["system"]["items"][0]["end"] = json!(1);
-    *route.plan_view.lock().unwrap() = Some(Ok(view));
-    assert_eq!(
-        request_context(&route).await.unwrap_err().code,
-        "invalid_provider_reply"
-    );
+    let mut inside_a_character = full_view();
+    inside_a_character["system"]["items"][0]["end"] = json!(1);
+    let mut no_notes = full_view();
+    no_notes["pending"]["notes"] = json!([]);
+    let mut old_note = full_view();
+    old_note["pending"] = json!({"generation": 4, "note": "Your tools changed."});
+    for view in [inside_a_character, no_notes, old_note] {
+        let route = FakeRoute::new();
+        *route.describe.lock().unwrap() = Some(describe_with(&["plan_view"]));
+        *route.plan_view.lock().unwrap() = Some(Ok(view.clone()));
+        assert_eq!(
+            request_context(&route).await.unwrap_err().code,
+            "invalid_provider_reply",
+            "{view}"
+        );
+    }
 }
 
 /// The read is admitted like the other app reads, for the desktop too.

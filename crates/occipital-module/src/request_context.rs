@@ -19,8 +19,9 @@
 //!   the UTF-8 byte range of one provider's part of `text`, `end` exclusive.
 //! - `tools [{name, description, inputSchema, provider, tokens? {count, exact}}]`,
 //!   in the order the model is offered them; `exact: false` is an estimate.
-//! - `pending {generation, note?}`: a newer plan not yet in force, and what the
-//!   model was told about it, when it was.
+//! - `pending {generation, notes?}`: a newer plan not yet in force, and each text
+//!   the model was told about it, exactly and in the order it got them, when it
+//!   was told.
 //! - `asPlanned: true`, always.
 //!
 //! Refusals the app must not retry keep their own code: `unsupported` (the runner
@@ -118,8 +119,8 @@ pub fn app_view(view: &PlanView) -> Value {
     if let Some(pending) = &view.pending {
         let mut value = Map::new();
         value.insert("generation".into(), json!(pending.generation));
-        if let Some(note) = &pending.note {
-            value.insert("note".into(), json!(note));
+        if let Some(notes) = &pending.notes {
+            value.insert("notes".into(), json!(notes));
         }
         reply.insert("pending".into(), Value::Object(value));
     }
