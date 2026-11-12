@@ -193,6 +193,17 @@ fn last_run_with_error_value(run: &LastRunState, error: Option<&LastRunError>) -
         if let Some(resets) = error.resets_at_ms {
             error_value["resetsAtMs"] = json!(resets);
         }
+        // The runner contract's code for the run's error, such as
+        // `account_limit_exhausted`, which an app reads as an account wait.
+        // Only codes the contract names pass: a provider may put its own text
+        // there, and that never reaches the apps.
+        if let Some(code) = error
+            .provider_code
+            .as_deref()
+            .filter(|code| cortexkit_role_llm_runner::errors::provider_codes::CODES.contains(code))
+        {
+            error_value["providerCode"] = json!(code);
+        }
         value["error"] = error_value;
     }
     value

@@ -107,6 +107,20 @@ async fn reported_last_run_error_reaches_the_phone_bytes_without_diagnostics() {
     ).await;
 }
 
+/// A run that ended on an account wait names its contract code on the head
+/// (runner contract 0.8.41's `provider_code`), and the apps get it as
+/// `providerCode` beside the wait, so they can say the account is at its limit
+/// until the reset. A code the contract doesn't name stays out, as above.
+#[tokio::test]
+async fn an_account_wait_run_end_names_its_code_to_the_apps() {
+    assert_last_run_phone_bytes(
+        json!({"run_id":"r-wait", "state":"error", "reason":"provider_error"}),
+        Some(json!({"class":"transient", "retry_after_secs":120.0,
+            "resets_at_ms":1794450000000_u64, "provider_code":"account_limit_exhausted"})),
+        r#"{"error":{"class":"transient","providerCode":"account_limit_exhausted","resetsAtMs":1794450000000,"retryAfterSecs":120.0},"reason":"provider_error","runId":"r-wait","state":"error"}"#,
+    ).await;
+}
+
 #[tokio::test]
 async fn unreported_last_run_error_stays_absent_from_the_phone_bytes() {
     assert_last_run_phone_bytes(
