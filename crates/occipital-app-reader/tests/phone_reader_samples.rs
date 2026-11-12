@@ -543,6 +543,14 @@ fn the_account_wait_samples_are_complete_and_their_checksums_verify() {
     verify_published_set("test-vectors/phone-reader-account-wait-v1", 6);
 }
 
+/// The same, adding a queued send refused at its turn and a turn that ended on the
+/// account, with the final code. Its README lists what each case shows; the
+/// module's send and session-facts tests prove each app file.
+#[test]
+fn the_account_wait_v2_samples_are_complete_and_their_checksums_verify() {
+    verify_published_set("test-vectors/phone-reader-account-wait-v2", 17);
+}
+
 /// A head's run held on a tool call, stopped with `session.stop`. Its README lists what
 /// each case shows.
 #[test]

@@ -9,7 +9,9 @@
 //! send, and the follower settles it however long that takes.
 //!
 //! It is its own namespace, not a change to `harness_app_send`, so a build without
-//! it can still open the store after a rollback.
+//! it can still open the store after a rollback. For the same reason the code a
+//! queued send's run ended with lives in a namespace of its own,
+//! `harness_app_send_wait`, beside the row it explains.
 
 use std::sync::Arc;
 
@@ -37,6 +39,20 @@ CREATE TABLE harness_app_send_queue (
 CREATE INDEX harness_app_send_queue_ended ON harness_app_send_queue(ended_at) WHERE ended_at IS NOT NULL;",
 }];
 
+/// The chain for the code an unsent send's run ended with ([`EndedRun`]).
+pub(crate) const WAIT_NAMESPACE: &str = "harness_app_send_wait";
+pub(crate) const WAIT_MIGRATIONS: &[Migration] = &[Migration {
+    version: 1,
+    statements: "
+CREATE TABLE harness_app_send_wait (
+    session TEXT NOT NULL,
+    client_message_id TEXT NOT NULL,
+    runner_code TEXT NOT NULL,
+    retry_after_ms INTEGER,
+    PRIMARY KEY (session, client_message_id)
+);",
+}];
+
 /// An unsent send stays listed this long after it ended, the same 48 hours a
 /// repeat of the send is answered from its receipt.
 pub const UNSENT_RETENTION_MS: i64 = 48 * 60 * 60 * 1000;
@@ -62,12 +78,29 @@ pub struct Queued {
     pub steer_until: Option<i64>,
 }
 
+/// The run that would have carried a queued send ended in an error the runner
+/// contract names, such as an account wait. The apps show it on the unsent entry
+/// as `runnerCode`, and for an account wait `retryAfterMs`: how long after the
+/// entry's `endedAtMs` the same words may go again, as a new send under a new
+/// `clientMessageId` (the runner answers the old send id with its record forever).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EndedRun {
+    pub runner_code: String,
+    pub retry_after_ms: Option<i64>,
+}
+
 pub struct SendQueue(Arc<SqliteStore>);
 
 impl SendQueue {
     pub fn open(store: Arc<SqliteStore>) -> Result<Arc<Self>, crate::Error> {
         if store.migrate(NAMESPACE, MIGRATIONS)?.store_ahead() {
             return Err("harness_app_send_queue_schema_ahead".into());
+        }
+        if store
+            .migrate(WAIT_NAMESPACE, WAIT_MIGRATIONS)?
+            .store_ahead()
+        {
+            return Err("harness_app_send_wait_schema_ahead".into());
         }
         Ok(Arc::new(Self(store)))
     }
@@ -89,26 +122,40 @@ impl SendQueue {
     pub fn delivered(&self, session: &str, client_message_id: &str) -> Result<bool, crate::Error> {
         Ok(self.0.with_conn(|conn| {
             conn.execute(
+                "DELETE FROM harness_app_send_wait WHERE session=?1 AND client_message_id=?2",
+                params![session, client_message_id],
+            )?;
+            conn.execute(
                 "DELETE FROM harness_app_send_queue WHERE session=?1 AND client_message_id=?2",
                 params![session, client_message_id],
             )
         })? > 0)
     }
 
-    /// The send ended undelivered: it stays listed as unsent, with `reason`.
+    /// The send ended undelivered: it stays listed as unsent, with `reason`, and
+    /// with the code its run ended with when there is one.
     pub fn unsent(
         &self,
         session: &str,
         client_message_id: &str,
         reason: &str,
+        ended: Option<&EndedRun>,
         now: i64,
     ) -> Result<bool, crate::Error> {
         Ok(self.0.with_conn(|conn| {
-            conn.execute(
+            let changed = conn.execute(
                 "UPDATE harness_app_send_queue SET state='unsent', reason=?3, ended_at=?4 \
                  WHERE session=?1 AND client_message_id=?2 AND state='queued'",
                 params![session, client_message_id, reason, now],
-            )
+            )?;
+            if let (true, Some(ended)) = (changed > 0, ended) {
+                conn.execute(
+                    "INSERT OR REPLACE INTO harness_app_send_wait(session,client_message_id,runner_code,retry_after_ms) \
+                     VALUES(?1,?2,?3,?4)",
+                    params![session, client_message_id, ended.runner_code, ended.retry_after_ms],
+                )?;
+            }
+            Ok(changed)
         })? > 0)
     }
 
@@ -138,11 +185,15 @@ impl SendQueue {
     /// unsent within [`UNSENT_RETENTION_MS`], oldest first, at most [`LIST_CAP`].
     /// `None` when there are none; the flag says more than the cap exist.
     pub fn list(&self, session: &str, now: i64) -> Result<Option<(Value, bool)>, crate::Error> {
-        let rows = self.0.with_read(|conn| {
-            conn.prepare(
-                "SELECT client_message_id,send_id,accepted_at,state,reason,ended_at FROM harness_app_send_queue \
-                 WHERE session=?1 AND (state='queued' OR ended_at>=?2) \
-                 ORDER BY accepted_at, client_message_id LIMIT ?3",
+        let rows =
+            self.0.with_read(|conn| {
+                conn.prepare(
+                "SELECT q.client_message_id,q.send_id,q.accepted_at,q.state,q.reason,q.ended_at,\
+                 w.runner_code,w.retry_after_ms FROM harness_app_send_queue q \
+                 LEFT JOIN harness_app_send_wait w \
+                 ON w.session=q.session AND w.client_message_id=q.client_message_id \
+                 WHERE q.session=?1 AND (q.state='queued' OR q.ended_at>=?2) \
+                 ORDER BY q.accepted_at, q.client_message_id LIMIT ?3",
             )?
             .query_map(
                 params![session, now.saturating_sub(UNSENT_RETENTION_MS), LIST_CAP as i64 + 1],
@@ -159,11 +210,17 @@ impl SendQueue {
                     if let Some(ended) = row.get::<_, Option<i64>>(5)? {
                         entry["endedAtMs"] = json!(ended);
                     }
+                    if let Some(code) = row.get::<_, Option<String>>(6)? {
+                        entry["runnerCode"] = json!(code);
+                    }
+                    if let Some(after) = row.get::<_, Option<i64>>(7)? {
+                        entry["retryAfterMs"] = json!(after);
+                    }
                     Ok(entry)
                 },
             )?
             .collect::<Result<Vec<_>, _>>()
-        })?;
+            })?;
         if rows.is_empty() {
             return Ok(None);
         }
@@ -175,11 +232,19 @@ impl SendQueue {
     /// Remove unsent rows whose listing window has passed, at most `chunk` at once.
     pub fn prune(&self, now: i64, chunk: usize) -> Result<usize, crate::Error> {
         Ok(self.0.with_conn(|conn| {
-            conn.execute(
+            let pruned = conn.execute(
                 "DELETE FROM harness_app_send_queue WHERE rowid IN (SELECT rowid FROM harness_app_send_queue \
                  WHERE ended_at < ?1 ORDER BY ended_at LIMIT ?2)",
                 params![now.saturating_sub(UNSENT_RETENTION_MS), chunk as i64],
-            )
+            )?;
+            // A wait row lives only as long as the entry it explains.
+            conn.execute(
+                "DELETE FROM harness_app_send_wait WHERE NOT EXISTS (SELECT 1 FROM harness_app_send_queue q \
+                 WHERE q.session=harness_app_send_wait.session \
+                 AND q.client_message_id=harness_app_send_wait.client_message_id)",
+                [],
+            )?;
+            Ok(pruned)
         })?)
     }
 }
@@ -241,9 +306,9 @@ mod tests {
             ])
         );
         assert!(q.delivered("ses", "a").unwrap());
-        assert!(q.unsent("ses", "b", "superseded", 40).unwrap());
+        assert!(q.unsent("ses", "b", "superseded", None, 40).unwrap());
         // An unsent send can't end twice.
-        assert!(!q.unsent("ses", "b", "not_sent", 50).unwrap());
+        assert!(!q.unsent("ses", "b", "not_sent", None, 50).unwrap());
         assert_eq!(
             q.list("ses", 41).unwrap().unwrap().0,
             json!([{"clientMessageId":"b","effectId":"send-b","acceptedAtMs":20,
@@ -254,6 +319,51 @@ mod tests {
         let later = 40 + UNSENT_RETENTION_MS + 1;
         assert_eq!(q.list("ses", later).unwrap(), None);
         assert_eq!(q.prune(later, 128).unwrap(), 1);
+    }
+
+    /// An unsent send whose run ended on a contract code lists it, with the wait
+    /// for an account wait, and the wait row goes with its entry.
+    #[test]
+    fn an_unsent_send_lists_the_code_its_run_ended_with() {
+        let q = queue();
+        q.queue(&entry("a", 10)).unwrap();
+        q.queue(&entry("b", 20)).unwrap();
+        let wait = EndedRun {
+            runner_code: "account_limit_exhausted".into(),
+            retry_after_ms: Some(120_000),
+        };
+        assert!(q.unsent("ses", "a", "error", Some(&wait), 40).unwrap());
+        let final_code = EndedRun {
+            runner_code: "account_selection_final".into(),
+            retry_after_ms: None,
+        };
+        assert!(q
+            .unsent("ses", "b", "error", Some(&final_code), 50)
+            .unwrap());
+        assert_eq!(
+            q.list("ses", 60).unwrap().unwrap().0,
+            json!([
+                {"clientMessageId":"a","effectId":"send-a","acceptedAtMs":10,"state":"unsent",
+                    "reason":"error","endedAtMs":40,"runnerCode":"account_limit_exhausted",
+                    "retryAfterMs":120000},
+                {"clientMessageId":"b","effectId":"send-b","acceptedAtMs":20,"state":"unsent",
+                    "reason":"error","endedAtMs":50,"runnerCode":"account_selection_final"},
+            ])
+        );
+        let waits = |q: &SendQueue| {
+            q.0.with_read(|conn| {
+                conn.query_row("SELECT count(*) FROM harness_app_send_wait", [], |row| {
+                    row.get::<_, i64>(0)
+                })
+            })
+            .unwrap()
+        };
+        assert_eq!(waits(&q), 2);
+        assert_eq!(q.prune(40 + UNSENT_RETENTION_MS + 1, 128).unwrap(), 1);
+        assert_eq!(waits(&q), 1);
+        // A later send under the same id starts clean.
+        assert!(q.delivered("ses", "b").unwrap());
+        assert_eq!(waits(&q), 0);
     }
 
     #[test]
@@ -298,9 +408,11 @@ mod tests {
         q.queue(&send(c, "app-synthetic-c", 1_793_213_402_000))
             .unwrap();
         assert!(q
-            .unsent("ses", a, "hold_expired", 1_793_213_400_000)
+            .unsent("ses", a, "hold_expired", None, 1_793_213_400_000)
             .unwrap());
-        assert!(q.unsent("ses", b, "not_sent", 1_793_213_460_000).unwrap());
+        assert!(q
+            .unsent("ses", b, "not_sent", None, 1_793_213_460_000)
+            .unwrap());
         let mut notice = json!({});
         attach(&mut notice, q.list("ses", 1_793_213_500_000).unwrap());
         let published: Value = serde_json::from_slice(

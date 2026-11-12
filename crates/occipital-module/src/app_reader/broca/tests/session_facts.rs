@@ -111,14 +111,65 @@ async fn reported_last_run_error_reaches_the_phone_bytes_without_diagnostics() {
 /// (runner contract 0.8.41's `provider_code`), and the apps get it as
 /// `providerCode` beside the wait, so they can say the account is at its limit
 /// until the reset. A code the contract doesn't name stays out, as above.
+///
+/// No runner served `provider_code` in its `session.head` reply (the session
+/// summary that names the last run and its error) when these were cut, so the
+/// replies are synthetic, each the run error of Broca's recorded queued case for that
+/// code (`tests/data/broca-account-wait-1112/5_queued_*`), and the
+/// `lastRun` each gives is a file of `phone-reader-account-wait-v2`. With
+/// `OCCIPITAL_WRITE_SAMPLES` set to a folder, the files are written there instead.
 #[tokio::test]
 async fn an_account_wait_run_end_names_its_code_to_the_apps() {
-    assert_last_run_phone_bytes(
-        json!({"run_id":"r-wait", "state":"error", "reason":"provider_error"}),
-        Some(json!({"class":"transient", "retry_after_secs":120.0,
-            "resets_at_ms":1794450000000_u64, "provider_code":"account_limit_exhausted"})),
-        r#"{"error":{"class":"transient","providerCode":"account_limit_exhausted","resetsAtMs":1794450000000,"retryAfterSecs":120.0},"reason":"provider_error","runId":"r-wait","state":"error"}"#,
-    ).await;
+    let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    for (sample, error, expected) in [
+        (
+            "09-run-end-limit",
+            json!({"class":"transient", "retry_after_secs":120.0,
+                "resets_at_ms":4102444800000_u64, "provider_code":"account_limit_exhausted"}),
+            r#"{"error":{"class":"transient","providerCode":"account_limit_exhausted","resetsAtMs":4102444800000,"retryAfterSecs":120.0},"reason":"provider_error","runId":"r-wait","state":"error"}"#,
+        ),
+        (
+            "10-run-end-selection",
+            json!({"class":"transient", "retry_after_secs":30.0,
+                "provider_code":"account_selection_refused"}),
+            r#"{"error":{"class":"transient","providerCode":"account_selection_refused","retryAfterSecs":30.0},"reason":"provider_error","runId":"r-wait","state":"error"}"#,
+        ),
+        (
+            "11-run-end-no-timing",
+            json!({"class":"transient", "provider_code":"account_limit_exhausted"}),
+            r#"{"error":{"class":"transient","providerCode":"account_limit_exhausted"},"reason":"provider_error","runId":"r-wait","state":"error"}"#,
+        ),
+        (
+            "12-run-end-final",
+            json!({"class":"permanent", "provider_code":"account_selection_final"}),
+            r#"{"error":{"class":"permanent","providerCode":"account_selection_final"},"reason":"provider_error","runId":"r-wait","state":"error"}"#,
+        ),
+    ] {
+        assert_last_run_phone_bytes(
+            json!({"run_id":"r-wait", "state":"error", "reason":"provider_error"}),
+            Some(error),
+            expected,
+        )
+        .await;
+        let app = json!({"lastRun": serde_json::from_str::<Value>(expected).unwrap()});
+        let file = format!("{sample}.json");
+        if let Some(folder) = std::env::var_os("OCCIPITAL_WRITE_SAMPLES") {
+            let folder = std::path::PathBuf::from(folder).join("phone-reader-account-wait-v2");
+            std::fs::create_dir_all(&folder).unwrap();
+            std::fs::write(folder.join(file), serde_json::to_vec(&app).unwrap()).unwrap();
+            continue;
+        }
+        let published: Value = serde_json::from_slice(
+            &std::fs::read(
+                manifest
+                    .join("../occipital-app-reader/test-vectors/phone-reader-account-wait-v2")
+                    .join(&file),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(app, published, "{file}");
+    }
 }
 
 #[tokio::test]

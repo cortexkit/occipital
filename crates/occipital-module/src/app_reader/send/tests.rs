@@ -747,6 +747,83 @@ async fn a_head_send_is_listed_until_delivered_or_listed_unsent() {
     assert_eq!(reply["queuedSends"], unsent);
 }
 
+/// Broca's recorded bodies for a send queued behind a running turn and refused at
+/// its own admission when its turn came (`tests/data/broca-account-wait-1112/`,
+/// case 5, copied unchanged): the send reads `finished` with reason `error`, and
+/// the run's error carries the contract code. The unsent entry names that code,
+/// and for an account wait how long after `endedAtMs` the words may go again as
+/// a new send. A final code names no wait. With `OCCIPITAL_WRITE_SAMPLES` set to
+/// a folder, the entries are written to the sample set there instead of compared.
+#[tokio::test(start_paused = true)]
+async fn a_queued_send_refused_for_its_account_lists_the_runs_code() {
+    let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data/broca-account-wait-1112");
+    let recorded = |name: &str| -> Value {
+        serde_json::from_slice(&std::fs::read(data.join(name)).unwrap()).unwrap()
+    };
+    for (code, sample, wait_ms) in [
+        ("account_limit_exhausted", "05-queued-limit", Some(120_000)),
+        (
+            "account_selection_refused",
+            "06-queued-selection",
+            Some(30_000),
+        ),
+        ("account_selection_final", "07-queued-final", None),
+    ] {
+        let f = fixture(Kind::Head);
+        let status = recorded(&format!("5_queued_{code}.new.session_send_status.json"));
+        let run_id = status["result"]["run_id"].clone();
+        {
+            let mut captured = f.runner.captured.lock().unwrap();
+            captured.insert("session.send_status", status);
+            captured.insert(
+                "run.status",
+                recorded(&format!("5_queued_{code}.new.run_status.json")),
+            );
+        }
+        f.sender.send(message("q1", "queued words")).await.unwrap();
+        // Its turn comes five seconds later, so `endedAtMs` reads apart from
+        // `acceptedAtMs`.
+        f.now.store(START + 5_000, Ordering::SeqCst);
+        let list = || f.receipts.queue().list("s", START).unwrap();
+        eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unsent")).await;
+        let (entries, _) = list().unwrap();
+        let entry = &entries[0];
+        assert_eq!(entry["reason"], "error", "{code}");
+        assert_eq!(entry["runnerCode"], code, "{code}");
+        assert_eq!(entry["retryAfterMs"].as_i64(), wait_ms, "{code}");
+        // It asked about the run that ended, once.
+        let asked: Vec<Value> = f
+            .runner
+            .calls()
+            .into_iter()
+            .filter(|(method, _)| method == "run.status")
+            .map(|(_, params)| params)
+            .collect();
+        assert_eq!(asked, [json!({"run_id": run_id})], "{code}");
+        let mut reply = json!({});
+        f.sender.attach_queued(&mut reply, "s").await;
+        let app = json!({"queuedSends": reply["queuedSends"]});
+        let file = format!("{sample}.json");
+        if let Some(folder) = std::env::var_os("OCCIPITAL_WRITE_SAMPLES") {
+            let folder = std::path::PathBuf::from(folder).join("phone-reader-account-wait-v2");
+            std::fs::create_dir_all(&folder).unwrap();
+            std::fs::write(folder.join(file), serde_json::to_vec(&app).unwrap()).unwrap();
+            continue;
+        }
+        let published: Value = serde_json::from_slice(
+            &std::fs::read(
+                std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("../occipital-app-reader/test-vectors/phone-reader-account-wait-v2")
+                    .join(&file),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(app, published, "{file}");
+    }
+}
+
 #[tokio::test(start_paused = true)]
 async fn a_steer_a_step_takes_is_settled_without_a_late_signal() {
     let f = fixture(Kind::Worker);
@@ -1800,6 +1877,74 @@ fn the_account_wait_samples_are_what_the_send_answers() {
         let published: Value =
             serde_json::from_slice(&std::fs::read(root.join(&file)).unwrap()).unwrap();
         assert_eq!(wire, published, "{file}");
+    }
+}
+
+/// `phone-reader-account-wait-v2`, the direct refusals: each `NN-*.runner.json` is a
+/// `session.send` refusal Broca recorded on runner contract 0.8.41, byte for byte the
+/// file in `tests/data/broca-account-wait-1112/`, and the `NN-*.json` beside it is
+/// the refusal the app receives. The two account waits are transient with their
+/// wait; `account_selection_final` and a routing code Broca doesn't know are final
+/// and name no wait, even where the detail carries a hint. With
+/// `OCCIPITAL_WRITE_SAMPLES` set to a folder, both files are written there instead.
+#[test]
+fn the_account_wait_v2_refusals_are_what_the_send_answers() {
+    let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let root = manifest.join("../occipital-app-reader/test-vectors/phone-reader-account-wait-v2");
+    let data = manifest.join("tests/data/broca-account-wait-1112");
+    for (name, recorded, detail) in [
+        (
+            "01-limit-retry-and-reset",
+            "1_account_limit_exhausted_retry_and_reset",
+            json!({"class": "transient", "runnerCode": "account_limit_exhausted", "retryAfterMs": 120_000}),
+        ),
+        (
+            "02-limit-reset-only",
+            "2_account_limit_exhausted_reset_only",
+            json!({"class": "transient", "runnerCode": "account_limit_exhausted", "retryAfterMs": 90_000}),
+        ),
+        (
+            "03-selection-retry",
+            "3_account_selection_refused_retry",
+            json!({"class": "transient", "runnerCode": "account_selection_refused", "retryAfterMs": 30_000}),
+        ),
+        (
+            "04-selection-final",
+            "4_account_selection_final_no_hint",
+            json!({"class": "final", "runnerCode": "account_selection_final"}),
+        ),
+        (
+            "08-unknown-routing-code-final",
+            "7_unknown_code_final",
+            json!({"class": "final", "runnerCode": "account_selection_final"}),
+        ),
+    ] {
+        let bytes = std::fs::read(data.join(format!("{recorded}.new.plan.json"))).unwrap();
+        let runner: Value = serde_json::from_slice(&bytes).unwrap();
+        let refusal = super::refused(
+            runner["code"].as_str().unwrap(),
+            runner["message"].as_str().unwrap(),
+            runner.get("detail"),
+        );
+        let wire = json!({"kind": "moduleError", "code": refusal.code,
+            "message": refusal.message, "detail": refusal.detail});
+        assert_eq!(wire["detail"], detail, "{name}");
+        let (runner_file, app_file) = (format!("{name}.runner.json"), format!("{name}.json"));
+        if let Some(folder) = std::env::var_os("OCCIPITAL_WRITE_SAMPLES") {
+            let folder = std::path::PathBuf::from(folder).join("phone-reader-account-wait-v2");
+            std::fs::create_dir_all(&folder).unwrap();
+            std::fs::write(folder.join(&runner_file), &bytes).unwrap();
+            std::fs::write(folder.join(app_file), serde_json::to_vec(&wire).unwrap()).unwrap();
+            continue;
+        }
+        assert_eq!(
+            std::fs::read(root.join(&runner_file)).unwrap(),
+            bytes,
+            "{runner_file}"
+        );
+        let published: Value =
+            serde_json::from_slice(&std::fs::read(root.join(&app_file)).unwrap()).unwrap();
+        assert_eq!(wire, published, "{app_file}");
     }
 }
 

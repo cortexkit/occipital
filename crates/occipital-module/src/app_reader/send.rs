@@ -1062,6 +1062,11 @@ impl Sender {
                 let answer = target
                     .call(SESSION_SEND_STATUS, json!({"send_id": send_id}))
                     .await;
+                // A head send's answer, kept to ask why its run ended without it.
+                let head_answer = match &follow {
+                    Follow::Head { .. } => answer.as_ref().ok().cloned(),
+                    Follow::Steer { .. } => None,
+                };
                 let fate = match &follow {
                     Follow::Steer { run_id, .. } => {
                         let submission = answer
@@ -1122,12 +1127,18 @@ impl Sender {
                     Fate::Waiting | Fate::Unanswered => None,
                 };
                 if let Some(reason) = ended {
+                    let now = clock();
+                    let run_end = match reason {
+                        Some(_) => ended_run(target.as_ref(), head_answer.as_ref(), now).await,
+                        None => None,
+                    };
                     if dequeue(
                         &receipts,
                         &session,
                         client_message_id.as_deref(),
                         reason.as_deref(),
-                        clock(),
+                        run_end,
+                        now,
                     )
                     .await
                     {
@@ -1419,12 +1430,14 @@ fn head_reply_fate(reply: &SendReply) -> Fate {
 }
 
 /// Take a followed send off the queued list: delivered (`reason` none) removes it,
-/// and an undelivered end keeps it as unsent. Whether the list changed.
+/// and an undelivered end keeps it as unsent, with the code its run ended with
+/// when there is one. Whether the list changed.
 async fn dequeue(
     receipts: &Option<Arc<Receipts>>,
     session: &str,
     id: Option<&str>,
     reason: Option<&str>,
+    run_end: Option<super::send_queue::EndedRun>,
     now: i64,
 ) -> bool {
     let (Some(receipts), Some(id)) = (receipts.clone(), id) else {
@@ -1433,7 +1446,9 @@ async fn dequeue(
     let (session, id, reason) = (session.to_owned(), id.to_owned(), reason.map(str::to_owned));
     let result = tokio::task::spawn_blocking(move || match reason {
         None => receipts.queue().delivered(&session, &id),
-        Some(reason) => receipts.queue().unsent(&session, &id, &reason, now),
+        Some(reason) => receipts
+            .queue()
+            .unsent(&session, &id, &reason, run_end.as_ref(), now),
     })
     .await;
     match result {
@@ -1671,29 +1686,77 @@ fn runner_refused_detail(code: &str, detail: Option<&Value>, now_ms: i64) -> Val
         "final"
     };
     let mut out = json!({"class": class, "runnerCode": code});
-    let wait_ms = detail.and_then(|detail| {
-        detail["retry_after_ms"]
-            .as_u64()
-            .or_else(|| {
-                detail["retry_after_s"]
-                    .as_u64()
-                    .map(|secs| secs.saturating_mul(1000))
-            })
-            .or_else(|| {
-                detail["retry_after_secs"]
-                    .as_f64()
-                    .filter(|secs| secs.is_finite() && *secs >= 0.0)
-                    .map(|secs| (secs * 1000.0).ceil() as u64)
-            })
-            .or_else(|| {
-                let resets_at = detail["resets_at_ms"].as_i64()?;
-                u64::try_from(resets_at.saturating_sub(now_ms).max(0)).ok()
-            })
-    });
-    if let Some(wait_ms) = wait_ms {
+    // A final refusal names no wait, even when its detail carries a hint: only
+    // the outer code decides, and waiting can't cure it.
+    if let Some(wait_ms) = detail
+        .filter(|_| class == "transient")
+        .and_then(|detail| named_wait_ms(detail, now_ms))
+    {
         out["retryAfterMs"] = json!(wait_ms);
     }
     out
+}
+
+/// The wait a refusal's detail or a run's error names, in milliseconds from
+/// `now_ms`: the runner's relative hint when it gives one (`retry_after_ms`,
+/// `retry_after_s`, `retry_after_secs`), else the time until `resets_at_ms`, as
+/// the contract orders them.
+fn named_wait_ms(detail: &Value, now_ms: i64) -> Option<u64> {
+    detail["retry_after_ms"]
+        .as_u64()
+        .or_else(|| {
+            detail["retry_after_s"]
+                .as_u64()
+                .map(|secs| secs.saturating_mul(1000))
+        })
+        .or_else(|| {
+            detail["retry_after_secs"]
+                .as_f64()
+                .filter(|secs| secs.is_finite() && *secs >= 0.0)
+                .map(|secs| (secs * 1000.0).ceil() as u64)
+        })
+        .or_else(|| {
+            let resets_at = detail["resets_at_ms"].as_i64()?;
+            u64::try_from(resets_at.saturating_sub(now_ms).max(0)).ok()
+        })
+}
+
+/// Why the run that would have carried a queued head send ended without it, when
+/// the runner says it ended in an error (`finished`, reason `error`): the code of
+/// that run's error from `run.status`, if the runner contract names it, and for
+/// an account wait the wait it names, from `now_ms`. Asked once; `None` when the
+/// runner names no run or no contract code, or doesn't answer, and the entry is
+/// then listed unsent with its reason alone.
+async fn ended_run(
+    target: &dyn SendTarget,
+    answer: Option<&Value>,
+    now_ms: i64,
+) -> Option<super::send_queue::EndedRun> {
+    use cortexkit_role_llm_runner::errors::{is_account_wait, provider_codes};
+    let reply: SendReply = serde_json::from_value(answer?.clone()).ok()?;
+    if reply.state != states::FINISHED || reply.reason.as_deref() != Some("error") {
+        return None;
+    }
+    let status = target
+        .call(
+            cortexkit_role_llm_runner::ops::RUN_STATUS,
+            json!({"run_id": reply.run_id?}),
+        )
+        .await
+        .ok()?;
+    let error = &status["error"];
+    let code = error["provider_code"]
+        .as_str()
+        .filter(|code| provider_codes::CODES.contains(code))?;
+    let retry_after_ms = if is_account_wait(code) {
+        named_wait_ms(error, now_ms).and_then(|wait| i64::try_from(wait).ok())
+    } else {
+        None
+    };
+    Some(super::send_queue::EndedRun {
+        runner_code: code.to_owned(),
+        retry_after_ms,
+    })
 }
 
 pub mod stop;
