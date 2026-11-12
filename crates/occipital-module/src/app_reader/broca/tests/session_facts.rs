@@ -746,6 +746,65 @@ async fn the_account_pause_samples_are_what_the_handlers_answer() {
     served.check();
 }
 
+/// The sample set the apps pin for a run that ended because the account's key
+/// is out of credit, `phone-reader-out-of-credit-v1`; its README says what each
+/// file shows. The run's state and error are Broca's recorded `session.head`
+/// bodies (`tests/data/broca-head-provider-code-1112/`): `billing_exhausted`
+/// on chat details, the newest page and a claim, then a permanent error that
+/// names no code, for contrast.
+#[tokio::test]
+async fn the_out_of_credit_samples_are_what_the_handlers_answer() {
+    let recorded = |name: &str| -> Value {
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/data/broca-head-provider-code-1112/after")
+            .join(name);
+        serde_json::from_slice::<Value>(&std::fs::read(path).unwrap()).unwrap()["result"].clone()
+    };
+    let route = sample_route();
+    set_head(&route, "model", model());
+    set_head(&route, "sender", grant());
+    *route.incarnation.lock().unwrap() = "6a6ce2eb-b065-4df0-806e-44bcf531e128".into();
+    let use_head = |head: &Value| {
+        *route.run_state.lock().unwrap() = head["last_run_state"].clone();
+        set_head(&route, "last_run_error", head["last_run_error"].clone());
+    };
+    let billing = recorded("store.billing_exhausted.json");
+    use_head(&billing);
+    let app = sending(&route);
+    let mut served =
+        super::served_samples::Served::new("phone-reader-out-of-credit-v1", app.clone());
+    let details_request =
+        json!({"method": DETAILS, "params": {"session":"alfonso:s1", "harness":"broca"}});
+    let page_request = json!({"method": TRANSCRIPT_PAGE, "params": params()});
+    let last_run =
+        |bytes: &[u8]| super::served_samples::decoded(bytes)["result"]["lastRun"].clone();
+    let out_of_credit = json!({"error": {"class": "permanent", "providerCode": "billing_exhausted"},
+        "reason": "error", "runId": billing["last_run_state"]["run_id"], "state": "error"});
+
+    let reply = served.read(1, &details_request).await;
+    assert_eq!(last_run(&reply), out_of_credit);
+    served.keep("01-details-out-of-credit", &details_request, reply);
+    let newest = served.read(2, &page_request).await;
+    assert_eq!(last_run(&newest), out_of_credit);
+    let claim_request = json!({"method": TRANSCRIPT_PAGE,
+        "params": claim(&super::served_samples::decoded(&newest)["result"], "m20", "m22")});
+    served.keep("02-newest-page-out-of-credit", &page_request, newest);
+    let claimed = served.read(3, &claim_request).await;
+    assert_eq!(last_run(&claimed), out_of_credit);
+    served.keep("03-claim-out-of-credit", &claim_request, claimed);
+
+    let no_code = recorded("store.permanent_no_code.json");
+    use_head(&no_code);
+    let reply = served.read(4, &details_request).await;
+    assert_eq!(
+        last_run(&reply),
+        json!({"error": {"class": "permanent"}, "reason": "error",
+            "runId": no_code["last_run_state"]["run_id"], "state": "error"})
+    );
+    served.keep("04-details-permanent-no-code", &details_request, reply);
+    served.check();
+}
+
 /// The sample set the apps pin for a head's service tier,
 /// `phone-session-tier-v1`; its README says what each file shows.
 /// `served_samples` says how the set is checked and rewritten.

@@ -4523,6 +4523,7 @@ pub(crate) mod tests {
     mod empty_claim_samples;
     mod exact_read_samples;
     mod files_samples;
+    mod head_provider_code_1112;
     mod head_selection_samples;
     mod imported_heads_1110;
     mod moved_calls;
