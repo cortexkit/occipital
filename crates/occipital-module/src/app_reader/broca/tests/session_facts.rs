@@ -690,6 +690,62 @@ async fn the_session_fact_samples_are_what_the_handlers_answer() {
     served.check();
 }
 
+/// The sample set the apps pin for a run Broca paused because its account is
+/// at its limit, `phone-reader-account-pause-v1`; its README says what each
+/// file shows. The paused run's state is Broca's recorded `last_run_state`
+/// (`tests/data/broca-runner-0842-1112/`), on chat details, the newest page
+/// and a claim, and then the same chat once the run has resumed and finished.
+#[tokio::test]
+async fn the_account_pause_samples_are_what_the_handlers_answer() {
+    let recorded = |name: &str| -> Value {
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/data/broca-runner-0842-1112")
+            .join(name);
+        serde_json::from_slice::<Value>(&std::fs::read(path).unwrap()).unwrap()["last_run_state"]
+            .clone()
+    };
+    let route = sample_route();
+    set_head(&route, "model", model());
+    set_head(&route, "sender", grant());
+    *route.incarnation.lock().unwrap() = "6a6ce2eb-b065-4df0-806e-44bcf531e128".into();
+    *route.run_state.lock().unwrap() = recorded("session-head-account-limit-after.json");
+    let app = sending(&route);
+    let mut served =
+        super::served_samples::Served::new("phone-reader-account-pause-v1", app.clone());
+    let details_request =
+        json!({"method": DETAILS, "params": {"session":"alfonso:s1", "harness":"broca"}});
+    let page_request = json!({"method": TRANSCRIPT_PAGE, "params": params()});
+    let paused = json!({"reason": "account_limit", "resumeNotBeforeMs": 1_790_000_600_000_u64,
+        "runId": "run-1", "state": "paused"});
+    let last_run =
+        |bytes: &[u8]| super::served_samples::decoded(bytes)["result"]["lastRun"].clone();
+
+    let reply = served.read(1, &details_request).await;
+    assert_eq!(last_run(&reply), paused);
+    served.keep("01-details-paused", &details_request, reply);
+    let newest = served.read(2, &page_request).await;
+    assert_eq!(last_run(&newest), paused);
+    let claim_request = json!({"method": TRANSCRIPT_PAGE,
+        "params": claim(&super::served_samples::decoded(&newest)["result"], "m20", "m22")});
+    served.keep("02-newest-page-paused", &page_request, newest);
+    let claimed = served.read(3, &claim_request).await;
+    assert_eq!(last_run(&claimed), paused);
+    assert_eq!(
+        super::served_samples::decoded(&claimed)["result"]["claim"],
+        "matched"
+    );
+    served.keep("03-claim-paused", &claim_request, claimed);
+
+    *route.run_state.lock().unwrap() = recorded("session-head-completed.json");
+    let reply = served.read(4, &details_request).await;
+    assert_eq!(
+        last_run(&reply),
+        json!({"runId": "run-1", "state": "completed"})
+    );
+    served.keep("04-details-resumed-and-finished", &details_request, reply);
+    served.check();
+}
+
 /// The sample set the apps pin for a head's service tier,
 /// `phone-session-tier-v1`; its README says what each file shows.
 /// `served_samples` says how the set is checked and rewritten.
