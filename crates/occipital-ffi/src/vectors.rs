@@ -933,7 +933,7 @@ fn format_facts() -> Vec<(String, Vector)> {
         (
             "number",
             r#"{"label":"Removes","value":18200,"unit":"tokens","approx":true}"#,
-            json!({"label": "Removes", "text": "about 18,200 tokens", "tone": "neutral"}),
+            json!({"label": "Removes", "text": "about 18k tokens", "tone": "neutral"}),
         ),
         (
             "state",

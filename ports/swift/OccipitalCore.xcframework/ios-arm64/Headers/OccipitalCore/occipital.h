@@ -443,7 +443,7 @@ int32_t occ_text_references(const uint8_t *text, size_t len,
  * the cortexkit-occipital-lang crate's format_fact.
  *
  * *out is {"label", "text", "tone"}, such as {"label": "Removes", "text":
- * "about 18,200 tokens", "tone": "neutral"}, where "tone" is one of
+ * "about 18k tokens", "tone": "neutral"}, where "tone" is one of
  * neutral, info, success, warning, danger. A fact the rules refuse answers
  * {"error": "fact_malformed" | "fact_conflict" | "fact_range"}, and the
  * app shows it as missing. Text that is not JSON is OCC_INVALID_ARGUMENT.

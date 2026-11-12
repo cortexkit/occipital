@@ -6,7 +6,7 @@
 //! or `{"label": "Code map", "state": "building", "progress": 0.4}`. The
 //! label is the module's own words. The value is never text: it is a number
 //! with a unit from a closed list, or a state from a closed list, and this
-//! module words it ("about 18,200 tokens", "Building, 40%") and gives it a
+//! module words it ("about 18k tokens", "Building, 40%") and gives it a
 //! tone. Both apps draw facts with [`format_fact`], so the same fact reads and
 //! colors the same everywhere, and no module invents its own "ready".
 
@@ -111,7 +111,7 @@ struct Wire {
 pub struct FormattedFact {
     /// The module's label, as given.
     pub label: String,
-    /// The value's wording, such as "about 18,200 tokens" or "Ready".
+    /// The value's wording, such as "about 18k tokens" or "Ready".
     pub text: String,
     /// The tone to draw the value in.
     pub tone: Tone,
@@ -162,8 +162,13 @@ impl std::fmt::Display for FactError {
 ///   `noun` ("41 parts"), `tokens` rounded ("18,200 tokens", "1 token"),
 ///   `bytes` in binary units ("7.6 MiB"), `duration` from milliseconds
 ///   ("2m 5s"), `ratio` as a whole percent ("61%"). Without a unit it is a
-///   `count`. `approx` puts "about " in front. Its tone is `neutral` unless
-///   the fact names one, such as `danger` for an error count.
+///   `count`. `approx` puts "about " in front, and an estimate shows no more
+///   digits than it means: a count or tokens from 1,000 up is shortened to
+///   thousands or millions, one decimal under ten ("about 6.7k tokens",
+///   "about 115k tokens", "about 1.2M tokens", "about 12k parts"), rounded
+///   half away from zero. An estimate of zero, in any unit, is "none". Its
+///   tone is `neutral` unless the fact names one, such as `danger` for an
+///   error count.
 /// - A state is written by its fixed wording ("Ready", "Out of date"), and
 ///   `building` with `progress` adds the percent ("Building, 40%"). Its tone
 ///   is fixed: `ready` success, `building` info, `paused` and `stale`
@@ -192,10 +197,35 @@ pub fn format_fact(fact: &Json) -> Result<FormattedFact, FactError> {
             }
             let x = decimal(value)?;
             let mut text = String::new();
-            if wire.approx {
-                text.push_str("about ");
+            if wire.approx && x == Decimal::ZERO {
+                text.push_str("none");
+            } else {
+                let words = number_words(x, unit, wire.noun.as_deref())?;
+                if wire.approx {
+                    text.push_str("about ");
+                    let short = matches!(unit, Unit::Count | Unit::Tokens)
+                        .then(|| shortened(x))
+                        .transpose()?
+                        .flatten();
+                    match short {
+                        // The number's words with its digits replaced: the
+                        // noun or "tokens" after it stays as it was.
+                        Some(short) => {
+                            let rest = words.split_once(' ').map_or("", |(_, rest)| rest);
+                            text.push_str(&short);
+                            if unit == Unit::Tokens {
+                                text.push_str(" tokens");
+                            } else if !rest.is_empty() {
+                                text.push(' ');
+                                text.push_str(rest);
+                            }
+                        }
+                        None => text.push_str(&words),
+                    }
+                } else {
+                    text.push_str(&words);
+                }
             }
-            text.push_str(&number_words(x, unit, wire.noun.as_deref())?);
             (text, wire.tone.unwrap_or(Tone::Neutral))
         }
         (None, Some(state)) => {
@@ -261,6 +291,37 @@ fn number_words(x: Decimal, unit: Unit, noun: Option<&str>) -> Result<String, Fa
         Unit::Duration => duration_text(x, false),
         Unit::Ratio => percent(x)?,
     })
+}
+
+/// An estimate of 1,000 or more in thousands ("6.7k", "115k") or millions
+/// ("1.2M", "15M"), one decimal while under ten; `None` below 1,000, which
+/// keeps its digits. Each step is chosen after rounding, so 9,960 is "10k",
+/// not "10.0k", and 999,600 is "1M".
+fn shortened(x: Decimal) -> Result<Option<String>, FactError> {
+    let int = |n: i128| {
+        Decimal::from_integer(n).map_err(|_| FactError::Range("a number the language can't hold"))
+    };
+    let held =
+        |r: Result<Decimal, _>| r.map_err(|_| FactError::Range("a number the language can't hold"));
+    let (thousand, ten) = (int(1000)?, int(10)?);
+    if x.abs() < thousand {
+        return Ok(None);
+    }
+    for (scale, suffix) in [(thousand, "k"), (int(1_000_000)?, "M")] {
+        let scaled = held(x.checked_div(scale))?;
+        let tenths = held(scaled.round(int(1)?))?;
+        if tenths.abs() < ten {
+            return Ok(Some(format!(
+                "{}{suffix}",
+                number_text(tenths, None, false)
+            )));
+        }
+        let whole = held(scaled.round(Decimal::ZERO))?;
+        if whole.abs() < thousand || suffix == "M" {
+            return Ok(Some(format!("{}{suffix}", number_text(whole, None, true))));
+        }
+    }
+    Ok(None)
 }
 
 /// A share as a whole percent, rounded half away from zero: 0.615 is "62%".

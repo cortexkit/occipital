@@ -27,7 +27,7 @@ enum FactJson {
 /// Words `fact_json`, one fact as a module sent it, for example
 /// `{"label": "Removes", "value": 18200, "unit": "tokens", "approx": true}`.
 /// `*out` is `{"label", "text", "tone"}`, such as
-/// `{"label": "Removes", "text": "about 18,200 tokens", "tone": "neutral"}`,
+/// `{"label": "Removes", "text": "about 18k tokens", "tone": "neutral"}`,
 /// or `{"error": "<code>"}` for a fact the rules refuse (`fact_malformed`,
 /// `fact_conflict` or `fact_range`), which the app shows as missing. Text
 /// that is not JSON is `OCC_INVALID_ARGUMENT`.
@@ -91,7 +91,7 @@ mod tests {
             )),
             (
                 OCC_OK,
-                Some(r#"{"label":"Removes","text":"about 18,200 tokens","tone":"neutral"}"#.into())
+                Some(r#"{"label":"Removes","text":"about 18k tokens","tone":"neutral"}"#.into())
             )
         );
         assert_eq!(

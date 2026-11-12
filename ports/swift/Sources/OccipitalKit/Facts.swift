@@ -8,7 +8,7 @@ extension Occipital {
     /// `tokens`, `bytes`, `duration` in milliseconds, `ratio`) or a state
     /// (`ready`, `building` with an optional `progress`, `paused`, `stale`,
     /// `unavailable`, `off`). The module's label is kept as given; the value
-    /// is worded by the library ("about 18,200 tokens", "Building, 40%"), and
+    /// is worded by the library ("about 18k tokens", "Building, 40%"), and
     /// a state's tone is fixed.
     ///
     /// - Parameter fact: the fact as the JSON text the module sent.

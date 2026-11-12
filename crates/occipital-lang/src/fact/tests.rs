@@ -11,6 +11,51 @@ fn code(fact: serde_json::Value) -> &'static str {
     format_fact(&fact).unwrap_err().code()
 }
 
+/// An estimate shows no more digits than it means: thousands and millions
+/// from 1,000 up, one decimal while under ten, each step chosen after
+/// rounding; an estimate of zero is "none". Exact counts keep every digit.
+#[test]
+fn estimates_are_shortened_and_zero_is_none() {
+    let approx = |value: serde_json::Value, unit: &str| {
+        words(json!({"label": "L", "value": value, "unit": unit, "approx": true})).0
+    };
+    for (value, text) in [
+        (json!(840), "about 840 tokens"),
+        (json!(999), "about 999 tokens"),
+        (json!(1000), "about 1k tokens"),
+        (json!(6708), "about 6.7k tokens"),
+        (json!(6750), "about 6.8k tokens"),
+        (json!(9960), "about 10k tokens"),
+        (json!(114_730), "about 115k tokens"),
+        (json!(999_400), "about 999k tokens"),
+        (json!(999_600), "about 1M tokens"),
+        (json!(1_240_000), "about 1.2M tokens"),
+        (json!(15_400_000), "about 15M tokens"),
+        (json!(2_500_000_000_i64), "about 2,500M tokens"),
+        (json!(-6708), "about -6.7k tokens"),
+        (json!(0), "none"),
+        (json!(0.0), "none"),
+    ] {
+        assert_eq!(approx(value.clone(), "tokens"), text, "{value}");
+    }
+    assert_eq!(
+        words(json!({"label": "L", "value": 12_345, "noun": "parts", "approx": true})).0,
+        "about 12k parts"
+    );
+    assert_eq!(approx(json!(12_345), "count"), "about 12k");
+    assert_eq!(approx(json!(0), "bytes"), "none");
+    assert_eq!(approx(json!(8_000_000), "bytes"), "about 7.6 MiB");
+    assert_eq!(approx(json!(0.42), "ratio"), "about 42%");
+    assert_eq!(
+        words(json!({"label": "L", "value": 114_730, "unit": "tokens"})).0,
+        "114,730 tokens"
+    );
+    assert_eq!(
+        words(json!({"label": "L", "value": 0, "unit": "tokens"})).0,
+        "0 tokens"
+    );
+}
+
 #[test]
 fn numbers_are_worded_by_their_unit() {
     let cases = [
@@ -24,7 +69,7 @@ fn numbers_are_worded_by_their_unit() {
         ),
         (
             json!({"label": "Removes", "value": 18200, "unit": "tokens", "approx": true}),
-            "about 18,200 tokens",
+            "about 18k tokens",
         ),
         (
             json!({"label": "Left", "value": 1, "unit": "tokens"}),
