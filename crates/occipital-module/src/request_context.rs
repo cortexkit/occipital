@@ -28,6 +28,9 @@
 //! doesn't serve plan views), `no_plan` and `too_large`. The runner refuses
 //! `too_large` for a plan above its 4 MiB frame; this module refuses the same for
 //! a reply above the app reply limit, which is a little lower, rather than cut it.
+//! `context_not_ready` means the runner serves the view only from the session's
+//! next applied plan, which can be hours away: the app reads again the next time
+//! the person opens its view of the session's model context, never on a timer.
 
 use cortexkit_role_llm_runner::plan_view::PlanView;
 use occipital_app_reader::source::ReadError;

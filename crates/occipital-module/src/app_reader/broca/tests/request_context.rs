@@ -157,6 +157,39 @@ async fn no_plan_and_too_large_reach_the_app() {
     assert_eq!(final_code(ReadOp::Read, Some("no_plan")), None);
 }
 
+/// A runner that can't vouch for a session's plan view until its next applied
+/// plan refuses `transient` with `detail.cause: "awaiting_plan_applied"` (runner
+/// contract §4.9). The app gets `context_not_ready`, not the runner being
+/// unavailable. A `transient` with any other cause, or none, and the same cause
+/// on another read, keep the runner-unavailable answer.
+#[test]
+fn a_view_awaiting_the_next_applied_plan_is_not_ready() {
+    let code = super::super::own_refusal;
+    let awaiting = json!({"cause": "awaiting_plan_applied"});
+    assert_eq!(
+        code(ReadOp::PlanView, Some("transient"), Some(&awaiting)),
+        Some("context_not_ready")
+    );
+    assert_eq!(
+        code(
+            ReadOp::PlanView,
+            Some("transient"),
+            Some(&json!({"cause": "credentials_unavailable"}))
+        ),
+        None
+    );
+    assert_eq!(code(ReadOp::PlanView, Some("transient"), None), None);
+    assert_eq!(
+        code(ReadOp::PlanView, Some("session_ended"), Some(&awaiting)),
+        None
+    );
+    assert_eq!(code(ReadOp::Read, Some("transient"), Some(&awaiting)), None);
+    assert_eq!(
+        code(ReadOp::PlanView, Some("no_plan"), None),
+        Some("no_plan")
+    );
+}
+
 /// A plan whose reply to the app wouldn't fit the app reply limit is refused
 /// `too_large`, as the runner refuses one above its frame, never cut.
 #[tokio::test]

@@ -485,6 +485,26 @@ fn final_refusal(op: ReadOp, code: Option<&str>) -> Option<&'static str> {
     }
 }
 
+/// A plan view the runner can't serve yet for this session, and will from the
+/// session's next applied plan: runner contract §4.9's `transient` with
+/// `detail.cause: "awaiting_plan_applied"`. The app gets `context_not_ready`, so it
+/// says the view isn't available for this agent yet rather than that the runner
+/// is away, and reads again the next time the person opens the app's view of
+/// the session's model context, never on a timer. Every
+/// other `transient` still reaches it as the runner being unavailable.
+fn not_ready(op: ReadOp, code: Option<&str>, detail: Option<&Value>) -> Option<&'static str> {
+    let awaiting =
+        detail.and_then(|detail| detail["cause"].as_str()) == Some("awaiting_plan_applied");
+    (matches!(op, ReadOp::PlanView) && code == Some("transient") && awaiting)
+        .then_some("context_not_ready")
+}
+
+/// The app code a runner's refusal of `op` keeps, if any: [`final_refusal`], or
+/// [`not_ready`].
+fn own_refusal(op: ReadOp, code: Option<&str>, detail: Option<&Value>) -> Option<&'static str> {
+    final_refusal(op, code).or_else(|| not_ready(op, code, detail))
+}
+
 /// A runner's reply: its result, or its refusal as the app sees it.
 fn result(value: Value) -> Result<Value, ReadError> {
     if let Some(code) = value.get("code").and_then(Value::as_str) {
@@ -522,7 +542,11 @@ impl BrocaRoute for DaemonRoute {
                         "Broca display history call failed");
                 }
                 let runner = &self.resolved.reference.runner;
-                match final_refusal(op, error.code()) {
+                let detail = match &error {
+                    CallError::Module(body) => body.detail.as_ref(),
+                    _ => None,
+                };
+                match own_refusal(op, error.code(), detail) {
                     Some(code) => ReadError::new(code, format!("{runner}: {error}")),
                     None => call_error(runner, error),
                 }
@@ -534,7 +558,11 @@ impl BrocaRoute for DaemonRoute {
                 tracing::debug!(code, "Broca display history refused");
             }
         }
-        if let Some(code) = final_refusal(op, value.get("code").and_then(Value::as_str)) {
+        if let Some(code) = own_refusal(
+            op,
+            value.get("code").and_then(Value::as_str),
+            value.get("detail"),
+        ) {
             let mut error = ReadError::new(
                 code,
                 format!(
