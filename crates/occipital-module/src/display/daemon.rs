@@ -40,6 +40,12 @@ impl DaemonCalls {
         }
     }
 
+    /// The identity this module opens routes under, proved by its launch
+    /// nonce, for callers that make their own calls on [`Self::consumer`].
+    pub fn identity(&self) -> ConsumerIdentity {
+        self.principal.clone()
+    }
+
     /// The connection, made now if there is none.
     pub async fn consumer(&self) -> Result<Arc<SubcConsumer>, CallFailure> {
         let mut held = self.consumer.lock().await;

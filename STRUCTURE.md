@@ -8,7 +8,7 @@ A Cargo workspace of Rust crates, plus the Swift package the phone links. This f
 crates/
   occipital-module/      the ck-occipital daemon module: app reader, sends, uploads, tool display, notices, reply teaching
   occipital-app-reader/  the transcript engine: app rows, pages, claims, live-text ring, watches (no daemon code)
-  occipital-lang/        the interface language: parser, checker, evaluator, layout (cortexkit-occipital-lang)
+  occipital-lang/        the interface language: parser, checker, evaluator, layout, fact wording (cortexkit-occipital-lang)
   occipital-ffi/         the C interface apps embed, with its round-trip vectors
   occipital-registry/    the tool template contract and the occipital-check command (cortexkit-occipital-registry)
   occipital-refs/        issue and pull request mentions for links, no dependencies (cortexkit-occipital-refs)
@@ -38,6 +38,7 @@ scripts/                 check.sh, build-xcframework.sh, xcframework-source-hash
 - `notices/wakes.rs`: wake records in the same file: the `display.write` wake kind, the sends page reads name, and `session.wake_records`.
 - `media.rs`: image reads and thumbnails.
 - `request_context.rs`: the plan's system text and tools, from the runner's `session.plan_view`.
+- `commands.rs`: the person's commands: listing the modules that declare `user-commands/v1`, and relaying previews and runs with the caller's verified facts.
 - `store.rs`, `backup.rs`: `store.db` and the Engram backup catalog.
 - `system_text.rs`: the reply teaching. `show_ui.rs` and `native.rs` exist only with the `show-ui` feature.
 

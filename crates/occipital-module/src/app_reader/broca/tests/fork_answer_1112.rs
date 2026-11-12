@@ -61,7 +61,11 @@ fn the_fork_answer_describes_read_as_the_same_runner() {
         assert!(!before.declares("fork_answer"), "{pair}");
         assert!(after.declares("fork_answer"), "{pair}");
         assert_eq!(groups(&before_value), groups(&after_value), "{pair}");
-        assert_eq!(stored_media(Some(&before)), stored_media(Some(&after)), "{pair}");
+        assert_eq!(
+            stored_media(Some(&before)),
+            stored_media(Some(&after)),
+            "{pair}"
+        );
         assert_eq!(
             send_grant(&head, Some(&before), false),
             send_grant(&head, Some(&after), false),

@@ -92,16 +92,19 @@ pub fn operations() -> Vec<ManagementOperation> {
         .into_iter()
         .chain(DISPLAY_METHODS)
         .chain(NOTICE_METHODS)
+        .chain([crate::commands::LIST, crate::commands::PREVIEW])
         .map(|name| ManagementOperation {
             name: name.into(),
             kind: ManagementOperationKind::Query,
             description: None,
         })
-        .chain([SEND, STOP, STOP_ALL].map(|name| ManagementOperation {
-            name: name.into(),
-            kind: ManagementOperationKind::Mutate,
-            description: None,
-        }))
+        .chain(
+            [SEND, STOP, STOP_ALL, crate::commands::RUN].map(|name| ManagementOperation {
+                name: name.into(),
+                kind: ManagementOperationKind::Mutate,
+                description: None,
+            }),
+        )
         .chain(uploads::operations())
         .collect()
 }
@@ -174,14 +177,61 @@ pub fn admit(binding: Option<&RouteBinding>, method: &str) -> Result<Caller, Rea
         matches!(target, RouteTarget::ManagementSurface { module_id } if module_id == crate::MODULE_ID)
             && operator_app.as_ref().is_some_and(|app| app.app == "alfonso-desktop")
     });
+    // Commands, the run included, are the person's own actions from the app,
+    // which the signed desktop may take; their module confirms what needs it.
     if desktop_app
         && (METHODS.contains(&method)
             || DISPLAY_METHODS.contains(&method)
-            || NOTICE_METHODS.contains(&method))
+            || NOTICE_METHODS.contains(&method)
+            || crate::commands::METHODS.contains(&method))
     {
         return Ok(Caller::Operator);
     }
     Err(admission_refusal(binding, method))
+}
+
+/// What a command's module is told about the app that asked, from the route's
+/// daemon facts alone: the signed desktop (its operator-app stamp), the
+/// desktop's development build (a plain local caller, while those are
+/// admitted), or a paired device through Callosum, with its fingerprint. Any
+/// other route, including Callosum's without a device, gets no commands.
+pub(crate) fn command_caller(
+    binding: Option<&RouteBinding>,
+) -> Option<cortexkit_role_user_commands::Caller> {
+    use cortexkit_role_user_commands::Caller as Facts;
+    let (principal, target, scope, identity, operator_app) = binding?;
+    let own_surface = matches!(target, RouteTarget::ManagementSurface { module_id } if module_id == crate::MODULE_ID);
+    if !own_surface || scope.is_some() {
+        return None;
+    }
+    if operator_app
+        .as_ref()
+        .is_some_and(|app| app.app == "alfonso-desktop")
+    {
+        return Some(Facts::new("desktop", "operator_app"));
+    }
+    match principal {
+        Some(Principal::Direct) if DEVELOPMENT_DIRECT_ADMITTED => {
+            Some(Facts::new("desktop", "development"))
+        }
+        Some(Principal::Reserved { module_id }) if module_id == "callosum" => {
+            let (class, fingerprint) = identity
+                .as_ref()?
+                .harness
+                .strip_prefix("fed-")?
+                .split_once(':')?;
+            if class.is_empty()
+                || fingerprint.is_empty()
+                || !fingerprint.bytes().all(|b| b.is_ascii_hexdigit())
+            {
+                return None;
+            }
+            let mut facts = Facts::new(class, "phone");
+            facts.device = Some(fingerprint.to_owned());
+            Some(facts)
+        }
+        _ => None,
+    }
 }
 
 /// The admission a route's principal earns on its own, whichever method it calls.
@@ -384,6 +434,7 @@ pub struct AppReader {
     /// The model names, once the module can call other modules; refused until
     /// then.
     model_names: std::sync::OnceLock<Arc<crate::display::model_names::ModelNames>>,
+    commands: std::sync::OnceLock<Arc<crate::commands::Commands>>,
     /// The notices that rode sessions' calls, once their file is open;
     /// refused until then.
     notices: std::sync::OnceLock<Arc<crate::notices::Notices>>,
@@ -429,6 +480,7 @@ impl AppReader {
             thumbs: crate::media::Thumbs::default(),
             tool_display: std::sync::OnceLock::new(),
             model_names: std::sync::OnceLock::new(),
+            commands: std::sync::OnceLock::new(),
             notices: std::sync::OnceLock::new(),
         }
     }
@@ -516,6 +568,42 @@ impl AppReader {
         let harness = occipital_app_reader::page::optional_transcript_harness(params)
             .map_err(|error| ReadError::new(error.code, error.message))?;
         observe::step("resolution", self.resolver.reference(session, harness)).await
+    }
+
+    pub fn set_commands(&self, commands: Arc<crate::commands::Commands>) {
+        if self.commands.set(commands).is_err() {
+            tracing::warn!("commands were set twice; the first stays");
+        }
+    }
+
+    /// One of the person's commands (`crate::commands`), for the app on
+    /// `binding`, whose verified facts its module is told.
+    async fn command(
+        &self,
+        binding: Option<&RouteBinding>,
+        method: &str,
+        params: Value,
+    ) -> Result<Value, ReadError> {
+        let commands = self.commands.get().ok_or_else(|| {
+            ReadError::new(
+                "command_unavailable",
+                "commands are unavailable: this module can't reach the daemon",
+            )
+        })?;
+        if method == crate::commands::LIST {
+            return commands.list(params).await;
+        }
+        let caller = command_caller(binding).ok_or_else(|| {
+            ReadError::new(
+                "carrier_op_not_permitted",
+                format!("{method} needs the desktop app or a paired device"),
+            )
+        })?;
+        if method == crate::commands::PREVIEW {
+            observe::step("preview", commands.preview(caller, params)).await
+        } else {
+            observe::step("run", commands.run(caller, params)).await
+        }
     }
 
     pub fn with_uploads(mut self, uploads: Option<Arc<uploads::Uploads>>) -> Self {
@@ -697,6 +785,7 @@ fn served(method: &str) -> bool {
         || method == STOP
         || method == STOP_ALL
         || uploads::METHODS.contains(&method)
+        || crate::commands::METHODS.contains(&method)
 }
 
 /// The route facts admission reads, captured from the daemon's `route.bind`.
@@ -896,6 +985,23 @@ impl AppReader {
         }
         if body_len > MAX_REQUEST_BYTES {
             return refusal("invalid_request", "request exceeds 64 KiB");
+        }
+        if crate::commands::METHODS.contains(&method.as_str()) {
+            return observe::request(&method, "", correlation, async {
+                match self.command(binding.as_ref(), &method, params).await {
+                    Ok(value) => {
+                        if let Some(outcome) = value["outcome"].as_str() {
+                            observe::answer(format!("outcome={outcome}"));
+                        }
+                        route::result_outcome(value)
+                    }
+                    Err(error) => {
+                        observe::refused(error.code, &error.message);
+                        route::error_outcome(&error)
+                    }
+                }
+            })
+            .await;
         }
         let records_watch = method == crate::display::app::RECORDS_WATCH;
         let notices_watch = method == crate::notices::WATCH;

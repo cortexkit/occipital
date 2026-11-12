@@ -104,17 +104,18 @@ impl Drop for RequestLog {
 }
 
 /// The requests that change something on the person's behalf: a message sent,
-/// a run stopped, a session's work stopped, a file placed in a project or an
-/// upload discarded. Each one
+/// a run stopped, a session's work stopped, a file placed in a project, an
+/// upload discarded or a command run. Each one
 /// that succeeds is logged at INFO, so the log can always answer whether an
 /// app did it, where a successful read is logged only when slow.
-const CONSEQUENTIAL: [&str; 6] = [
+const CONSEQUENTIAL: [&str; 7] = [
     super::SEND,
     super::STOP,
     super::STOP_ALL,
     super::uploads::FINISH,
     super::uploads::ABORT,
     super::uploads::PLACE,
+    crate::commands::RUN,
 ];
 
 fn summary_level(

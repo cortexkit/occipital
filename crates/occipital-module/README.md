@@ -93,6 +93,8 @@ The apps reach these operations through Callosum, and the desktop app directly:
 | `session.transcript_watch`, `session.display_watch`, `session.tool_records_watch`, `session.notices_watch` | watch |
 | `session.enqueue_user_message`, `session.stop`, `session.stop_all` | send |
 | `upload.begin`, `upload.chunk`, `upload.status`, `upload.finish`, `upload.abort`, `upload.place` | upload |
+| `commands.list`, `commands.preview` | read |
+| `commands.run` | send |
 
 An uploaded file goes into the model's prompt or into the session's project. An
 app that asks for the prompt (`prompt: true` on `upload.begin`) gets it when the
@@ -167,6 +169,37 @@ store, and details in `display-details.db`. Engram backs up `display.db`,
 since a provider writes each record once; details are left out, since they
 are large and can hold file contents. Records are kept 180 days and details 14
 days, at most 512 MiB.
+
+## Commands
+
+A command is something a module lets the person do from the apps directly,
+without asking a model, such as Magic Context's flush. A module that has
+commands provides `user-commands/v1` and serves `commands.describe`,
+`commands.preview` and `commands.run` on its management surface, admitting
+them only from `reserved:occipital`. The wire shapes are the
+`cortexkit-role-user-commands` crate's.
+
+The apps ask Occipital. `commands.list {subject}` lists the commands of every
+ready module whose manifest provides the capability, for the subject's kind
+(session, agent or computer), each named by its module. Occipital keeps each
+module's description per build, read again when the module is placed on
+another; a module whose description fails its checks is left out. A preview or
+a run names its module and command, and Occipital checks it against that
+command's declaration before relaying it, then passes the module's answer on as
+it came.
+
+The module can't see which app asked, so Occipital checks the app's route and
+forwards what it verified as `caller`: `{app: "desktop", admission:
+"operator_app"}` for the signed desktop, `"development"` for its development
+build, and `{app: "phone", admission: "phone", device}` for a paired device,
+with its fingerprint. A route with no such facts is refused
+`carrier_op_not_permitted`. A run is never sent twice: one sent but unanswered
+is refused `command_outcome_unknown`, and the app asks again under the same
+`request_id`, which the module answers from its stored reply. Refusals keep the
+contract's codes (`invalid_params`, `unknown_command`, `unknown_subject`,
+`caller_not_admitted`); an unreachable module is `command_unavailable`, an
+answer in a shape the apps can't read `command_reply_invalid`, and any other
+refusal `command_refused` with the module's code in `detail.moduleCode`.
 
 ## Notices
 

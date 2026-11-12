@@ -254,6 +254,9 @@ mod tests {
         assert_eq!(
             names,
             [
+                ("commands.list", "query"),
+                ("commands.preview", "query"),
+                ("commands.run", "mutate"),
                 ("display.model_names", "query"),
                 ("display.template", "query"),
                 ("display.views", "query"),

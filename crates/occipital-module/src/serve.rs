@@ -381,8 +381,13 @@ impl OccipitalHandler {
         let app = AppReader::with_sender(resolver, sends).with_uploads(Some(uploads));
         if let Some(calls) = self.daemon_calls() {
             app.set_model_names(Arc::new(crate::display::model_names::ModelNames::new(
-                Arc::new(crate::display::model_names::DaemonNameSources::new(calls)),
+                Arc::new(crate::display::model_names::DaemonNameSources::new(
+                    calls.clone(),
+                )),
             )));
+            app.set_commands(Arc::new(crate::commands::Commands::new(Arc::new(
+                crate::commands::DaemonModules::new(calls),
+            ))));
         }
         if self.app.set(Arc::new(app)).is_ok() {
             if let Ok(mut tasks) = self.background.lock() {

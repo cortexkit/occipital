@@ -34,6 +34,8 @@ cortexkit-project-identity = "=0.1.4"
 cortexkit-role-llm-runner = "=0.8.42"
 cortexkit-role-tool-display = "=0.1.4"
 cortexkit-role-tool-provider = "=0.14.6"
+# The person's commands: their declarations, previews, runs and facts.
+cortexkit-role-user-commands = "=0.1.0"
 cortexkit-store = "=0.4.1"
 cortexkit-store-types = "0.2.2"
 futures-util = "0.3"

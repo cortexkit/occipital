@@ -2,7 +2,7 @@
 
 Occipital is how agents' work reaches and renders in the CortexKit phone and desktop apps. It is two things at once:
 
-- **A daemon module, `ck-occipital`** (`crates/occipital-module`), the reserved `occipital` module of the subconscious daemon (subc). It is the one module the apps use for a chat: it reads every session from the llm-runner hosting it, composes the pages and live text the apps draw, forwards sends, Stop and uploads, keeps the display data tool providers write for each call, and keeps the notices modules send agents. It also serves the reply teaching, the part of a head's system prompt that teaches the interface tags.
+- **A daemon module, `ck-occipital`** (`crates/occipital-module`), the reserved `occipital` module of the subconscious daemon (subc). It is the one module the apps use for a chat: it reads every session from the llm-runner hosting it, composes the pages and live text the apps draw, forwards sends, Stop and uploads, keeps the display data tool providers write for each call, keeps the notices modules send agents, and relays the person's commands to the modules that own them. It also serves the reply teaching, the part of a head's system prompt that teaches the interface tags.
 - **The libraries:** the interface language (`crates/occipital-lang`, published as `cortexkit-occipital-lang`), its C binding packaged for iOS (`crates/occipital-ffi`, wrapped in Swift as `OccipitalKit`) and the mention finder for links (`crates/occipital-refs`, published as `cortexkit-occipital-refs`), which the apps embed, so a reply, a tool row or a link is drawn the same way on the phone, on the desktop and in the module; and the tool template contract and checker (`crates/occipital-registry`, published as `cortexkit-occipital-registry`), which tool providers run in their CI.
 
 `STRUCTURE.md` has the directory map and where to add new code. The module guide, `crates/occipital-module/README.md`, lists every operation.
@@ -18,13 +18,14 @@ Occipital is how agents' work reaches and renders in the CortexKit phone and des
 - **Tool call identity:** each tool part carries `callKey` (the runner's key for the call, unique across that runner) and `schemaPin` (which version of the tool ran). A call moved to another runner with its history keeps its key, and the runner names the one that minted it as `call_carrier`.
 - **View, template, record, completion, detail:** a tool provider's **view** of a tool version says how its calls draw: an `occipital.template/1` **template** for the row and the page, plus the shape of what it writes. For each call the provider writes a **record** (drawn on the row), a **completion** and a **detail** (drawn on the page).
 - **Notice:** a module's message to an agent, such as a reminder or a status line. It reaches the agent either as its own message, which is a chat row like any other, or **riding** the next tool result, which makes no row.
+- **Command:** something a module lets the person do from the apps directly, without asking a model, such as Magic Context's flush. A **preview** says what it would do now, in **facts** (a label with a number and unit, or a fixed state); a **run** does it.
 - **Reply stamp:** the interface dialect and catalog digest a runner records on a head's reply, so the apps know which tags it may hold. Replies use catalog 1.0; tool templates use tool catalog 1.1.
 
 ## How the apps reach Occipital
 
 The phone reaches the computer through Callosum, the federation module: every phone call arrives on a route stamped `reserved:callosum` with the device it came from. The desktop app connects to the daemon directly. Admission reads only what the daemon attests on the route: the route's principal, and the operator-app stamp that names the desktop. While the desktop is in development, a plain local caller is admitted too. Everything else is refused before the request is read further.
 
-Occipital in turn calls runners, Entorhinal and tool providers as `reserved:occipital`, proved by its launch nonce. A runner admits Occipital's reads and sends by the session's plan, which core writes: Occipital is listed as a reader and as a sender, with the send modes the plan grants.
+Occipital in turn calls runners, Entorhinal, tool providers and command modules as `reserved:occipital`, proved by its launch nonce. A runner admits Occipital's reads and sends by the session's plan, which core writes: Occipital is listed as a reader and as a sender, with the send modes the plan grants.
 
 ## Reading a chat
 
@@ -75,6 +76,15 @@ Occipital keeps each riding notice it learns of, from a page read's notices fact
 
 **Wake records** say what a wake held, so the apps draw it as chips rather than the prompt text. The waking module (core) writes each record before it sends the wake, with `display.write` and `kind: "wake"`, keyed by its own send id; the sender is the route's attested writer. Occipital keeps it once per session, sender and send id, never changed. A row names its send only through the runner's read facts, so every page read records which send each message came from, in memory at once and in the file. The apps read the records of the rows they draw with `session.wake_records {messageIds}`, and a riding notice carries its send's record in `session.notices`. A row whose history moved from another session takes the one record its send has in any session, and none when two sessions hold one. There is no watch: the apps fetch a row's record before inserting the row, and a record that arrives later never replaces its plain card.
 
+## Commands
+
+A module that has commands provides `user-commands/v1` and serves `commands.describe`, `commands.preview` and `commands.run` on its management surface, admitting them only from `reserved:occipital`; the shapes are the `cortexkit-role-user-commands` crate's (`crates/occipital-module/src/commands.rs`).
+
+- **Listing:** `commands.list {subject}` merges the commands of every ready module whose manifest provides the capability, for the subject's kind (session, agent or computer), each named by its module. Each module's description is kept per build and read again when the module is placed on another; one that fails its checks is left out, so a broken module never hides the others.
+- **Relaying:** a preview or run is checked against its command's declaration, then sent to the module with `caller`, the facts Occipital verified on the app's route (the signed desktop, its development build, or a paired device with its fingerprint). The module records them beside Occipital's principal and never treats them as authority; it confirms what needs confirming itself. The module's answer is passed on as it came.
+- **Runs are never sent twice.** One sent but unanswered is reported `command_outcome_unknown`, and the app asks again under the same `request_id`, which the module answers from its stored reply.
+- **Nothing enters a chat.** A run is the person's action, never part of a transcript or of what a model reads.
+
 ## Reply teaching and the interface language
 
 The language library parses, checks, evaluates and lays out the closed interface language: the tags a head's reply may hold, `show_ui` programs and tool templates. It has no panic paths, because apps embed it. Its catalogs are pinned by publication digest; when a catalog's text changes, the previous digest stays an accepted alias, so a stored reply keeps drawing.
@@ -82,6 +92,7 @@ The language library parses, checks, evaluates and lays out the closed interface
 - **Reply teaching:** asked for its system text, the module answers with teaching generated from the catalog, plus the stamp a runner records on each reply.
 - **Tool templates:** a row template reads the call's view (its record, completion and timing) and the clock only inside a fixed-size `Slot`, so a row's height never changes when they arrive. `occipital-check` gives tool providers the same checks in their CI.
 - **The phone:** `crates/occipital-ffi` exposes the library as a C interface that turns any panic into a status code, built into `ports/swift/OccipitalCore.xcframework`; `OccipitalKit` wraps it in Swift.
+- **Facts:** `format_fact` words a command preview's or result's facts ("about 18,200 tokens", "Building, 40%") and gives each a tone, so both apps draw them alike; a fact's value is never the module's own text.
 - **Links:** `crates/occipital-refs` finds "Issue N", "PR #N" and `owner/repo#N` mentions in text and returns byte ranges with URLs, from the project record core serves beside each agent. The apps draw the links; the text is never changed.
 
 ## Storage
@@ -105,8 +116,8 @@ All stores sit in Occipital's data folder, normally `<data home>/cortexkit/occip
 
 - **Health** comes from in-memory counters only, never a store or network read, and reports `failing` naming any background task that stopped.
 - **Runner refusals are mapped, never passed raw.** A read the runner refuses reaches the apps as `cursor_expired` or `session_unknown` when that is what it says, and otherwise as `provider_unavailable`, which the apps retry; the runner's code stays in the message. A media read keeps `unknown_media` and `invalid_params`, and a plan view `no_plan` and `too_large`, which are final. A plan view the runner refuses `transient` with `detail.cause: "awaiting_plan_applied"` reaches the apps as `context_not_ready`: the runner serves it from the session's next applied plan, so the app reads again later instead of retrying. A send's refusal reaches the apps under a send code (`enqueue_not_authorized`, `client_message_id_conflict`, `media_unsupported`, `media_too_large` and others) or as `runner_refused`, with the runner's code, whether the same send may succeed later, and how long to wait first. An account wait (the account that would serve the send is at its usage limit, or routing can't choose an account yet) counts as one that may succeed later, after the wait the runner names; it is never reported as failed. When `session.head` names the code the session's last run ended with, the session facts carry it as `lastRun.error.providerCode`, if it is one of the codes the runner contract names, so the apps can say a run ended on an account wait. A queued send whose turn ended in an error is listed unsent with that run's code (`runnerCode`, read once from `run.status`) and, for an account wait, `retryAfterMs` from `endedAtMs`; the app sends the words again as a new message, since the runner answers the old send id with its finished record.
-- **Mutations are never retried blindly.** A send or Stop whose outcome is unknown is reported, not resent; the app's retry carries the same key.
-- **Logs** record every app request with its method, session, outcome and the calls it made: a send, Stop, Stop everything or finished, aborted or placed upload at INFO, any other success at debug level unless it took over 2 seconds, and refusals and deadlines as warnings. A request other than a watch that is still running after 10 seconds gets one extra warning naming its current step. Message text and file names never reach the log.
+- **Mutations are never retried blindly.** A send, Stop or command run whose outcome is unknown is reported, not resent; the app's retry carries the same key.
+- **Logs** record every app request with its method, session, outcome and the calls it made: a send, Stop, Stop everything, command run or finished, aborted or placed upload at INFO, any other success at debug level unless it took over 2 seconds, and refusals and deadlines as warnings. A request other than a watch that is still running after 10 seconds gets one extra warning naming its current step. Message text and file names never reach the log.
 
 ## How changes are verified
 
