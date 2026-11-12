@@ -4560,6 +4560,7 @@ pub(crate) mod tests {
     mod send_ids_1110;
     mod signed_reasoning_cause_1112;
     mod speaks_for_name_1109;
+    mod temperature_0844_1112;
     mod text_upload_1108;
     mod unreadable_samples;
     mod wake_records_samples;
