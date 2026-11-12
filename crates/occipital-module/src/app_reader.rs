@@ -747,8 +747,28 @@ impl AppReader {
                     .resolve(&request.session, request.harness.as_deref()),
             )
             .await?;
+            let found = source.is_some();
             let (mut reply, head) =
                 occipital_app_reader::details::read_with_head(source.as_deref(), &request).await?;
+            // The session as its runner and the modules serving it key it, for
+            // the apps to name it by in a command's subject. It comes from the
+            // runner Occipital reads, never from a runner name an app holds:
+            // Entorhinal may record a Pi chat under `thalamus-pi`, while the
+            // module hosting it is `thalamus-harness`. Only for an app that
+            // asks, like `attachmentLimits`, so other details keep their bytes.
+            if found && params["commandSubject"] == true {
+                if let Ok(reference) = self
+                    .resolver
+                    .reference(&request.session, request.harness.as_deref())
+                    .await
+                {
+                    reply["subject"] = serde_json::json!({
+                        "runner": reference.runner,
+                        "harness": request.harness.as_deref().unwrap_or("broca"),
+                        "session": reference.session,
+                    });
+                }
+            }
             // Only for an app that asks, so the details every other app reads
             // keep their bytes.
             if params["attachmentLimits"] == true {

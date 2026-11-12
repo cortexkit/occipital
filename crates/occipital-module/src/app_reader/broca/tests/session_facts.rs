@@ -307,6 +307,26 @@ async fn details(app: &AppReader) -> Value {
         .unwrap()
 }
 
+/// An app that asks gets the session as its runner keys it, to name it by in a
+/// command's subject; one that doesn't gets the details it always had.
+#[tokio::test]
+async fn session_details_name_the_command_subject_when_asked() {
+    let route = FakeRoute::new();
+    let app = sending(&route);
+    let asked = app
+        .read(
+            DETAILS,
+            json!({"session":"alfonso:s1", "harness":"broca", "commandSubject": true}),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        asked["subject"],
+        json!({"runner": "broca", "harness": "broca", "session": "alfonso:s1"})
+    );
+    assert!(details(&app).await.get("subject").is_none());
+}
+
 fn calls(route: &FakeRoute, method: &str) -> usize {
     route
         .calls

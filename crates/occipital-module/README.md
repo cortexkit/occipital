@@ -179,6 +179,12 @@ commands provides `user-commands/v1` and serves `commands.describe`,
 them only from `reserved:occipital`. The wire shapes are the
 `cortexkit-role-user-commands` crate's.
 
+A session subject is `{runner, harness, session}` as the session's runner and
+the modules serving it key it. The apps take it verbatim from `session.details`
+when the request carries `commandSubject: true`, as `subject`, rather than
+building it from the runner name Entorhinal records, which for a Pi chat is
+`thalamus-pi` while its host is `thalamus-harness`.
+
 The apps ask Occipital. `commands.list {subject}` lists the commands of every
 ready module whose manifest provides the capability, for the subject's kind
 (session, agent or computer), each named by its module. Occipital keeps each
