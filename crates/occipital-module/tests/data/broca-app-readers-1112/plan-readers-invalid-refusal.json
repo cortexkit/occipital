@@ -1,0 +1,1 @@
+{"code":"invalid_params","message":"plan.readers must be an array of distinct principal strings","detail":{"field":"plan.readers"}}
