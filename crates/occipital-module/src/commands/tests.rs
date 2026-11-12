@@ -324,8 +324,9 @@ async fn requests_the_relay_refuses_reach_no_module() {
 
 /// How a module's failure reaches the app. An unanswered run may have run, so
 /// it is never reported as safe to send again; an unanswered preview is. The
-/// contract's refusal codes pass through, and any other is
-/// `command_refused` naming the module's code.
+/// contract's refusal codes pass through, `unavailable` (nothing ran, safe to
+/// repeat) among them, and any other is `command_refused` naming the
+/// module's code.
 #[tokio::test]
 async fn module_failures_reach_the_app_by_what_they_prove() {
     let requests = sample("requests.json");
@@ -345,6 +346,10 @@ async fn module_failures_reach_the_app_by_what_they_prove() {
     assert_eq!(
         run(Answer::Refused("unknown_subject")).await.code,
         "unknown_subject"
+    );
+    assert_eq!(
+        run(Answer::Refused("unavailable")).await.code,
+        "unavailable"
     );
     let other = run(Answer::Refused("vault_locked")).await;
     assert_eq!(other.code, "command_refused");
@@ -417,4 +422,24 @@ fn caller_facts_come_from_the_route() {
         assert_eq!(command_caller(Some(&refused)), None, "{refused:?}");
     }
     assert_eq!(command_caller(None), None);
+}
+
+/// A description whose commands hold a number (an arg's default) still
+/// passes its digest check here, where serde_json keeps each number's text
+/// (`arbitrary_precision`): the digest a module computes without that
+/// feature, worked out by hand from the commands' canonical JSON (RFC 8785,
+/// JCS: sorted keys, no spaces), is the one this module accepts.
+#[test]
+fn a_number_default_keeps_the_modules_digest() {
+    let reply = json!({
+        "commands": [{"id": "wait", "title": "Wait", "summary": "Waits a while.",
+            "subject": "computer",
+            "args": [{"key": "seconds", "kind": "number", "label": "Seconds", "default": 2.5}],
+            "effects": ["reversible"], "run": {}}],
+        // SHA-256 of `[{"args":[{"default":2.5,"key":"seconds",...}],...}]`,
+        // the commands array in canonical JSON (RFC 8785).
+        "digest": "33bd98021945ff75d0cf4bf0a067e02deb388ee5fc21c6e6b4aec83f0afe8eff",
+    });
+    let described: contract::DescribeReply = serde_json::from_value(reply).unwrap();
+    described.check().unwrap();
 }

@@ -203,7 +203,9 @@ with its fingerprint. A route with no such facts is refused
 is refused `command_outcome_unknown`, and the app asks again under the same
 `request_id`, which the module answers from its stored reply. Refusals keep the
 contract's codes (`invalid_params`, `unknown_command`, `unknown_subject`,
-`caller_not_admitted`); an unreachable module is `command_unavailable`, an
+`caller_not_admitted`, and `unavailable`, where the module couldn't take the
+call and nothing ran, so the app may repeat it under the same `request_id`); an
+unreachable module is `command_unavailable`, an
 answer in a shape the apps can't read `command_reply_invalid`, and any other
 refusal `command_refused` with the module's code in `detail.moduleCode`.
 

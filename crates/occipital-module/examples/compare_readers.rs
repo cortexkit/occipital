@@ -10,7 +10,10 @@
 //! compare_readers <method> '<params JSON>' [<module> <module>]
 //! ```
 //!
-//! The modules default to `occipital` and `thalamus-harness`. The daemon is
+//! The modules default to `occipital` and `thalamus-harness`. With one module
+//! named twice and `COMPARE_RAW=1`, the reply prints as one line of compact
+//! JSON, a result wrapped as `{"result": …}` and a refusal as its error body,
+//! the shape the app sample sets keep under `test-vectors/`. The daemon is
 //! found the way every local client finds it (the SDK's default discovery).
 //! It prints each reply's outcome and, when they differ, every JSON path where
 //! they do, and exits 1 on a difference. Naming one module twice asks it once
@@ -209,8 +212,16 @@ async fn main() -> ExitCode {
     }
     if first == second {
         let reply = ask(&consumer, first, &request).await;
-        let (Ok(body) | Err(body)) = &reply;
-        println!("{body:#}");
+        // `COMPARE_RAW=1`: one line of compact JSON, as the module doc says.
+        if std::env::var_os("COMPARE_RAW").is_some() {
+            match &reply {
+                Ok(body) => println!("{}", serde_json::json!({ "result": body })),
+                Err(body) => println!("{body}"),
+            }
+        } else {
+            let (Ok(body) | Err(body)) = &reply;
+            println!("{body:#}");
+        }
         return if reply.is_ok() {
             ExitCode::SUCCESS
         } else {

@@ -315,8 +315,10 @@ fn checked_reply<T: DeserializeOwned>(
 /// read, unanswered ones are `command_unavailable`, which the app may ask
 /// again. An unanswered run is `command_outcome_unknown`: it may have run, so
 /// the app asks again only under the same `request_id`. The contract's
-/// refusal codes pass through; any other refusal is `command_refused`, with
-/// the module's code in `detail.moduleCode`.
+/// refusal codes pass through, `unavailable` among them: the module couldn't
+/// take the call now and nothing ran, so the app may repeat it, a run under
+/// the same `request_id`. Any other refusal is `command_refused`, with the
+/// module's code in `detail.moduleCode`.
 fn failed(module: &str, method: &str, failure: Failure, mutation: bool) -> ReadError {
     match failure {
         Failure::NotSent(error) => ReadError::new(
@@ -337,6 +339,9 @@ fn failed(module: &str, method: &str, failure: Failure, mutation: bool) -> ReadE
                 contract::UNKNOWN_COMMAND => "unknown_command",
                 contract::UNKNOWN_SUBJECT => "unknown_subject",
                 contract::CALLER_NOT_ADMITTED => "caller_not_admitted",
+                // Added to the contract's refusals after 0.1.0, so the crate
+                // has no constant for it yet.
+                "unavailable" => "unavailable",
                 _ => "command_refused",
             };
             let mut error = ReadError::new(
