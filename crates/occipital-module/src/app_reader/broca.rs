@@ -2442,11 +2442,35 @@ pub(crate) fn send_grant(
 /// read. That includes the log identity, which must fit its 1 to 128-byte bound.
 fn head_meta(value: &Value) -> Result<cortexkit_role_llm_runner::read::HeadMeta, ReadError> {
     let meta: cortexkit_role_llm_runner::read::HeadMeta =
-        serde_json::from_value(value.clone()).map_err(|error| invalid(error.to_string()))?;
+        serde_json::from_value(without_malformed_wait(value).into_owned())
+            .map_err(|error| invalid(error.to_string()))?;
     if !meta.snapshot_consistent() {
         return Err(invalid("Broca session.head has an inconsistent snapshot"));
     }
     Ok(meta)
+}
+
+/// `head` without its last run's `awaits` when that doesn't decode, such as an
+/// `attempt` of 0 or an overlong message. The contract reads an absent wait
+/// as no information, so a malformed one costs only the wait, never the
+/// whole head: the chat still reads and still takes sends.
+pub(crate) fn without_malformed_wait(head: &Value) -> std::borrow::Cow<'_, Value> {
+    let wait = &head["last_run_state"]["awaits"];
+    if wait.is_null()
+        || serde_json::from_value::<cortexkit_role_llm_runner::awaits::RunAwaits>(wait.clone())
+            .is_ok()
+    {
+        return std::borrow::Cow::Borrowed(head);
+    }
+    tracing::debug!("a runner's last-run wait didn't decode; it is left out");
+    let mut head = head.clone();
+    if let Some(run) = head
+        .get_mut("last_run_state")
+        .and_then(Value::as_object_mut)
+    {
+        run.remove("awaits");
+    }
+    std::borrow::Cow::Owned(head)
 }
 
 fn activity_for(state: Option<&str>) -> Option<&'static str> {

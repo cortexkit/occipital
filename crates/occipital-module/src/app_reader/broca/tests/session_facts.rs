@@ -866,3 +866,122 @@ async fn the_service_tier_samples_are_what_the_handlers_answer() {
     served.keep("03-details-no-tier", &details_request, untiered);
     served.check();
 }
+
+/// llm-runner 0.8.45's wait samples (`tests/data/llm-runner-run-awaits/`,
+/// copied unchanged from the contract crate's `run-awaits.json`).
+fn run_awaits_samples() -> Value {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data/llm-runner-run-awaits/run-awaits.json");
+    let bytes = std::fs::read(path).unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "8b863ec5f37c5276e6627213c5ed8e3df9a41b615066d033fb5e52af8c60591b"
+    );
+    serde_json::from_slice(&bytes).unwrap()
+}
+
+/// The `lastRun` the apps should read for a head's `last_run_state`, written
+/// out here from the contract's own field list rather than with the reader's
+/// code: the camelCase spelling, and `message` only from the runner or a
+/// sign-in plugin.
+fn expected_last_run(state: &Value) -> Value {
+    let mut expected = json!({"runId": state["run_id"], "state": state["state"]});
+    for (wire, app) in [
+        ("reason", "reason"),
+        ("resume_not_before_ms", "resumeNotBeforeMs"),
+    ] {
+        if !state[wire].is_null() {
+            expected[app] = state[wire].clone();
+        }
+    }
+    let wait = &state["awaits"];
+    if !wait.is_null() {
+        let mut awaits = json!({"party": wait["party"], "sinceMs": wait["since_ms"]});
+        for (wire, app) in [
+            ("reason", "reason"),
+            ("next_ms", "nextMs"),
+            ("deadline_ms", "deadlineMs"),
+            ("attempt", "attempt"),
+            ("person", "person"),
+        ] {
+            if !wait[wire].is_null() {
+                awaits[app] = wait[wire].clone();
+            }
+        }
+        if matches!(wait["message"]["from"].as_str(), Some("plugin" | "runner")) {
+            awaits["message"] = wait["message"].clone();
+        }
+        expected["awaits"] = awaits;
+    }
+    expected
+}
+
+/// Every wait case, the unknown party and action included, reaches the apps as
+/// `lastRun.awaits` on details, the newest page, a claim and a watch, with
+/// the host's quoted retry text left out. One more case, a sign-in plugin's
+/// own text, shows that `message` passes when its source may be shown.
+#[tokio::test]
+async fn every_wait_reaches_the_apps_on_last_run() {
+    let mut heads: Vec<Value> = run_awaits_samples()["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|case| case["head"].clone())
+        .collect();
+    heads.push(json!({"run_id": "r-plugin", "state": "active", "awaits": {
+        "party": "runner", "reason": "account_free", "since_ms": 1_790_000_000_000_u64,
+        "message": {"text": "Waiting for an account to come free", "from": "plugin"}}}));
+    assert_eq!(heads.len(), 11);
+    for head in heads {
+        let expected = serde_json::to_string(&expected_last_run(&head)).unwrap();
+        assert_last_run_phone_bytes(head, None, &expected).await;
+    }
+}
+
+/// A wait the contract refuses to decode (a zero attempt, an overlong
+/// message or label) costs only the wait: the chat still reads, and its
+/// `lastRun` is the run without it.
+#[tokio::test]
+async fn a_malformed_wait_is_left_out_and_the_chat_still_reads() {
+    for case in run_awaits_samples()["malformed"].as_array().unwrap() {
+        let head = json!({"run_id": "r-bad", "state": "active", "awaits": case["awaits"]});
+        assert_last_run_phone_bytes(head, None, r#"{"runId":"r-bad","state":"active"}"#).await;
+    }
+}
+
+/// The sample set the apps pin for runs that wait, `phone-reader-run-awaits-v1`;
+/// its README says what each file shows. Each case's head is the contract's
+/// own sample, read as `session.details`.
+#[tokio::test]
+async fn the_run_awaits_samples_are_what_the_handlers_answer() {
+    let route = sample_route();
+    set_head(&route, "model", model());
+    set_head(&route, "sender", grant());
+    *route.incarnation.lock().unwrap() = "6a6ce2eb-b065-4df0-806e-44bcf531e128".into();
+    let app = sending(&route);
+    let mut served = super::served_samples::Served::new("phone-reader-run-awaits-v1", app.clone());
+    let details_request =
+        json!({"method": DETAILS, "params": {"session":"alfonso:s1", "harness":"broca"}});
+    for (index, case) in run_awaits_samples()["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .enumerate()
+    {
+        *route.run_state.lock().unwrap() = case["head"].clone();
+        let reply = served.read(index as u64 + 1, &details_request).await;
+        assert_eq!(
+            super::served_samples::decoded(&reply)["result"]["lastRun"],
+            expected_last_run(&case["head"]),
+            "{}",
+            case["name"]
+        );
+        let name = case["name"].as_str().unwrap().replace('_', "-");
+        served.keep(
+            &format!("{:02}-details-{name}", index + 1),
+            &details_request,
+            reply,
+        );
+    }
+    served.check();
+}

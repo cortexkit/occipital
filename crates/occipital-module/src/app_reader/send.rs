@@ -484,12 +484,14 @@ impl Sender {
                 detail,
             }) => return Err(refused(&code, &message, detail.as_ref())),
         };
-        let meta: HeadMeta = serde_json::from_value(head.clone()).map_err(|error| {
-            SendRefusal::new(
-                "invalid_provider_reply",
-                format!("runner head reply: {error}"),
-            )
-        })?;
+        let meta: HeadMeta =
+            serde_json::from_value(super::broca::without_malformed_wait(&head).into_owned())
+                .map_err(|error| {
+                    SendRefusal::new(
+                        "invalid_provider_reply",
+                        format!("runner head reply: {error}"),
+                    )
+                })?;
         // Files need the description too: only a runner declaring `attachments`
         // takes them.
         let describe: Option<RoleDescribe> =
@@ -1322,7 +1324,9 @@ async fn pending_steer_fate(
     let Ok(head) = target.call("session.head", json!({})).await else {
         return Fate::Unanswered;
     };
-    if serde_json::from_value::<HeadMeta>(head.clone()).is_err() {
+    if serde_json::from_value::<HeadMeta>(super::broca::without_malformed_wait(&head).into_owned())
+        .is_err()
+    {
         return Fate::Unanswered;
     }
     if head["last_run_state"]["run_id"] == run_id

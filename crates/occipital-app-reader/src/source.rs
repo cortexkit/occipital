@@ -191,6 +191,9 @@ fn last_run_with_error_value(run: &LastRunState, error: Option<&LastRunError>) -
     if let Some(at) = run.resume_not_before_ms {
         value["resumeNotBeforeMs"] = json!(at);
     }
+    if let Some(wait) = &run.awaits {
+        value["awaits"] = awaits_value(wait);
+    }
     if let Some(error) = error {
         let mut error_value = json!({"class": error.class});
         if let Some(retry) = error.retry_after_secs {
@@ -211,6 +214,48 @@ fn last_run_with_error_value(run: &LastRunState, error: Option<&LastRunError>) -
             error_value["providerCode"] = json!(code);
         }
         value["error"] = error_value;
+    }
+    value
+}
+
+/// What the run waits on, in the apps' spelling: who ends the wait (`party`),
+/// why, since when, when it moves by itself or gives up, which attempt, and
+/// what the person must do. A `party` or `person.action` this crate doesn't
+/// know passes as written, for the app to word from the other members.
+///
+/// `message` passes only when the runner or a sign-in plugin wrote it. Text
+/// labelled as the provider's or the host's (a host's retry message is the
+/// provider's error text), or with a source this crate doesn't know, never
+/// reaches the apps, as provider text never does.
+fn awaits_value(wait: &cortexkit_role_llm_runner::awaits::RunAwaits) -> Value {
+    use cortexkit_role_llm_runner::awaits::AwaitMessageFrom;
+    let mut value = json!({"party": String::from(wait.party.clone()), "sinceMs": wait.since_ms});
+    if let Some(reason) = &wait.reason {
+        value["reason"] = json!(reason);
+    }
+    if let Some(next) = wait.next_ms {
+        value["nextMs"] = json!(next);
+    }
+    if let Some(deadline) = wait.deadline_ms {
+        value["deadlineMs"] = json!(deadline);
+    }
+    if let Some(attempt) = wait.attempt {
+        value["attempt"] = json!(attempt);
+    }
+    if let Some(person) = &wait.person {
+        value["person"] = json!({"action": String::from(person.action.clone())});
+        if let Some(on) = &person.on {
+            value["person"]["on"] = json!(on);
+        }
+    }
+    if let Some(message) = wait.message.as_ref().filter(|message| {
+        matches!(
+            message.from,
+            AwaitMessageFrom::Plugin | AwaitMessageFrom::Runner
+        )
+    }) {
+        value["message"] =
+            json!({"text": message.text, "from": String::from(message.from.clone())});
     }
     value
 }
