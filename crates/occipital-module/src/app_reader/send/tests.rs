@@ -937,6 +937,54 @@ async fn a_run_error_with_a_chatgpt_limit_window_lists_as_before() {
     }
 }
 
+/// Broca's `run.status` body for a run Anthropic refused because signed
+/// thinking was changed, before and after its error gains
+/// `cause: "signed_reasoning_rejected"`, from
+/// `tests/data/broca-signed-reasoning-cause-1112/`, copied unchanged. The
+/// queued-send follower never reads the member: both list the same unsent
+/// entry. The follower passes on only the provider codes the llm-runner crate
+/// lists (`errors::provider_codes::CODES`), and `request_invalid` isn't one, so
+/// neither entry carries a `runnerCode`, and neither a wait.
+#[tokio::test(start_paused = true)]
+async fn a_run_error_with_a_signed_reasoning_cause_lists_as_before() {
+    let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let samples = manifest.join("tests/data/broca-signed-reasoning-cause-1112");
+    let status: Value = serde_json::from_slice(
+        &std::fs::read(manifest.join(
+            "tests/data/broca-account-wait-1112/5_queued_account_limit_exhausted.new.session_send_status.json",
+        ))
+        .unwrap(),
+    )
+    .unwrap();
+    let mut listed = Vec::new();
+    for side in ["before", "after"] {
+        let body: Value = serde_json::from_slice(
+            &std::fs::read(samples.join(format!("{side}.run.status.json"))).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            body["result"]["error"].get("cause").is_some(),
+            side == "after",
+            "{side}"
+        );
+        let f = fixture(Kind::Head);
+        {
+            let mut captured = f.runner.captured.lock().unwrap();
+            captured.insert("session.send_status", status.clone());
+            captured.insert("run.status", body);
+        }
+        f.sender.send(message("q1", "queued words")).await.unwrap();
+        let list = || f.receipts.queue().list("s", START).unwrap();
+        eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unsent")).await;
+        let entry = list().unwrap().0[0].clone();
+        assert_eq!(entry["reason"], "error", "{side}: {entry}");
+        assert!(entry.get("runnerCode").is_none(), "{side}: {entry}");
+        assert!(entry.get("retryAfterMs").is_none(), "{side}: {entry}");
+        listed.push(entry);
+    }
+    assert_eq!(listed[0], listed[1]);
+}
+
 #[tokio::test(start_paused = true)]
 async fn a_steer_a_step_takes_is_settled_without_a_late_signal() {
     let f = fixture(Kind::Worker);
