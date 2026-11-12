@@ -1,0 +1,77 @@
+[
+  {
+    "final_message": {
+      "mid": "g3cbe3b7507900a24.6",
+      "ordinal": 2,
+      "text": "Done."
+    },
+    "run_id": "r1",
+    "state": "completed",
+    "usage": {
+      "by_model": [
+        {
+          "input_tokens": 100,
+          "model": "m",
+          "output_tokens": 20,
+          "provider": "stub",
+          "steps": 1,
+          "unreported_steps": 0
+        }
+      ],
+      "input_tokens": 100,
+      "output_tokens": 20,
+      "steps": 1,
+      "unreported_steps": 0
+    }
+  },
+  {
+    "final_message": {
+      "mid": "g3cbe3b7507900a24.25",
+      "ordinal": 6,
+      "text": "It says file contents."
+    },
+    "run_id": "r2",
+    "state": "completed",
+    "usage": {
+      "by_model": [
+        {
+          "input_tokens": 200,
+          "model": "m",
+          "output_tokens": 40,
+          "provider": "stub",
+          "steps": 2,
+          "unreported_steps": 0
+        }
+      ],
+      "input_tokens": 200,
+      "output_tokens": 40,
+      "steps": 2,
+      "unreported_steps": 0
+    }
+  },
+  {
+    "final_message": {
+      "mid": "g3cbe3b7507900a24.33",
+      "ordinal": 8,
+      "text": "As  shows, the file  holds it."
+    },
+    "run_id": "r3",
+    "state": "completed",
+    "usage": {
+      "by_model": [
+        {
+          "input_tokens": 100,
+          "model": "m",
+          "output_tokens": 20,
+          "provider": "stub",
+          "steps": 1,
+          "unreported_steps": 0
+        }
+      ],
+      "input_tokens": 100,
+      "output_tokens": 20,
+      "steps": 1,
+      "unreported_steps": 0
+    }
+  }
+]

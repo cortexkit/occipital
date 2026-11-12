@@ -1,0 +1,208 @@
+{
+  "entries": [
+    {
+      "digest": "f609b257845f68f940023d8084c38bc350090ed665e43227b3e3685eac33b85b",
+      "mid": "g69737e9dcfa0c9b9.5",
+      "ordinal": 1,
+      "parts": [
+        {
+          "digest": "2dad5b4b54819e362d69a5b6e23b59a4bdb450d143d65acc11fe3855106ceec5",
+          "id": "0",
+          "kind": "text",
+          "tag": 1,
+          "text": "first",
+          "tokens": {
+            "count": 4
+          }
+        }
+      ],
+      "role": "user",
+      "written_at": 1794425983147
+    },
+    {
+      "completed_at": 1,
+      "digest": "54bae68ae49a20b7e5ffe2c46d3e008610b778da291524d79236ec2443a63292",
+      "mid": "g69737e9dcfa0c9b9.6",
+      "ordinal": 2,
+      "parts": [
+        {
+          "digest": "e207c1f43986bb9bdc1ebad087977ed787f8bcc529bc633107f6aba22468de58",
+          "id": "0",
+          "kind": "text",
+          "tag": 2,
+          "text": "Done.",
+          "tokens": {
+            "count": 5
+          }
+        }
+      ],
+      "reasoning_tokens": {
+        "count": 15,
+        "measured": false
+      },
+      "role": "assistant",
+      "usage": {
+        "output_tokens": 20,
+        "prompt_tokens": 100
+      },
+      "written_at": 1
+    },
+    {
+      "digest": "924938d0a5721fbe4740d7c5e1f98969bc2574bb87516db89a83e59d942ac35f",
+      "mid": "g69737e9dcfa0c9b9.13",
+      "ordinal": 3,
+      "parts": [
+        {
+          "digest": "be34dd3897cd71644ca7ecbb992e2da1f0f4dbb3a630c7c78c6e49cb662bc142",
+          "id": "0",
+          "kind": "text",
+          "tag": 3,
+          "text": "read a",
+          "tokens": {
+            "count": 5
+          }
+        }
+      ],
+      "role": "user",
+      "written_at": 1794425983223
+    },
+    {
+      "completed_at": 1,
+      "digest": "2e1dbf950ead104e961801679d2e61069074359f725989c262cf6a2894044927",
+      "mid": "g69737e9dcfa0c9b9.14",
+      "ordinal": 4,
+      "parts": [
+        {
+          "digest": "71b0b0e59031cd74712b2e986c652690fa221d23c9009ad7d8bac8f3916f025f",
+          "id": "0",
+          "kind": "text",
+          "tag": 4,
+          "text": "let me look",
+          "tokens": {
+            "count": 6
+          }
+        },
+        {
+          "call_id": "c1",
+          "digest": "bc188a63f7a8fb8ba8ed5b58cc89168aa3842cc3456c9c1d70941205e45ecf23",
+          "id": "1",
+          "input": {
+            "path": "a"
+          },
+          "kind": "tool",
+          "name": "read",
+          "output": "file contents",
+          "output_bytes": 13,
+          "status": "completed",
+          "tag": 5,
+          "tokens": {
+            "input": 6,
+            "output": 5
+          }
+        }
+      ],
+      "reasoning_tokens": {
+        "count": 8,
+        "measured": false
+      },
+      "role": "assistant",
+      "usage": {
+        "output_tokens": 20,
+        "prompt_tokens": 100
+      },
+      "written_at": 1
+    },
+    {
+      "digest": "822aab69cd0fb2aaf8e31a0ca847b86cdba637df0e11e9a5465ea44f6ca3f615",
+      "mid": "g69737e9dcfa0c9b9.18",
+      "ordinal": 5,
+      "parts": [],
+      "role": "assistant",
+      "written_at": 1
+    },
+    {
+      "completed_at": 1,
+      "digest": "3b4ffd09fd1a83a449f4b8983e06d82a8aee191e6248e1c435a893ca794a69eb",
+      "mid": "g69737e9dcfa0c9b9.25",
+      "ordinal": 6,
+      "parts": [
+        {
+          "digest": "49735d3b854aa438eb63c47e662e25000d6bf99e6f3520dd043d502c4b44c970",
+          "id": "0",
+          "kind": "text",
+          "tag": 6,
+          "text": "It says file contents.",
+          "tokens": {
+            "count": 8
+          }
+        }
+      ],
+      "reasoning_tokens": {
+        "count": 12,
+        "measured": false
+      },
+      "role": "assistant",
+      "usage": {
+        "output_tokens": 20,
+        "prompt_tokens": 100
+      },
+      "written_at": 1
+    },
+    {
+      "digest": "972b6bdb0cb533789b3048f40cbaeb5906c1a929d12f1c54b470f060364be194",
+      "mid": "g69737e9dcfa0c9b9.32",
+      "ordinal": 7,
+      "parts": [
+        {
+          "digest": "284646878759d06acaa7a0826dee6f4669243c15a42cf7066dd785cafa6608f6",
+          "id": "0",
+          "kind": "text",
+          "tag": 7,
+          "text": "and",
+          "tokens": {
+            "count": 4
+          }
+        }
+      ],
+      "role": "user",
+      "written_at": 1794425983304
+    },
+    {
+      "completed_at": 1,
+      "digest": "a74f3346c0aacc0aab7420da31ccdff30b14daf8fc5349edac0eedbf53f63654",
+      "mid": "g69737e9dcfa0c9b9.33",
+      "ordinal": 8,
+      "parts": [
+        {
+          "digest": "eefb36b1f1b60cbfaab613c7ab59b627ea27d5aca7490fd869c3f6172aa6728e",
+          "id": "0",
+          "kind": "text",
+          "tag": 8,
+          "text": "As  shows, the file  holds it.",
+          "tokens": {
+            "count": 13
+          }
+        }
+      ],
+      "reasoning_tokens": {
+        "count": 7,
+        "measured": false
+      },
+      "role": "assistant",
+      "usage": {
+        "output_tokens": 20,
+        "prompt_tokens": 100
+      },
+      "written_at": 1
+    }
+  ],
+  "head": {
+    "newest": {
+      "digest": "a74f3346c0aacc0aab7420da31ccdff30b14daf8fc5349edac0eedbf53f63654",
+      "mid": "g69737e9dcfa0c9b9.33",
+      "ordinal": 8
+    }
+  },
+  "token_family": "o200k/1+img:anthropic-2576-4784",
+  "token_family_exact": false
+}

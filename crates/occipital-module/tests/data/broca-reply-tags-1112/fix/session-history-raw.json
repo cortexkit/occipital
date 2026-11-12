@@ -1,0 +1,227 @@
+{
+  "history_version": 1,
+  "incarnation": "fc44a5b4874399492e028b480e0ac188",
+  "messages": [
+    {
+      "message": {
+        "content": [
+          {
+            "text": "first",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "g3cbe3b7507900a24.5",
+      "ordinal": 1,
+      "part_keys": [
+        "m0#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "r1",
+        "final": false,
+        "run_id": "r1"
+      },
+      "written_at": 1794425004840
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "Done.",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "stub"
+        },
+        "role": "assistant"
+      },
+      "mid": "g3cbe3b7507900a24.6",
+      "ordinal": 2,
+      "part_keys": [
+        "m1#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "r1",
+        "final": true,
+        "run_id": "r1"
+      },
+      "written_at": 1
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "read a",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "g3cbe3b7507900a24.13",
+      "ordinal": 3,
+      "part_keys": [
+        "m2#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "r2",
+        "final": false,
+        "run_id": "r2"
+      },
+      "written_at": 1794425004881
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "let me look",
+            "type": "text"
+          },
+          {
+            "input": {
+              "path": "a"
+            },
+            "tool_call_id": "c1",
+            "tool_name": "read",
+            "type": "tool_call"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "stub"
+        },
+        "role": "assistant"
+      },
+      "mid": "g3cbe3b7507900a24.14",
+      "ordinal": 4,
+      "part_keys": [
+        "m3#0",
+        "m3#1"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "r2",
+        "final": false,
+        "run_id": "r2"
+      },
+      "tool_calls": [
+        {
+          "call_key": "70ec8cf3b77a8610a6321734e2c771c1:19",
+          "indeterminate": false,
+          "tool_call_id": "c1"
+        }
+      ],
+      "written_at": 1
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "is_error": false,
+            "output": {
+              "kind": "text",
+              "text": "file contents"
+            },
+            "tool_call_id": "c1",
+            "type": "tool_result"
+          }
+        ],
+        "role": "tool"
+      },
+      "mid": "g3cbe3b7507900a24.18",
+      "ordinal": 5,
+      "part_keys": [
+        "m4#0"
+      ],
+      "role": "tool",
+      "run": {
+        "episode": "r2",
+        "final": false,
+        "run_id": "r2"
+      },
+      "written_at": 1
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "It says file contents.",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "stub"
+        },
+        "role": "assistant"
+      },
+      "mid": "g3cbe3b7507900a24.25",
+      "ordinal": 6,
+      "part_keys": [
+        "m5#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "r2",
+        "final": true,
+        "run_id": "r2"
+      },
+      "written_at": 1
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "and",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "g3cbe3b7507900a24.32",
+      "ordinal": 7,
+      "part_keys": [
+        "m6#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "r3",
+        "final": false,
+        "run_id": "r3"
+      },
+      "written_at": 1794425004938
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "As  shows, the file  holds it.",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "stub"
+        },
+        "role": "assistant"
+      },
+      "mid": "g3cbe3b7507900a24.33",
+      "ordinal": 8,
+      "part_keys": [
+        "m7#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "r3",
+        "final": true,
+        "run_id": "r3"
+      },
+      "written_at": 1
+    }
+  ]
+}

@@ -1,0 +1,227 @@
+{
+  "history_version": 0,
+  "incarnation": "8019ee83d54e9bf63692164de57bb7ec",
+  "messages": [
+    {
+      "message": {
+        "content": [
+          {
+            "text": "first",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "g69737e9dcfa0c9b9.5",
+      "ordinal": 1,
+      "part_keys": [
+        "m0#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "r1",
+        "final": false,
+        "run_id": "r1"
+      },
+      "written_at": 1794425983147
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "§2§ Done.",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "stub"
+        },
+        "role": "assistant"
+      },
+      "mid": "g69737e9dcfa0c9b9.6",
+      "ordinal": 2,
+      "part_keys": [
+        "m1#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "r1",
+        "final": true,
+        "run_id": "r1"
+      },
+      "written_at": 1
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "read a",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "g69737e9dcfa0c9b9.13",
+      "ordinal": 3,
+      "part_keys": [
+        "m2#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "r2",
+        "final": false,
+        "run_id": "r2"
+      },
+      "written_at": 1794425983223
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "let me look",
+            "type": "text"
+          },
+          {
+            "input": {
+              "path": "a"
+            },
+            "tool_call_id": "c1",
+            "tool_name": "read",
+            "type": "tool_call"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "stub"
+        },
+        "role": "assistant"
+      },
+      "mid": "g69737e9dcfa0c9b9.14",
+      "ordinal": 4,
+      "part_keys": [
+        "m3#0",
+        "m3#1"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "r2",
+        "final": false,
+        "run_id": "r2"
+      },
+      "tool_calls": [
+        {
+          "call_key": "92083d533713c3cc951b5ef3398266af:19",
+          "indeterminate": false,
+          "tool_call_id": "c1"
+        }
+      ],
+      "written_at": 1
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "is_error": false,
+            "output": {
+              "kind": "text",
+              "text": "file contents"
+            },
+            "tool_call_id": "c1",
+            "type": "tool_result"
+          }
+        ],
+        "role": "tool"
+      },
+      "mid": "g69737e9dcfa0c9b9.18",
+      "ordinal": 5,
+      "part_keys": [
+        "m4#0"
+      ],
+      "role": "tool",
+      "run": {
+        "episode": "r2",
+        "final": false,
+        "run_id": "r2"
+      },
+      "written_at": 1
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "§5§ §6§ It says file contents.",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "stub"
+        },
+        "role": "assistant"
+      },
+      "mid": "g69737e9dcfa0c9b9.25",
+      "ordinal": 6,
+      "part_keys": [
+        "m5#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "r2",
+        "final": true,
+        "run_id": "r2"
+      },
+      "written_at": 1
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "and",
+            "type": "text"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "g69737e9dcfa0c9b9.32",
+      "ordinal": 7,
+      "part_keys": [
+        "m6#0"
+      ],
+      "role": "user",
+      "run": {
+        "episode": "r3",
+        "final": false,
+        "run_id": "r3"
+      },
+      "written_at": 1794425983304
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "As §3§ shows, the file §4§ holds it.",
+            "type": "text"
+          }
+        ],
+        "origin": {
+          "model_id": "m",
+          "provider_module_id": "stub"
+        },
+        "role": "assistant"
+      },
+      "mid": "g69737e9dcfa0c9b9.33",
+      "ordinal": 8,
+      "part_keys": [
+        "m7#0"
+      ],
+      "role": "assistant",
+      "run": {
+        "episode": "r3",
+        "final": true,
+        "run_id": "r3"
+      },
+      "written_at": 1
+    }
+  ]
+}

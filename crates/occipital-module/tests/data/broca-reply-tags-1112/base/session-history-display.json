@@ -1,0 +1,202 @@
+{
+  "history_version": 0,
+  "incarnation": "8019ee83d54e9bf63692164de57bb7ec",
+  "messages": [
+    {
+      "mid": "g69737e9dcfa0c9b9.5",
+      "ordinal": 1,
+      "part_keys": [
+        "m0#0"
+      ],
+      "row": {
+        "parts": [
+          {
+            "part": "m0#0",
+            "text": "first",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "text": "first"
+      },
+      "written_at": 1794425983147
+    },
+    {
+      "mid": "g69737e9dcfa0c9b9.6",
+      "ordinal": 2,
+      "part_keys": [
+        "m1#0"
+      ],
+      "row": {
+        "model": "stub/m",
+        "output_refs": {
+          "count": 0,
+          "dialect": "rich-ui/1",
+          "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "mid": "g69737e9dcfa0c9b9.6",
+          "set_id": "h1.ODAxOWVlODNkNTRlOWJmNjM2OTIxNjRkZTU3YmI3ZWM.0/m1"
+        },
+        "parts": [
+          {
+            "part": "m1#0",
+            "text": "§2§ Done.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "§2§ Done."
+      },
+      "written_at": 1
+    },
+    {
+      "mid": "g69737e9dcfa0c9b9.13",
+      "ordinal": 3,
+      "part_keys": [
+        "m2#0"
+      ],
+      "row": {
+        "parts": [
+          {
+            "part": "m2#0",
+            "text": "read a",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "text": "read a"
+      },
+      "written_at": 1794425983223
+    },
+    {
+      "mid": "g69737e9dcfa0c9b9.14",
+      "ordinal": 4,
+      "part_keys": [
+        "m3#0",
+        "m3#1"
+      ],
+      "row": {
+        "model": "stub/m",
+        "output_refs": {
+          "count": 0,
+          "dialect": "rich-ui/1",
+          "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "mid": "g69737e9dcfa0c9b9.14",
+          "set_id": "h1.ODAxOWVlODNkNTRlOWJmNjM2OTIxNjRkZTU3YmI3ZWM.0/m3"
+        },
+        "parts": [
+          {
+            "part": "m3#0",
+            "text": "let me look",
+            "type": "text"
+          },
+          {
+            "arguments": "{\"path\":\"a\"}",
+            "call_key": "92083d533713c3cc951b5ef3398266af:19",
+            "finished_at": 1,
+            "name": "read",
+            "part": "m3#1",
+            "started_at": 1,
+            "tool_call_id": "c1",
+            "type": "tool_call"
+          }
+        ],
+        "role": "assistant",
+        "text": "let me look"
+      },
+      "written_at": 1
+    },
+    {
+      "mid": "g69737e9dcfa0c9b9.18",
+      "ordinal": 5,
+      "part_keys": [
+        "m4#0"
+      ],
+      "row": {
+        "parts": [
+          {
+            "content": "file contents",
+            "part": "m4#0",
+            "tool_call_id": "c1",
+            "type": "tool_result"
+          }
+        ],
+        "role": "tool",
+        "text": ""
+      },
+      "written_at": 1
+    },
+    {
+      "mid": "g69737e9dcfa0c9b9.25",
+      "ordinal": 6,
+      "part_keys": [
+        "m5#0"
+      ],
+      "row": {
+        "model": "stub/m",
+        "output_refs": {
+          "count": 0,
+          "dialect": "rich-ui/1",
+          "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "mid": "g69737e9dcfa0c9b9.25",
+          "set_id": "h1.ODAxOWVlODNkNTRlOWJmNjM2OTIxNjRkZTU3YmI3ZWM.0/m5"
+        },
+        "parts": [
+          {
+            "part": "m5#0",
+            "text": "§5§ §6§ It says file contents.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "§5§ §6§ It says file contents."
+      },
+      "written_at": 1
+    },
+    {
+      "mid": "g69737e9dcfa0c9b9.32",
+      "ordinal": 7,
+      "part_keys": [
+        "m6#0"
+      ],
+      "row": {
+        "parts": [
+          {
+            "part": "m6#0",
+            "text": "and",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "text": "and"
+      },
+      "written_at": 1794425983304
+    },
+    {
+      "mid": "g69737e9dcfa0c9b9.33",
+      "ordinal": 8,
+      "part_keys": [
+        "m7#0"
+      ],
+      "row": {
+        "model": "stub/m",
+        "output_refs": {
+          "count": 0,
+          "dialect": "rich-ui/1",
+          "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "mid": "g69737e9dcfa0c9b9.33",
+          "set_id": "h1.ODAxOWVlODNkNTRlOWJmNjM2OTIxNjRkZTU3YmI3ZWM.0/m7"
+        },
+        "parts": [
+          {
+            "part": "m7#0",
+            "text": "As §3§ shows, the file §4§ holds it.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "As §3§ shows, the file §4§ holds it."
+      },
+      "written_at": 1
+    }
+  ]
+}

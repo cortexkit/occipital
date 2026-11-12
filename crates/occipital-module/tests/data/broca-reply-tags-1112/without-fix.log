@@ -1,0 +1,42 @@
+   Compiling broca-module v0.4.16 (/w/acct-01KXJJHK4V6DB42W1YAN2XD9QN/597cb79e014f09be1c140a704ff54704239d9a7a8e2f1be4f431fae386f5ae5f/broca/scratch-reply-samples/copies/fix/crates/broca-module)
+warning: unused variable: `clean_replies`
+   --> crates/broca-module/src/store_read.rs:519:9
+    |
+519 |         clean_replies,
+    |         ^^^^^^^^^^^^^ help: try ignoring the field: `clean_replies: _`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling broca-session-convert v0.4.16 (/w/acct-01KXJJHK4V6DB42W1YAN2XD9QN/597cb79e014f09be1c140a704ff54704239d9a7a8e2f1be4f431fae386f5ae5f/broca/scratch-reply-samples/copies/fix/crates/broca-session-convert)
+warning: `broca-module` (lib) generated 1 warning (run `cargo fix --lib -p broca-module` to apply 1 suggestion)
+warning: `broca-module` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5m 48s
+────────────
+ Nextest run ID 66f3c4fc-6a2b-409f-a45f-595b06349bfa with nextest profile: default
+    Starting 1 test across 5 binaries (1353 tests skipped)
+        FAIL [   0.689s] (1/1) broca-module store_actor::entries_comparison::every_exposure_serves_a_cleaned_reply_and_the_store_keeps_the_written_one
+  stdout ───
+
+    running 1 test
+    test store_actor::entries_comparison::every_exposure_serves_a_cleaned_reply_and_the_store_keeps_the_written_one ... FAILED
+
+    failures:
+
+    failures:
+        store_actor::entries_comparison::every_exposure_serves_a_cleaned_reply_and_the_store_keeps_the_written_one
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1139 filtered out; finished in 0.67s
+
+  stderr ───
+
+    thread 'store_actor::entries_comparison::every_exposure_serves_a_cleaned_reply_and_the_store_keeps_the_written_one' (4036) panicked at crates/broca-module/src/store_actor/entries_comparison.rs:1520:13:
+    assertion `left == right` failed: session.read Inline
+      left: [["§2§ Done."], ["let me look"], ["§5§ §6§ It says file contents."], ["As §3§ shows, the file §4§ holds it."]]
+     right: [["Done."], ["let me look"], ["It says file contents."], ["As  shows, the file  holds it."]]
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+  Cancelling due to test failure: 
+────────────
+     Summary [   0.693s] 1 test run: 0 passed, 1 failed, 1353 skipped
+        FAIL [   0.689s] (1/1) broca-module store_actor::entries_comparison::every_exposure_serves_a_cleaned_reply_and_the_store_keeps_the_written_one
+error: test run failed
