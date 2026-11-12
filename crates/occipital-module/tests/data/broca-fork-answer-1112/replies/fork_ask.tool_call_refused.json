@@ -1,0 +1,1 @@
+{"result":{"answer":"before tool","finish":"tool_call_refused","usage":{"steps":1,"unreported_steps":0,"input_tokens":17,"cached_input_tokens":3,"output_tokens":11,"by_model":[]}}}
