@@ -177,9 +177,6 @@ pub(crate) fn utc_date(ms: i64) -> String {
 /// Whether `meta` (from `symlink_metadata`) is a link of any kind: a symlink, or on
 /// Windows any reparse point, which covers junctions and mount points too.
 pub(crate) fn is_link(meta: &std::fs::Metadata) -> bool {
-    if meta.file_type().is_symlink() {
-        return true;
-    }
     #[cfg(windows)]
     {
         use std::os::windows::fs::MetadataExt;
@@ -188,7 +185,7 @@ pub(crate) fn is_link(meta: &std::fs::Metadata) -> bool {
             return true;
         }
     }
-    false
+    meta.file_type().is_symlink()
 }
 
 /// Why `meta` (from `symlink_metadata` on `path`) is not a folder this module may

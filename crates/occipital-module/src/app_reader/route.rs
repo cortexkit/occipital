@@ -190,6 +190,13 @@ impl Watch {
     }
 }
 
+/// Waits for ever. A watch's helper calls this once its watch can't take more
+/// (the reply path failed, or the source of its notices closed): the watch's
+/// own end stops it.
+async fn idle() -> std::convert::Infallible {
+    std::future::pending().await
+}
+
 /// Put each late send outcome for `session` on its transcript watch, as its own
 /// notice beside the claim replies: a worker steer that expired before a run took
 /// it is the app's only word that the message was never delivered. Never returns;
@@ -214,11 +221,11 @@ async fn forward_late(
                     // A JSON value's text is its compact serialization.
                     let body = outcome.notice.to_string().into_bytes();
                     if host.emit_body(body).await.is_err() {
-                        return std::future::pending().await;
+                        match idle().await {}
                     }
                 }
                 Ok(_) | Err(RecvError::Lagged(_)) => {}
-                Err(RecvError::Closed) => return std::future::pending().await,
+                Err(RecvError::Closed) => match idle().await {},
             },
             // A watch that opted in (`acceptQueuedSends`) is told when only the list
             // changed: a send queued or settled while nothing stored changed. A missed
@@ -237,7 +244,7 @@ async fn forward_late(
                     }
                     let body = notice.to_string().into_bytes();
                     if host.emit_body(body).await.is_err() {
-                        return std::future::pending().await;
+                        match idle().await {}
                     }
                 }
                 Err(RecvError::Closed) => queue = None,
