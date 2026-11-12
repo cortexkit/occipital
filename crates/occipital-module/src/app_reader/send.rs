@@ -1641,31 +1641,54 @@ pub(super) fn refused(code: &str, message: &str, detail: Option<&Value>) -> Send
         }
         _ => {
             let mut refusal = SendRefusal::new("runner_refused", said);
-            refusal.detail = Some(runner_refused_detail(code, detail));
+            refusal.detail = Some(runner_refused_detail(code, detail, crate::now_ms()));
             refusal
         }
     }
 }
 
 /// What the app needs to decide whether to resend a `runner_refused` send under the
-/// same `clientMessageId`: `class` is `transient` when the runner contract says the
-/// same request may succeed later (`errors::is_retryable`) and `final` otherwise,
-/// `runnerCode` is the runner's own code, and `retryAfterMs` is the wait the runner
-/// named, when it named one.
-fn runner_refused_detail(code: &str, detail: Option<&Value>) -> Value {
-    let class = if cortexkit_role_llm_runner::errors::is_retryable(code) {
+/// same `clientMessageId`: `class`, `runnerCode` (the runner's own code) and
+/// `retryAfterMs`, the wait before resending, when the runner named one.
+///
+/// `class` is `transient` when the runner contract says the same request may
+/// succeed later, and `final` otherwise. Two kinds are transient. A plain retry
+/// (`errors::is_retryable`). And an account wait (`errors::is_account_wait`): the
+/// account that would serve the send is at its usage limit, or routing can't
+/// choose an account yet, so the send must wait for the named time and must
+/// never be shown as failed. An app holds any transient
+/// refusal at least `retryAfterMs` before sending it again, so an account wait
+/// needs no class of its own; its `runnerCode` lets the app say why it waits.
+///
+/// The wait is the runner's relative hint when it gives one (`retry_after_ms`,
+/// `retry_after_s`, `retry_after_secs`), else the time until `resets_at_ms`, as
+/// the contract orders them; `now_ms` is when the refusal arrived.
+fn runner_refused_detail(code: &str, detail: Option<&Value>, now_ms: i64) -> Value {
+    use cortexkit_role_llm_runner::errors::{is_account_wait, is_retryable};
+    let class = if is_retryable(code) || is_account_wait(code) {
         "transient"
     } else {
         "final"
     };
     let mut out = json!({"class": class, "runnerCode": code});
     let wait_ms = detail.and_then(|detail| {
-        detail["retry_after_ms"].as_u64().or_else(|| {
-            detail["retry_after_secs"]
-                .as_f64()
-                .filter(|secs| secs.is_finite() && *secs >= 0.0)
-                .map(|secs| (secs * 1000.0).ceil() as u64)
-        })
+        detail["retry_after_ms"]
+            .as_u64()
+            .or_else(|| {
+                detail["retry_after_s"]
+                    .as_u64()
+                    .map(|secs| secs.saturating_mul(1000))
+            })
+            .or_else(|| {
+                detail["retry_after_secs"]
+                    .as_f64()
+                    .filter(|secs| secs.is_finite() && *secs >= 0.0)
+                    .map(|secs| (secs * 1000.0).ceil() as u64)
+            })
+            .or_else(|| {
+                let resets_at = detail["resets_at_ms"].as_i64()?;
+                u64::try_from(resets_at.saturating_sub(now_ms).max(0)).ok()
+            })
     });
     if let Some(wait_ms) = wait_ms {
         out["retryAfterMs"] = json!(wait_ms);

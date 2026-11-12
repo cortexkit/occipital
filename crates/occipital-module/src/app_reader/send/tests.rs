@@ -1712,6 +1712,97 @@ async fn stop_all_is_unsupported_without_the_runner_group_and_checks_its_request
     }
 }
 
+/// An account wait (the runner contract's `account_selection_refused` and
+/// `account_limit_exhausted`) is transient, never final, so the app holds the message
+/// rather than showing it failed. Its wait is the relative hint when the runner gives
+/// one, whole seconds before the float, else the time left until `resets_at_ms`, never
+/// below zero; with neither, no wait is named.
+#[test]
+fn an_account_wait_is_transient_with_the_wait_the_runner_named() {
+    let now = 1_794_400_000_000_i64;
+    for (code, detail, expected) in [
+        (
+            "account_limit_exhausted",
+            json!({"routing_code": "limit", "class": "permanent", "retry_after_s": 600,
+                "retry_after_secs": 600.0, "provider_code": "account_limit_exhausted",
+                "resets_at_ms": now + 3_600_000}),
+            json!({"class": "transient", "runnerCode": "account_limit_exhausted", "retryAfterMs": 600_000}),
+        ),
+        (
+            "account_selection_refused",
+            json!({"routing_code": "no_account", "class": "transient", "resets_at_ms": now + 90_500}),
+            json!({"class": "transient", "runnerCode": "account_selection_refused", "retryAfterMs": 90_500}),
+        ),
+        (
+            "account_selection_refused",
+            json!({"routing_code": "no_account", "class": "transient", "resets_at_ms": now - 5_000}),
+            json!({"class": "transient", "runnerCode": "account_selection_refused", "retryAfterMs": 0}),
+        ),
+        (
+            "account_limit_exhausted",
+            json!({"routing_code": "limit", "class": "transient"}),
+            json!({"class": "transient", "runnerCode": "account_limit_exhausted"}),
+        ),
+    ] {
+        assert_eq!(
+            super::runner_refused_detail(code, Some(&detail), now),
+            expected,
+            "{detail}"
+        );
+    }
+    // Through the app's mapping: the same refusal reaches the app as `runner_refused`.
+    let refusal = super::refused(
+        "account_limit_exhausted",
+        "the account is at its limit",
+        Some(&json!({"routing_code": "limit", "class": "permanent", "retry_after_s": 60})),
+    );
+    assert_eq!(refusal.code, "runner_refused");
+    assert_eq!(refusal.detail.unwrap()["class"], "transient");
+}
+
+/// `phone-reader-account-wait-v1`: each `NN-*.runner.json` is a `session.send` refusal
+/// Broca recorded from its real serve path, copied unchanged, and the `NN-*.json` beside
+/// it is the refusal the app receives for it. With `OCCIPITAL_WRITE_SAMPLES` set to a
+/// folder, the app files are written there instead of compared.
+#[test]
+fn the_account_wait_samples_are_what_the_send_answers() {
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../occipital-app-reader/test-vectors/phone-reader-account-wait-v1");
+    for (name, wait_ms) in [
+        ("01-limit-retry-and-reset", 120_000),
+        ("02-limit-reset-only", 90_000),
+        ("03-selection-retry", 30_000),
+    ] {
+        let runner: Value = serde_json::from_slice(
+            &std::fs::read(root.join(format!("{name}.runner.json"))).unwrap(),
+        )
+        .unwrap();
+        let code = runner["code"].as_str().unwrap();
+        let refusal = super::refused(
+            code,
+            runner["message"].as_str().unwrap(),
+            runner.get("detail"),
+        );
+        let wire = json!({"kind": "moduleError", "code": refusal.code,
+            "message": refusal.message, "detail": refusal.detail});
+        assert_eq!(
+            wire["detail"],
+            json!({"class": "transient", "runnerCode": code, "retryAfterMs": wait_ms}),
+            "{name}"
+        );
+        let file = format!("{name}.json");
+        if let Some(folder) = std::env::var_os("OCCIPITAL_WRITE_SAMPLES") {
+            let folder = std::path::PathBuf::from(folder).join("phone-reader-account-wait-v1");
+            std::fs::create_dir_all(&folder).unwrap();
+            std::fs::write(folder.join(file), serde_json::to_vec(&wire).unwrap()).unwrap();
+            continue;
+        }
+        let published: Value =
+            serde_json::from_slice(&std::fs::read(root.join(&file)).unwrap()).unwrap();
+        assert_eq!(wire, published, "{file}");
+    }
+}
+
 /// The published synthetic refusals in `phone-reader-runner-refused-v1` are exactly what
 /// this mapping answers for those runner refusals.
 #[test]

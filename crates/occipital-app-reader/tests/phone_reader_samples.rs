@@ -536,6 +536,13 @@ fn the_recorded_stop_ends_the_named_run_and_keeps_its_reply() {
     );
 }
 
+/// Sends refused because no account can serve them yet, held rather than failed. Its
+/// README lists what each case shows; the module's send tests prove each app file.
+#[test]
+fn the_account_wait_samples_are_complete_and_their_checksums_verify() {
+    verify_published_set("test-vectors/phone-reader-account-wait-v1", 6);
+}
+
 /// A head's run held on a tool call, stopped with `session.stop`. Its README lists what
 /// each case shows.
 #[test]
