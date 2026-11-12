@@ -336,7 +336,7 @@ async fn only_a_runner_declaring_media_refs_is_asked_for_media_references() {
 /// media read, still reach it as the runner being unavailable.
 #[test]
 fn a_media_reads_own_refusals_keep_their_code() {
-    let code = super::super::media_refusal;
+    let code = super::super::final_refusal;
     assert_eq!(
         code(ReadOp::MediaRead, Some("unknown_media")),
         Some("unknown_media")

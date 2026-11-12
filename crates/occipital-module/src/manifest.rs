@@ -264,6 +264,7 @@ mod tests {
                 ("session.media", "query"),
                 ("session.notices", "query"),
                 ("session.notices_watch", "query"),
+                ("session.request_context", "query"),
                 ("session.stop", "mutate"),
                 ("session.stop_all", "mutate"),
                 ("session.tool_detail", "query"),

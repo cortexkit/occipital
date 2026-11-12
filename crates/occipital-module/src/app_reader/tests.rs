@@ -112,6 +112,20 @@ impl SourceResolver for FakeResolver {
         let bytes = &b"png"[offset.min(3) as usize..(offset + length).min(3) as usize];
         Ok(json!({"size": 3, "mime": "image/png", "data": crate::base64::encode(bytes)}))
     }
+
+    /// Session `s` has a one-line plan with no tools.
+    async fn plan_view(
+        &self,
+        session: &str,
+        _: Option<&str>,
+    ) -> Result<cortexkit_role_llm_runner::plan_view::PlanView, ReadError> {
+        use cortexkit_role_llm_runner::plan_view::{PlanView, System};
+        self.resolutions.fetch_add(1, Ordering::SeqCst);
+        if session != "s" {
+            return Err(ReadError::new("session_unknown", "no such session"));
+        }
+        Ok(PlanView::new(1, System::new("Be brief."), Vec::new()))
+    }
 }
 
 /// Serve one request on `method` through the module's own handler, as the device

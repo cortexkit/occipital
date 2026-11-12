@@ -55,6 +55,10 @@ How many files a message may carry follows the session's model: `session.details
 
 `session.media` reads an image a chat references: a thumbnail Occipital makes from the runner's bytes (at most 1024 pixels on the longest side, upright), or the original in pieces. Page reads ask runners that support it for photo references, so no page brings image bytes with it; an image reaches the apps as a file part with its digest and size, and its bytes only through `session.media`.
 
+## What the model is given
+
+`session.request_context` answers the system text and the tools of the plan in force on a session, from the runner contract's `session.plan_view`, which a runner admits as it admits `session.read`. Occipital checks the reply against the contract's closed type and passes the text, the tool schemas and the UTF-8 byte offsets on unchanged, with the members spelled the apps' way. It is the request as the plan built it, not a copy of one sent to a provider, and it holds none of Magic Context's head messages (memories, summaries, profile, docs), which the apps read from Magic Context. A runner that doesn't declare `plan_view` is refused `unsupported` without a call.
+
 ## Tool display
 
 - **Writing:** a tool provider writes each call's record, completion and detail with `display.write` on Occipital's tool-provider route. The writer is the module the daemon attests, never a name in the body; an unverified caller is refused.
@@ -100,7 +104,7 @@ All stores sit in Occipital's data folder, normally `<data home>/cortexkit/occip
 ## Failure handling
 
 - **Health** comes from in-memory counters only, never a store or network read, and reports `failing` naming any background task that stopped.
-- **Runner refusals are mapped, never passed raw.** A read the runner refuses reaches the apps as `cursor_expired` or `session_unknown` when that is what it says, and otherwise as `provider_unavailable`, which the apps retry; the runner's code stays in the message. A media read keeps `unknown_media` and `invalid_params`, which are final. A send's refusal reaches the apps under a send code (`enqueue_not_authorized`, `client_message_id_conflict`, `media_unsupported`, `media_too_large` and others) or as `runner_refused`, with the runner's code and whether the same send may succeed later.
+- **Runner refusals are mapped, never passed raw.** A read the runner refuses reaches the apps as `cursor_expired` or `session_unknown` when that is what it says, and otherwise as `provider_unavailable`, which the apps retry; the runner's code stays in the message. A media read keeps `unknown_media` and `invalid_params`, and a plan view `no_plan` and `too_large`, which are final. A send's refusal reaches the apps under a send code (`enqueue_not_authorized`, `client_message_id_conflict`, `media_unsupported`, `media_too_large` and others) or as `runner_refused`, with the runner's code and whether the same send may succeed later.
 - **Mutations are never retried blindly.** A send or Stop whose outcome is unknown is reported, not resent; the app's retry carries the same key.
 - **Logs** record every app request with its method, session, outcome and the calls it made: a send, Stop, Stop everything or finished, aborted or placed upload at INFO, any other success at debug level unless it took over 2 seconds, and refusals and deadlines as warnings. A request other than a watch that is still running after 10 seconds gets one extra warning naming its current step. Message text and file names never reach the log.
 

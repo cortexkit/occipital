@@ -44,13 +44,16 @@ pub const DISPLAY_WATCH: &str = "session.display_watch";
 pub const DETAILS: &str = occipital_app_reader::details::OPERATION;
 /// An image in the chat: its thumbnail or its original bytes (`crate::media`).
 pub const MEDIA: &str = crate::media::OPERATION;
-pub const METHODS: [&str; 6] = [
+/// The system text and tools the session's model is given (`crate::request_context`).
+pub const REQUEST_CONTEXT: &str = crate::request_context::OPERATION;
+pub const METHODS: [&str; 7] = [
     TRANSCRIPT_PAGE,
     TRANSCRIPT_WATCH,
     DISPLAY_READ,
     DISPLAY_WATCH,
     DETAILS,
     MEDIA,
+    REQUEST_CONTEXT,
 ];
 /// The apps' send keeps core's operation name, so the apps change only the module
 /// they address.
@@ -275,6 +278,19 @@ pub trait SourceResolver: Send + Sync {
         Err(ReadError::new(
             "provider_unavailable",
             "no runner connection is configured for media reads",
+        ))
+    }
+
+    /// The system text and tools of the plan in force on the session, from its
+    /// runner's `session.plan_view`, checked against the contract's closed type.
+    async fn plan_view(
+        &self,
+        _session: &str,
+        _harness: Option<&str>,
+    ) -> Result<cortexkit_role_llm_runner::plan_view::PlanView, ReadError> {
+        Err(ReadError::new(
+            "provider_unavailable",
+            "no runner connection is configured for plan views",
         ))
     }
 
@@ -623,6 +639,13 @@ impl AppReader {
             return observe::step(
                 "media",
                 crate::media::answer(&params, self.resolver.as_ref(), &self.thumbs),
+            )
+            .await;
+        }
+        if method == REQUEST_CONTEXT {
+            return observe::step(
+                "request_context",
+                crate::request_context::answer(&params, self.resolver.as_ref()),
             )
             .await;
         }

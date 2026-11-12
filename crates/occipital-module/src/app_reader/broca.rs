@@ -14,9 +14,11 @@ use std::{
 use async_trait::async_trait;
 use cortexkit_role_llm_runner::{
     archive_prunes_reasoning::PrunedReasoning,
+    capabilities,
     describe::{check_describe, RoleDescribe},
     display::DisplayPage,
     history::{HistoryForm, HistoryRequest},
+    plan_view::{PlanView, PlanViewRequest},
     read::{MediaMode, ReadRequest, SenderGrant},
 };
 use futures_util::future::{BoxFuture, FutureExt, Shared};
@@ -236,6 +238,10 @@ impl SourceResolver for LazyBrocaSources {
             .await
     }
 
+    async fn plan_view(&self, session: &str, harness: Option<&str>) -> Result<PlanView, ReadError> {
+        self.connected().await?.plan_view(session, harness).await
+    }
+
     async fn watch(
         &self,
         session: &str,
@@ -290,6 +296,8 @@ pub enum ReadOp {
     Describe,
     /// Bytes of an image or file the session's history references.
     MediaRead,
+    /// The system text and tools of the plan in force.
+    PlanView,
 }
 
 impl ReadOp {
@@ -301,6 +309,7 @@ impl ReadOp {
             Self::Status => "run.status",
             Self::Describe => "role.describe",
             Self::MediaRead => "session.media_read",
+            Self::PlanView => "session.plan_view",
         }
     }
 }
@@ -459,19 +468,19 @@ fn call_error(runner: &str, error: CallError) -> ReadError {
     ReadError::new(code, format!("{runner}: {error}"))
 }
 
-/// The runner refusals of a media read that reach the app under their own code:
-/// a digest the session's history doesn't reference (`unknown_media`), and an
-/// offset or length out of range (`invalid_params`). Each is a definite answer
-/// about the file asked for, which the app must not ask for again. Every other
-/// refusal of a read, and these on other reads, reach it as the runner being
-/// unavailable ([`call_error`], [`result`]).
-fn media_refusal(op: ReadOp, code: Option<&str>) -> Option<&'static str> {
-    if !matches!(op, ReadOp::MediaRead) {
-        return None;
-    }
-    match code? {
-        "unknown_media" => Some("unknown_media"),
-        "invalid_params" => Some("invalid_params"),
+/// The runner refusals that reach the app under their own code, because each
+/// is a definite answer the app must not ask again for. A media read's: a
+/// digest the session's history doesn't reference (`unknown_media`), and an
+/// offset or length out of range (`invalid_params`). A plan view's: the session
+/// has no plan in force (`no_plan`), or the plan doesn't fit one reply
+/// (`too_large`). Every other refusal of a read, and these on other reads,
+/// reach it as the runner being unavailable ([`call_error`], [`result`]).
+fn final_refusal(op: ReadOp, code: Option<&str>) -> Option<&'static str> {
+    match (op, code?) {
+        (ReadOp::MediaRead, "unknown_media") => Some("unknown_media"),
+        (ReadOp::MediaRead, "invalid_params") => Some("invalid_params"),
+        (ReadOp::PlanView, "no_plan") => Some("no_plan"),
+        (ReadOp::PlanView, "too_large") => Some("too_large"),
         _ => None,
     }
 }
@@ -513,7 +522,7 @@ impl BrocaRoute for DaemonRoute {
                         "Broca display history call failed");
                 }
                 let runner = &self.resolved.reference.runner;
-                match media_refusal(op, error.code()) {
+                match final_refusal(op, error.code()) {
                     Some(code) => ReadError::new(code, format!("{runner}: {error}")),
                     None => call_error(runner, error),
                 }
@@ -525,7 +534,7 @@ impl BrocaRoute for DaemonRoute {
                 tracing::debug!(code, "Broca display history refused");
             }
         }
-        if let Some(code) = media_refusal(op, value.get("code").and_then(Value::as_str)) {
+        if let Some(code) = final_refusal(op, value.get("code").and_then(Value::as_str)) {
             let mut error = ReadError::new(
                 code,
                 format!(
@@ -872,6 +881,11 @@ impl SourceResolver for BrocaSources {
             .await
     }
 
+    async fn plan_view(&self, session: &str, harness: Option<&str>) -> Result<PlanView, ReadError> {
+        let reference = self.reference(session, harness).await?;
+        self.source(&reference).await?.plan_view().await
+    }
+
     async fn watch(
         &self,
         session: &str,
@@ -1011,6 +1025,33 @@ impl BrocaSource {
             cortexkit_role_llm_runner::attachments::MediaReadRequest::new(sha256, offset, length);
         self.remote_read(ReadOp::MediaRead, json_of(&request)?)
             .await
+    }
+
+    /// The system text and tools of the plan in force, from the runner's
+    /// `session.plan_view`. The reply is checked against the contract's closed
+    /// type, which refuses item ranges outside the text, so a reply that fails is
+    /// never passed on. A runner without the contract's `plan_view` group isn't
+    /// asked, and the read is refused `unsupported`.
+    pub async fn plan_view(&self) -> Result<PlanView, ReadError> {
+        if !self
+            .describe()
+            .await
+            .is_some_and(|describe| describe.declares(capabilities::PLAN_VIEW))
+        {
+            return Err(ReadError::new(
+                "unsupported",
+                "this session's runner doesn't serve its plan's system text and tools",
+            ));
+        }
+        let value = self
+            .remote_read(ReadOp::PlanView, json_of(&PlanViewRequest::new())?)
+            .await?;
+        serde_json::from_value(value).map_err(|error| {
+            ReadError::new(
+                "invalid_provider_reply",
+                format!("session.plan_view: {error}"),
+            )
+        })
     }
 
     /// Give each image on `rows` its drawn size: from the sizes already learned,
@@ -2358,6 +2399,8 @@ pub(crate) mod tests {
         read_entries: AtomicUsize,
         /// The files `session.media_read` serves, by digest: type and bytes.
         media: Mutex<HashMap<String, (String, Vec<u8>)>>,
+        /// The `session.plan_view` answer, or its refusal; none refuses `no_plan`.
+        plan_view: Mutex<Option<Result<Value, ReadError>>>,
     }
 
     /// A `role.describe` answer that passes the contract's check, declaring `groups`.
@@ -2393,6 +2436,9 @@ pub(crate) mod tests {
                     served.push(op.into());
                 }
             }
+        }
+        if groups.contains(&"plan_view") {
+            served.push(ops::SESSION_PLAN_VIEW.into());
         }
         let mut describe = serde_json::to_value(
             RoleDescribe::new(vec![Major::new(PROVIDES, served, "alpha")], "fake-broca")
@@ -2541,6 +2587,7 @@ pub(crate) mod tests {
                 anchor_replies: Mutex::new(HashMap::new()),
                 read_entries: AtomicUsize::new(0),
                 media: Mutex::new(HashMap::new()),
+                plan_view: Mutex::new(None),
             })
         }
 
@@ -2569,6 +2616,10 @@ pub(crate) mod tests {
             ReadOp::History => serde_json::from_value::<HistoryRequest>(params.clone()).map(drop),
             ReadOp::MediaRead => serde_json::from_value::<
                 cortexkit_role_llm_runner::attachments::MediaReadRequest,
+            >(params.clone())
+            .map(drop),
+            ReadOp::PlanView => serde_json::from_value::<
+                cortexkit_role_llm_runner::plan_view::PlanViewRequest,
             >(params.clone())
             .map(drop),
             ReadOp::Status | ReadOp::Describe => Ok(()),
@@ -2750,6 +2801,12 @@ pub(crate) mod tests {
                     }
                     Ok(reply)
                 }
+                "session.plan_view" => self
+                    .plan_view
+                    .lock()
+                    .unwrap()
+                    .clone()
+                    .unwrap_or_else(|| Err(ReadError::new("no_plan", "no plan is applied"))),
                 method => Err(ReadError::new(
                     "scope_owner_mismatch",
                     format!("observer cannot call {method}"),
@@ -4334,6 +4391,7 @@ pub(crate) mod tests {
     mod moved_calls;
     mod notice_writer_1107;
     mod read_role_samples;
+    mod request_context;
     mod send_ids_1110;
     mod speaks_for_name_1109;
     mod text_upload_1108;

@@ -37,6 +37,7 @@ scripts/                 check.sh, build-xcframework.sh, xcframework-source-hash
 - `notices.rs`: riding notices, their store, and the apps' notice reads.
 - `notices/wakes.rs`: wake records in the same file: the `display.write` wake kind, the sends page reads name, and `session.wake_records`.
 - `media.rs`: image reads and thumbnails.
+- `request_context.rs`: the plan's system text and tools, from the runner's `session.plan_view`.
 - `store.rs`, `backup.rs`: `store.db` and the Engram backup catalog.
 - `system_text.rs`: the reply teaching. `show_ui.rs` and `native.rs` exist only with the `show-ui` feature.
 

@@ -89,7 +89,7 @@ The apps reach these operations through Callosum, and the desktop app directly:
 | --- | --- |
 | `session.transcript_page`, `session.display_read`, `session.details`, `session.media` | read |
 | `display.views`, `display.template`, `session.tool_records`, `session.tool_detail` | read |
-| `session.notices`, `session.wake_records` | read |
+| `session.notices`, `session.wake_records`, `session.request_context` | read |
 | `session.transcript_watch`, `session.display_watch`, `session.tool_records_watch`, `session.notices_watch` | watch |
 | `session.enqueue_user_message`, `session.stop`, `session.stop_all` | send |
 | `upload.begin`, `upload.chunk`, `upload.status`, `upload.finish`, `upload.abort`, `upload.place` | upload |
@@ -115,6 +115,15 @@ An image a chat references is read with `session.media`: a thumbnail Occipital
 makes from the runner's bytes (at most 1024 pixels on its longest side, upright),
 or the original in pieces. Image file parts on a page carry the image's digest and,
 once Occipital has read its first bytes, its drawn width and height.
+
+`session.request_context` answers the system text and the tools of the plan in
+force on a session, from its runner's `session.plan_view`, with the members
+spelled the apps' way (`appliedAtMs`, `newestStep`, `inputSchema`) and the text,
+tool schemas and UTF-8 byte offsets unchanged. It is the request as the plan
+built it, not a copy of one sent to a provider, and it holds none of Magic
+Context's head messages, which Magic Context serves itself. A runner that
+doesn't declare `plan_view` is refused `unsupported` without a call; `no_plan`
+and `too_large` keep their codes.
 
 Admission reads only what the daemon attests on the route: a Callosum route
 (`reserved:callosum`, with the device label `fed-<class>:<fingerprint>` it
