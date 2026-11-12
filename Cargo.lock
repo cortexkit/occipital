@@ -160,7 +160,7 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-occipital-lang"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "allocation-counter",
  "cortexkit-rich-ui-syntax",
