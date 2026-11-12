@@ -826,14 +826,16 @@ async fn a_queued_send_refused_for_its_account_lists_the_runs_code() {
 
 /// Broca's `run.status` bodies before and after a run's error gains
 /// `account_continue` (routing's answer when it wouldn't move the run to another
-/// account), from `tests/data/broca-account-move-1112/`, copied unchanged. The
-/// queued-send follower is the one path that reads a run's error; it lists the
-/// same code and the same wait from each, since it reads only the contract's
-/// members. `run.result` is never read.
+/// account), from `tests/data/broca-account-move-1112-r2/`, copied unchanged. The
+/// queued-send follower is the one path that reads a run's error, and it reads
+/// only the contract's members. Each lists the same code. The wait is the time
+/// until the account's reset, except where routing named a hold time: there
+/// Broca also sets `retry_after_secs` to it, and that comes first. `run.result`
+/// is never read.
 #[tokio::test(start_paused = true)]
 async fn a_run_error_with_account_continue_lists_as_before() {
     let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let moved = manifest.join("tests/data/broca-account-move-1112");
+    let moved = manifest.join("tests/data/broca-account-move-1112-r2");
     let sums = std::fs::read_to_string(moved.join("SHA256SUMS")).unwrap();
     // The eight bodies and the README.
     assert_eq!(sums.lines().count(), 9);
@@ -849,12 +851,12 @@ async fn a_run_error_with_account_continue_lists_as_before() {
         .unwrap(),
     )
     .unwrap();
-    let mut listed = Vec::new();
-    for side in [
-        "before",
-        "after-hold-with-until",
-        "after-hold-without-until",
-        "after-refusal",
+    let until_reset = 1_900_000_000_000_i64 - START;
+    for (side, wait) in [
+        ("before", until_reset),
+        ("after-hold-with-until", 3_600_000),
+        ("after-hold-without-until", until_reset),
+        ("after-refusal", until_reset),
     ] {
         let body: Value = serde_json::from_slice(
             &std::fs::read(moved.join(format!("{side}.run.status.json"))).unwrap(),
@@ -875,14 +877,9 @@ async fn a_run_error_with_account_continue_lists_as_before() {
         let list = || f.receipts.queue().list("s", START).unwrap();
         eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unsent")).await;
         let entry = list().unwrap().0[0].clone();
-        listed.push((entry["runnerCode"].clone(), entry["retryAfterMs"].clone()));
+        assert_eq!(entry["runnerCode"], "account_limit_exhausted", "{side}");
+        assert_eq!(entry["retryAfterMs"], wait, "{side}");
     }
-    // The error names only a reset, so the wait is the time until it.
-    let expected = (
-        json!("account_limit_exhausted"),
-        json!(1_900_000_000_000_i64 - START),
-    );
-    assert!(listed.iter().all(|entry| entry == &expected), "{listed:?}");
 }
 
 #[tokio::test(start_paused = true)]
