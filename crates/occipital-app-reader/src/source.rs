@@ -223,10 +223,12 @@ fn last_run_with_error_value(run: &LastRunState, error: Option<&LastRunError>) -
 /// what the person must do. A `party` or `person.action` this crate doesn't
 /// know passes as written, for the app to word from the other members.
 ///
-/// `message` passes only when the runner or a sign-in plugin wrote it. Text
-/// labelled as the provider's or the host's (a host's retry message is the
-/// provider's error text), or with a source this crate doesn't know, never
-/// reaches the apps, as provider text never does.
+/// `message` is quoted words about the wait, labelled by whose words they are
+/// (`from`). The apps never draw it as the wait's own line; they open it on
+/// tap, quoted under that label. So it passes for every source the contract
+/// names, the provider's and the host's words included, and is
+/// left out when `from` is one this crate doesn't know, since the apps would
+/// have no true label for it.
 fn awaits_value(wait: &cortexkit_role_llm_runner::awaits::RunAwaits) -> Value {
     use cortexkit_role_llm_runner::awaits::AwaitMessageFrom;
     let mut value = json!({"party": String::from(wait.party.clone()), "sinceMs": wait.since_ms});
@@ -248,12 +250,11 @@ fn awaits_value(wait: &cortexkit_role_llm_runner::awaits::RunAwaits) -> Value {
             value["person"]["on"] = json!(on);
         }
     }
-    if let Some(message) = wait.message.as_ref().filter(|message| {
-        matches!(
-            message.from,
-            AwaitMessageFrom::Plugin | AwaitMessageFrom::Runner
-        )
-    }) {
+    if let Some(message) = wait
+        .message
+        .as_ref()
+        .filter(|message| !matches!(message.from, AwaitMessageFrom::Unknown(_)))
+    {
         value["message"] =
             json!({"text": message.text, "from": String::from(message.from.clone())});
     }

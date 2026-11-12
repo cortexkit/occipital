@@ -882,8 +882,8 @@ fn run_awaits_samples() -> Value {
 
 /// The `lastRun` the apps should read for a head's `last_run_state`, written
 /// out here from the contract's own field list rather than with the reader's
-/// code: the camelCase spelling, and `message` only from the runner or a
-/// sign-in plugin.
+/// code: the camelCase spelling, and `message` for every source the contract
+/// names, never one it doesn't.
 fn expected_last_run(state: &Value) -> Value {
     let mut expected = json!({"runId": state["run_id"], "state": state["state"]});
     for (wire, app) in [
@@ -908,7 +908,10 @@ fn expected_last_run(state: &Value) -> Value {
                 awaits[app] = wait[wire].clone();
             }
         }
-        if matches!(wait["message"]["from"].as_str(), Some("plugin" | "runner")) {
+        if matches!(
+            wait["message"]["from"].as_str(),
+            Some("plugin" | "runner" | "host" | "provider")
+        ) {
             awaits["message"] = wait["message"].clone();
         }
         expected["awaits"] = awaits;
@@ -917,9 +920,10 @@ fn expected_last_run(state: &Value) -> Value {
 }
 
 /// Every wait case, the unknown party and action included, reaches the apps as
-/// `lastRun.awaits` on details, the newest page, a claim and a watch, with
-/// the host's quoted retry text left out. One more case, a sign-in plugin's
-/// own text, shows that `message` passes when its source may be shown.
+/// `lastRun.awaits` on details, the newest page, a claim and a watch, the
+/// host's quoted retry text with it. Three more cases cover the other message
+/// sources: a sign-in plugin's and a provider's words pass, and words from a
+/// source the contract doesn't name are left out.
 #[tokio::test]
 async fn every_wait_reaches_the_apps_on_last_run() {
     let mut heads: Vec<Value> = run_awaits_samples()["cases"]
@@ -931,7 +935,21 @@ async fn every_wait_reaches_the_apps_on_last_run() {
     heads.push(json!({"run_id": "r-plugin", "state": "active", "awaits": {
         "party": "runner", "reason": "account_free", "since_ms": 1_790_000_000_000_u64,
         "message": {"text": "Waiting for an account to come free", "from": "plugin"}}}));
-    assert_eq!(heads.len(), 11);
+    heads.push(
+        json!({"run_id": "r-provider", "state": "active", "awaits": {
+        "party": "runner", "reason": "provider_retry", "since_ms": 1_790_000_000_000_u64,
+        "message": {"text": "Overloaded", "from": "provider"}}}),
+    );
+    heads.push(json!({"run_id": "r-future", "state": "active", "awaits": {
+        "party": "runner", "since_ms": 1_790_000_000_000_u64,
+        "message": {"text": "From somewhere new", "from": "future_source"}}}));
+    assert_eq!(heads.len(), 13);
+    let host_retry = &heads[2];
+    assert_eq!(host_retry["awaits"]["message"]["from"], "host");
+    assert!(expected_last_run(host_retry)["awaits"]["message"].is_object());
+    assert!(expected_last_run(&heads[12])["awaits"]
+        .get("message")
+        .is_none());
     for head in heads {
         let expected = serde_json::to_string(&expected_last_run(&head)).unwrap();
         assert_last_run_phone_bytes(head, None, &expected).await;
@@ -949,7 +967,7 @@ async fn a_malformed_wait_is_left_out_and_the_chat_still_reads() {
     }
 }
 
-/// The sample set the apps pin for runs that wait, `phone-reader-run-awaits-v1`;
+/// The sample set the apps pin for runs that wait, `phone-reader-run-awaits-v2`;
 /// its README says what each file shows. Each case's head is the contract's
 /// own sample, read as `session.details`.
 #[tokio::test]
@@ -959,7 +977,7 @@ async fn the_run_awaits_samples_are_what_the_handlers_answer() {
     set_head(&route, "sender", grant());
     *route.incarnation.lock().unwrap() = "6a6ce2eb-b065-4df0-806e-44bcf531e128".into();
     let app = sending(&route);
-    let mut served = super::served_samples::Served::new("phone-reader-run-awaits-v1", app.clone());
+    let mut served = super::served_samples::Served::new("phone-reader-run-awaits-v2", app.clone());
     let details_request =
         json!({"method": DETAILS, "params": {"session":"alfonso:s1", "harness":"broca"}});
     for (index, case) in run_awaits_samples()["cases"]
