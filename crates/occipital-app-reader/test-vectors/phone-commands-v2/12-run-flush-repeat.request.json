@@ -1,0 +1,1 @@
+{"method":"commands.run","params":{"module":"magic-context","id":"flush","subject":{"kind":"session","session":{"runner":"thalamus-harness","harness":"opencode2","session":"ses_e6db20348ffeRuShcoY9FRmAAd"}},"args":{},"preview_version":"3dd0c2a179159231107b9768dc8aa6b35013e5e807e2831cfdd7307e6beebb6a","request_id":"occi-sample-flush-v2"}}

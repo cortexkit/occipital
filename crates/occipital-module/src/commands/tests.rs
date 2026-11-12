@@ -444,24 +444,44 @@ fn a_number_default_keeps_the_modules_digest() {
     described.check().unwrap();
 }
 
-/// `phone-commands-v1`: what the relay served the apps from the live Magic
-/// Context module. Every request is one the contract's app request types
-/// take, every answer is one its reply types take, and every fact in a
+/// `phone-commands-v1` and `-v2`: what the relay served the apps from the live
+/// Magic Context module, before and after it stopped putting token figures in
+/// a flush preview's version. Every request is one the contract's app request
+/// types take, every answer is one its reply types take, and every fact in a
 /// preview, a run's answer or a table row draws through the apps' shared
 /// formatter, so the palette never meets a fact it refuses. The steps the
-/// palette leans on keep their outcomes: a flush with nothing it may land,
-/// one that runs and is `scheduled`, a repeat answered byte for byte from the
-/// stored reply, a stale version, and the refusals.
+/// palette leans on keep their outcomes: a flush that runs and is
+/// `scheduled`, a repeat answered byte for byte from the stored reply, a stale
+/// version, and the refusals.
 #[test]
 fn the_live_command_samples_are_what_the_apps_decode_and_draw() {
+    let v1 = live_command_set("phone-commands-v1", 16);
+    // Only v1 holds a flush with nothing it may land.
+    assert_eq!(
+        v1("06-preview-flush.json")["result"]["reason"],
+        "queued_in_recent_tail"
+    );
+    let v2 = live_command_set("phone-commands-v2", 12);
+    assert_eq!(
+        v2("07-preview-status.json")["result"]["table"]["columns"],
+        serde_json::json!(["Now"])
+    );
+}
+
+/// Checks one recorded set and hands back a reader for its replies.
+fn live_command_set(set: &str, requests: usize) -> impl Fn(&str) -> Value {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../occipital-app-reader/test-vectors/phone-commands-v1");
-    let read = |name: &str| -> Value {
-        serde_json::from_slice(&std::fs::read(root.join(name)).unwrap()).unwrap()
+        .join("../occipital-app-reader/test-vectors")
+        .join(set);
+    let read = {
+        let root = root.clone();
+        move |name: &str| -> Value {
+            serde_json::from_slice(&std::fs::read(root.join(name)).unwrap()).unwrap()
+        }
     };
     let draws = |fact: &Value, name: &str| {
         occipital_lang::format_fact(fact)
-            .unwrap_or_else(|error| panic!("{name}: {fact}: {error:?}"));
+            .unwrap_or_else(|error| panic!("{set}/{name}: {fact}: {error:?}"));
     };
     let mut names: Vec<String> = std::fs::read_dir(&root)
         .unwrap()
@@ -469,7 +489,7 @@ fn the_live_command_samples_are_what_the_apps_decode_and_draw() {
         .filter(|name| name.ends_with(".request.json"))
         .collect();
     names.sort();
-    assert_eq!(names.len(), 16);
+    assert_eq!(names.len(), requests, "{set}");
     for request_name in &names {
         let request = read(request_name);
         let reply_name = request_name.replace(".request.json", ".json");
@@ -483,7 +503,7 @@ fn the_live_command_samples_are_what_the_apps_decode_and_draw() {
             None => ("session.details".to_owned(), request.clone()),
         };
         let Some(result) = reply.get("result").cloned() else {
-            assert!(reply["code"].is_string(), "{reply_name}");
+            assert!(reply["code"].is_string(), "{set}/{reply_name}");
             continue;
         };
         match method.as_str() {
@@ -512,14 +532,10 @@ fn the_live_command_samples_are_what_the_apps_decode_and_draw() {
                     draws(fact, &reply_name);
                 }
             }
-            _ => assert!(result["subject"].is_object(), "{reply_name}"),
+            _ => assert!(result["subject"].is_object(), "{set}/{reply_name}"),
         }
     }
     let outcome = |name: &str| read(name)["result"]["outcome"].clone();
-    assert_eq!(
-        read("06-preview-flush.json")["result"]["reason"],
-        "queued_in_recent_tail"
-    );
     assert_eq!(
         read("10-preview-flush-available.json")["result"]["available"],
         true
@@ -528,8 +544,10 @@ fn the_live_command_samples_are_what_the_apps_decode_and_draw() {
     assert_eq!(outcome("11-run-flush-scheduled.json"), "scheduled");
     assert_eq!(
         std::fs::read(root.join("11-run-flush-scheduled.json")).unwrap(),
-        std::fs::read(root.join("12-run-flush-repeat.json")).unwrap()
+        std::fs::read(root.join("12-run-flush-repeat.json")).unwrap(),
+        "{set}"
     );
     assert_eq!(read("09-unknown-module.json")["code"], "unknown_command");
     assert_eq!(read("04-details-opencode1.json")["code"], "invalid_request");
+    read
 }
