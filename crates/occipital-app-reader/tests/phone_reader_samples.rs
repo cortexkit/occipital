@@ -1346,3 +1346,10 @@ fn a_resend_under_the_same_id_lands_once_and_refusals_carry_their_class() {
         1500
     );
 }
+
+/// The person's commands through the relay and through the phone route; the
+/// module's command tests prove what each file says.
+#[test]
+fn the_command_samples_are_complete_and_their_checksums_verify() {
+    verify_published_set("test-vectors/phone-commands-v1", 36);
+}

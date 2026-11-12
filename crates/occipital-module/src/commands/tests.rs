@@ -443,3 +443,93 @@ fn a_number_default_keeps_the_modules_digest() {
     let described: contract::DescribeReply = serde_json::from_value(reply).unwrap();
     described.check().unwrap();
 }
+
+/// `phone-commands-v1`: what the relay served the apps from the live Magic
+/// Context module. Every request is one the contract's app request types
+/// take, every answer is one its reply types take, and every fact in a
+/// preview, a run's answer or a table row draws through the apps' shared
+/// formatter, so the palette never meets a fact it refuses. The steps the
+/// palette leans on keep their outcomes: a flush with nothing it may land,
+/// one that runs and is `scheduled`, a repeat answered byte for byte from the
+/// stored reply, a stale version, and the refusals.
+#[test]
+fn the_live_command_samples_are_what_the_apps_decode_and_draw() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../occipital-app-reader/test-vectors/phone-commands-v1");
+    let read = |name: &str| -> Value {
+        serde_json::from_slice(&std::fs::read(root.join(name)).unwrap()).unwrap()
+    };
+    let draws = |fact: &Value, name: &str| {
+        occipital_lang::format_fact(fact)
+            .unwrap_or_else(|error| panic!("{name}: {fact}: {error:?}"));
+    };
+    let mut names: Vec<String> = std::fs::read_dir(&root)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .filter(|name| name.ends_with(".request.json"))
+        .collect();
+    names.sort();
+    assert_eq!(names.len(), 16);
+    for request_name in &names {
+        let request = read(request_name);
+        let reply_name = request_name.replace(".request.json", ".json");
+        let reply = read(&reply_name);
+        // The relay's request files are `{method, params}`; the phone's hold
+        // only the params, and the step's name says the method.
+        let (method, params) = match request["method"].as_str() {
+            Some(method) => (method.to_owned(), request["params"].clone()),
+            None if request_name.contains("-list") => (LIST.to_owned(), request.clone()),
+            None if request_name.contains("-preview") => (PREVIEW.to_owned(), request.clone()),
+            None => ("session.details".to_owned(), request.clone()),
+        };
+        let Some(result) = reply.get("result").cloned() else {
+            assert!(reply["code"].is_string(), "{reply_name}");
+            continue;
+        };
+        match method.as_str() {
+            LIST => {
+                serde_json::from_value::<contract::ListRequest>(params).unwrap();
+                serde_json::from_value::<contract::ListReply>(result).unwrap();
+            }
+            PREVIEW => {
+                serde_json::from_value::<contract::AppPreviewRequest>(params).unwrap();
+                serde_json::from_value::<contract::Preview>(result.clone()).unwrap();
+                for fact in result["facts"].as_array().into_iter().flatten() {
+                    draws(fact, &reply_name);
+                }
+                for row in result["table"]["rows"].as_array().into_iter().flatten() {
+                    for cell in row["cells"].as_array().unwrap() {
+                        let mut fact = cell.clone();
+                        fact["label"] = row["label"].clone();
+                        draws(&fact, &reply_name);
+                    }
+                }
+            }
+            RUN => {
+                serde_json::from_value::<contract::AppRunRequest>(params).unwrap();
+                serde_json::from_value::<contract::RunReply>(result.clone()).unwrap();
+                for fact in result["facts"].as_array().into_iter().flatten() {
+                    draws(fact, &reply_name);
+                }
+            }
+            _ => assert!(result["subject"].is_object(), "{reply_name}"),
+        }
+    }
+    let outcome = |name: &str| read(name)["result"]["outcome"].clone();
+    assert_eq!(
+        read("06-preview-flush.json")["result"]["reason"],
+        "queued_in_recent_tail"
+    );
+    assert_eq!(
+        read("10-preview-flush-available.json")["result"]["available"],
+        true
+    );
+    assert_eq!(outcome("08-run-flush-stale.json"), "preview_stale");
+    assert_eq!(outcome("11-run-flush-scheduled.json"), "scheduled");
+    assert_eq!(
+        std::fs::read(root.join("11-run-flush-scheduled.json")).unwrap(),
+        std::fs::read(root.join("12-run-flush-repeat.json")).unwrap()
+    );
+    assert_eq!(read("09-unknown-module.json")["code"], "unknown_command");
+    assert_eq!(read("04-details-opencode1.json")["code"], "invalid_request");
+}
