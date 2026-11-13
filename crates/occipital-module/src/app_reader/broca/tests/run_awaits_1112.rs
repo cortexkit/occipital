@@ -101,14 +101,16 @@ async fn every_head_reaches_the_apps_as_its_last_run() {
         let expected = serde_json::to_string(&expected).unwrap();
         assert_last_run_phone_bytes(state, error, &expected).await;
     }
-    // Every after head and the past-floor reconnect carry a wait except the
-    // error with no provider code, and no before head carries one.
+    // Every after head carries a wait except the error with no provider code,
+    // and so does `retry.past-floor`, a reconnect after the retry's next
+    // attempt time has passed; no before head carries one.
     assert_eq!(with_awaits, 13);
 }
 
 /// The held call is the one head whose state changes: `paused` before,
-/// `active` with `tool_held` after, so the chat reads busy and a worker's
-/// steer may join the run.
+/// `active` with `tool_held` after, so the chat reads busy, and a message the
+/// person sends a worker (a steer, which only joins a running turn) is no
+/// longer refused as paused.
 #[test]
 fn a_held_call_now_reads_active() {
     let before = body("held.before.session.head.json")["last_run_state"].clone();
@@ -140,9 +142,10 @@ fn run_status_keeps_its_state() {
 
 /// What each subscribe frame does in this reader: control frames stay
 /// control frames and map as before, the wait riding beside what the reader
-/// reads; a retry wait on the display lane, a type the contract doesn't name
-/// there, resets the live view, which drops the abandoned attempt's words, as
-/// an unknown display type must.
+/// reads. A retry wait comes as a display frame (`kind: "display"`, the
+/// lossy stream of live words), as a type the contract doesn't name there,
+/// and resets the live view, which drops the abandoned attempt's words, as an
+/// unknown display type must.
 #[test]
 fn subscribe_frames_map_as_before() {
     let frames = names(".json")
