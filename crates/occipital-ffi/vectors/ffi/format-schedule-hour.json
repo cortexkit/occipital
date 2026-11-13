@@ -1,0 +1,9 @@
+{
+  "entry": "occ_format_schedule",
+  "request": {
+    "schedule_json": "{\"every\":\"hour\",\"minute\":15,\"time_zone\":\"Europe/Istanbul\"}",
+    "shift_minutes": 0
+  },
+  "status": 0,
+  "response": "{\"text\":\"Every hour at :15\"}"
+}

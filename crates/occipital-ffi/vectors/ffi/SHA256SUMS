@@ -1,4 +1,4 @@
-caaee6edc79025d66ae2cae2dc4a2aaf149c996ab3cae0819f367fb92e349b2c  README.md
+54313648ed4186ae82d527dc16fa0e3e360157f798ab2a098d48863d0c47f400  README.md
 7e685b0f6d08f01426081f06dd04717be067c09156d9573be3b86b86965e7d5f  check-16.01-row-bash-1-running.json
 8575f572540104d09646644c13077386e894ab647c82e65ed2a3097f5d9b5ae4  check-16.01-row-bash-2-succeeded.json
 902e4ab8ba1303b8951b261f06ae61a0dd9def7f9d5cfa9895d65a892feb6469  check-16.01-row-bash-3-failed.json
@@ -29,6 +29,10 @@ c4e7a96c26c82a8421e0c4ac42e8cb0a7b7bbcd71ceddac42b4cd55f526b30ef  check-reserved
 603fde9b831aa51d7f06ea1d495cfff02c74d6b2b5ed7b59572793bd988d535d  format-fact-number.json
 9c6905ca786297cea974e318bcf045f0ac44333bbe93a34ddc908b94ebe4d9da  format-fact-refused.json
 c77e13e9b4c928de4a25171e714bc7b59072c93b13b3255fc94cbd256fea2bcf  format-fact-state.json
+29d14f638d7c2103098e86c09a5e739da0ed95a9b0d7ef09ed8168d08e485374  format-schedule-cron.json
+98310b9d3205555fa1b353ad470160db535d41582747ad7df4ca70345f087c9d  format-schedule-hour.json
+d0a04716edae1f27ebee09a96ca82a0c6b21a14e894bd44d4ebe7ae612758ea5  format-schedule-week-shifted.json
+4b31ab6efa75a8f65ff6bbf6fad5db78a745fb25c6cd8d2e3b60b922cb03018b  format-schedule-week.json
 7406b7f6447ddce843e292cdd17757ba39b6eec927d7941810a007135165e9ab  measure-block-16.08-reply-test-run-1.json
 6f529cac5f84c4aa51df3d6e733d3b0a84a93bc472391b50ff2072d7336b5bac  measure-block-16.08-reply-test-run-3.json
 35f8d6c4da0af27699618c4a1ebec79ecdb311dd601876d988d053f2cdd8bf91  measure-block-16.09-reply-places-2.json

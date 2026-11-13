@@ -62,3 +62,8 @@ this case pins the entry point's JSON.
 The `format-fact-*` cases are `occ_format_fact` on one fact each: a number
 with a unit and `approx`, a state with progress, and a fact the rules refuse,
 which answers its code.
+
+The `format-schedule-*` cases are `occ_format_schedule` on one schedule each,
+with `shift_minutes` the integer to pass: a weekly schedule in its own zone,
+the same schedule an hour east (its day moves past midnight), an hourly one,
+and a cron-only one, which answers its code.

@@ -459,6 +459,25 @@ int32_t occ_text_references(const uint8_t *text, size_t len,
  */
 int32_t occ_format_fact(const char *fact_json, char **out);
 
+/*
+ * Words a module's recurring schedule in the person's own clock, so both
+ * apps draw it alike. `schedule_json` is the schedule as the module sent it,
+ * each with "time_zone" (an IANA name): {"every": "hour", "minute"},
+ * {"every": "day", "at": "HH:MM"}, {"every": "week", "days", "at"}
+ * (days Monday first), or {"cron"} when none of those can express it.
+ * `shift_minutes` is the device's UTC offset minus the offset of the
+ * schedule's time_zone, both now, in minutes (at most 26 hours either way);
+ * the app computes it from the zone name, and 0 words it as given.
+ *
+ * *out is {"text"}, such as {"text": "Mondays and Thursdays at 09:30"},
+ * "Weekdays at 04:30", "Every day at 06:00" or "Every hour at :15". A
+ * cron-only schedule answers {"error": "schedule_unworded"} and any other
+ * shape {"error": "schedule_malformed"}; the app shows its own fallback,
+ * such as the cron text. Text that is not JSON is OCC_INVALID_ARGUMENT.
+ */
+int32_t occ_format_schedule(const char *schedule_json, int32_t shift_minutes,
+                            char **out);
+
 /* ------------------------------------------------------------------------
  * Strings
  * --------------------------------------------------------------------- */

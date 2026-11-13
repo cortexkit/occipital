@@ -21,8 +21,8 @@
 //! with error diagnostics and a source with invalid UTF-8, have no golden
 //! trace and are checked by assertions instead, as are the tool row cases
 //! (a long command beside a Slot, evaluated and measured as a row), the
-//! version descriptor, one call of `occ_text_references` and the three
-//! `occ_format_fact` calls. The
+//! version descriptor, one call of `occ_text_references`, the three
+//! `occ_format_fact` calls and the four `occ_format_schedule` calls. The
 //! scheduler traces drive a program session, which no entry point exposes, so
 //! they have no vectors.
 //!
@@ -42,7 +42,7 @@ use serde_json::{json, Value as Json};
 
 use crate::account::occ_account_free;
 use crate::base64;
-use crate::fact::occ_format_fact;
+use crate::fact::{occ_format_fact, occ_format_schedule};
 use crate::measure::{occ_measure_block, occ_measure_tree};
 use crate::metrics::tests::{table, Script};
 use crate::occ_version;
@@ -138,6 +138,11 @@ this case pins the entry point's JSON.
 The `format-fact-*` cases are `occ_format_fact` on one fact each: a number
 with a unit and `approx`, a state with progress, and a fact the rules refuse,
 which answers its code.
+
+The `format-schedule-*` cases are `occ_format_schedule` on one schedule each,
+with `shift_minutes` the integer to pass: a weekly schedule in its own zone,
+the same schedule an hour east (its day moves past midnight), an hourly one,
+and a cron-only one, which answers its code.
 "#;
 
 /// One recorded call, or for a reply session the session.
@@ -959,6 +964,53 @@ fn format_facts() -> Vec<(String, Vector)> {
     .collect()
 }
 
+/// `occ_format_schedule` on a weekly schedule as given and shifted past
+/// midnight, an hourly one, and a cron-only one.
+fn format_schedules() -> Vec<(String, Vector)> {
+    let zone = "Europe/Istanbul";
+    [
+        (
+            "week",
+            json!({"every": "week", "days": ["mon", "thu"], "at": "23:30", "time_zone": zone}),
+            0,
+            json!({"text": "Mondays and Thursdays at 23:30"}),
+        ),
+        (
+            "week-shifted",
+            json!({"every": "week", "days": ["mon", "thu"], "at": "23:30", "time_zone": zone}),
+            60,
+            json!({"text": "Tuesdays and Fridays at 00:30"}),
+        ),
+        (
+            "hour",
+            json!({"every": "hour", "minute": 15, "time_zone": zone}),
+            0,
+            json!({"text": "Every hour at :15"}),
+        ),
+        (
+            "cron",
+            json!({"cron": "15 */2 * * *", "time_zone": zone}),
+            0,
+            json!({"error": "schedule_unworded"}),
+        ),
+    ]
+    .into_iter()
+    .map(|(name, schedule, shift, expected)| {
+        let text = schedule.to_string();
+        let schedule_c = c(&text);
+        // SAFETY: `schedule_c` outlives the call; `out` is the helper's.
+        let result = call(|out| unsafe { occ_format_schedule(schedule_c.as_ptr(), shift, out) });
+        let vector = Vector::call(
+            "occ_format_schedule",
+            json!({ "schedule_json": text, "shift_minutes": shift }),
+            result,
+        );
+        assert_eq!(json(vector.ok()), expected, "{name}");
+        (format!("format-schedule-{name}"), vector)
+    })
+    .collect()
+}
+
 fn generate() -> BTreeMap<String, Vec<u8>> {
     let mut vectors: Vec<(String, Vector)> = vec![];
     for case in reply_cases() {
@@ -994,6 +1046,7 @@ fn generate() -> BTreeMap<String, Vec<u8>> {
     vectors.push(("version".to_owned(), version));
     vectors.push(("text-references".to_owned(), text_references()));
     vectors.extend(format_facts());
+    vectors.extend(format_schedules());
     // The acceptance cases of `occ_program_check`: error diagnostics and
     // invalid UTF-8 are results, not failed calls.
     let show_ui = json!({ "context": context("show_ui", json!({}), Json::Null) });

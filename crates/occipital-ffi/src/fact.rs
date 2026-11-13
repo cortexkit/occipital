@@ -1,11 +1,12 @@
 //! `occ_format_fact`: the wording and tone of one fact a module reports, so
-//! both apps draw a command preview's facts alike. The rules are
-//! cortexkit-occipital-lang's `format_fact`; this file only decodes and
-//! encodes.
+//! both apps draw a command preview's facts alike, and `occ_format_schedule`:
+//! the wording of a module's recurring schedule. The rules are
+//! cortexkit-occipital-lang's `format_fact` and `format_schedule`; this file
+//! only decodes and encodes.
 
 use std::ffi::c_char;
 
-use occipital_lang::{format_fact, Tone};
+use occipital_lang::{format_fact, format_schedule, Tone};
 use serde::Serialize;
 
 use crate::boundary::{json_arg, string_entry};
@@ -48,6 +49,46 @@ pub unsafe extern "C" fn occ_format_fact(fact_json: *const c_char, out: *mut *mu
                 tone: formatted.tone,
             },
             Err(error) => FactJson::Refused {
+                error: error.code(),
+            },
+        })
+    };
+    // SAFETY: the caller's guarantee about `out` is `string_entry`'s.
+    unsafe { string_entry(out, body) }
+}
+
+#[derive(Serialize)]
+#[serde(untagged)]
+enum ScheduleJson {
+    Worded { text: String },
+    Refused { error: &'static str },
+}
+
+/// Words `schedule_json`, a module's schedule as it sent it, in the
+/// person's clock: `shift_minutes` is the device's UTC offset minus the
+/// offset of the schedule's `time_zone`, both now, which the app computes
+/// from the zone name. `*out` is `{"text"}`, such as
+/// `{"text": "Mondays and Thursdays at 09:30"}`, or `{"error": "<code>"}`:
+/// `schedule_unworded` for a cron-only schedule, `schedule_malformed` for
+/// any other shape. The app then shows its own fallback. Text that is not
+/// JSON is `OCC_INVALID_ARGUMENT`.
+///
+/// # Safety
+///
+/// `schedule_json` must be NULL or a NUL-terminated string, and `out` NULL
+/// or valid for writing one pointer, both for the duration of the call.
+#[no_mangle]
+pub unsafe extern "C" fn occ_format_schedule(
+    schedule_json: *const c_char,
+    shift_minutes: i32,
+    out: *mut *mut c_char,
+) -> i32 {
+    let body = || {
+        // SAFETY: the caller's guarantee about `schedule_json` is `json_arg`'s.
+        let schedule = unsafe { json_arg::<serde_json::Value>(schedule_json)? };
+        to_json(&match format_schedule(&schedule, shift_minutes) {
+            Ok(text) => ScheduleJson::Worded { text },
+            Err(error) => ScheduleJson::Refused {
                 error: error.code(),
             },
         })

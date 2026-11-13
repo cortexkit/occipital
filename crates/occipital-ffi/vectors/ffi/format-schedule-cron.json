@@ -1,0 +1,9 @@
+{
+  "entry": "occ_format_schedule",
+  "request": {
+    "schedule_json": "{\"cron\":\"15 */2 * * *\",\"time_zone\":\"Europe/Istanbul\"}",
+    "shift_minutes": 0
+  },
+  "status": 0,
+  "response": "{\"error\":\"schedule_unworded\"}"
+}

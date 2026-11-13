@@ -99,6 +99,8 @@ mod builtins;
 // Facts a module reports, worded and toned the same way in every app.
 mod fact;
 pub use fact::{format_fact, FactError, FormattedFact, Tone};
+mod schedule;
+pub use schedule::{format_schedule, ScheduleError};
 
 // Program evaluation: the host state machine and public sessions will drive it.
 #[cfg_attr(not(test), allow(dead_code))]

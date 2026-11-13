@@ -93,7 +93,8 @@ The language library parses, checks, evaluates and lays out the closed interface
 - **Reply teaching:** asked for its system text, the module answers with teaching generated from the catalog, plus the stamp a runner records on each reply.
 - **Tool templates:** a row template reads the call's view (its record, completion and timing) and the clock only inside a fixed-size `Slot`, so a row's height never changes when they arrive. `occipital-check` gives tool providers the same checks in their CI.
 - **The phone:** `crates/occipital-ffi` exposes the library as a C interface that turns any panic into a status code, built into `ports/swift/OccipitalCore.xcframework`; `OccipitalKit` wraps it in Swift.
-- **Facts:** `format_fact` words a command preview's or result's facts ("about 18,200 tokens", "Building, 40%") and gives each a tone, so both apps draw them alike; a fact's value is never the module's own text.
+- **Facts:** `format_fact` words a command preview's or result's facts ("about 18k tokens", "Building, 40%") and gives each a tone, so both apps draw them alike; a fact's value is never the module's own text.
+- **Schedules:** `format_schedule` words a module's recurring schedule ("Every day at 03:00", "Mondays and Thursdays at 09:30") in the person's own clock. The app passes the minutes between its zone and the schedule's, since the library carries no zone rules; a cron-only schedule is refused, and each app draws its own fallback.
 - **Links and chips:** `crates/occipital-refs` finds "Issue N", "PR #N" and `owner/repo#N` mentions in text and returns byte ranges with URLs, from the project record core serves beside each agent, and `@NAME` mentions with the name, which the apps look up among the agents they know. The apps draw the links and chips; the text is never changed.
 
 ## Storage

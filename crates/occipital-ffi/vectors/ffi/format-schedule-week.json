@@ -1,0 +1,9 @@
+{
+  "entry": "occ_format_schedule",
+  "request": {
+    "schedule_json": "{\"at\":\"23:30\",\"days\":[\"mon\",\"thu\"],\"every\":\"week\",\"time_zone\":\"Europe/Istanbul\"}",
+    "shift_minutes": 0
+  },
+  "status": 0,
+  "response": "{\"text\":\"Mondays and Thursdays at 23:30\"}"
+}
