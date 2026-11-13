@@ -136,8 +136,8 @@ fn caller(app: &str, admission: &str, device: Option<&str>) -> contract::Caller 
 #[test]
 fn the_contract_samples_keep_their_checksums() {
     let sums = std::fs::read_to_string(root().join("SHA256SUMS")).unwrap();
-    // Eight bodies and the README.
-    assert_eq!(sums.lines().count(), 9);
+    // Ten bodies and the README.
+    assert_eq!(sums.lines().count(), 11);
     for line in sums.lines() {
         let (expected, name) = line.split_once("  ").unwrap();
         let bytes = std::fs::read(root().join(name)).unwrap();
@@ -262,6 +262,100 @@ async fn a_run_is_relayed_under_the_apps_request_id() {
         fake.calls(RUN),
         [(CONTEXT.to_owned(), requests["module_run"].clone())]
     );
+}
+
+/// Project and workspace subjects (contract 0.1.2) list and relay like any
+/// other: each list holds only its kind's commands, and a run reaches its
+/// module with the app's subject unchanged.
+#[tokio::test]
+async fn project_and_workspace_commands_list_and_run_under_their_subjects() {
+    let fake = modules();
+    fake.answer(
+        CONTEXT,
+        "commands.describe",
+        Answer::Reply(sample("describe-project.json")),
+    );
+    fake.answer(
+        CODE,
+        "commands.describe",
+        Answer::Reply(sample("describe-workspace.json")),
+    );
+    let scheduled = case("run-replies.json", "flush_scheduled");
+    fake.answer(CONTEXT, RUN, Answer::Reply(scheduled.clone()));
+    let commands = Commands::new(fake.clone());
+    let requests = sample("requests.json");
+    let listed = |subject: &Value| {
+        let commands = &commands;
+        let subject = subject.clone();
+        async move {
+            commands.list(json!({ "subject": subject })).await.unwrap()["commands"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|entry| {
+                    format!(
+                        "{}/{}",
+                        entry["module"].as_str().unwrap(),
+                        entry["command"]["id"].as_str().unwrap()
+                    )
+                })
+                .collect::<Vec<_>>()
+        }
+    };
+    let project = requests["project_run"]["subject"].clone();
+    let workspace = requests["workspace_run"]["subject"].clone();
+    assert_eq!(listed(&project).await, [format!("{CONTEXT}/edit_project")]);
+    assert_eq!(listed(&workspace).await, [format!("{CODE}/edit_workspace")]);
+    assert!(listed(&requests["list"]["subject"]).await.is_empty());
+
+    let mut app_run = requests["project_run"].clone();
+    let module_run = app_run.clone();
+    let caller_facts = app_run.as_object_mut().unwrap().remove("caller").unwrap();
+    app_run["module"] = json!(CONTEXT);
+    let reply = commands
+        .run(serde_json::from_value(caller_facts).unwrap(), app_run)
+        .await
+        .unwrap();
+    assert_eq!(reply, scheduled);
+    assert_eq!(fake.calls(RUN), [(CONTEXT.to_owned(), module_run)]);
+}
+
+/// A description is read command by command once its digest matches: a
+/// command naming a subject kind this build doesn't know, and two commands
+/// sharing an id, are left out, the module's other commands stay listed, and
+/// a preview of a left-out command reaches no module.
+#[tokio::test]
+async fn a_command_this_build_cant_read_hides_only_itself() {
+    let fake = modules();
+    let commands = Commands::new(fake.clone());
+    let list = sample("requests.json")["list"].clone();
+    let before = commands.list(list.clone()).await.unwrap();
+
+    let mut described = sample("describe.json");
+    let entries = described["commands"].as_array_mut().unwrap();
+    let extra = |id: &str, subject: &str| {
+        json!({"id": id, "title": "Extra", "summary": "An extra command.",
+               "subject": subject, "args": [], "effects": ["reversible"], "run": {}})
+    };
+    entries.push(extra("orbit", "galaxy"));
+    entries.push(extra("twin", "session"));
+    entries.push(extra("twin", "session"));
+    let bytes = serde_jcs::to_vec(&described["commands"]).unwrap();
+    described["digest"] = json!(format!("{:x}", Sha256::digest(bytes)));
+    fake.answer(CONTEXT, "commands.describe", Answer::Reply(described));
+    let commands = Commands::new(fake.clone());
+    assert_eq!(commands.list(list).await.unwrap(), before);
+
+    let mut preview = sample("requests.json")["app_preview"].clone();
+    for id in ["orbit", "twin"] {
+        preview["id"] = json!(id);
+        let refused = commands
+            .preview(caller("desktop", "development", None), preview.clone())
+            .await
+            .unwrap_err();
+        assert_eq!(refused.code, "unknown_command", "{id}");
+    }
+    assert!(fake.calls(PREVIEW).is_empty());
 }
 
 /// Requests the relay can refuse itself never reach a module: an unknown

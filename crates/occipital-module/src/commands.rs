@@ -230,9 +230,16 @@ impl Commands {
     }
 
     /// `module`'s commands under `build`, asked for when none are kept under
-    /// it. A description that fails its checks (a bad declaration, or a
-    /// digest that doesn't match its commands) isn't kept, so the next read
-    /// asks again.
+    /// it. A description whose digest doesn't match its commands, or that
+    /// isn't JSON, isn't kept, so the next read asks again.
+    ///
+    /// Within a description that matches its digest, each command is read on
+    /// its own: one this build can't decode (a subject kind or arg kind added
+    /// to the contract after it) or that fails its checks is left out and
+    /// logged, and the module's other commands stay listed. A preview or run
+    /// of a left-out command is refused `unknown_command`, because the relay
+    /// only relays what it has read. Two commands sharing an id are both left
+    /// out, so a preview never reaches the wrong one.
     async fn described(
         &self,
         module: &str,
@@ -251,12 +258,33 @@ impl Commands {
                 Failure::NotSent(error) | Failure::Unknown(error) => error,
                 Failure::Refused(body) => format!("{}: {}", body.code, body.message),
             })?;
-        let described: contract::DescribeReply =
-            serde_json::from_value(reply).map_err(|error| format!("describe: {error}"))?;
-        described
-            .check()
+        let bytes = serde_json::to_vec(&reply).map_err(|error| format!("describe: {error}"))?;
+        let described = contract::DescribeReply::decode_tolerant(&bytes)
             .map_err(|error| format!("describe: {error}"))?;
-        let commands = Arc::new(described.commands);
+        for skipped in &described.unreadable {
+            tracing::warn!(module = %module, index = skipped.index, id = ?skipped.id, error = %skipped.error, "a command this build can't read was left out");
+        }
+        let mut readable = Vec::new();
+        for (index, command) in described.commands.into_iter().enumerate() {
+            match command.check() {
+                Ok(()) => readable.push(command),
+                Err(error) => {
+                    tracing::warn!(module = %module, index, id = %command.id, %error, "a command that fails its checks was left out");
+                }
+            }
+        }
+        let mut seen = HashMap::<String, usize>::new();
+        for command in &readable {
+            *seen.entry(command.id.clone()).or_default() += 1;
+        }
+        readable.retain(|command| {
+            let unique = seen.get(&command.id) == Some(&1);
+            if !unique {
+                tracing::warn!(module = %module, id = %command.id, "two commands share an id; both were left out");
+            }
+            unique
+        });
+        let commands = Arc::new(readable);
         self.lock()
             .described
             .insert(module.to_owned(), (build.to_owned(), commands.clone()));

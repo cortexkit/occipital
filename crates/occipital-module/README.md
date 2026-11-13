@@ -187,9 +187,13 @@ building it from the runner name Entorhinal records, which for a Pi chat is
 
 The apps ask Occipital. `commands.list {subject}` lists the commands of every
 ready module whose manifest provides the capability, for the subject's kind
-(session, agent or computer), each named by its module. Occipital keeps each
-module's description per build, read again when the module is placed on
-another; a module whose description fails its checks is left out. A preview or
+(session, agent, computer, project or workspace), each named by its module.
+Occipital keeps each module's description per build, read again when the
+module is placed on another. A description whose digest doesn't match its
+commands is left out whole. Within one that matches, each command is read on
+its own: one this build can't decode (a kind added to the contract later), one
+that fails its checks, and two that share an id are left out alone, and the
+module's other commands stay listed. A preview or
 a run names its module and command, and Occipital checks it against that
 command's declaration before relaying it, then passes the module's answer on as
 it came.
