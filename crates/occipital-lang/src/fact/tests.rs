@@ -128,8 +128,9 @@ fn states_have_one_wording_and_one_tone() {
         ("building", "Building", Tone::Info),
         ("paused", "Paused", Tone::Warning),
         ("stale", "Out of date", Tone::Warning),
-        ("unavailable", "Unavailable", Tone::Danger),
+        ("unavailable", "Unavailable", Tone::Neutral),
         ("off", "Off", Tone::Neutral),
+        ("failed", "Failed", Tone::Danger),
     ];
     for (state, text, tone) in cases {
         assert_eq!(
@@ -157,6 +158,8 @@ fn members_that_dont_go_together_are_refused() {
         json!({"label": "x", "value": 1, "state": "ready"}),
         json!({"label": "x", "state": "ready", "unit": "count"}),
         json!({"label": "x", "state": "ready", "approx": true}),
+        // Even `false`: the contract refuses `approx` on a state outright.
+        json!({"label": "x", "state": "ready", "approx": false}),
         json!({"label": "x", "state": "ready", "tone": "danger"}),
         json!({"label": "x", "state": "ready", "noun": "parts"}),
         json!({"label": "x", "state": "ready", "progress": 0.5}),

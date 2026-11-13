@@ -136,8 +136,9 @@ cortexkit-occipital-refs;
 this case pins the entry point's JSON.
 
 The `format-fact-*` cases are `occ_format_fact` on one fact each: a number
-with a unit and `approx`, a state with progress, and a fact the rules refuse,
-which answers its code.
+with a unit and `approx`, a state with progress, `unavailable` (not reported
+yet, toned neutral), `failed` (a fault, toned danger), and a fact the rules
+refuse, which answers its code.
 
 The `format-schedule-*` cases are `occ_format_schedule` on one schedule each,
 with `shift_minutes` the integer to pass: a weekly schedule in its own zone,
@@ -933,7 +934,7 @@ fn text_references() -> Vector {
     vector
 }
 
-/// `occ_format_fact` on a number, a state and a refused fact.
+/// `occ_format_fact` on a number, states and a refused fact.
 fn format_facts() -> Vec<(String, Vector)> {
     [
         (
@@ -945,6 +946,16 @@ fn format_facts() -> Vec<(String, Vector)> {
             "state",
             r#"{"label":"Code map","state":"building","progress":0.4}"#,
             json!({"label": "Code map", "text": "Building, 40%", "tone": "info"}),
+        ),
+        (
+            "state-unavailable",
+            r#"{"label":"Errors","state":"unavailable"}"#,
+            json!({"label": "Errors", "text": "Unavailable", "tone": "neutral"}),
+        ),
+        (
+            "state-failed",
+            r#"{"label":"Code map","state":"failed"}"#,
+            json!({"label": "Code map", "text": "Failed", "tone": "danger"}),
         ),
         (
             "refused",

@@ -46,8 +46,12 @@ enum State {
     Building,
     Paused,
     Stale,
+    /// A value that can't be shown right now (not reported yet, or not
+    /// readable here). Not a fault.
     Unavailable,
     Off,
+    /// Something that should work and doesn't.
+    Failed,
 }
 
 impl State {
@@ -59,6 +63,7 @@ impl State {
             State::Stale => "Out of date",
             State::Unavailable => "Unavailable",
             State::Off => "Off",
+            State::Failed => "Failed",
         }
     }
 
@@ -67,8 +72,8 @@ impl State {
             State::Ready => Tone::Success,
             State::Building => Tone::Info,
             State::Paused | State::Stale => Tone::Warning,
-            State::Unavailable => Tone::Danger,
-            State::Off => Tone::Neutral,
+            State::Unavailable | State::Off => Tone::Neutral,
+            State::Failed => Tone::Danger,
         }
     }
 }
@@ -98,8 +103,8 @@ struct Wire {
     value: Option<serde_json::Number>,
     unit: Option<Unit>,
     noun: Option<String>,
-    #[serde(default)]
-    approx: bool,
+    /// Kept as given: a state refuses `approx` even when it is `false`.
+    approx: Option<bool>,
     state: Option<State>,
     progress: Option<serde_json::Number>,
     tone: Option<Tone>,
@@ -172,7 +177,7 @@ impl std::fmt::Display for FactError {
 /// - A state is written by its fixed wording ("Ready", "Out of date"), and
 ///   `building` with `progress` adds the percent ("Building, 40%"). Its tone
 ///   is fixed: `ready` success, `building` info, `paused` and `stale`
-///   warning, `unavailable` danger, `off` neutral.
+///   warning, `unavailable` and `off` neutral, `failed` danger.
 ///
 /// JSON numbers arrive through `serde_json` without `arbitrary_precision`,
 /// so a fraction is the shortest text that round-trips its `f64`; that is
@@ -196,12 +201,13 @@ pub fn format_fact(fact: &Json) -> Result<FormattedFact, FactError> {
                 return Err(FactError::Conflict("noun is only for a count"));
             }
             let x = decimal(value)?;
+            let approx = wire.approx.unwrap_or(false);
             let mut text = String::new();
-            if wire.approx && x == Decimal::ZERO {
+            if approx && x == Decimal::ZERO {
                 text.push_str("none");
             } else {
                 let words = number_words(x, unit, wire.noun.as_deref())?;
-                if wire.approx {
+                if approx {
                     text.push_str("about ");
                     let short = matches!(unit, Unit::Count | Unit::Tokens)
                         .then(|| shortened(x))
@@ -229,7 +235,11 @@ pub fn format_fact(fact: &Json) -> Result<FormattedFact, FactError> {
             (text, wire.tone.unwrap_or(Tone::Neutral))
         }
         (None, Some(state)) => {
-            if wire.unit.is_some() || wire.noun.is_some() || wire.approx || wire.tone.is_some() {
+            if wire.unit.is_some()
+                || wire.noun.is_some()
+                || wire.approx.is_some()
+                || wire.tone.is_some()
+            {
                 return Err(FactError::Conflict(
                     "a state takes no unit, noun, approx or tone",
                 ));

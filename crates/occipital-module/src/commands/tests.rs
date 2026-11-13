@@ -145,6 +145,36 @@ fn the_contract_samples_keep_their_checksums() {
     }
 }
 
+/// The apps word every fact with `format_fact`, so it reads the contract's
+/// facts exactly as the contract's own validator does: each valid case words,
+/// with the wording and tone the contract fixes where it names them (a state
+/// such as `unavailable` or `failed`), and each invalid case is refused with
+/// the contract's code.
+#[test]
+fn format_fact_reads_the_contracts_facts() {
+    let cases: Vec<Value> =
+        serde_json::from_slice(&std::fs::read(root().join("facts.json")).unwrap()).unwrap();
+    for case in cases {
+        let name = case["name"].as_str().unwrap();
+        let worded = occipital_lang::format_fact(&case["body"]);
+        if case["valid"] == true {
+            let fact = worded.unwrap_or_else(|e| panic!("{name}: {e}"));
+            let drawn = serde_json::to_value(&fact).unwrap();
+            if let Some(text) = case.get("expected_wording") {
+                assert_eq!(&drawn["text"], text, "{name}");
+            }
+            if let Some(tone) = case.get("expected_tone") {
+                assert_eq!(&drawn["tone"], tone, "{name}");
+            }
+        } else {
+            let refused = worded
+                .err()
+                .unwrap_or_else(|| panic!("{name} was accepted"));
+            assert_eq!(refused.code(), case["code"], "{name}");
+        }
+    }
+}
+
 /// The list for a session merges every declaring module's session commands,
 /// each named by its module: the sample's merged list, in module order.
 #[tokio::test]

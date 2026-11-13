@@ -1,0 +1,8 @@
+{
+  "entry": "occ_format_fact",
+  "request": {
+    "fact_json": "{\"label\":\"Errors\",\"state\":\"unavailable\"}"
+  },
+  "status": 0,
+  "response": "{\"label\":\"Errors\",\"text\":\"Unavailable\",\"tone\":\"neutral\"}"
+}
