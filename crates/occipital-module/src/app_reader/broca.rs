@@ -4539,6 +4539,7 @@ pub(crate) mod tests {
 
     mod app_readers_1112;
     mod bounded_reads;
+    mod cache_write_split_1113;
     mod call_pins;
     mod claude_code_pages;
     mod claude_code_samples;

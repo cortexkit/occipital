@@ -1,0 +1,1 @@
+{"state":"completed","final_step_finish_reason":"stop","undelivered_steers":[],"usage":{"steps":3,"unreported_steps":0,"input_tokens":30,"cache_write_tokens":130,"output_tokens":15,"by_model":[{"provider":"stub","model":"claude-sonnet","steps":3,"unreported_steps":0,"input_tokens":30,"cache_write_tokens":130,"output_tokens":15}]},"retries_used":0}

@@ -1,0 +1,1 @@
+{"usage":{"steps":2,"unreported_steps":0,"input_tokens":20,"cache_write_tokens":100,"output_tokens":10,"by_model":[{"provider":"stub","model":"claude-sonnet","steps":2,"unreported_steps":0,"input_tokens":20,"cache_write_tokens":100,"output_tokens":10}]},"run_id":"cache-run","state":"completed","final_message":{"ordinal":2,"mid":"g4d4cd4aaa7904adc.6","text":"synthetic answer"}}
