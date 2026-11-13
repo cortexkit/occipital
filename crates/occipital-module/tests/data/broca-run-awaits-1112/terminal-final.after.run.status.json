@@ -1,0 +1,1 @@
+{"state":"error","awaits":{"party":"nobody","since_ms":1794521708844,"message":{"text":"The request is invalid.","from":"provider"}},"undelivered_steers":[],"usage":{"steps":0,"unreported_steps":0,"by_model":[]},"retries_used":0,"error":{"class":"permanent","message":"400: {\"error\":{\"message\":\"The request is invalid.\"}}","status":400,"provider_code":"request_invalid"}}

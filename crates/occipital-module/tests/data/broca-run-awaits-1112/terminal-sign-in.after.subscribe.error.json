@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":7,"sub_index":0,"incarnation":"90b53d3efb215ed856ec227aac0a6d51","digest":"38b79239114fe4d0"},"unit":{"type":"error","awaits":{"party":"person","since_ms":1794521708910,"person":{"action":"sign_in"}},"error":{"class":"permanent","message":"Sign in.","provider_code":"auth_required"}},"seq":5,"event":{"type":"display_reset"}}

@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":7,"sub_index":0,"incarnation":"3a3f198c144fd3af74cbe5db4900c76b","digest":"23769c659c927804"},"unit":{"type":"error","awaits":{"party":"caller","since_ms":1794521708711},"error":{"class":"transient","message":"Account limited.","provider_code":"account_limit_exhausted"}},"seq":5,"event":{"type":"display_reset"}}

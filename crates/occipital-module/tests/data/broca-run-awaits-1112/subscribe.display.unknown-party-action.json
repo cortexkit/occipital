@@ -1,0 +1,1 @@
+{"kind":"display","event":{"type":"run_status","run_id":"run","state":"active","awaits":{"party":"future_party","since_ms":42,"person":{"action":"future_action"}}},"seq":4}

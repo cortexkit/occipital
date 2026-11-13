@@ -884,7 +884,7 @@ fn run_awaits_samples() -> Value {
 /// out here from the contract's own field list rather than with the reader's
 /// code: the camelCase spelling, and `message` for every source the contract
 /// names, never one it doesn't.
-fn expected_last_run(state: &Value) -> Value {
+pub(super) fn expected_last_run(state: &Value) -> Value {
     let mut expected = json!({"runId": state["run_id"], "state": state["state"]});
     for (wire, app) in [
         ("reason", "reason"),

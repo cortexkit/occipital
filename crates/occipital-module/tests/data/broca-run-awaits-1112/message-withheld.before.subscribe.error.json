@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":3,"sub_index":0,"incarnation":"f7c9c678-8161-4145-8589-b6208894d900","digest":"ee31540901a0e585"},"unit":{"type":"error","error":{"class":"permanent","message":"websocket error: response body omitted","status":400,"provider_code":"request_invalid"}},"seq":5,"event":{"type":"display_reset"}}

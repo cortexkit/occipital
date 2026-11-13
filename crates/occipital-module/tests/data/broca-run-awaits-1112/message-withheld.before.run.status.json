@@ -1,0 +1,1 @@
+{"state":"error","undelivered_steers":[],"usage":{"steps":0,"unreported_steps":0,"by_model":[]},"retries_used":0,"error":{"class":"permanent","message":"websocket error: response body omitted","status":400,"provider_code":"request_invalid"}}

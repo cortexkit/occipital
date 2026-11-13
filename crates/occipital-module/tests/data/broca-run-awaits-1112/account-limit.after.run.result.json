@@ -1,0 +1,1 @@
+{"auth_selection":"oauth:stub:work","usage":{"steps":0,"unreported_steps":0,"by_model":[]},"run_id":"r1","state":"paused","reason":"account_limit","error":{"class":"transient","message":"account window exhausted","status":429,"provider_code":"account_limit_exhausted","resets_at_ms":1794519160872,"account_ref":"acct-a","credential_id":"oauth:stub:work"}}

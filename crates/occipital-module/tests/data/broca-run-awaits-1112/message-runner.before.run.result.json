@@ -1,0 +1,1 @@
+{"usage":{"steps":0,"unreported_steps":0,"by_model":[]},"run_id":"r1","state":"error","error":{"class":"transient","message":"the ChatGPT backend ended the response at its 900 s limit; send a smaller turn or lower reasoning effort","provider_code":"response_deadline"}}

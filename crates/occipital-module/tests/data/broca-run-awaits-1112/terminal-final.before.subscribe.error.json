@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":3,"sub_index":0,"incarnation":"b9560d7c-8841-41d8-8979-f9de799f2824","digest":"74a723f2b6ea5ef3"},"unit":{"type":"error","error":{"class":"permanent","message":"400: {\"error\":{\"message\":\"The request is invalid.\"}}","status":400,"provider_code":"request_invalid"}},"seq":5,"event":{"type":"display_reset"}}

@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":3,"sub_index":1,"incarnation":"907ec38e-1899-4a70-8da3-8ecb3c1169d6","digest":"1e960f99e83b5f05"},"unit":{"type":"run_finished","run_id":"r1","reason":"error","retries_used":0},"seq":6,"event":{"type":"run_finished","run_id":"r1","reason":"error"}}

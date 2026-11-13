@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":3,"sub_index":0,"incarnation":"07fe9ae1-3f40-4f25-987a-d258bfb01dae","digest":"7aa49653a7502726"},"unit":{"type":"error","error":{"class":"permanent","message":"synthetic error without a provider code","status":400}},"seq":5,"event":{"type":"display_reset"}}

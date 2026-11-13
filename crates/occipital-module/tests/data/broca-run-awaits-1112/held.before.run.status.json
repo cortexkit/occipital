@@ -1,0 +1,1 @@
+{"state":"active","usage":{"steps":1,"unreported_steps":0,"input_tokens":100,"output_tokens":20,"by_model":[{"provider":"stub","model":"m","steps":1,"unreported_steps":0,"input_tokens":100,"output_tokens":20}]},"held_calls":[{"call_key":"aa3cf05f-7754-4f6e-9136-8e1d4df756be:5","tool":"read","provider":"tools","reason":"running","held_at_ms":1794519100815}]}

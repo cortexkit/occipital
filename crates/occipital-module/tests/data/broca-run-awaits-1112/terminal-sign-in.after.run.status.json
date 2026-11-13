@@ -1,0 +1,1 @@
+{"state":"error","awaits":{"party":"person","since_ms":1794521708910,"person":{"action":"sign_in"}},"undelivered_steers":[],"usage":{"steps":0,"unreported_steps":0,"by_model":[]},"retries_used":0,"error":{"class":"permanent","message":"Sign in.","provider_code":"auth_required"}}

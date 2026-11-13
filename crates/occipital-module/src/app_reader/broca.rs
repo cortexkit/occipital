@@ -4556,6 +4556,7 @@ pub(crate) mod tests {
     mod read_role_samples;
     mod request_context;
     mod request_context_samples;
+    mod run_awaits_1112;
     mod runner_0842_samples;
     mod send_ids_1110;
     mod signed_reasoning_cause_1112;
