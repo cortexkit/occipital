@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":3,"sub_index":0,"incarnation":"0b131ac5-9308-4a5e-ac6f-7b732b4ae499","digest":"a297449657596726"},"unit":{"type":"error","error":{"class":"transient","message":"synthetic codeless provider refusal","status":503,"provider_code":"transient","provider_subcode":"upstream_detail","provider_details":{}}},"seq":5,"event":{"type":"display_reset"}}

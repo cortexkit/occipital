@@ -61,7 +61,7 @@ fn the_run_awaits_samples_keep_their_checksums() {
 /// The app's spelling of a head's `last_run_error`, written out from the
 /// fields the reader passes: class, its waits, and a provider code only when
 /// the runner contract names it.
-fn expected_error(error: &Value) -> Value {
+pub(super) fn expected_error(error: &Value) -> Value {
     let mut expected = json!({"class": error["class"]});
     for (wire, app) in [
         ("retry_after_secs", "retryAfterSecs"),

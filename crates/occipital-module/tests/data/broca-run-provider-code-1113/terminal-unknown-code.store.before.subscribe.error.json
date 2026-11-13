@@ -1,0 +1,1 @@
+{"kind":"control","cursor":{"wal_seq":7,"sub_index":0,"incarnation":"4ceee4e5eca0e7e821d895d5ed590374","digest":"f8f3af7ed1c691b7"},"unit":{"type":"error","error":{"class":"permanent","message":"synthetic codeless provider refusal","status":400,"provider_subcode":"upstream_detail","provider_details":{}}},"seq":5,"event":{"type":"display_reset"}}

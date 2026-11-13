@@ -1,0 +1,1 @@
+{"state":"error","undelivered_steers":[],"usage":{"steps":0,"unreported_steps":0,"by_model":[]},"retries_used":0,"error":{"class":"transient","message":"synthetic codeless provider refusal","status":503,"provider_code":"transient","provider_subcode":"upstream_detail","provider_details":{}}}
