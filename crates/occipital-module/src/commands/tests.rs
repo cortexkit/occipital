@@ -645,3 +645,89 @@ fn live_command_set(set: &str, requests: usize) -> impl Fn(&str) -> Value {
     assert_eq!(read("04-details-opencode1.json")["code"], "invalid_request");
     read
 }
+
+/// Magic Context's owner commands (`tests/data/mc-user-commands-samples-v2/`,
+/// recorded by the Magic Context module's own command handlers and copied
+/// unchanged; its README says how they were made): the
+/// relay keeps every one of its 30 declarations, lists each under its
+/// subject's kind, and every preview and run reply decodes as the contract's,
+/// with facts and table cells the apps can word.
+#[tokio::test]
+async fn magic_contexts_owner_commands_relay_whole() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/mc-user-commands-samples-v2");
+    let read = |name: &str| -> Value {
+        serde_json::from_slice(&std::fs::read(root.join(name)).unwrap()).unwrap()
+    };
+    let sums = std::fs::read_to_string(root.join("SHA256SUMS")).unwrap();
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(root.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+
+    let fake = Arc::new(Fake::default());
+    *fake.declaring.lock().unwrap() = BTreeMap::from([("magic-context".into(), "0.50.0".into())]);
+    fake.answer(
+        "magic-context",
+        "commands.describe",
+        Answer::Reply(read("describe.json")),
+    );
+    let commands = Commands::new(fake);
+    let mut counts = BTreeMap::new();
+    for subject in [
+        json!({"kind": "computer"}),
+        json!({"kind": "workspace", "workspace_id": "ws-1"}),
+        json!({"kind": "project", "project_id": "pj-1"}),
+        json!({"kind": "agent", "agent_id": "agent_1"}),
+        json!({"kind": "session", "session": {"runner": "broca", "harness": "broca", "session": "s"}}),
+    ] {
+        let kind = subject["kind"].as_str().unwrap().to_owned();
+        let listed = commands.list(json!({ "subject": subject })).await.unwrap();
+        counts.insert(kind, listed["commands"].as_array().unwrap().len());
+    }
+    assert_eq!(
+        counts,
+        BTreeMap::from([
+            ("agent".to_owned(), 5),
+            ("computer".to_owned(), 7),
+            ("project".to_owned(), 10),
+            ("session".to_owned(), 3),
+            ("workspace".to_owned(), 5),
+        ]),
+        "all 30 declarations survive the relay's checks"
+    );
+
+    let draws = |fact: &Value, name: &str| {
+        occipital_lang::format_fact(fact)
+            .unwrap_or_else(|error| panic!("{name}: {fact}: {error:?}"));
+    };
+    let mut replies = 0;
+    for line in sums.lines() {
+        let name = line.split_once("  ").unwrap().1;
+        let reply = read(name);
+        if name.ends_with("-preview.json") || name.ends_with("-preview-locked.json") {
+            serde_json::from_value::<contract::Preview>(reply.clone()).unwrap();
+            for fact in reply["facts"].as_array().into_iter().flatten() {
+                draws(fact, name);
+            }
+            for row in reply["table"]["rows"].as_array().into_iter().flatten() {
+                for cell in row["cells"].as_array().unwrap() {
+                    let mut fact = cell.clone();
+                    fact["label"] = row["label"].clone();
+                    draws(&fact, name);
+                }
+            }
+            replies += 1;
+        } else if name.ends_with("-run.json") || name == "preview-stale.json" {
+            serde_json::from_value::<contract::RunReply>(reply.clone()).unwrap();
+            for fact in reply["facts"].as_array().into_iter().flatten() {
+                draws(fact, name);
+            }
+            replies += 1;
+        } else if name != "describe.json" {
+            assert!(reply["code"].is_string(), "{name}");
+        }
+    }
+    assert_eq!(read("preview-stale.json")["outcome"], "preview_stale");
+    assert_eq!(replies, 32);
+}
