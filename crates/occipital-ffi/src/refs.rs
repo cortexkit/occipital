@@ -1,5 +1,5 @@
-//! `occ_text_references`: the issue and pull request mentions in a text, for
-//! the app to draw as links. The rules are cortexkit-occipital-refs'; this
+//! `occ_text_references`: the issue, pull request and `@NAME` mentions in a
+//! text, for the app to draw as links and chips. The rules are cortexkit-occipital-refs'; this
 //! file only decodes the project and encodes the answer.
 
 use std::ffi::c_char;
@@ -139,23 +139,24 @@ mod tests {
         assert_eq!(status, OCC_OK);
         assert_eq!(
             json.unwrap(),
-            r#"{"rules":1,"references":[{"start":9,"end":16,"kind":"issue","target":"https://github.com/cortexkit/occipital/issues/499"}]}"#
+            r#"{"rules":2,"references":[{"start":9,"end":16,"kind":"issue","target":"https://github.com/cortexkit/occipital/issues/499"}]}"#
         );
     }
 
-    /// JSON `null` is text with no project: only `owner/repo#N` links.
+    /// JSON `null` is text with no project: only `owner/repo#N` links, and
+    /// `@NAME`, which needs no project.
     #[test]
     fn null_is_text_with_no_project() {
-        let (status, json) = call(b"PR 4 and cortexkit/aft#12", Some("null"));
+        let (status, json) = call(b"PR 4 and cortexkit/aft#12, @CKDESK", Some("null"));
         assert_eq!(status, OCC_OK);
         assert_eq!(
             json.unwrap(),
-            r#"{"rules":1,"references":[{"start":9,"end":25,"kind":"repository_issue","target":"https://github.com/cortexkit/aft/issues/12"}]}"#
+            r#"{"rules":2,"references":[{"start":9,"end":25,"kind":"repository_issue","target":"https://github.com/cortexkit/aft/issues/12"},{"start":27,"end":34,"kind":"mention","target":"CKDESK"}]}"#
         );
         let (status, json) = call(b"PR 4", Some("{}"));
         assert_eq!(
             (status, json.as_deref()),
-            (OCC_OK, Some(r#"{"rules":1,"references":[]}"#))
+            (OCC_OK, Some(r#"{"rules":2,"references":[]}"#))
         );
     }
 

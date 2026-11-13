@@ -1,10 +1,10 @@
 [package]
 name = "cortexkit-occipital-refs"
-version = "0.1.0"
+version = "0.1.1"
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Finds issue and pull request mentions in agent text, so the CortexKit apps can draw them as links"
+description = "Finds issue, pull request and @agent mentions in text, so the CortexKit apps can draw them as links and chips"
 readme = "README.md"
 repository = "https://github.com/cortexkit/occipital"
 keywords = ["cortexkit", "markdown", "links", "github"]

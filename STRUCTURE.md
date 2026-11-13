@@ -11,7 +11,7 @@ crates/
   occipital-lang/        the interface language: parser, checker, evaluator, layout, fact wording (cortexkit-occipital-lang)
   occipital-ffi/         the C interface apps embed, with its round-trip vectors
   occipital-registry/    the tool template contract and the occipital-check command (cortexkit-occipital-registry)
-  occipital-refs/        issue and pull request mentions for links, no dependencies (cortexkit-occipital-refs)
+  occipital-refs/        issue, pull request and @agent mentions for links and chips, no dependencies (cortexkit-occipital-refs)
   occipital-files/       no-replace move, file identity and free space, for placing uploads
 ports/swift/             OccipitalCore.xcframework (built, committed) and the OccipitalKit sources
 Package.swift            the OccipitalKit Swift package

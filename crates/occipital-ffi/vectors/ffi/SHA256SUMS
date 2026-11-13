@@ -1,4 +1,4 @@
-2479a5e5f1fd4529fb7087b4de3097b403c9424ed9b7a48c6bd4c482328f3945  README.md
+caaee6edc79025d66ae2cae2dc4a2aaf149c996ab3cae0819f367fb92e349b2c  README.md
 7e685b0f6d08f01426081f06dd04717be067c09156d9573be3b86b86965e7d5f  check-16.01-row-bash-1-running.json
 8575f572540104d09646644c13077386e894ab647c82e65ed2a3097f5d9b5ae4  check-16.01-row-bash-2-succeeded.json
 902e4ab8ba1303b8951b261f06ae61a0dd9def7f9d5cfa9895d65a892feb6469  check-16.01-row-bash-3-failed.json
@@ -57,5 +57,5 @@ a894c5036d918150d2d3edb3b53c37f72e275fddbc1af55bc6e8753845222361  template-bash-
 b934d8efd051d9e48e8725ad3aca3df7934855ce24efd8895bd161a5f8ca4900  template-bash-row-narrow-filled.json
 536ed06c7b5ce8595713791619aae1ca712d8fd9287fae69e1ef7f46f6acbeaf  template-bash-row-narrow-waiting.json
 eef7825e752f24fcb9222c8cf305e129cef441046b0ec50ee6f4809b0fec9a81  template-bash-row-waiting.json
-467d14516779c98b30de8e325dd4260f7198f4aa8dc61814ecf0c850305bfded  text-references.json
+5a97e39a07db5ce4ae7e1cda4495ce84d728d3381e807d05dc43508f25603af7  text-references.json
 435a0e94bff9e88e5be54e29d2656796038e453b49eaaf4ce8c691fcdf60f171  version.json

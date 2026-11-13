@@ -53,9 +53,10 @@ what the Slot leaves, and both trees have the same height.
 The `version` case is `occ_version` with no arguments; its request is `{}`.
 
 The `text-references` case is `occ_text_references` on a reply naming an
-issue, a pull request in another repository, and a pull request inside a
-code span, under a project record as core serves it. The rules themselves
-are pinned by the `text-references-v1` vectors of cortexkit-occipital-refs;
+issue, a pull request in another repository, a pull request inside a code
+span and an agent, under a project record as core serves it. The rules
+themselves are pinned by the `text-references-v2` vectors of
+cortexkit-occipital-refs;
 this case pins the entry point's JSON.
 
 The `format-fact-*` cases are `occ_format_fact` on one fact each: a number

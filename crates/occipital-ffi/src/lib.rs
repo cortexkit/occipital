@@ -6,7 +6,7 @@
 //! `out` pointer as a Rust-owned JSON string or an opaque handle; the `_free`
 //! functions return nothing. This crate only encodes, decodes and maps
 //! statuses; checking, evaluation and layout all stay in occipital-lang, and
-//! finding issue and pull request mentions in cortexkit-occipital-refs.
+//! finding issue, pull request and `@NAME` mentions in cortexkit-occipital-refs.
 //!
 //! Every `extern "C"` function runs its body inside `catch_unwind`, so a panic
 //! in the library never unwinds into C code (which is undefined behaviour) or

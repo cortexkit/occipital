@@ -1,6 +1,7 @@
-//! Finds mentions of issues and pull requests in text, so an app can draw
-//! them as links: "PR #499" in an agent's reply becomes a link to pull request
-//! 499 of the repository the agent works in.
+//! Finds mentions of issues, pull requests and agents in text, so an app can
+//! draw them as links or chips: "PR #499" in an agent's reply becomes a link
+//! to pull request 499 of the repository the agent works in, and `@CKDESK`
+//! names the agent CKDESK.
 //!
 //! The text itself is never changed. An app passes the text it is about to
 //! draw and the project the text belongs to, and gets back byte ranges with
@@ -15,6 +16,8 @@
 //! - `owner/repo#N` names issue or pull request N in that repository, kind
 //!   [`REPOSITORY_ISSUE`], whatever the project.
 //! - A bare `#N` names nothing: in agents' text it is usually a room post.
+//! - `@NAME` names an agent, kind [`MENTION`], with the name as typed for the
+//!   app to look up; `@all` comes back as the name `all`.
 //! - Nothing inside code (code spans and fenced code blocks), Markdown links
 //!   (inline, reference and their definitions), HTML tags, autolinks or bare
 //!   URLs is a mention.
@@ -29,7 +32,7 @@ use std::collections::{HashMap, HashSet};
 /// The version of the rules [`references`] applies. It goes up whenever the
 /// same text and project could give different references, so apps can tell
 /// which rules a set of test vectors pins.
-pub const RULES_VERSION: u32 = 1;
+pub const RULES_VERSION: u32 = 2;
 
 /// The kind of "Issue N", "PR N" and the like: an issue or pull request in
 /// the project's own repository.
@@ -38,6 +41,11 @@ pub const ISSUE: &str = "issue";
 /// The kind of `owner/repo#N`: an issue or pull request in the repository it
 /// names.
 pub const REPOSITORY_ISSUE: &str = "repository_issue";
+
+/// The kind of `@NAME`: a name, which an app draws as a chip when it names
+/// an agent it knows, comparing without regard to case. Its target is the
+/// name, without the `@`.
+pub const MENTION: &str = "mention";
 
 /// The host whose URLs version 1 knows how to build.
 const GITHUB: &str = "github.com";
@@ -67,10 +75,11 @@ pub struct Reference {
     pub start: usize,
     /// The UTF-8 byte offset just past the mention's last digit.
     pub end: usize,
-    /// [`ISSUE`] or [`REPOSITORY_ISSUE`]. Later rule versions add kinds, so
-    /// an app that doesn't know a kind should draw it as a plain link.
+    /// [`ISSUE`], [`REPOSITORY_ISSUE`] or [`MENTION`]. Later rule versions
+    /// add kinds, so an app that doesn't know a kind should draw the text as
+    /// it is.
     pub kind: &'static str,
-    /// The URL the mention links to.
+    /// The URL an issue mention links to, or the name a [`MENTION`] names.
     pub target: String,
 }
 
@@ -296,6 +305,18 @@ impl<'t> Stretch<'t> {
                 at = next;
                 continue;
             }
+            if byte == b'@' && starts_word(text, at) {
+                if let Some(name_end) = agent_name(text, at + 1, end) {
+                    found.push(Reference {
+                        start: at,
+                        end: name_end,
+                        kind: MENTION,
+                        target: text[at + 1..name_end].to_owned(),
+                    });
+                    at = name_end;
+                    continue;
+                }
+            }
             if starts_word(text, at) {
                 if let Some((mention_end, number)) = keyword_mention(text, at, end) {
                     if let Some(repository) = home {
@@ -518,6 +539,18 @@ fn number(text: &str, at: usize, end: usize) -> Option<(usize, u32)> {
         .iter()
         .fold(0u32, |value, byte| value * 10 + u32::from(byte - b'0'));
     Some((after, value))
+}
+
+/// Where the name after an `@` at `at - 1` ends: the longest run of letters,
+/// digits (any script), `_` and `-`. None when the run is empty. The name is
+/// returned as typed: whether it names an agent is for the app to look up.
+fn agent_name(text: &str, at: usize, end: usize) -> Option<usize> {
+    let length: usize = text[at..end]
+        .chars()
+        .take_while(|&c| c.is_alphanumeric() || c == '_' || c == '-')
+        .map(char::len_utf8)
+        .sum();
+    (length > 0).then_some(at + length)
 }
 
 /// Whether a mention may start at `at`: at the start of the text, or after a

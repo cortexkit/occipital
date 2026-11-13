@@ -129,9 +129,10 @@ what the Slot leaves, and both trees have the same height.
 The `version` case is `occ_version` with no arguments; its request is `{}`.
 
 The `text-references` case is `occ_text_references` on a reply naming an
-issue, a pull request in another repository, and a pull request inside a
-code span, under a project record as core serves it. The rules themselves
-are pinned by the `text-references-v1` vectors of cortexkit-occipital-refs;
+issue, a pull request in another repository, a pull request inside a code
+span and an agent, under a project record as core serves it. The rules
+themselves are pinned by the `text-references-v2` vectors of
+cortexkit-occipital-refs;
 this case pins the entry point's JSON.
 
 The `format-fact-*` cases are `occ_format_fact` on one fact each: a number
@@ -889,7 +890,7 @@ fn tool_row(
 /// `occ_text_references` under a served project record, checked against the
 /// rules crate itself so the vector can't record a wrong answer.
 fn text_references() -> Vector {
-    let text = "Fixed by PR #499 — see cortexkit/aft#12, not `PR 1`.";
+    let text = "Fixed by PR #499 — see cortexkit/aft#12, not `PR 1`. Thanks @CKDESK.";
     let project = r#"{"id":"pj-030ff29a745f4ef9","name":"occipital","repository":{"host":"github.com","owner":"cortexkit","name":"occipital"}}"#;
     let project_c = c(project);
     // SAFETY: `text` and `project_c` outlive the call; `out` is the helper's.
@@ -912,7 +913,7 @@ fn text_references() -> Vector {
         },
     );
     let answer = json(vector.ok());
-    assert_eq!(answer["references"].as_array().unwrap().len(), 2);
+    assert_eq!(answer["references"].as_array().unwrap().len(), 3);
     for (got, want) in answer["references"]
         .as_array()
         .unwrap()

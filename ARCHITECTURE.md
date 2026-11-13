@@ -3,7 +3,7 @@
 Occipital is how agents' work reaches and renders in the CortexKit phone and desktop apps. It is two things at once:
 
 - **A daemon module, `ck-occipital`** (`crates/occipital-module`), the reserved `occipital` module of the subconscious daemon (subc). It is the one module the apps use for a chat: it reads every session from the llm-runner hosting it, composes the pages and live text the apps draw, forwards sends, Stop and uploads, keeps the display data tool providers write for each call, keeps the notices modules send agents, and relays the person's commands to the modules that own them. It also serves the reply teaching, the part of a head's system prompt that teaches the interface tags.
-- **The libraries:** the interface language (`crates/occipital-lang`, published as `cortexkit-occipital-lang`), its C binding packaged for iOS (`crates/occipital-ffi`, wrapped in Swift as `OccipitalKit`) and the mention finder for links (`crates/occipital-refs`, published as `cortexkit-occipital-refs`), which the apps embed, so a reply, a tool row or a link is drawn the same way on the phone, on the desktop and in the module; and the tool template contract and checker (`crates/occipital-registry`, published as `cortexkit-occipital-registry`), which tool providers run in their CI.
+- **The libraries:** the interface language (`crates/occipital-lang`, published as `cortexkit-occipital-lang`), its C binding packaged for iOS (`crates/occipital-ffi`, wrapped in Swift as `OccipitalKit`) and the mention finder for links and chips (`crates/occipital-refs`, published as `cortexkit-occipital-refs`), which the apps embed, so a reply, a tool row, a link or a chip is drawn the same way on the phone, on the desktop and in the module; and the tool template contract and checker (`crates/occipital-registry`, published as `cortexkit-occipital-registry`), which tool providers run in their CI.
 
 `STRUCTURE.md` has the directory map and where to add new code. The module guide, `crates/occipital-module/README.md`, lists every operation.
 
@@ -94,7 +94,7 @@ The language library parses, checks, evaluates and lays out the closed interface
 - **Tool templates:** a row template reads the call's view (its record, completion and timing) and the clock only inside a fixed-size `Slot`, so a row's height never changes when they arrive. `occipital-check` gives tool providers the same checks in their CI.
 - **The phone:** `crates/occipital-ffi` exposes the library as a C interface that turns any panic into a status code, built into `ports/swift/OccipitalCore.xcframework`; `OccipitalKit` wraps it in Swift.
 - **Facts:** `format_fact` words a command preview's or result's facts ("about 18,200 tokens", "Building, 40%") and gives each a tone, so both apps draw them alike; a fact's value is never the module's own text.
-- **Links:** `crates/occipital-refs` finds "Issue N", "PR #N" and `owner/repo#N` mentions in text and returns byte ranges with URLs, from the project record core serves beside each agent. The apps draw the links; the text is never changed.
+- **Links and chips:** `crates/occipital-refs` finds "Issue N", "PR #N" and `owner/repo#N` mentions in text and returns byte ranges with URLs, from the project record core serves beside each agent, and `@NAME` mentions with the name, which the apps look up among the agents they know. The apps draw the links and chips; the text is never changed.
 
 ## Storage
 
