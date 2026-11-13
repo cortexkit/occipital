@@ -441,7 +441,9 @@ where
 ///   is passed on as the runner names it, except OpenCode 2's `synthetic`:
 ///   text OpenCode wrote in the conversation itself, which the runner contract
 ///   counts as host text whole. It is a `user` row whose parts are all host
-///   parts, with no code, so its text is never drawn as anyone's words.
+///   parts, so its text is never drawn as anyone's words. A part has a code
+///   only when the read's `host_parts` names it with one, as for the fixed
+///   texts OpenCode writes to make the model go on after an interruption.
 ///
 /// An entry whose body doesn't project stays visible as the unreadable
 /// placeholder, as on Broca.
@@ -549,9 +551,16 @@ pub fn display_rows(
                 continue;
             }
             let part = match part {
-                Part::Text(text) | Part::Injected(text) if synthetic => {
-                    Part::Host { text, code: None }
-                }
+                // Its role already makes it host text. A `host_parts` fact
+                // naming the part only gives the code for its wording.
+                Part::Text(text) | Part::Injected(text) if synthetic => Part::Host {
+                    text,
+                    code: entry
+                        .host_parts
+                        .iter()
+                        .find(|fact| fact.part == key)
+                        .and_then(|fact| fact.host_code.clone()),
+                },
                 part => match entry.host_part(part, &[key.as_str()]) {
                     Some(part) => part,
                     None => continue,

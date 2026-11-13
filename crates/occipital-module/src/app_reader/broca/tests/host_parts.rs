@@ -204,7 +204,8 @@ fn broca_entries_take_the_fact_by_part_key() {
 /// it carries no `host_parts` fact. The apps get it in the shape of a person's
 /// message that holds only host text: a `user` row with empty `text` whose
 /// only part is a host `injected` part, with no code. The phone draws nothing
-/// for that row and the desktop hides it, so the text is never anyone's words.
+/// for that row and the desktop hides it, so the text is never anyone's words,
+/// unless a code tells it what to say.
 /// OpenCode 2's other native roles keep their names.
 #[test]
 fn an_opencode2_synthetic_message_is_host_text() {
@@ -238,6 +239,48 @@ fn an_opencode2_synthetic_message_is_host_text() {
         let row = row(kind);
         assert_eq!(row["role"], kind, "{row}");
         assert_eq!(row["parts"][0]["type"], "text", "{row}");
+    }
+}
+
+/// A `host_parts` fact on an OpenCode 2 `synthetic` message names a code for
+/// the wording, such as `continued_after_interruption` for the fixed text
+/// OpenCode writes to make the model go on after an interrupted reply. The
+/// row stays host text either way; a fact naming no part of it adds nothing.
+#[test]
+fn an_opencode2_synthetic_message_takes_its_code_from_the_fact() {
+    let text = "The previous response was interrupted. Continue from where you left off \
+        without repeating completed content.";
+    let row = |facts: Value| {
+        let entry = json!({"ordinal": 1, "mid": "m1", "host_parts": facts,
+            "message": {"id": "msg_1", "type": "synthetic", "text": text}});
+        broca_entries::display_rows(
+            &[entry],
+            false,
+            broca_entries::DisplayProfile::OpenCode2,
+            &[],
+        )
+        .unwrap()
+        .remove(0)
+        .display
+    };
+    let coded = row(json!([{"part": "0", "host_code": "continued_after_interruption"}]));
+    assert_eq!(
+        (&coded["role"], &coded["text"]),
+        (&json!("user"), &json!("")),
+        "{coded}"
+    );
+    assert_eq!(
+        coded["parts"],
+        json!([{"type": "injected", "text": text, "host": true,
+            "hostCode": "continued_after_interruption", "partIndex": 0, "partKey": "0"}])
+    );
+    for facts in [
+        json!([]),
+        json!([{"part": "7", "host_code": "continued_after_interruption"}]),
+    ] {
+        let row = row(facts);
+        assert_eq!(row["parts"][0]["host"], true, "{row}");
+        assert!(row["parts"][0].get("hostCode").is_none(), "{row}");
     }
 }
 

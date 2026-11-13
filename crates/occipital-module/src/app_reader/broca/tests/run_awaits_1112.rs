@@ -143,8 +143,8 @@ fn run_status_keeps_its_state() {
 /// What each subscribe frame does in this reader: control frames stay
 /// control frames and map as before, the wait riding beside what the reader
 /// reads. A retry wait comes as a display frame (`kind: "display"`, the
-/// lossy stream of live words), `run_status`, which resets the live view, so
-/// the abandoned attempt's words don't stay on screen.
+/// lossy stream of live words), `run_status`, which leaves the live view
+/// alone; only the `display_reset` the runner sends clears words.
 #[test]
 fn subscribe_frames_map_as_before() {
     let frames = names(".json")
@@ -156,8 +156,12 @@ fn subscribe_frames_map_as_before() {
     for name in &frames {
         let after = body(name);
         if after["kind"] == "display" {
-            let reset = matches!(mapped(&after), Some(Some(DisplayInput::Reset)));
-            assert!(reset, "{name}");
+            let expected = match after["event"]["type"].as_str() {
+                Some("run_status") => None,
+                Some("display_reset") => Some(DisplayInput::Reset),
+                other => panic!("{name}: {other:?}"),
+            };
+            assert_eq!(mapped(&after), Some(expected), "{name}");
             continue;
         }
         assert_eq!(after["kind"], "control", "{name}");
