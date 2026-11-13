@@ -4563,6 +4563,7 @@ pub(crate) mod tests {
     mod model_fallback_1113;
     mod moved_calls;
     mod notice_writer_1107;
+    mod open_transient_1113;
     mod read_role_samples;
     mod request_context;
     mod request_context_samples;
