@@ -143,9 +143,8 @@ fn run_status_keeps_its_state() {
 /// What each subscribe frame does in this reader: control frames stay
 /// control frames and map as before, the wait riding beside what the reader
 /// reads. A retry wait comes as a display frame (`kind: "display"`, the
-/// lossy stream of live words), as a type the contract doesn't name there,
-/// and resets the live view, which drops the abandoned attempt's words, as an
-/// unknown display type must.
+/// lossy stream of live words), `run_status`, which resets the live view, so
+/// the abandoned attempt's words don't stay on screen.
 #[test]
 fn subscribe_frames_map_as_before() {
     let frames = names(".json")
@@ -173,4 +172,37 @@ fn subscribe_frames_map_as_before() {
             assert_eq!(mapped(&after), mapped(&before), "{name}");
         }
     }
+}
+
+/// Every display `run_status` makes the chat's watches re-read the head,
+/// where the wait is recorded; other display frames don't. The samples hold
+/// four: one starting a retry wait, one clearing it, one sent to a subscriber
+/// that reconnected after the retry's next attempt time had passed, and one
+/// whose `awaits.party` (who ends the wait) is a value this reader doesn't
+/// know.
+#[test]
+fn a_display_run_status_rereads_the_head() {
+    let statuses: Vec<String> = names(".json")
+        .into_iter()
+        .filter(|name| {
+            name.contains("subscribe.display.") && !name.ends_with("subscribe.display.json")
+        })
+        .collect();
+    assert_eq!(statuses.len(), 4);
+    let rereads = |frame: Value| {
+        let source = BrocaSource::new(resolved(), FakeRoute::new());
+        let mut changes = source.changes();
+        changes.mark_unchanged();
+        assert!(source.observe(frame));
+        changes.has_changed().unwrap()
+    };
+    for name in &statuses {
+        let frame = body(name);
+        assert_eq!(frame["event"]["type"], "run_status", "{name}");
+        assert!(rereads(frame), "{name}");
+    }
+    let other = |event: &str| json!({"kind": "display", "event": {"type": event}, "seq": 1});
+    assert!(!rereads(other("display_reset")));
+    assert!(!rereads(json!({"kind": "display", "seq": 2,
+        "event": {"type": "text_delta", "mid": "m1", "delta": "Hi"}})));
 }

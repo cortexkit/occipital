@@ -207,9 +207,9 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-role-llm-runner"
-version = "0.8.46"
+version = "0.8.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7ca7160d221aaf1fe5e328b764c676c9a441b8ac6e89cbfb8dbd7abf6ae71c2"
+checksum = "21739e201d7de17e7a5df222d4e828a3ca3bf203b26f09b34646ab54faa2b4e0"
 dependencies = [
  "cortexkit-rich-ui-syntax",
  "cortexkit-role-tool-provider 0.15.0",

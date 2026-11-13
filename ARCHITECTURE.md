@@ -38,7 +38,7 @@ A page's version moves only when the runner's history counter or log identity do
 
 ## Live text and tool frames
 
-Each open chat has one subscription to its runner's live events, shared by every app watching it (`app_reader/display_hub.rs`). Text arrives in a ring that batches deltas for 300 ms; a watch or read that starts mid-reply first gets the text written so far. A reader that opts in with `acceptToolFrames` also gets a frame for each call as it starts and ends, matched to the stored part by `callId`; a run that ends with calls still running marks them unanswered. A run's end ends the live view only when it names the run that is running, since a new run's start can arrive before the previous run's end.
+Each open chat has one subscription to its runner's live events, shared by every app watching it (`app_reader/display_hub.rs`). Text arrives in a ring that batches deltas for 300 ms; a watch or read that starts mid-reply first gets the text written so far. A reader that opts in with `acceptToolFrames` also gets a frame for each call as it starts and ends, matched to the stored part by `callId`; a run that ends with calls still running marks them unanswered. A run's end ends the live view only when it names the run that is running, since a new run's start can arrive before the previous run's end. A display `run_status`, which says the run's state changed (a provider retry starting or ending), makes the chat's watches re-read the head and resets the live view, so an abandoned attempt's words never stay on screen.
 
 Watches run in a long-held pool of handler slots, so open chats never hold up reads and sends. A route may hold at most 24 watches, which leaves room for its reads and sends; the 25th is refused `watch_capacity`.
 

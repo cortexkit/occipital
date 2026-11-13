@@ -89,14 +89,24 @@ fn every_codeless_error_gets_the_code_its_class_names() {
     assert_eq!(errors, 22);
 }
 
+/// Whether the contract names `code`. Of the codes Broca now supplies from an
+/// error's class when the provider gave none, only the catch-all for a
+/// permanent error, `provider_error`, is one (llm-runner 0.8.47); `transient`
+/// and `auth_required` are not.
+fn named(code: &str) -> bool {
+    provider_codes::CODES.contains(&code)
+}
+
 /// Every head reaches the apps as `lastRun` with its wait and error, byte for
-/// byte, on details, the newest page, a claim and a watch. The derived codes
-/// aren't ones this contract version names, so `providerCode` stays out and a
-/// chat's error reads as it did before; the new store's waits are added.
+/// byte, on details, the newest page, a claim and a watch. A codeless
+/// permanent error now reads `providerCode: "provider_error"`; every other
+/// error reads as it did before. Heads from Broca's new storage also gain
+/// `lastRun.awaits`.
 #[tokio::test]
 async fn every_head_reaches_the_apps_as_its_last_run() {
     let heads = names(".session.head.json");
     assert_eq!(heads.len(), 12);
+    let mut catch_alls = 0;
     for name in &heads {
         let head = body(name);
         let state = head["last_run_state"].clone();
@@ -105,36 +115,49 @@ async fn every_head_reaches_the_apps_as_its_last_run() {
         if let Some(error) = &error {
             expected["error"] = expected_error(error);
             if let Some(code) = error["provider_code"].as_str() {
-                assert!(!provider_codes::CODES.contains(&code), "{name}: {code}");
+                assert_eq!(named(code), code == "provider_error", "{name}: {code}");
             }
         }
         let expected = serde_json::to_string(&expected).unwrap();
         assert_last_run_phone_bytes(state, error, &expected).await;
         if name.contains(".after.") {
-            let before = before(name);
             let error = |head: &Value| head.get("last_run_error").map(expected_error);
-            assert_eq!(error(&head), error(&before), "{name}");
+            let mut before = error(&before(name));
+            if let (Some(before), Some(after)) = (&mut before, error(&head)) {
+                if after.get("providerCode").is_some() {
+                    assert_eq!(after["providerCode"], "provider_error", "{name}");
+                    before["providerCode"] = after["providerCode"].clone();
+                    catch_alls += 1;
+                }
+            }
+            assert_eq!(error(&head), before, "{name}");
         }
     }
+    // The codeless permanent ending, on each storage.
+    assert_eq!(catch_alls, 2);
 }
 
 /// A queued send's ended turn takes `run.status`'s code only when the
-/// contract names it, so these derived codes leave it listed with its reason
-/// alone, as before; and Stop's `state` is unchanged.
+/// contract names it, so it now reads `provider_error` after a codeless
+/// permanent ending and is otherwise listed with its reason alone, as before;
+/// and Stop's `state` is unchanged.
 #[test]
 fn run_status_reads_as_before() {
     for name in names(".after.run.status.json") {
         let after = body(&name);
         let before = before(&name);
         assert_eq!(after["state"], before["state"], "{name}");
-        let named = |status: &Value| {
+        let taken = |status: &Value| {
             status["error"]["provider_code"]
                 .as_str()
-                .filter(|code| provider_codes::CODES.contains(code))
+                .filter(|code| named(code))
                 .map(str::to_owned)
         };
-        assert_eq!(named(&after), None, "{name}");
-        assert_eq!(named(&after), named(&before), "{name}");
+        let expected = name
+            .starts_with("terminal-unknown-code.")
+            .then(|| "provider_error".to_owned());
+        assert_eq!(taken(&after), expected, "{name}");
+        assert_eq!(taken(&before), None, "{name}");
     }
 }
 

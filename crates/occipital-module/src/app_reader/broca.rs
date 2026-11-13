@@ -1873,6 +1873,14 @@ impl BrocaSource {
                 event["delta"] = event["text"].clone();
             }
         }
+        // A display `run_status` says the live run's state changed, such as a
+        // provider retry starting or ending (llm-runner 0.8.47). It carries no
+        // record of its own, so the chat's watches re-read the head, which is.
+        if normalized["kind"] == "display"
+            && name == cortexkit_role_llm_runner::live::event_types::RUN_STATUS
+        {
+            self.bump();
+        }
         if normalized["kind"] == "control" {
             if matches!(name.as_str(), "run_started" | "run_finished" | "run_paused") {
                 // A control event wakes the reader; only the next durable head

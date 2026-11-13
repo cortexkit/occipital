@@ -98,6 +98,11 @@ const EVENT_NAMES: &[(&str, &str, Effect)] = &[
     ("display", "tool_input_delta", Effect::Ignore),
     ("display", "display_gap", Effect::Gap),
     ("display", "display_reset", Effect::Reset),
+    // The live run's state changed (llm-runner 0.8.47); the module re-reads
+    // the head on it. A runner sends it when a provider retry abandons an
+    // attempt, so the live view resets: the abandoned attempt's words never
+    // stay on screen.
+    ("display", "run_status", Effect::Reset),
     ("control", "message_started", Effect::Start),
     ("control", "message_finished", Effect::MessageEnd),
     ("control", "tool_started", Effect::ToolStarted),
