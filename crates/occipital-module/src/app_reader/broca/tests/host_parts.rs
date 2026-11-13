@@ -314,3 +314,52 @@ fn a_recorded_interrupt_marker_leaves_the_persons_bubble() {
     assert_eq!(row["text"], "Call echo, then wait for it.", "{row}");
     assert_eq!(row["parts"][0]["hostCode"], "interrupted", "{row}");
 }
+
+/// The contract's samples for codes on native `synthetic` rows (runner
+/// contract 0.8.48). The coded continuation reaches the apps as a person's
+/// row of host text whose part carries the code. A `system` row the contract
+/// refuses a code on keeps reading as before: its fact is left out, and its
+/// text is shown as the system's own, with no host mark.
+#[test]
+fn the_contract_synthetic_cases_carry_their_codes() {
+    let file = vector("display-synthetic-host-codes.json");
+    let row = |entry: &Value| {
+        broca_entries::display_rows(
+            std::slice::from_ref(entry),
+            false,
+            broca_entries::DisplayProfile::OpenCode2,
+            &[],
+        )
+        .unwrap()
+        .remove(0)
+        .display
+    };
+    let cases = file["cases"].as_array().unwrap();
+    assert_eq!(cases.len(), 1);
+    for case in cases {
+        let row = row(&case["read"]);
+        let part = &case["row"]["parts"][0];
+        assert_eq!(
+            (&row["role"], &row["text"]),
+            (&json!("user"), &json!("")),
+            "{row}"
+        );
+        assert_eq!(
+            row["parts"],
+            json!([{"type": "injected", "text": part["text"], "host": true,
+                "hostCode": part["host_code"], "partIndex": 0, "partKey": part["part"]}]),
+            "{}",
+            case["name"]
+        );
+    }
+    let refused = file["invalid_cases"].as_array().unwrap();
+    assert_eq!(refused.len(), 1);
+    for case in refused {
+        let row = row(&case["read"]);
+        assert_eq!(row["role"], "system", "{row}");
+        assert_eq!(row["text"], case["read"]["message"]["text"], "{row}");
+        assert_eq!(row["parts"][0]["type"], "text", "{row}");
+        assert!(row["parts"][0].get("host").is_none(), "{row}");
+        assert!(row["parts"][0].get("hostCode").is_none(), "{row}");
+    }
+}

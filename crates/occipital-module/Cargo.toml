@@ -31,7 +31,7 @@ cortexkit-agent-identity = "=0.1.2"
 # The fleet log: one file a day in the module's data folder, filtered by CK_LOG.
 cortexkit-log = "0.3.6"
 cortexkit-project-identity = "=0.1.4"
-cortexkit-role-llm-runner = "=0.8.47"
+cortexkit-role-llm-runner = "=0.8.48"
 cortexkit-role-tool-display = "=0.1.4"
 cortexkit-role-tool-provider = "=0.14.6"
 # The person's commands: their declarations, previews, runs and facts.
@@ -79,6 +79,6 @@ subc-client-rs = { version = "=0.34.0", features = ["test-support"] }
 # The contract's own wake vectors, for the wake record tests.
 cortexkit-role-tool-display = { version = "=0.1.4", features = ["test-vectors"] }
 # The runner contract's own vectors, for the host-written part tests.
-cortexkit-role-llm-runner = { version = "=0.8.47", features = ["test-vectors"] }
+cortexkit-role-llm-runner = { version = "=0.8.48", features = ["test-vectors"] }
 tempfile = "3"
 tokio = { version = "1", features = ["test-util"] }
