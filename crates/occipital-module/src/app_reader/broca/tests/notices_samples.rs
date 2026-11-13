@@ -79,6 +79,7 @@ async fn the_notices_samples_are_what_the_reader_serves() {
         )
         .with_notices(slot),
     )));
+    let mut arrivals = notices.arrivals();
     app.set_notices(notices);
     let mut served = Served::new("phone-reader-notices-v1", app);
     let session = json!({"session": "ses_head", "harness": "opencode2"});
@@ -98,17 +99,7 @@ async fn the_notices_samples_are_what_the_reader_serves() {
     assert_eq!(parts[1]["callKey"], "ck_two", "{parts}");
     assert!(!String::from_utf8_lossy(&page).contains(STATUS_NOTICE));
     served.keep("01-page", &page_request, page);
-    for _ in 0..1_000 {
-        if file
-            .for_call(THALAMUS_RUNNER_MODULE_ID, "ses_head", "ck_two")
-            .unwrap()
-            .len()
-            == 2
-        {
-            break;
-        }
-        tokio::time::sleep(Duration::from_millis(1)).await;
-    }
+    told(&mut arrivals, &["ck_one", "ck_two", "ck_two"]).await;
 
     // 02: one notice on the first call, two from different modules on the
     // second in delivery order, and the third call, which none rode, left out.
@@ -379,6 +370,7 @@ async fn the_notices_v3_samples_are_what_the_reader_serves() {
         )
         .with_notices(slot),
     )));
+    let mut arrivals = notices.arrivals();
     app.set_notices(notices);
     let mut served = Served::new("phone-reader-notices-v3", app);
     let session = json!({"session": "ses_head", "harness": "opencode2"});
@@ -390,10 +382,6 @@ async fn the_notices_v3_samples_are_what_the_reader_serves() {
         json!({"method": method, "params": params})
     };
     let calls = |reply: &[u8]| decoded(reply)["result"]["calls"].clone();
-    let kept = |key: &str| {
-        file.for_call(THALAMUS_RUNNER_MODULE_ID, "ses_head", key)
-            .unwrap()
-    };
     let note = |text: &str, form: &str| json!([{"sender": "magic-context", "text": text, "deliveredAs": form}]);
 
     // 01: the page names each call by its key; neither notice is on it.
@@ -401,12 +389,7 @@ async fn the_notices_v3_samples_are_what_the_reader_serves() {
     let page = served.read(1, &page_request).await;
     assert!(!String::from_utf8_lossy(&page).contains(TURN_NOTE));
     served.keep("01-page", &page_request, page);
-    for _ in 0..1_000 {
-        if !kept("ck_two").is_empty() {
-            break;
-        }
-        tokio::time::sleep(Duration::from_millis(1)).await;
-    }
+    told(&mut arrivals, &["ck_one", "ck_two"]).await;
 
     // 02: a ride under the first call and a turn note after the second.
     let read_request = request(
@@ -483,4 +466,24 @@ async fn the_notices_v3_samples_are_what_the_reader_serves() {
     served.keep("09-notices-corrected", &fixed_request, fixed);
 
     served.check();
+}
+
+/// Wait until the notice writer has told its watches about one notice for
+/// each entry of `keys` (a key twice for two notices on that call). The writer
+/// puts a notice in the file before it tells the watches, so a watch opened as
+/// soon as the file holds the notice can still hear that older hint, ahead of
+/// the one a test checks.
+async fn told(
+    arrivals: &mut tokio::sync::broadcast::Receiver<crate::notices::Arrived>,
+    keys: &[&str],
+) {
+    let mut left: Vec<&str> = keys.to_vec();
+    while !left.is_empty() {
+        let arrived = tokio::time::timeout(Duration::from_secs(5), arrivals.recv())
+            .await
+            .expect("the notice writer told no watch in time")
+            .unwrap();
+        let at = left.iter().position(|key| *key == arrived.call_key);
+        left.remove(at.unwrap_or_else(|| panic!("an unexpected hint for {}", arrived.call_key)));
+    }
 }
