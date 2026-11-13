@@ -4551,6 +4551,7 @@ pub(crate) mod tests {
     mod head_provider_code_1112;
     mod head_selection_samples;
     mod imported_heads_1110;
+    mod model_fallback_1113;
     mod moved_calls;
     mod notice_writer_1107;
     mod read_role_samples;

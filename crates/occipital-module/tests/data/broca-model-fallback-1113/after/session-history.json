@@ -1,0 +1,102 @@
+{
+  "history_version": 1,
+  "incarnation": "b593e16e3b70a4c726920f2c0c0dfbf6",
+  "messages": [
+    {
+      "mid": "gaa260a24a5b38659.5",
+      "ordinal": 1,
+      "part_keys": [
+        "m0#0"
+      ],
+      "row": {
+        "parts": [
+          {
+            "part": "m0#0",
+            "text": "answer",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "text": "answer"
+      },
+      "written_at": 1794535274104
+    },
+    {
+      "mid": "gaa260a24a5b38659.6",
+      "ordinal": 2,
+      "part_keys": [
+        "m1#0"
+      ],
+      "row": {
+        "model": "stub/m",
+        "output_refs": {
+          "count": 0,
+          "dialect": "rich-ui/1",
+          "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "mid": "gaa260a24a5b38659.6",
+          "set_id": "h1.YjU5M2UxNmUzYjcwYTRjNzI2OTIwZjJjMGMwZGZiZjY.0/m1"
+        },
+        "parts": [
+          {
+            "part": "m1#0",
+            "text": "claude-opus-4-8 is only text here.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "claude-opus-4-8 is only text here."
+      },
+      "written_at": 1
+    },
+    {
+      "mid": "gaa260a24a5b38659.13",
+      "ordinal": 3,
+      "part_keys": [
+        "m2#0"
+      ],
+      "row": {
+        "parts": [
+          {
+            "part": "m2#0",
+            "text": "answer",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "text": "answer"
+      },
+      "written_at": 1794535274112
+    },
+    {
+      "mid": "gaa260a24a5b38659.14",
+      "ordinal": 4,
+      "part_keys": [
+        "m3#0"
+      ],
+      "row": {
+        "model": "stub/claude-opus-4-8",
+        "model_fallback": {
+          "answered": "stub/claude-opus-4-8",
+          "requested": "stub/m"
+        },
+        "output_refs": {
+          "count": 0,
+          "dialect": "rich-ui/1",
+          "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "mid": "gaa260a24a5b38659.14",
+          "set_id": "h1.YjU5M2UxNmUzYjcwYTRjNzI2OTIwZjJjMGMwZGZiZjY.0/m3"
+        },
+        "parts": [
+          {
+            "part": "m3#0",
+            "text": "The fallback answer.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "The fallback answer."
+      },
+      "written_at": 1
+    }
+  ]
+}

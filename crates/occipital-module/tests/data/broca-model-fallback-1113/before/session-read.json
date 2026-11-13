@@ -1,0 +1,121 @@
+{
+  "messages": [
+    {
+      "written_at": 1794532780243,
+      "ordinal": 1,
+      "mid": "gaf1f8ffa692bd8ce.5",
+      "message": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "answer"
+          }
+        ]
+      },
+      "run": {
+        "run_id": "ordinary",
+        "episode": "ordinary",
+        "final": false
+      },
+      "part_keys": [
+        "m0#0"
+      ],
+      "role": "user"
+    },
+    {
+      "written_at": 1,
+      "ordinal": 2,
+      "mid": "gaf1f8ffa692bd8ce.6",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "claude-opus-4-8 is only text here."
+          }
+        ],
+        "origin": {
+          "provider_module_id": "stub",
+          "model_id": "m"
+        }
+      },
+      "run": {
+        "run_id": "ordinary",
+        "episode": "ordinary",
+        "final": true
+      },
+      "part_keys": [
+        "m1#0"
+      ],
+      "role": "assistant"
+    },
+    {
+      "written_at": 1794532780250,
+      "ordinal": 3,
+      "mid": "gaf1f8ffa692bd8ce.13",
+      "message": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "answer"
+          }
+        ]
+      },
+      "run": {
+        "run_id": "fallback",
+        "episode": "fallback",
+        "final": false
+      },
+      "part_keys": [
+        "m2#0"
+      ],
+      "role": "user"
+    },
+    {
+      "written_at": 1,
+      "ordinal": 4,
+      "mid": "gaf1f8ffa692bd8ce.14",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "The fallback answer."
+          }
+        ],
+        "origin": {
+          "provider_module_id": "stub",
+          "model_id": "claude-opus-4-8"
+        }
+      },
+      "run": {
+        "run_id": "fallback",
+        "episode": "fallback",
+        "final": true
+      },
+      "part_keys": [
+        "m3#0"
+      ],
+      "role": "assistant"
+    }
+  ],
+  "head": {
+    "wal_seq": 19,
+    "sub_index": 0,
+    "incarnation": "c433dfb84d9237c376c4bba50b9a37bd",
+    "digest": "00a16949637cd4e3"
+  },
+  "history_version": 1,
+  "incarnation": "c433dfb84d9237c376c4bba50b9a37bd",
+  "lineage_state": {
+    "last_run_id": "fallback",
+    "state": "completed",
+    "reason": "completed",
+    "usage": {
+      "input_tokens": 200,
+      "output_tokens": 40
+    }
+  }
+}

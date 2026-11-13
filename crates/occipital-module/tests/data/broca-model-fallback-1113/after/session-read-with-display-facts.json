@@ -1,0 +1,129 @@
+{
+  "messages": [
+    {
+      "written_at": 1794535274104,
+      "ordinal": 1,
+      "mid": "gaa260a24a5b38659.5",
+      "message": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "answer"
+          }
+        ]
+      },
+      "run": {
+        "run_id": "ordinary",
+        "episode": "ordinary",
+        "final": false
+      },
+      "part_keys": [
+        "m0#0"
+      ],
+      "created_at": 1794535274104,
+      "role": "user"
+    },
+    {
+      "written_at": 1,
+      "ordinal": 2,
+      "mid": "gaa260a24a5b38659.6",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "claude-opus-4-8 is only text here."
+          }
+        ],
+        "origin": {
+          "provider_module_id": "stub",
+          "model_id": "m"
+        }
+      },
+      "run": {
+        "run_id": "ordinary",
+        "episode": "ordinary",
+        "final": true
+      },
+      "part_keys": [
+        "m1#0"
+      ],
+      "completed_at": 1,
+      "role": "assistant"
+    },
+    {
+      "written_at": 1794535274112,
+      "ordinal": 3,
+      "mid": "gaa260a24a5b38659.13",
+      "message": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "answer"
+          }
+        ]
+      },
+      "run": {
+        "run_id": "fallback",
+        "episode": "fallback",
+        "final": false
+      },
+      "part_keys": [
+        "m2#0"
+      ],
+      "created_at": 1794535274112,
+      "role": "user"
+    },
+    {
+      "written_at": 1,
+      "ordinal": 4,
+      "mid": "gaa260a24a5b38659.14",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "The fallback answer."
+          }
+        ],
+        "origin": {
+          "provider_module_id": "stub",
+          "model_id": "claude-opus-4-8"
+        }
+      },
+      "run": {
+        "run_id": "fallback",
+        "episode": "fallback",
+        "final": true
+      },
+      "part_keys": [
+        "m3#0"
+      ],
+      "model_fallback": {
+        "requested": "stub/m",
+        "answered": "stub/claude-opus-4-8"
+      },
+      "completed_at": 1,
+      "role": "assistant"
+    }
+  ],
+  "head": {
+    "wal_seq": 19,
+    "sub_index": 0,
+    "incarnation": "b593e16e3b70a4c726920f2c0c0dfbf6",
+    "digest": "466396d3244618f9"
+  },
+  "history_version": 1,
+  "incarnation": "b593e16e3b70a4c726920f2c0c0dfbf6",
+  "lineage_state": {
+    "last_run_id": "fallback",
+    "state": "completed",
+    "reason": "completed",
+    "usage": {
+      "input_tokens": 200,
+      "output_tokens": 40
+    }
+  }
+}
