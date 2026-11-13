@@ -107,18 +107,21 @@ async fn notices(served: &mut Served) -> Vec<Vec<u8>> {
     bodies
 }
 
-/// `phone-reader-host-notes-v1`: a page of the runner contract's own host-part
-/// cases (`display-host-codes.json`, numbered from ordinal 1 as runners do) on a
-/// Claude Code chat. Three of the person's messages hold only text the host
-/// wrote, each with a code (one an app won't know); the fourth holds a host part
-/// with no code before the person's own words. A message with only host parts is
-/// a `user` row with empty `text` whose only parts are host `injected` ones: the
-/// shape the apps must draw as a note, or not at all, never as a sent message.
-/// A part as the host-note test compares it: type, `host`, `hostCode`.
+/// A part as the host-note tests compare it: type, `host`, `hostCode`.
 type ShownPart = (Value, Value, Value);
 
-#[tokio::test]
-async fn the_host_note_samples_are_what_the_reader_serves() {
+/// A row as the host-note tests compare it: role, `text`, its parts and its
+/// `modelFallback`.
+type ShownRow = (Value, Value, Vec<ShownPart>, Value);
+
+/// A page of the first `cases` of the runner contract's own host-part cases
+/// (`display-host-codes.json`, numbered from ordinal 1 as runners do) on a
+/// Claude Code chat, served into the set `set`, with each row as the tests
+/// compare it.
+async fn host_note_page(
+    set: &'static str,
+    cases: usize,
+) -> (Served, Value, Vec<u8>, Vec<ShownRow>) {
     let file: Value = serde_json::from_str(
         cortexkit_role_llm_runner::vectors::file("display-host-codes.json").unwrap(),
     )
@@ -127,6 +130,7 @@ async fn the_host_note_samples_are_what_the_reader_serves() {
         .as_array()
         .unwrap()
         .iter()
+        .take(cases)
         .enumerate()
         .map(|(index, case)| {
             let mut entry = case["read"].clone();
@@ -134,6 +138,7 @@ async fn the_host_note_samples_are_what_the_reader_serves() {
             entry
         })
         .collect();
+    assert_eq!(chat.len(), cases);
     let route = FakeRoute::new();
     *route.entries.lock().unwrap() = chat;
     *route.run_state.lock().unwrap() = Value::Null;
@@ -143,12 +148,12 @@ async fn the_host_note_samples_are_what_the_reader_serves() {
             Arc::new(AnyHarness(route.clone())),
         ),
     )));
-    let mut served = Served::new("phone-reader-host-notes-v1", app);
+    let mut served = Served::new(set, app);
     let request = json!({"method": super::super::super::TRANSCRIPT_PAGE,
         "params": {"session": "ses_head", "harness": "claude-code", "limit": 50}});
     let reply = served.read(1, &request).await;
     let rows = decoded(&reply)["result"]["messages"].clone();
-    let shown: Vec<(Value, Value, Vec<ShownPart>)> = rows
+    let shown = rows
         .as_array()
         .unwrap()
         .iter()
@@ -165,31 +170,80 @@ async fn the_host_note_samples_are_what_the_reader_serves() {
                     )
                 })
                 .collect();
-            (row["role"].clone(), row["text"].clone(), parts)
+            (
+                row["role"].clone(),
+                row["text"].clone(),
+                parts,
+                row["modelFallback"].clone(),
+            )
         })
         .collect();
-    let host = |code: Value| (json!("injected"), json!(true), code);
-    assert_eq!(
-        shown,
-        [
-            (json!("user"), json!(""), vec![host(json!("interrupted"))]),
-            (
-                json!("user"),
-                json!(""),
-                vec![host(json!("interrupted_for_tool_use"))]
-            ),
-            (
-                json!("user"),
-                json!(""),
-                vec![host(json!("future_notice_7"))]
-            ),
-            (
-                json!("user"),
-                json!("Person's words."),
-                vec![host(Value::Null), (json!("text"), Value::Null, Value::Null)]
-            ),
-        ]
-    );
+    (served, request, reply, shown)
+}
+
+fn host(code: Value) -> ShownPart {
+    (json!("injected"), json!(true), code)
+}
+
+/// The person's messages of `display-host-codes.json`'s first four cases, as
+/// the apps get them.
+fn host_note_rows() -> Vec<ShownRow> {
+    let user = |text: &str, parts| (json!("user"), json!(text), parts, Value::Null);
+    vec![
+        user("", vec![host(json!("interrupted"))]),
+        user("", vec![host(json!("interrupted_for_tool_use"))]),
+        user("", vec![host(json!("future_notice_7"))]),
+        user(
+            "Person's words.",
+            vec![host(Value::Null), (json!("text"), Value::Null, Value::Null)],
+        ),
+    ]
+}
+
+/// `phone-reader-host-notes-v1`: the first four cases. Three of the person's
+/// messages hold only text the host wrote, each with a code (one an app won't
+/// know); the fourth holds a host part with no code before the person's own
+/// words. A message with only host parts is a `user` row with empty `text`
+/// whose only parts are host `injected` ones: the shape the apps must draw as a
+/// note, or not at all, never as a sent message.
+#[tokio::test]
+async fn the_host_note_samples_are_what_the_reader_serves() {
+    let (mut served, request, reply, shown) = host_note_page("phone-reader-host-notes-v1", 4).await;
+    assert_eq!(shown, host_note_rows());
+    served.keep("01-page-host-notes", &request, reply);
+    served.check();
+}
+
+/// `phone-reader-host-notes-v2`: all seven cases of runner contract 0.8.46,
+/// which add three replies. The host's own reasoning blocks in a reply are left
+/// out, so a reply whose only part was one has no parts at all. A reply
+/// another model wrote in place of the one asked for carries `modelFallback`,
+/// from a boundary marker that parses or from the runner's own record; a
+/// marker that doesn't parse names no models.
+#[tokio::test]
+async fn the_host_note_v2_samples_are_what_the_reader_serves() {
+    let (mut served, request, reply, shown) = host_note_page("phone-reader-host-notes-v2", 7).await;
+    let reply_row = |text: &str, fallback: Value| {
+        let parts = if text.is_empty() {
+            vec![]
+        } else {
+            vec![(json!("text"), Value::Null, Value::Null)]
+        };
+        (json!("assistant"), json!(text), parts, fallback)
+    };
+    let mut expected = host_note_rows();
+    expected.extend([
+        reply_row(
+            "The model's reply.",
+            json!({"requested": "claude-fable-5-2", "answered": "claude-opus-4-8"}),
+        ),
+        reply_row("", Value::Null),
+        reply_row(
+            "A replacement reply.",
+            json!({"requested": "provider/requested", "answered": "provider/answered"}),
+        ),
+    ]);
+    assert_eq!(shown, expected);
     served.keep("01-page-host-notes", &request, reply);
     served.check();
 }

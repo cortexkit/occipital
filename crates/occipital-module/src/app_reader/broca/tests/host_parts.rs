@@ -5,6 +5,12 @@
 //! exactly. The apps get each as an `injected` part marked `host`, with its
 //! `hostCode`, and its text stays out of the row's `text`, which the phone
 //! draws the person's bubble from.
+//!
+//! A host can also write parts into a reply (runner contract 0.8.46): the
+//! empty reasoning blocks that record that a fallback model answered. Those
+//! are bookkeeping, not anyone's words, so the apps don't get them at all.
+//! The runner's `model_fallback` fact names both models instead, and the row
+//! carries it as `modelFallback` for a quiet note under the reply.
 
 use super::*;
 use cortexkit_role_llm_runner::vectors;
@@ -27,22 +33,35 @@ fn row(entry: &Value) -> Value {
     .display
 }
 
-/// Every host part in the contract's cases becomes a host `injected` part
-/// with its code, when it has one, and the row's text keeps only the sender's
-/// words. The text of a coded part is kept too, as the fallback for a code an
-/// app doesn't know.
+/// The contract's cases: in a user message, every host part becomes a host
+/// `injected` part with its code, when it has one, and the row's text keeps
+/// only the sender's words. The text of a coded part is kept too, as the
+/// fallback for a code an app doesn't know. In a reply, a host part is left
+/// out, and `model_fallback` reaches the row as `modelFallback` only when
+/// the read names it: a boundary marker that doesn't parse names none.
 #[test]
 fn the_contract_cases_serve_host_parts_apart_from_the_persons_words() {
     let file = vector("display-host-codes.json");
     let cases = file["cases"].as_array().unwrap();
-    assert_eq!(cases.len(), 4);
+    assert_eq!(cases.len(), 7);
+    let mut fallbacks = 0;
     for case in cases {
         let name = case["name"].as_str().unwrap();
         let row = row(&case["read"]);
+        let reply = case["read"]["role"] == "assistant";
+        let fallback = &case["row"]["model_fallback"];
+        assert_eq!(fallback, &case["read"]["model_fallback"], "{name}");
+        if fallback.is_null() {
+            assert!(row.get("modelFallback").is_none(), "{name}: {row}");
+        } else {
+            fallbacks += 1;
+            assert_eq!(&row["modelFallback"], fallback, "{name}: {row}");
+        }
         let expected: Vec<Value> = case["row"]["parts"]
             .as_array()
             .unwrap()
             .iter()
+            .filter(|part| !(reply && part["host"] == true))
             .map(|part| {
                 let mut app = if part["host"] == true {
                     json!({"type": "injected", "text": part["text"], "host": true})
@@ -73,18 +92,81 @@ fn the_contract_cases_serve_host_parts_apart_from_the_persons_words() {
             .unwrap()
             .iter()
             .filter(|part| part["host"] != true)
+            .filter(|part| part["type"] == "text")
             .filter_map(|part| part["text"].as_str())
             .collect();
         assert_eq!(row["text"], words, "{name}");
     }
+    // The parsed boundary marker and the runner's own record.
+    assert_eq!(fallbacks, 2);
+}
+
+/// Broca names a reply's host parts by served part key too, and leaves the
+/// reasoning the model wrote after them in place.
+#[test]
+fn a_broca_reply_drops_its_host_parts_and_keeps_the_rest() {
+    let entry = json!({"mid": "m1", "ordinal": 1, "part_keys": ["k-mark", "k-think", "k-text"],
+        "message": {"role": "assistant", "content": [
+            {"type": "reasoning", "text": "\u{2060}",
+                "signature": "cortexkit-server-fallback-v1:claude-fable-5-2|claude-opus-4-8"},
+            {"type": "reasoning", "text": "Checking the file first."},
+            {"type": "text", "text": "Done."}]},
+        "host_parts": [{"part": "k-mark", "host_code": "server_fallback"}],
+        "model_fallback": {"requested": "claude-fable-5-2", "answered": "claude-opus-4-8"}});
+    let row = broca_entries::rows(&[entry], false)
+        .unwrap()
+        .remove(0)
+        .display;
+    let kinds: Vec<&Value> = row["parts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|part| &part["type"])
+        .collect();
+    assert_eq!(kinds, ["reasoning", "text"], "{row}");
+    assert_eq!(row["parts"][0]["text"], "Checking the file first.", "{row}");
+    assert_eq!(row["parts"][0]["partIndex"], 1, "{row}");
+    assert_eq!(
+        row["modelFallback"],
+        json!({"requested": "claude-fable-5-2", "answered": "claude-opus-4-8"})
+    );
+}
+
+/// A `model_fallback` the contract refuses (repeated or empty ids), or one on
+/// a message that isn't a reply, costs only the note: the message still reads
+/// whole.
+#[test]
+fn a_fallback_fact_that_doesnt_hold_is_left_out() {
+    for (role, fallback) in [
+        ("assistant", json!({"requested": "m", "answered": "m"})),
+        ("assistant", json!({"requested": "", "answered": "m"})),
+        ("assistant", json!("m")),
+        ("user", json!({"requested": "a", "answered": "b"})),
+    ] {
+        let entry = json!({"ordinal": 1, "mid": "m1", "role": role,
+            "message": {"role": role, "content": [{"type": "text", "text": "Words."}]},
+            "model_fallback": fallback});
+        for row in [
+            row(&entry),
+            broca_entries::rows(std::slice::from_ref(&entry), false)
+                .unwrap()
+                .remove(0)
+                .display,
+        ] {
+            assert_eq!(row["text"], "Words.", "{role} {fallback}: {row}");
+            assert!(
+                row.get("modelFallback").is_none(),
+                "{role} {fallback}: {row}"
+            );
+        }
+    }
 }
 
 /// A fact naming no part of the entry marks nothing, and a fact on an entry
-/// that isn't a user message is ignored: only a user message can hold text
-/// the host wrote in its sender's place.
+/// that is neither a user message nor a reply is ignored.
 #[test]
-fn a_fact_marks_only_a_user_part_it_names() {
-    for (role, key) in [("user", "missing"), ("assistant", "0")] {
+fn a_fact_marks_only_a_part_it_names() {
+    for (role, key) in [("user", "missing"), ("assistant", "missing")] {
         let entry = json!({"ordinal": 1, "mid": "m1", "role": role,
             "message": {"role": role, "content": [{"type": "text", "text": "Words."}]},
             "host_parts": [{"part": key}]});

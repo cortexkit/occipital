@@ -39,7 +39,9 @@ use std::collections::{HashMap, VecDeque};
 
 use cortexkit_role_llm_runner::archive_prunes_reasoning::{kinds, PrunedReasoning};
 use cortexkit_role_llm_runner::attribution::{self, Attribution};
-use cortexkit_role_llm_runner::display::{self, DisplayPart, DisplayRow, ProjectionError};
+use cortexkit_role_llm_runner::display::{
+    self, DisplayPart, DisplayRow, ModelFallback, ProjectionError,
+};
 use cortexkit_role_llm_runner::read::HostPart;
 use cortexkit_role_llm_runner::serializer_profile;
 use serde::Deserialize;
@@ -103,6 +105,12 @@ struct Entry {
     /// part key, which a runner adds when the read asks for display facts.
     #[serde(default)]
     host_parts: Vec<HostPart>,
+    /// The model that answered in place of the one the session asked for,
+    /// which a runner adds to an assistant entry when the read asks for display
+    /// facts and it knows exactly (llm-runner §4.7). A malformed fact drops only
+    /// itself.
+    #[serde(default, deserialize_with = "lenient_fallback")]
+    model_fallback: Option<ModelFallback>,
     /// The module that relayed this message, once its header is verified and
     /// cut. Never read from the entry itself.
     #[serde(skip)]
@@ -129,28 +137,32 @@ impl Entry {
         }
     }
 
-    /// `part` as the apps get it: text the host wrote into a user message,
-    /// such as Claude Code's `[Request interrupted by user]`, becomes a host
-    /// part, so it is never drawn as the person's words. The runner names those
-    /// parts by key (`host_parts`), and only on a user entry; a fact on any
-    /// other entry is ignored.
-    fn host_part(&self, part: Part, keys: &[&str]) -> Part {
-        if self.message.role != "user" {
-            return part;
-        }
-        let Some(fact) = self
+    /// `part` as the apps get it, or `None` when they don't get it at all. The
+    /// runner names the parts its host wrote by key (`host_parts`):
+    /// - in a user message, text such as Claude Code's `[Request interrupted
+    ///   by user]` becomes a host part, so it is never drawn as the person's
+    ///   words.
+    /// - in a reply, a host part is the host's own bookkeeping, such as the
+    ///   empty reasoning block that records a fallback model, so it is left
+    ///   out. Which model answered reaches the apps as the row's
+    ///   `modelFallback`.
+    ///
+    /// A fact on any other role is ignored.
+    fn host_part(&self, part: Part, keys: &[&str]) -> Option<Part> {
+        let fact = self
             .host_parts
             .iter()
-            .find(|fact| keys.contains(&fact.part.as_str()))
-        else {
-            return part;
-        };
-        match part {
-            Part::Text(text) | Part::Injected(text) => Part::Host {
-                text,
-                code: fact.host_code.clone(),
-            },
-            other => other,
+            .find(|fact| keys.contains(&fact.part.as_str()));
+        match (self.message.role.as_str(), fact) {
+            ("assistant", Some(_)) => None,
+            ("user", Some(fact)) => Some(match part {
+                Part::Text(text) | Part::Injected(text) => Part::Host {
+                    text,
+                    code: fact.host_code.clone(),
+                },
+                other => other,
+            }),
+            _ => Some(part),
         }
     }
 }
@@ -289,7 +301,9 @@ pub fn rows_with_pruned_reasoning(
                             .into_iter()
                             .chain([position.as_str()])
                             .collect();
-                        let part = entry.host_part(part, &keys);
+                        let Some(part) = entry.host_part(part, &keys) else {
+                            continue;
+                        };
                         parts.push(Decoded {
                             stored,
                             key: stored.to_string(),
@@ -395,6 +409,18 @@ struct EntryFacts {
     part_keys: Vec<String>,
     #[serde(default)]
     host_parts: Vec<HostPart>,
+    #[serde(default, deserialize_with = "lenient_fallback")]
+    model_fallback: Option<ModelFallback>,
+}
+
+/// A `model_fallback` fact the contract's type refuses (an empty or repeated
+/// id) reads as absent, so it costs only the note, never the message.
+fn lenient_fallback<'de, D>(deserializer: D) -> Result<Option<ModelFallback>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Option::<Value>::deserialize(deserializer)?;
+    Ok(value.and_then(|value| serde_json::from_value(value).ok()))
 }
 
 /// The apps' rows for the read entries of a runner whose bodies the contract
@@ -487,6 +513,7 @@ pub fn display_rows(
             part_digests: facts.part_digests,
             part_keys: facts.part_keys,
             host_parts: facts.host_parts,
+            model_fallback: facts.model_fallback,
             // The contract's projection already shows each reasoning summary as
             // a reasoning part of the display row.
             reasoning_summaries: Vec::new(),
@@ -525,7 +552,10 @@ pub fn display_rows(
                 Part::Text(text) | Part::Injected(text) if synthetic => {
                     Part::Host { text, code: None }
                 }
-                part => entry.host_part(part, &[key.as_str()]),
+                part => match entry.host_part(part, &[key.as_str()]) {
+                    Some(part) => part,
+                    None => continue,
+                },
             };
             parts.push(Decoded {
                 stored,
@@ -1159,6 +1189,18 @@ fn project(
     // A message another module relayed, drawn as from that module.
     if let Some(module) = &message.entry.origin {
         display["origin"] = json!({"module": module});
+    }
+    // A reply another model wrote in place of the one asked for, which the
+    // apps note quietly under the reply, naming both. Only a reply may carry
+    // one; the contract refuses it on every other role.
+    if let Some(fallback) = message
+        .entry
+        .model_fallback
+        .as_ref()
+        .filter(|fallback| fallback.check(&message.entry.message.role).is_ok())
+    {
+        display["modelFallback"] =
+            json!({"requested": fallback.requested, "answered": fallback.answered});
     }
     if let Some(id) = message
         .entry
