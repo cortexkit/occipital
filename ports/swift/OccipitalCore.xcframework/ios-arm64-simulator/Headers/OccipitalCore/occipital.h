@@ -238,14 +238,14 @@ typedef struct OccMetrics {
 /*
  * The version descriptor of what this library implements, as JSON:
  *   {"executionDialect": "1.0",
- *    "catalog": {"version": "...", "digest": "<hex>", "layout": "...",
- *                "aliases": ["<hex>", ...]},
+ *    "catalog": {"version": "...", "digest": "<hex>", "layout": "..."},
  *    "toolCatalog": {"version": "1.1", "digest": "<hex>", "layout": "...",
  *                    "aliases": ["<hex>", ...]}}
  * `catalog` is the embedded catalog: `digest` is its digest and `layout`
- * its layout version. `aliases` are earlier digests of the same catalog,
- * from before a change to its descriptive text only: a stored reply whose
- * rich UI stamp names `digest` or any alias draws with this catalog.
+ * its layout version. A stored reply whose rich UI stamp names `digest`
+ * draws with this catalog; one naming any other digest draws as plain
+ * Markdown. Either catalog may carry `aliases`, earlier digests that name
+ * it too; the member is left out when there are none, as for `catalog`.
  * `toolCatalog` is the catalog tool templates name: a template whose
  * `catalog.digest` is "sha256:" followed by its `digest` or one of its
  * `aliases` is for this library; one naming any other digest is not. Its

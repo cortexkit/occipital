@@ -32,8 +32,7 @@ pub enum Refusal {
 }
 
 /// The stamp the reply teaching text carries: the execution dialect and the
-/// catalog digest replies are stamped with, which the language library keeps
-/// at catalog 1.0's first digest so every app build can draw the reply.
+/// catalog digest replies are stamped with, catalog 1.0's current digest.
 pub fn stamp() -> Result<RichUiStamp, String> {
     let descriptor = occipital_lang::VersionDescriptor::current();
     RichUiStamp::new(
@@ -88,25 +87,20 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    /// Replies stay stamped with catalog 1.0's first digest, which every app
-    /// build knows: the version descriptor lists it as an alias of the
-    /// current digest, so newer builds accept it too.
+    /// Replies are stamped with the catalog the apps draw them with: dialect
+    /// 1.0 under catalog 1.0's current digest, the only one it accepts.
     #[test]
-    fn the_stamp_is_the_first_catalog_digest_every_app_knows() {
+    fn the_stamp_is_the_current_catalog_digest() {
         let descriptor = occipital_lang::VersionDescriptor::current();
         let stamp = stamp().unwrap();
         assert_eq!(stamp.dialect(), descriptor.execution_dialect);
         assert_eq!(stamp.dialect(), "1.0");
+        assert_eq!(stamp.catalog_digest(), descriptor.catalog.digest);
         assert_eq!(
             stamp.catalog_digest(),
-            "beb0904e8b402916d84d7609a8b06db30ac308f692dcc048db2dc1138cd0c986"
+            "4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5"
         );
-        assert!(descriptor
-            .catalog
-            .aliases
-            .iter()
-            .any(|alias| alias == stamp.catalog_digest()));
-        assert_ne!(stamp.catalog_digest(), descriptor.catalog.digest);
+        assert!(descriptor.catalog.aliases.is_empty());
     }
 
     #[test]

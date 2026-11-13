@@ -40,14 +40,6 @@ pub struct Catalog {
     admission: BTreeMap<String, Value>,
 }
 
-/// Catalog 1.0's earlier digests, oldest first. Its header and a few prose
-/// lines once named the team that drafted it and the apps' product name;
-/// they were rewritten without changing what any component, prop, rule or
-/// layout means, so these digests name the same catalog. The first is the
-/// digest replies are stamped with ([`crate::reply_stamp_digest`]).
-pub(crate) const V1_ALIASES: &[&str] =
-    &["beb0904e8b402916d84d7609a8b06db30ac308f692dcc048db2dc1138cd0c986"];
-
 /// The tool catalog's earlier digests, oldest first. The tool catalog has
 /// only ever grown or been clarified: a later digest adds to it (a Slot
 /// `width` of `narrow`, 8 digit widths) or states how apps draw what is

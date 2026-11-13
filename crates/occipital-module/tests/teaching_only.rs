@@ -56,10 +56,10 @@ async fn the_real_catalog_lists_no_tools_and_keeps_the_stamped_reply_teaching() 
         assert_eq!(text.tool_names, Some(vec![]));
         let stamp = text.rich_ui.unwrap();
         assert_eq!(stamp.dialect(), "1.0");
-        // Replies keep catalog 1.0's first digest, which every app build knows.
+        // Replies carry catalog 1.0's current digest, the one the apps draw.
         assert_eq!(
             stamp.catalog_digest(),
-            "beb0904e8b402916d84d7609a8b06db30ac308f692dcc048db2dc1138cd0c986"
+            "4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5"
         );
     }
 

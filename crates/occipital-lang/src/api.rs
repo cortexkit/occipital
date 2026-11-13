@@ -49,10 +49,10 @@ pub struct CatalogDescriptor {
     pub digest: String,
     /// The catalog's layout version, such as `1`.
     pub layout: String,
-    /// Earlier digests of this same catalog, from before a change to its
-    /// descriptive text only. A stored reply stamped with one of them draws
-    /// exactly as one stamped with `digest`, so an app accepts all of them.
-    /// Left out of the JSON when there are none.
+    /// Earlier digests of this same catalog, from before a change that kept
+    /// what everything in it means. Something naming one of them draws
+    /// exactly as if it named `digest`, so an app accepts all of them. Left
+    /// out of the JSON when there are none, as for catalog 1.0.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub aliases: Vec<String>,
 }
@@ -95,24 +95,20 @@ impl CatalogDescriptor {
     }
 
     /// The descriptor of the embedded catalog, whose digest is computed once.
+    /// It has no aliases: a reply stamped with any other digest doesn't draw.
     pub(crate) fn embedded() -> Self {
         let catalog = Catalog::v1();
         Self {
             version: catalog.version().to_owned(),
             digest: Catalog::embedded_digest().to_owned(),
             layout: catalog.layout_version().to_owned(),
-            aliases: crate::catalog::V1_ALIASES
-                .iter()
-                .map(|alias| (*alias).to_owned())
-                .collect(),
+            aliases: Vec::new(),
         }
     }
 }
 
-/// The catalog digest a runner stamps on rich replies (`rich_ui.catalog_digest`).
-/// It is catalog 1.0's first published digest, now an alias: stamps never
-/// moved when the catalog's descriptive text was rewritten, so app builds that
-/// know only that digest keep drawing new replies.
+/// The catalog digest a runner stamps on rich replies (`rich_ui.catalog_digest`):
+/// the embedded catalog 1.0's digest.
 pub fn reply_stamp_digest() -> &'static str {
-    crate::catalog::V1_ALIASES[0]
+    Catalog::embedded_digest()
 }

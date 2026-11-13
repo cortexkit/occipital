@@ -467,9 +467,6 @@
   "versions": {
     "catalogs": [
       {
-        "aliases": [
-          "beb0904e8b402916d84d7609a8b06db30ac308f692dcc048db2dc1138cd0c986"
-        ],
         "digest": "4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5",
         "layout": "1",
         "version": "1.0"

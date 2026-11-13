@@ -276,7 +276,7 @@ fn version_descriptor_names_dialect_catalog_digest_and_layout() {
     assert_eq!(
         serde_json_shape(&descriptor),
         format!(
-            "{{\"executionDialect\":\"1.0\",\"catalog\":{{\"version\":\"1.0\",\"digest\":\"{}\",\"layout\":\"1\",\"aliases\":[\"beb0904e8b402916d84d7609a8b06db30ac308f692dcc048db2dc1138cd0c986\"]}}}}",
+            "{{\"executionDialect\":\"1.0\",\"catalog\":{{\"version\":\"1.0\",\"digest\":\"{}\",\"layout\":\"1\"}}}}",
             descriptor.catalog.digest
         )
     );

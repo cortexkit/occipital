@@ -21,10 +21,11 @@ struct VersionJson {
 }
 
 /// The version descriptor as JSON:
-/// `{"executionDialect", "catalog": {"version", "digest", "layout", "aliases"},
-/// "toolCatalog": {"version", "digest", "layout", "aliases"}}`. `catalog`
-/// is the embedded catalog: a stored reply whose stamp names its `digest` or
-/// any of its `aliases` draws with it. `toolCatalog` is the catalog tool
+/// `{"executionDialect", "catalog": {"version", "digest", "layout"},
+/// "toolCatalog": {"version", "digest", "layout", "aliases"}}`, with
+/// `aliases` left out of a catalog that has none. `catalog` is the embedded
+/// catalog: a stored reply whose stamp names its `digest` (or an alias, when
+/// it has any) draws with it. `toolCatalog` is the catalog tool
 /// templates name: a template whose `catalog.digest` is `sha256:` followed by
 /// its `digest` or one of its `aliases` is for this library, and a template
 /// naming another digest is for a catalog it doesn't implement.
@@ -74,12 +75,10 @@ mod tests {
         assert_eq!(digest, current.catalog.digest);
         assert_eq!(digest.len(), 64);
         assert!(digest.bytes().all(|b| b.is_ascii_hexdigit()));
-        assert_eq!(
-            json["catalog"]["aliases"],
-            serde_json::json!(current.catalog.aliases)
-        );
+        // Catalog 1.0 has no earlier digest the apps still accept.
+        assert!(current.catalog.aliases.is_empty());
         assert_eq!(json.as_object().unwrap().len(), 3);
-        assert_eq!(json["catalog"].as_object().unwrap().len(), 4);
+        assert_eq!(json["catalog"].as_object().unwrap().len(), 3);
 
         // The tool catalog: what a template's `catalog` must name, here
         // checked against the template checker's own expectation.

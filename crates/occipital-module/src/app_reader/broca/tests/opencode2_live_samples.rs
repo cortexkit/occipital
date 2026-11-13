@@ -26,8 +26,9 @@ impl BrocaRoutes for AnyHarness {
 /// The session the test resolver knows (`ByHarness`).
 const SESSION: &str = "ses_head";
 const REPLY: &str = "msg_reply";
-/// The stamp runners put on a run's replies: rich UI dialect 1.0 under catalog
-/// 1.0's original digest, which every app build accepts.
+/// The stamp runners put on a run's replies when this set was recorded: rich
+/// UI dialect 1.0 under catalog 1.0's original digest. Apps no longer accept
+/// it; the set stays as recorded.
 const CATALOG: &str = "beb0904e8b402916d84d7609a8b06db30ac308f692dcc048db2dc1138cd0c986";
 /// The reply's words, in the pieces the runner streams them in.
 const PIECES: [&str; 5] = [
