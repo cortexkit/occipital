@@ -711,7 +711,7 @@ fn live_command_set(set: &str, requests: usize) -> impl Fn(&str) -> Value {
     read
 }
 
-/// Magic Context's owner commands (`tests/data/mc-user-commands-samples-v2/`,
+/// Magic Context's owner commands (`tests/data/mc-user-commands-samples-v3/`,
 /// recorded by the Magic Context module's own command handlers and copied
 /// unchanged; its README says how they were made): the
 /// relay keeps every one of its 30 declarations, lists each under its
@@ -719,7 +719,7 @@ fn live_command_set(set: &str, requests: usize) -> impl Fn(&str) -> Value {
 /// with facts and table cells the apps can word.
 #[tokio::test]
 async fn magic_contexts_owner_commands_relay_whole() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/mc-user-commands-samples-v2");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/mc-user-commands-samples-v3");
     let read = |name: &str| -> Value {
         serde_json::from_slice(&std::fs::read(root.join(name)).unwrap()).unwrap()
     };
