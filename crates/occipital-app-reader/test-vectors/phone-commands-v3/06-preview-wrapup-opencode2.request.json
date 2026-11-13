@@ -1,0 +1,1 @@
+{"method":"commands.preview","params":{"module":"magic-context","id":"wrapup","subject":{"kind":"session","session":{"runner":"thalamus-harness","harness":"opencode2","session":"ses_e6db20348ffeRuShcoY9FRmAAd"}},"args":{"messages_to_keep":20}}}

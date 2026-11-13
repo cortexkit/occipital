@@ -549,16 +549,85 @@ fn a_number_default_keeps_the_modules_digest() {
 /// version, and the refusals.
 #[test]
 fn the_live_command_samples_are_what_the_apps_decode_and_draw() {
-    let v1 = live_command_set("phone-commands-v1", 16);
-    // Only v1 holds a flush with nothing it may land.
+    for (set, requests) in [("phone-commands-v1", 16), ("phone-commands-v2", 12)] {
+        let read = live_command_set(set, requests);
+        let outcome = |name: &str| read(name)["result"]["outcome"].clone();
+        assert_eq!(
+            read("10-preview-flush-available.json")["result"]["available"],
+            true
+        );
+        assert_eq!(outcome("08-run-flush-stale.json"), "preview_stale");
+        assert_eq!(outcome("11-run-flush-scheduled.json"), "scheduled");
+        // The repeat is answered from the module's stored reply, byte for byte.
+        let bytes = |name: &str| {
+            std::fs::read(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../occipital-app-reader/test-vectors")
+                    .join(set)
+                    .join(name),
+            )
+            .unwrap()
+        };
+        assert_eq!(
+            bytes("11-run-flush-scheduled.json"),
+            bytes("12-run-flush-repeat.json"),
+            "{set}"
+        );
+        assert_eq!(read("09-unknown-module.json")["code"], "unknown_command");
+        assert_eq!(read("04-details-opencode1.json")["code"], "invalid_request");
+        if set == "phone-commands-v1" {
+            // Only v1 holds a flush with nothing it may land.
+            assert_eq!(
+                read("06-preview-flush.json")["result"]["reason"],
+                "queued_in_recent_tail"
+            );
+        } else {
+            assert_eq!(
+                read("07-preview-status.json")["result"]["table"]["columns"],
+                serde_json::json!(["Now"])
+            );
+        }
+    }
+    // v3: AFT's `status` and Magic Context's `wrapup` on two agents' chats
+    // (sessions on an OpenCode 2 runner and on Broca), and the answers for a
+    // session neither module serves.
+    let v3 = live_command_set("phone-commands-v3", 7);
+    let ids = |name: &str| -> Vec<String> {
+        v3(name)["result"]["commands"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|entry| {
+                format!(
+                    "{}/{}",
+                    entry["module"].as_str().unwrap(),
+                    entry["command"]["id"].as_str().unwrap()
+                )
+            })
+            .collect()
+    };
+    let palette = [
+        "aft/status",
+        "magic-context/flush",
+        "magic-context/status",
+        "magic-context/wrapup",
+    ];
+    assert_eq!(ids("01-list-opencode2.json"), palette);
+    assert_eq!(ids("02-list-broca.json"), palette);
+    for name in [
+        "03-preview-aft-status-opencode2.json",
+        "04-preview-aft-status-broca.json",
+        "06-preview-wrapup-opencode2.json",
+    ] {
+        assert_eq!(v3(name)["result"]["available"], true, "{name}");
+    }
     assert_eq!(
-        v1("06-preview-flush.json")["result"]["reason"],
-        "queued_in_recent_tail"
+        v3("05-preview-aft-status-not-bound.json")["result"]["reason"],
+        "not_bound"
     );
-    let v2 = live_command_set("phone-commands-v2", 12);
     assert_eq!(
-        v2("07-preview-status.json")["result"]["table"]["columns"],
-        serde_json::json!(["Now"])
+        v3("07-preview-wrapup-not-managed.json")["result"]["reason"],
+        "not_managed"
     );
 }
 
@@ -629,20 +698,16 @@ fn live_command_set(set: &str, requests: usize) -> impl Fn(&str) -> Value {
             _ => assert!(result["subject"].is_object(), "{set}/{reply_name}"),
         }
     }
-    let outcome = |name: &str| read(name)["result"]["outcome"].clone();
-    assert_eq!(
-        read("10-preview-flush-available.json")["result"]["available"],
-        true
-    );
-    assert_eq!(outcome("08-run-flush-stale.json"), "preview_stale");
-    assert_eq!(outcome("11-run-flush-scheduled.json"), "scheduled");
-    assert_eq!(
-        std::fs::read(root.join("11-run-flush-scheduled.json")).unwrap(),
-        std::fs::read(root.join("12-run-flush-repeat.json")).unwrap(),
-        "{set}"
-    );
-    assert_eq!(read("09-unknown-module.json")["code"], "unknown_command");
-    assert_eq!(read("04-details-opencode1.json")["code"], "invalid_request");
+    let sums = std::fs::read_to_string(root.join("SHA256SUMS")).unwrap();
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(root.join(name)).unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            expected,
+            "{set}/{name}"
+        );
+    }
     read
 }
 
