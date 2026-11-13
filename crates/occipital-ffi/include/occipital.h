@@ -43,8 +43,14 @@
  * OUTPUT JSON
  *
  *   A reply revision is {"id", "provisional", "tree", "literals": [span...],
- *   "diagnostics": [diagnostic...], "plain_text"}; a source span is
- *   {"line", "column", "endLine", "endColumn"}.
+ *   "diagnostics": [diagnostic...], "plain_text", "readable_text"}; a source
+ *   span is {"line", "column", "endLine", "endColumn"}. "plain_text" is the
+ *   language's plain-text export, for copying and accessibility.
+ *   "readable_text" is what to draw for a reply whose catalog digest the app
+ *   doesn't hold: the same export with a table as its rows (header first,
+ *   cells tab-separated, at most 200 rows) and a badge as its bare label. A
+ *   provisional revision's "plain_text" is empty, and its "readable_text" is
+ *   the words streamed so far, one block per line.
  *
  *   A measurement is {"height", "key", "known_work_visits", "reservation",
  *   "boxes", "row_frame"}. A height is {"known": "<decimal>"} or

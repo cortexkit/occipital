@@ -14,7 +14,7 @@
         "bytes": "SA=="
       },
       "status": 0,
-      "response": "{\"id\":1,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"H\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":1,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"H\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"H\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -22,7 +22,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":2,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"He\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":2,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"He\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"He\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -30,7 +30,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":3,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Her\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":3,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Her\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Her\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -38,7 +38,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":4,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":4,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -46,7 +46,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":5,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":5,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -54,7 +54,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":6,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here i\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":6,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here i\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here i\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -62,7 +62,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":7,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":7,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -70,7 +70,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":8,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":8,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -78,7 +78,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":9,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":9,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is t\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -86,7 +86,7 @@
         "bytes": "aA=="
       },
       "status": 0,
-      "response": "{\"id\":10,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":10,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is th\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -94,7 +94,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":11,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":11,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -102,7 +102,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":12,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":12,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -110,7 +110,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":13,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the s\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":13,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the s\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the s\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -118,7 +118,7 @@
         "bytes": "dQ=="
       },
       "status": 0,
-      "response": "{\"id\":14,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the su\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":14,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the su\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the su\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -126,7 +126,7 @@
         "bytes": "bQ=="
       },
       "status": 0,
-      "response": "{\"id\":15,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the sum\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":15,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the sum\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the sum\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -134,7 +134,7 @@
         "bytes": "bQ=="
       },
       "status": 0,
-      "response": "{\"id\":16,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summ\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":16,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summ\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summ\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -142,7 +142,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":17,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summa\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":17,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summa\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summa\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -150,7 +150,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":18,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summar\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":18,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summar\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summar\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -158,7 +158,7 @@
         "bytes": "eQ=="
       },
       "status": 0,
-      "response": "{\"id\":19,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":19,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -166,7 +166,7 @@
         "bytes": "Lg=="
       },
       "status": 0,
-      "response": "{\"id\":20,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":20,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -174,7 +174,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":21,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":21,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -430,7 +430,7 @@
         "bytes": "Pg=="
       },
       "status": 0,
-      "response": "{\"id\":22,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":22,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -550,7 +550,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":23,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":23,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -558,7 +558,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":24,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":24,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const t\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -566,7 +566,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":25,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const to\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":25,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const to\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const to\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -574,7 +574,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":26,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const tot\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":26,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const tot\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const tot\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -582,7 +582,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":27,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const tota\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":27,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const tota\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const tota\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -590,7 +590,7 @@
         "bytes": "bA=="
       },
       "status": 0,
-      "response": "{\"id\":28,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":28,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -598,7 +598,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":29,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":29,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -606,7 +606,7 @@
         "bytes": "PQ=="
       },
       "status": 0,
-      "response": "{\"id\":30,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total =\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":30,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total =\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total =\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -614,7 +614,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":31,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":31,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total =\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -622,7 +622,7 @@
         "bytes": "Uw=="
       },
       "status": 0,
-      "response": "{\"id\":32,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = S\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":32,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = S\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = S\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -630,7 +630,7 @@
         "bytes": "dQ=="
       },
       "status": 0,
-      "response": "{\"id\":33,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Su\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":33,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Su\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Su\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -638,7 +638,7 @@
         "bytes": "bQ=="
       },
       "status": 0,
-      "response": "{\"id\":34,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":34,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -646,7 +646,7 @@
         "bytes": "KA=="
       },
       "status": 0,
-      "response": "{\"id\":35,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":35,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -654,7 +654,7 @@
         "bytes": "ZA=="
       },
       "status": 0,
-      "response": "{\"id\":36,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(d\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":36,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(d\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(d\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -662,7 +662,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":37,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(da\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":37,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(da\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(da\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -670,7 +670,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":38,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(dat\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":38,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(dat\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(dat\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -678,7 +678,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":39,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":39,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -686,7 +686,7 @@
         "bytes": "Lg=="
       },
       "status": 0,
-      "response": "{\"id\":40,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":40,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -694,7 +694,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":41,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.r\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":41,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.r\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.r\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -702,7 +702,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":42,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.ro\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":42,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.ro\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.ro\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -710,7 +710,7 @@
         "bytes": "dw=="
       },
       "status": 0,
-      "response": "{\"id\":43,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.row\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":43,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.row\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.row\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -718,7 +718,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":44,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":44,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -726,7 +726,7 @@
         "bytes": "Lg=="
       },
       "status": 0,
-      "response": "{\"id\":45,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":45,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -734,7 +734,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":46,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.s\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":46,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.s\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.s\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -742,7 +742,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":47,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sa\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":47,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sa\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sa\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -750,7 +750,7 @@
         "bytes": "bA=="
       },
       "status": 0,
-      "response": "{\"id\":48,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sal\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":48,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sal\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sal\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -758,7 +758,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":49,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sale\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":49,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sale\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sale\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -766,7 +766,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":50,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":50,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -774,7 +774,7 @@
         "bytes": "KQ=="
       },
       "status": 0,
-      "response": "{\"id\":51,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":51,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -798,7 +798,7 @@
         "bytes": "VA=="
       },
       "status": 0,
-      "response": "{\"id\":52,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"T\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":52,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"T\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nT\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -806,7 +806,7 @@
         "bytes": "aA=="
       },
       "status": 0,
-      "response": "{\"id\":53,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"Th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":53,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"Th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nTh\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -814,7 +814,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":54,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":54,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -822,7 +822,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":55,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":55,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -830,7 +830,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":56,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":56,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe t\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -838,7 +838,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":57,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The to\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":57,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The to\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe to\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -846,7 +846,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":58,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The tot\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":58,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The tot\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe tot\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -854,7 +854,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":59,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The tota\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":59,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The tota\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe tota\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -862,7 +862,7 @@
         "bytes": "bA=="
       },
       "status": 0,
-      "response": "{\"id\":60,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":60,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -870,7 +870,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":61,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":61,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -878,7 +878,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":62,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total i\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":62,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total i\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total i\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -886,7 +886,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":63,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":63,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -894,7 +894,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":64,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":64,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -902,7 +902,7 @@
         "bytes": "ew=="
       },
       "status": 0,
-      "response": "{\"id\":65,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":65,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -910,7 +910,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":66,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":66,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {t\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -918,7 +918,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":67,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{to\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":67,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{to\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {to\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -926,7 +926,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":68,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{tot\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":68,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{tot\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {tot\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -934,7 +934,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":69,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{tota\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":69,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{tota\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {tota\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -942,7 +942,7 @@
         "bytes": "bA=="
       },
       "status": 0,
-      "response": "{\"id\":70,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":70,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {total\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -950,7 +950,7 @@
         "bytes": "fQ=="
       },
       "status": 0,
-      "response": "{\"id\":71,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":71,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {total}\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -958,7 +958,7 @@
         "bytes": "Lg=="
       },
       "status": 0,
-      "response": "{\"id\":72,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\".\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":72,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\".\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {total}.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -966,7 +966,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":73,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":73,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {total}.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1134,7 +1134,7 @@
         "bytes": "Pg=="
       },
       "status": 0,
-      "response": "{\"id\":74,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"c\":\"Gauge\",\"p\":{},\"k\":[]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":74,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"c\":\"Gauge\",\"p\":{},\"k\":[]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {total}.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1142,7 +1142,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":75,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"c\":\"Gauge\",\"p\":{},\"k\":[]},{\"t\":\" \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":75,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"c\":\"Gauge\",\"p\":{},\"k\":[]},{\"t\":\" \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {total}.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1414,7 +1414,7 @@
         "bytes": "Pg=="
       },
       "status": 0,
-      "response": "{\"id\":76,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"c\":\"Gauge\",\"p\":{},\"k\":[]},{\"t\":\" \"},{\"t\":\"<Badge tone=\\\"info\\\" text={total} />\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":76,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"c\":\"Gauge\",\"p\":{},\"k\":[]},{\"t\":\" \"},{\"t\":\"<Badge tone=\\\"info\\\" text={total} />\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Here is the summary. Draft\\nexport const total = Sum(data.rows.sales)\\nThe total is {total}.  <Badge tone=\\\"info\\\" text={total} />\"}"
     },
     {
       "entry": "occ_reply_finish",
@@ -1423,7 +1423,7 @@
         "tail": ""
       },
       "status": 0,
-      "response": "{\"id\":77,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{\"tone\":\"info\"},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"t\":\"<Gauge value={0.4} />\"},{\"t\":\" \"},{\"t\":\"<Badge tone=\\\"info\\\" text={total} />\"}]}]},\"literals\":[{\"line\":3,\"column\":1,\"endLine\":3,\"endColumn\":42},{\"line\":5,\"column\":14,\"endLine\":5,\"endColumn\":21},{\"line\":5,\"column\":23,\"endLine\":5,\"endColumn\":44},{\"line\":5,\"column\":45,\"endLine\":5,\"endColumn\":79}],\"diagnostics\":[{\"code\":\"E_REPLY_FORBIDDEN\",\"severity\":\"error\",\"phase\":\"check\",\"span\":{\"line\":5,\"column\":45,\"endLine\":5,\"endColumn\":79},\"message\":\"This tag or prop value is not allowed in replies.\"},{\"code\":\"E_UNKNOWN_COMPONENT\",\"severity\":\"error\",\"phase\":\"check\",\"span\":{\"line\":5,\"column\":23,\"endLine\":5,\"endColumn\":44},\"subject\":\"Gauge\",\"message\":\"The catalog has no component with this name.\"}],\"plain_text\":\"Here is the summary. [Draft]\\n\\nexport const total = Sum(data.rows.sales)\\n\\nThe total is {total}. <Gauge value={0.4} /> <Badge tone=\\\"info\\\" text={total} />\"}"
+      "response": "{\"id\":77,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Here is the summary. \"},{\"c\":\"Badge\",\"p\":{\"tone\":\"info\"},\"k\":[{\"t\":\"Draft\"}]}]},{\"m\":\"p\",\"k\":[{\"t\":\"export const total = Sum(data.rows.sales)\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"The total is \"},{\"t\":\"{total}\"},{\"t\":\". \"},{\"t\":\"<Gauge value={0.4} />\"},{\"t\":\" \"},{\"t\":\"<Badge tone=\\\"info\\\" text={total} />\"}]}]},\"literals\":[{\"line\":3,\"column\":1,\"endLine\":3,\"endColumn\":42},{\"line\":5,\"column\":14,\"endLine\":5,\"endColumn\":21},{\"line\":5,\"column\":23,\"endLine\":5,\"endColumn\":44},{\"line\":5,\"column\":45,\"endLine\":5,\"endColumn\":79}],\"diagnostics\":[{\"code\":\"E_REPLY_FORBIDDEN\",\"severity\":\"error\",\"phase\":\"check\",\"span\":{\"line\":5,\"column\":45,\"endLine\":5,\"endColumn\":79},\"message\":\"This tag or prop value is not allowed in replies.\"},{\"code\":\"E_UNKNOWN_COMPONENT\",\"severity\":\"error\",\"phase\":\"check\",\"span\":{\"line\":5,\"column\":23,\"endLine\":5,\"endColumn\":44},\"subject\":\"Gauge\",\"message\":\"The catalog has no component with this name.\"}],\"plain_text\":\"Here is the summary. [Draft]\\n\\nexport const total = Sum(data.rows.sales)\\n\\nThe total is {total}. <Gauge value={0.4} /> <Badge tone=\\\"info\\\" text={total} />\",\"readable_text\":\"Here is the summary. Draft\\n\\nexport const total = Sum(data.rows.sales)\\n\\nThe total is {total}. <Gauge value={0.4} /> <Badge tone=\\\"info\\\" text={total} />\"}"
     },
     {
       "entry": "occ_reply_measure",

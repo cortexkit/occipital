@@ -56,6 +56,7 @@ pub(super) fn same(a: &Revision, b: &Revision) {
     assert_eq!(a.literals, b.literals);
     assert_eq!(a.diagnostics, b.diagnostics);
     assert_eq!(a.plain_text, b.plain_text);
+    assert_eq!(a.readable_text, b.readable_text);
 }
 
 pub(super) struct Fixed;

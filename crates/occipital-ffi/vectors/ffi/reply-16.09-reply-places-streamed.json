@@ -30,7 +30,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":1,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":1,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -38,7 +38,7 @@
         "bytes": "VA=="
       },
       "status": 0,
-      "response": "{\"id\":2,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"T\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":2,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"T\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"T\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -46,7 +46,7 @@
         "bytes": "dw=="
       },
       "status": 0,
-      "response": "{\"id\":3,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Tw\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":3,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Tw\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Tw\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -54,7 +54,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":4,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":4,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -62,7 +62,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":5,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":5,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -70,7 +70,7 @@
         "bytes": "Yw=="
       },
       "status": 0,
-      "response": "{\"id\":6,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two c\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":6,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two c\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two c\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -78,7 +78,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":7,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two ca\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":7,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two ca\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two ca\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -86,7 +86,7 @@
         "bytes": "Zg=="
       },
       "status": 0,
-      "response": "{\"id\":8,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two caf\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":8,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two caf\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two caf\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -102,7 +102,7 @@
         "bytes": "qQ=="
       },
       "status": 0,
-      "response": "{\"id\":9,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two café\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":9,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two café\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two café\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -110,7 +110,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":10,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":10,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -118,7 +118,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":11,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":11,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -126,7 +126,7 @@
         "bytes": "bg=="
       },
       "status": 0,
-      "response": "{\"id\":12,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés n\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":12,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés n\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés n\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -134,7 +134,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":13,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés ne\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":13,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés ne\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés ne\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -142,7 +142,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":14,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés nea\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":14,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés nea\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés nea\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -150,7 +150,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":15,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":15,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -158,7 +158,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":16,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":16,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -166,7 +166,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":17,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":17,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near t\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -174,7 +174,7 @@
         "bytes": "aA=="
       },
       "status": 0,
-      "response": "{\"id\":18,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":18,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near th\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -182,7 +182,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":19,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":19,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -190,7 +190,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":20,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":20,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -198,7 +198,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":21,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the s\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":21,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the s\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the s\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -206,7 +206,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":22,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the st\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":22,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the st\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the st\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -214,7 +214,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":23,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the sta\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":23,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the sta\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the sta\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -222,7 +222,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":24,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the stat\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":24,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the stat\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the stat\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -230,7 +230,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":25,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the stati\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":25,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the stati\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the stati\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -238,7 +238,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":26,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the statio\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":26,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the statio\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the statio\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -246,7 +246,7 @@
         "bytes": "bg=="
       },
       "status": 0,
-      "response": "{\"id\":27,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":27,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -286,7 +286,7 @@
         "bytes": "Sw=="
       },
       "status": 0,
-      "response": "{\"id\":28,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"K\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":28,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"K\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**K\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -294,7 +294,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":29,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Ka\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":29,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Ka\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**Ka\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -302,7 +302,7 @@
         "bytes": "aA=="
       },
       "status": 0,
-      "response": "{\"id\":30,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kah\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":30,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kah\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**Kah\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -310,7 +310,7 @@
         "bytes": "dg=="
       },
       "status": 0,
-      "response": "{\"id\":31,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahv\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":31,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahv\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**Kahv\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -318,7 +318,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":32,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":32,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**Kahve\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -326,7 +326,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":33,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":33,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**Kahve\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -334,7 +334,7 @@
         "bytes": "RA=="
       },
       "status": 0,
-      "response": "{\"id\":34,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve D\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":34,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve D\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**Kahve D\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -342,7 +342,7 @@
         "bytes": "dQ=="
       },
       "status": 0,
-      "response": "{\"id\":35,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve Du\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":35,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve Du\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**Kahve Du\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -350,7 +350,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":36,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve Dur\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":36,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve Dur\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**Kahve Dur\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -358,7 +358,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":37,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve Dura\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":37,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve Dura\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**Kahve Dura\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -374,7 +374,7 @@
         "bytes": "nw=="
       },
       "status": 0,
-      "response": "{\"id\":38,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve Durağ\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":38,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve Durağ\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**Kahve Durağ\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -390,7 +390,7 @@
         "bytes": "sQ=="
       },
       "status": 0,
-      "response": "{\"id\":39,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve Durağı\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":39,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Kahve Durağı\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\n**Kahve Durağı\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -414,7 +414,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":40,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":40,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -422,7 +422,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":41,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" i\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":41,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" i\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı i\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -430,7 +430,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":42,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":42,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -438,7 +438,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":43,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":43,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -446,7 +446,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":44,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":44,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is t\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -454,7 +454,7 @@
         "bytes": "aA=="
       },
       "status": 0,
-      "response": "{\"id\":45,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":45,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is th\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -462,7 +462,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":46,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":46,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -470,7 +470,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":47,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":47,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -478,7 +478,7 @@
         "bytes": "Yw=="
       },
       "status": 0,
-      "response": "{\"id\":48,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the c\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":48,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the c\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the c\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -486,7 +486,7 @@
         "bytes": "bA=="
       },
       "status": 0,
-      "response": "{\"id\":49,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the cl\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":49,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the cl\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the cl\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -494,7 +494,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":50,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the clo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":50,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the clo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the clo\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -502,7 +502,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":51,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the clos\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":51,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the clos\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the clos\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -510,7 +510,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":52,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the close\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":52,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the close\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the close\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -518,7 +518,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":53,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closes\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":53,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closes\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closes\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -526,7 +526,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":54,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":54,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -534,7 +534,7 @@
         "bytes": "LA=="
       },
       "status": 0,
-      "response": "{\"id\":55,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest,\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":55,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest,\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest,\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -542,7 +542,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":56,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":56,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest,\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -550,7 +550,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":57,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":57,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, t\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -558,7 +558,7 @@
         "bytes": "dw=="
       },
       "status": 0,
-      "response": "{\"id\":58,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, tw\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":58,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, tw\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, tw\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -566,7 +566,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":59,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":59,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -574,7 +574,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":60,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":60,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -582,7 +582,7 @@
         "bytes": "bQ=="
       },
       "status": 0,
-      "response": "{\"id\":61,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two m\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":61,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two m\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two m\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -590,7 +590,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":62,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two mi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":62,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two mi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two mi\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -598,7 +598,7 @@
         "bytes": "bg=="
       },
       "status": 0,
-      "response": "{\"id\":63,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two min\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":63,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two min\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two min\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -606,7 +606,7 @@
         "bytes": "dQ=="
       },
       "status": 0,
-      "response": "{\"id\":64,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minu\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":64,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minu\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minu\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -614,7 +614,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":65,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minut\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":65,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minut\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minut\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -622,7 +622,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":66,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minute\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":66,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minute\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minute\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -630,7 +630,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":67,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":67,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -638,7 +638,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":68,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":68,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -646,7 +646,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":69,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes o\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":69,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes o\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes o\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -654,7 +654,7 @@
         "bytes": "bg=="
       },
       "status": 0,
-      "response": "{\"id\":70,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":70,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -662,7 +662,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":71,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":71,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -670,7 +670,7 @@
         "bytes": "Zg=="
       },
       "status": 0,
-      "response": "{\"id\":72,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on f\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":72,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on f\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on f\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -678,7 +678,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":73,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on fo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":73,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on fo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on fo\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -686,7 +686,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":74,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":74,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foo\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -694,7 +694,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":75,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":75,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -702,7 +702,7 @@
         "bytes": "Lg=="
       },
       "status": 0,
-      "response": "{\"id\":76,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":76,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -942,7 +942,7 @@
         "bytes": "Pg=="
       },
       "status": 0,
-      "response": "{\"id\":77,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":77,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -950,7 +950,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":78,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":78,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -958,7 +958,7 @@
         "bytes": "SQ=="
       },
       "status": 0,
-      "response": "{\"id\":79,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" I\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":79,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" I\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. I\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -966,7 +966,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":80,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":80,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -974,7 +974,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":81,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":81,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -982,7 +982,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":82,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It o\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":82,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It o\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It o\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -990,7 +990,7 @@
         "bytes": "cA=="
       },
       "status": 0,
-      "response": "{\"id\":83,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It op\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":83,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It op\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It op\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -998,7 +998,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":84,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It ope\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":84,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It ope\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It ope\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1006,7 +1006,7 @@
         "bytes": "bg=="
       },
       "status": 0,
-      "response": "{\"id\":85,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It open\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":85,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It open\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It open\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1014,7 +1014,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":86,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":86,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1022,7 +1022,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":87,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":87,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1030,7 +1030,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":88,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens a\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":88,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens a\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens a\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1038,7 +1038,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":89,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":89,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1046,7 +1046,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":90,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":90,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1054,7 +1054,7 @@
         "bytes": "Nw=="
       },
       "status": 0,
-      "response": "{\"id\":91,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":91,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1062,7 +1062,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":92,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":92,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1070,7 +1070,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":93,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 a\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":93,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 a\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 a\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1078,7 +1078,7 @@
         "bytes": "bg=="
       },
       "status": 0,
-      "response": "{\"id\":94,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 an\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":94,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 an\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 an\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1086,7 +1086,7 @@
         "bytes": "ZA=="
       },
       "status": 0,
-      "response": "{\"id\":95,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":95,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1094,7 +1094,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":96,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":96,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1102,7 +1102,7 @@
         "bytes": "aA=="
       },
       "status": 0,
-      "response": "{\"id\":97,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and h\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":97,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and h\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and h\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1110,7 +1110,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":98,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and ha\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":98,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and ha\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and ha\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1118,7 +1118,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":99,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":99,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1126,7 +1126,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":100,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":100,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1134,7 +1134,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":101,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has s\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":101,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has s\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has s\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1142,7 +1142,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":102,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has se\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":102,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has se\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has se\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1150,7 +1150,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":103,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has sea\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":103,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has sea\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has sea\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1158,7 +1158,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":104,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seat\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":104,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seat\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seat\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1166,7 +1166,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":105,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":105,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1174,7 +1174,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":106,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":106,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1182,7 +1182,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":107,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats o\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":107,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats o\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats o\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1190,7 +1190,7 @@
         "bytes": "dQ=="
       },
       "status": 0,
-      "response": "{\"id\":108,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats ou\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":108,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats ou\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats ou\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1198,7 +1198,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":109,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats out\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":109,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats out\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats out\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1206,7 +1206,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":110,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outs\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":110,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outs\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outs\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1214,7 +1214,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":111,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outsi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":111,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outsi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outsi\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1222,7 +1222,7 @@
         "bytes": "ZA=="
       },
       "status": 0,
-      "response": "{\"id\":112,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outsid\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":112,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outsid\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outsid\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1230,7 +1230,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":113,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":113,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1238,7 +1238,7 @@
         "bytes": "Lg=="
       },
       "status": 0,
-      "response": "{\"id\":114,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":114,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2206,7 +2206,7 @@
         "bytes": "Cg=="
       },
       "status": 0,
-      "response": "{\"id\":115,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":115,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2238,7 +2238,7 @@
         "bytes": "TA=="
       },
       "status": 0,
-      "response": "{\"id\":116,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"L\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":116,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"L\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**L\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2246,7 +2246,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":117,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Li\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":117,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Li\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Li\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2254,7 +2254,7 @@
         "bytes": "bQ=="
       },
       "status": 0,
-      "response": "{\"id\":118,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Lim\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":118,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Lim\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Lim\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2262,7 +2262,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":119,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Lima\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":119,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Lima\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Lima\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2270,7 +2270,7 @@
         "bytes": "bg=="
       },
       "status": 0,
-      "response": "{\"id\":120,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":120,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Liman\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2278,7 +2278,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":121,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":121,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Liman\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2286,7 +2286,7 @@
         "bytes": "Sw=="
       },
       "status": 0,
-      "response": "{\"id\":122,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman K\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":122,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman K\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Liman K\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2294,7 +2294,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":123,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Ka\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":123,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Ka\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Liman Ka\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2302,7 +2302,7 @@
         "bytes": "aA=="
       },
       "status": 0,
-      "response": "{\"id\":124,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Kah\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":124,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Kah\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Liman Kah\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2310,7 +2310,7 @@
         "bytes": "dg=="
       },
       "status": 0,
-      "response": "{\"id\":125,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Kahv\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":125,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Kahv\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Liman Kahv\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2318,7 +2318,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":126,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Kahve\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":126,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Kahve\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Liman Kahve\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2326,7 +2326,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":127,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Kahves\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":127,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Kahves\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Liman Kahves\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2334,7 +2334,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":128,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Kahvesi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":128,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"**\"},{\"t\":\"Liman Kahvesi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\n**Liman Kahvesi\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2358,7 +2358,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":129,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":129,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2366,7 +2366,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":130,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" i\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":130,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" i\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi i\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2374,7 +2374,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":131,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":131,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2382,7 +2382,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":132,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":132,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2390,7 +2390,7 @@
         "bytes": "cQ=="
       },
       "status": 0,
-      "response": "{\"id\":133,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is q\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":133,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is q\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is q\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2398,7 +2398,7 @@
         "bytes": "dQ=="
       },
       "status": 0,
-      "response": "{\"id\":134,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is qu\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":134,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is qu\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is qu\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2406,7 +2406,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":135,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is qui\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":135,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is qui\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is qui\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2414,7 +2414,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":136,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quie\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":136,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quie\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quie\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2422,7 +2422,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":137,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quiet\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":137,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quiet\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quiet\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2430,7 +2430,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":138,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quiete\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":138,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quiete\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quiete\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2438,7 +2438,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":139,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":139,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2446,7 +2446,7 @@
         "bytes": "LA=="
       },
       "status": 0,
-      "response": "{\"id\":140,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter,\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":140,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter,\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter,\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2454,7 +2454,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":141,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":141,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter,\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2462,7 +2462,7 @@
         "bytes": "dw=="
       },
       "status": 0,
-      "response": "{\"id\":142,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, w\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":142,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, w\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, w\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2470,7 +2470,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":143,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, wi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":143,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, wi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, wi\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2478,7 +2478,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":144,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, wit\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":144,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, wit\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, wit\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2486,7 +2486,7 @@
         "bytes": "aA=="
       },
       "status": 0,
-      "response": "{\"id\":145,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":145,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2494,7 +2494,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":146,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":146,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2502,7 +2502,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":147,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":147,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2510,7 +2510,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":148,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":148,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2518,7 +2518,7 @@
         "bytes": "dg=="
       },
       "status": 0,
-      "response": "{\"id\":149,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a v\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":149,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a v\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a v\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2526,7 +2526,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":150,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a vi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":150,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a vi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a vi\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2534,7 +2534,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":151,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a vie\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":151,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a vie\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a vie\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2542,7 +2542,7 @@
         "bytes": "dw=="
       },
       "status": 0,
-      "response": "{\"id\":152,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":152,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2550,7 +2550,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":153,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":153,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2558,7 +2558,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":154,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view o\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":154,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view o\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view o\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2566,7 +2566,7 @@
         "bytes": "Zg=="
       },
       "status": 0,
-      "response": "{\"id\":155,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":155,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2574,7 +2574,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":156,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":156,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2582,7 +2582,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":157,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":157,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of t\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2590,7 +2590,7 @@
         "bytes": "aA=="
       },
       "status": 0,
-      "response": "{\"id\":158,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":158,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of th\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2598,7 +2598,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":159,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":159,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2606,7 +2606,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":160,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":160,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2614,7 +2614,7 @@
         "bytes": "Zg=="
       },
       "status": 0,
-      "response": "{\"id\":161,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the f\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":161,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the f\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the f\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2622,7 +2622,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":162,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the fe\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":162,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the fe\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the fe\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2630,7 +2630,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":163,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the fer\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":163,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the fer\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the fer\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2638,7 +2638,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":164,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferr\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":164,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferr\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the ferr\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2646,7 +2646,7 @@
         "bytes": "eQ=="
       },
       "status": 0,
-      "response": "{\"id\":165,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":165,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the ferry\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2654,7 +2654,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":166,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":166,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the ferry\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2662,7 +2662,7 @@
         "bytes": "cA=="
       },
       "status": 0,
-      "response": "{\"id\":167,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry p\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":167,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry p\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the ferry p\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2670,7 +2670,7 @@
         "bytes": "aQ=="
       },
       "status": 0,
-      "response": "{\"id\":168,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":168,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pi\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the ferry pi\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2678,7 +2678,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":169,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pie\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":169,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pie\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the ferry pie\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2686,7 +2686,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":170,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":170,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the ferry pier\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2694,7 +2694,7 @@
         "bytes": "Lg=="
       },
       "status": 0,
-      "response": "{\"id\":171,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":171,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the ferry pier.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2934,7 +2934,7 @@
         "bytes": "Pg=="
       },
       "status": 0,
-      "response": "{\"id\":172,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":172,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the ferry pier.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -3390,7 +3390,7 @@
         "bytes": "Cg=="
       },
       "status": 0,
-      "response": "{\"id\":173,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]}]},{\"c\":\"Map\",\"p\":{},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":173,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"},{\"c\":\"Citation\",\"p\":{},\"k\":[]}]},{\"c\":\"Map\",\"p\":{},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Two cafés near the station\\nKahve Durağı is the closest, two minutes on foot. It opens at 7 and has seats outside.\\nLiman Kahvesi is quieter, with a view of the ferry pier.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -4047,7 +4047,7 @@
         "tail": ""
       },
       "status": 0,
-      "response": "{\"id\":174,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"loading\"}}},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{\"images\":[{\"snapshot\":{\"record_id\":\"record-art_k1\",\"state\":\"resolved\"}},{\"snapshot\":{\"record_id\":\"record-art_k2\",\"state\":\"resolved\"}}],\"aspect\":\"4:3\",\"caption\":\"Kahve Durağı, inside and out\"},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"loading\"}}},\"k\":[]}]},{\"c\":\"Map\",\"p\":{\"places\":{\"snapshot\":{\"record_id\":\"14\",\"state\":\"loading\"}},\"aspect\":\"16:9\"},\"k\":[]},{\"c\":\"LinkCard\",\"p\":{\"href\":\"https://limankahvesi.example/menu\",\"title\":\"Liman Kahvesi menu\"},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"## Two cafés near the station\\n\\n**Kahve Durağı** is the closest, two minutes on foot.[1] It opens at 7 and has seats outside.\\n\\n[2 images: Kahve Durağı, inside and out]\\n\\n**Liman Kahvesi** is quieter, with a view of the ferry pier.[1]\\n\\n[map: 0 places]\\n\\nLiman Kahvesi menu (https://limankahvesi.example/menu)\"}"
+      "response": "{\"id\":174,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"loading\"}}},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{\"images\":[{\"snapshot\":{\"record_id\":\"record-art_k1\",\"state\":\"resolved\"}},{\"snapshot\":{\"record_id\":\"record-art_k2\",\"state\":\"resolved\"}}],\"aspect\":\"4:3\",\"caption\":\"Kahve Durağı, inside and out\"},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"loading\"}}},\"k\":[]}]},{\"c\":\"Map\",\"p\":{\"places\":{\"snapshot\":{\"record_id\":\"14\",\"state\":\"loading\"}},\"aspect\":\"16:9\"},\"k\":[]},{\"c\":\"LinkCard\",\"p\":{\"href\":\"https://limankahvesi.example/menu\",\"title\":\"Liman Kahvesi menu\"},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"## Two cafés near the station\\n\\n**Kahve Durağı** is the closest, two minutes on foot.[1] It opens at 7 and has seats outside.\\n\\n[2 images: Kahve Durağı, inside and out]\\n\\n**Liman Kahvesi** is quieter, with a view of the ferry pier.[1]\\n\\n[map: 0 places]\\n\\nLiman Kahvesi menu (https://limankahvesi.example/menu)\",\"readable_text\":\"## Two cafés near the station\\n\\n**Kahve Durağı** is the closest, two minutes on foot.[1] It opens at 7 and has seats outside.\\n\\n[2 images: Kahve Durağı, inside and out]\\n\\n**Liman Kahvesi** is quieter, with a view of the ferry pier.[1]\\n\\n[map: 0 places]\\n\\nLiman Kahvesi menu (https://limankahvesi.example/menu)\"}"
     },
     {
       "entry": "occ_reply_measure",
@@ -4064,7 +4064,7 @@
         "event_json": "{\"kind\":\"snapshot\",\"reference\":12,\"result\":{\"ok\":\"S2FodmUgRHVyYcSfxLE6IHR3byBtaW51dGVzIGZyb20gdGhlIHN0YXRpb24sIG9wZW5zIGF0IDcu\"}}"
       },
       "status": 0,
-      "response": "{\"id\":175,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"resolved\"}}},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{\"images\":[{\"snapshot\":{\"record_id\":\"record-art_k1\",\"state\":\"resolved\"}},{\"snapshot\":{\"record_id\":\"record-art_k2\",\"state\":\"resolved\"}}],\"aspect\":\"4:3\",\"caption\":\"Kahve Durağı, inside and out\"},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"resolved\"}}},\"k\":[]}]},{\"c\":\"Map\",\"p\":{\"places\":{\"snapshot\":{\"record_id\":\"14\",\"state\":\"loading\"}},\"aspect\":\"16:9\"},\"k\":[]},{\"c\":\"LinkCard\",\"p\":{\"href\":\"https://limankahvesi.example/menu\",\"title\":\"Liman Kahvesi menu\"},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"## Two cafés near the station\\n\\n**Kahve Durağı** is the closest, two minutes on foot.[1] It opens at 7 and has seats outside.\\n\\n[2 images: Kahve Durağı, inside and out]\\n\\n**Liman Kahvesi** is quieter, with a view of the ferry pier.[1]\\n\\n[map: 0 places]\\n\\nLiman Kahvesi menu (https://limankahvesi.example/menu)\"}"
+      "response": "{\"id\":175,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"resolved\"}}},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{\"images\":[{\"snapshot\":{\"record_id\":\"record-art_k1\",\"state\":\"resolved\"}},{\"snapshot\":{\"record_id\":\"record-art_k2\",\"state\":\"resolved\"}}],\"aspect\":\"4:3\",\"caption\":\"Kahve Durağı, inside and out\"},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"resolved\"}}},\"k\":[]}]},{\"c\":\"Map\",\"p\":{\"places\":{\"snapshot\":{\"record_id\":\"14\",\"state\":\"loading\"}},\"aspect\":\"16:9\"},\"k\":[]},{\"c\":\"LinkCard\",\"p\":{\"href\":\"https://limankahvesi.example/menu\",\"title\":\"Liman Kahvesi menu\"},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"## Two cafés near the station\\n\\n**Kahve Durağı** is the closest, two minutes on foot.[1] It opens at 7 and has seats outside.\\n\\n[2 images: Kahve Durağı, inside and out]\\n\\n**Liman Kahvesi** is quieter, with a view of the ferry pier.[1]\\n\\n[map: 0 places]\\n\\nLiman Kahvesi menu (https://limankahvesi.example/menu)\",\"readable_text\":\"## Two cafés near the station\\n\\n**Kahve Durağı** is the closest, two minutes on foot.[1] It opens at 7 and has seats outside.\\n\\n[2 images: Kahve Durağı, inside and out]\\n\\n**Liman Kahvesi** is quieter, with a view of the ferry pier.[1]\\n\\n[map: 0 places]\\n\\nLiman Kahvesi menu (https://limankahvesi.example/menu)\"}"
     },
     {
       "entry": "occ_reply_measure",
@@ -4081,7 +4081,7 @@
         "event_json": "{\"kind\":\"snapshot\",\"reference\":14,\"result\":{\"ok\":\"W3sibmFtZSI6IkthaHZlIER1cmHEn8SxIiwibGF0Ijo0MS4wLCJsb24iOjI5LjB9LHsibmFtZSI6IkxpbWFuIEthaHZlc2kiLCJsYXQiOjQxLjAxLCJsb24iOjI5LjAxfV0=\"}}"
       },
       "status": 0,
-      "response": "{\"id\":176,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"resolved\"}}},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{\"images\":[{\"snapshot\":{\"record_id\":\"record-art_k1\",\"state\":\"resolved\"}},{\"snapshot\":{\"record_id\":\"record-art_k2\",\"state\":\"resolved\"}}],\"aspect\":\"4:3\",\"caption\":\"Kahve Durağı, inside and out\"},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"resolved\"}}},\"k\":[]}]},{\"c\":\"Map\",\"p\":{\"places\":{\"snapshot\":{\"record_id\":\"14\",\"state\":\"resolved\",\"value\":[{\"record\":{\"name\":\"Kahve Durağı\",\"lat\":{\"number\":\"41\"},\"lon\":{\"number\":\"29\"}}},{\"record\":{\"name\":\"Liman Kahvesi\",\"lat\":{\"number\":\"41.01\"},\"lon\":{\"number\":\"29.01\"}}}]}},\"aspect\":\"16:9\"},\"k\":[]},{\"c\":\"LinkCard\",\"p\":{\"href\":\"https://limankahvesi.example/menu\",\"title\":\"Liman Kahvesi menu\"},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"## Two cafés near the station\\n\\n**Kahve Durağı** is the closest, two minutes on foot.[1] It opens at 7 and has seats outside.\\n\\n[2 images: Kahve Durağı, inside and out]\\n\\n**Liman Kahvesi** is quieter, with a view of the ferry pier.[1]\\n\\n[map: 2 places]\\n\\nLiman Kahvesi menu (https://limankahvesi.example/menu)\"}"
+      "response": "{\"id\":176,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"h\",\"level\":2,\"k\":[{\"t\":\"Two cafés near the station\"}]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Kahve Durağı\"}]},{\"t\":\" is the closest, two minutes on foot.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"resolved\"}}},\"k\":[]},{\"t\":\" It opens at 7 and has seats outside.\"}]},{\"c\":\"ImageGroup\",\"p\":{\"images\":[{\"snapshot\":{\"record_id\":\"record-art_k1\",\"state\":\"resolved\"}},{\"snapshot\":{\"record_id\":\"record-art_k2\",\"state\":\"resolved\"}}],\"aspect\":\"4:3\",\"caption\":\"Kahve Durağı, inside and out\"},\"k\":[]},{\"m\":\"p\",\"k\":[{\"m\":\"strong\",\"k\":[{\"t\":\"Liman Kahvesi\"}]},{\"t\":\" is quieter, with a view of the ferry pier.\"},{\"c\":\"Citation\",\"p\":{\"source\":{\"snapshot\":{\"record_id\":\"12\",\"state\":\"resolved\"}}},\"k\":[]}]},{\"c\":\"Map\",\"p\":{\"places\":{\"snapshot\":{\"record_id\":\"14\",\"state\":\"resolved\",\"value\":[{\"record\":{\"name\":\"Kahve Durağı\",\"lat\":{\"number\":\"41\"},\"lon\":{\"number\":\"29\"}}},{\"record\":{\"name\":\"Liman Kahvesi\",\"lat\":{\"number\":\"41.01\"},\"lon\":{\"number\":\"29.01\"}}}]}},\"aspect\":\"16:9\"},\"k\":[]},{\"c\":\"LinkCard\",\"p\":{\"href\":\"https://limankahvesi.example/menu\",\"title\":\"Liman Kahvesi menu\"},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"## Two cafés near the station\\n\\n**Kahve Durağı** is the closest, two minutes on foot.[1] It opens at 7 and has seats outside.\\n\\n[2 images: Kahve Durağı, inside and out]\\n\\n**Liman Kahvesi** is quieter, with a view of the ferry pier.[1]\\n\\n[map: 2 places]\\n\\nLiman Kahvesi menu (https://limankahvesi.example/menu)\",\"readable_text\":\"## Two cafés near the station\\n\\n**Kahve Durağı** is the closest, two minutes on foot.[1] It opens at 7 and has seats outside.\\n\\n[2 images: Kahve Durağı, inside and out]\\n\\n**Liman Kahvesi** is quieter, with a view of the ferry pier.[1]\\n\\n[map: 2 places]\\n\\nLiman Kahvesi menu (https://limankahvesi.example/menu)\"}"
     },
     {
       "entry": "occ_reply_measure",

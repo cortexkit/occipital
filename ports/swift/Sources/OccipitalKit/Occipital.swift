@@ -12,8 +12,10 @@ public enum Occipital {
     /// "digest", "layout", "aliases"}}`; `aliases` is left out of a catalog
     /// that has none. The runner stamps each rich UI reply with the digest of
     /// the catalog it was written for. A reply stamped with `catalog.digest`
-    /// (or an alias, when it has any) draws with this library's catalog; any
-    /// other draws as plain Markdown. A tool
+    /// (or an alias, when it has any) draws with this library's catalog. A
+    /// reply in a dialect this library knows, stamped with any other digest,
+    /// still runs a `ReplySession` and draws its revisions' `readable_text`
+    /// as plain text; a reply in an unknown dialect draws as plain Markdown. A tool
     /// template is for this library when its `catalog.digest` is `sha256:`
     /// followed by `toolCatalog.digest` or by one of `toolCatalog.aliases`.
     public static func version() throws(OccipitalError) -> String {

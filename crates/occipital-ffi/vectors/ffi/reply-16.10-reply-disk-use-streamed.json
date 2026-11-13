@@ -14,7 +14,7 @@
         "bytes": "WQ=="
       },
       "status": 0,
-      "response": "{\"id\":1,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Y\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":1,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Y\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Y\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -22,7 +22,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":2,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Yo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":2,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Yo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Yo\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -30,7 +30,7 @@
         "bytes": "dQ=="
       },
       "status": 0,
-      "response": "{\"id\":3,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"You\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":3,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"You\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"You\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -38,7 +38,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":4,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":4,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -46,7 +46,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":5,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":5,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -54,7 +54,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":6,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":6,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your t\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -62,7 +62,7 @@
         "bytes": "aA=="
       },
       "status": 0,
-      "response": "{\"id\":7,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":7,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your th\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your th\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -70,7 +70,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":8,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your thr\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":8,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your thr\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your thr\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -78,7 +78,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":9,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your thre\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":9,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your thre\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your thre\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -86,7 +86,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":10,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":10,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -94,7 +94,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":11,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":11,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -102,7 +102,7 @@
         "bytes": "bA=="
       },
       "status": 0,
-      "response": "{\"id\":12,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three l\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":12,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three l\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three l\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -110,7 +110,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":13,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three la\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":13,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three la\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three la\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -118,7 +118,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":14,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three lar\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":14,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three lar\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three lar\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -126,7 +126,7 @@
         "bytes": "Zw=="
       },
       "status": 0,
-      "response": "{\"id\":15,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three larg\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":15,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three larg\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three larg\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -134,7 +134,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":16,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three large\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":16,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three large\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three large\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -142,7 +142,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":17,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three larges\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":17,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three larges\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three larges\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -150,7 +150,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":18,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":18,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -158,7 +158,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":19,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":19,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -166,7 +166,7 @@
         "bytes": "Zg=="
       },
       "status": 0,
-      "response": "{\"id\":20,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest f\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":20,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest f\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest f\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -174,7 +174,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":21,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest fo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":21,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest fo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest fo\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -182,7 +182,7 @@
         "bytes": "bA=="
       },
       "status": 0,
-      "response": "{\"id\":22,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest fol\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":22,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest fol\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest fol\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -190,7 +190,7 @@
         "bytes": "ZA=="
       },
       "status": 0,
-      "response": "{\"id\":23,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest fold\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":23,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest fold\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest fold\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -198,7 +198,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":24,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folde\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":24,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folde\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folde\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -206,7 +206,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":25,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folder\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":25,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folder\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folder\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -214,7 +214,7 @@
         "bytes": "cw=="
       },
       "status": 0,
-      "response": "{\"id\":26,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":26,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -222,7 +222,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":27,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":27,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -230,7 +230,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":28,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders a\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":28,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders a\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders a\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -238,7 +238,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":29,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders ar\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":29,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders ar\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders ar\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -246,7 +246,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":30,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":30,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -254,7 +254,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":31,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":31,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -262,7 +262,7 @@
         "bytes": "Yg=="
       },
       "status": 0,
-      "response": "{\"id\":32,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are b\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":32,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are b\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are b\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -270,7 +270,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":33,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are be\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":33,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are be\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are be\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -278,7 +278,7 @@
         "bytes": "bA=="
       },
       "status": 0,
-      "response": "{\"id\":34,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are bel\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":34,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are bel\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are bel\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -286,7 +286,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":35,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are belo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":35,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are belo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are belo\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -294,7 +294,7 @@
         "bytes": "dw=="
       },
       "status": 0,
-      "response": "{\"id\":36,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":36,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -302,7 +302,7 @@
         "bytes": "Lg=="
       },
       "status": 0,
-      "response": "{\"id\":37,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":37,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below.\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -310,7 +310,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":38,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":38,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -862,7 +862,7 @@
         "bytes": "Pg=="
       },
       "status": 0,
-      "response": "{\"id\":39,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":39,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1910,7 +1910,7 @@
         "bytes": "Cg=="
       },
       "status": 0,
-      "response": "{\"id\":40,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":40,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1926,7 +1926,7 @@
         "bytes": "fA=="
       },
       "status": 0,
-      "response": "{\"id\":41,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"|\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":41,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"|\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n|\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1934,7 +1934,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":42,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":42,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n|\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1942,7 +1942,7 @@
         "bytes": "Rg=="
       },
       "status": 0,
-      "response": "{\"id\":43,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| F\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":43,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| F\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| F\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1950,7 +1950,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":44,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Fo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":44,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Fo\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Fo\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1958,7 +1958,7 @@
         "bytes": "bA=="
       },
       "status": 0,
-      "response": "{\"id\":45,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Fol\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":45,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Fol\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Fol\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1966,7 +1966,7 @@
         "bytes": "ZA=="
       },
       "status": 0,
-      "response": "{\"id\":46,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Fold\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":46,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Fold\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Fold\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1974,7 +1974,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":47,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folde\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":47,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folde\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folde\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1982,7 +1982,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":48,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":48,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1990,7 +1990,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":49,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":49,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -1998,7 +1998,7 @@
         "bytes": "fA=="
       },
       "status": 0,
-      "response": "{\"id\":50,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder |\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":50,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder |\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder |\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2006,7 +2006,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":51,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":51,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder |\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2014,7 +2014,7 @@
         "bytes": "Uw=="
       },
       "status": 0,
-      "response": "{\"id\":52,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | S\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":52,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | S\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | S\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2022,7 +2022,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":53,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Sa\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":53,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Sa\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Sa\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2030,7 +2030,7 @@
         "bytes": "Zg=="
       },
       "status": 0,
-      "response": "{\"id\":54,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Saf\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":54,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Saf\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Saf\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2038,7 +2038,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":55,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":55,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2046,7 +2046,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":56,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":56,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2054,7 +2054,7 @@
         "bytes": "dA=="
       },
       "status": 0,
-      "response": "{\"id\":57,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":57,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe t\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe t\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2062,7 +2062,7 @@
         "bytes": "bw=="
       },
       "status": 0,
-      "response": "{\"id\":58,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":58,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe to\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2070,7 +2070,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":59,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":59,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe to\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2078,7 +2078,7 @@
         "bytes": "Yw=="
       },
       "status": 0,
-      "response": "{\"id\":60,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to c\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":60,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to c\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe to c\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2086,7 +2086,7 @@
         "bytes": "bA=="
       },
       "status": 0,
-      "response": "{\"id\":61,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to cl\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":61,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to cl\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe to cl\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2094,7 +2094,7 @@
         "bytes": "ZQ=="
       },
       "status": 0,
-      "response": "{\"id\":62,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to cle\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":62,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to cle\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe to cle\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2102,7 +2102,7 @@
         "bytes": "YQ=="
       },
       "status": 0,
-      "response": "{\"id\":63,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to clea\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":63,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to clea\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe to clea\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2110,7 +2110,7 @@
         "bytes": "cg=="
       },
       "status": 0,
-      "response": "{\"id\":64,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to clear\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":64,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to clear\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe to clear\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2118,7 +2118,7 @@
         "bytes": "Pw=="
       },
       "status": 0,
-      "response": "{\"id\":65,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to clear?\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":65,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to clear?\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe to clear?\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2126,7 +2126,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":66,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to clear? \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":66,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to clear? \"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe to clear?\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2134,7 +2134,7 @@
         "bytes": "fA=="
       },
       "status": 0,
-      "response": "{\"id\":67,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to clear? |\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":67,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"p\",\"k\":[{\"t\":\"| Folder | Safe to clear? |\"}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n| Folder | Safe to clear? |\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2222,7 +2222,7 @@
         "bytes": "Cg=="
       },
       "status": 0,
-      "response": "{\"id\":68,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":68,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2230,7 +2230,7 @@
         "bytes": "fA=="
       },
       "status": 0,
-      "response": "{\"id\":69,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":69,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2390,7 +2390,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":70,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]},{\"t\":\" \"}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":70,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]},{\"t\":\" \"}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?~/Library/Caches\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2398,7 +2398,7 @@
         "bytes": "fA=="
       },
       "status": 0,
-      "response": "{\"id\":71,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":71,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?~/Library/Caches\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2670,7 +2670,7 @@
         "bytes": "Pg=="
       },
       "status": 0,
-      "response": "{\"id\":72,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":72,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?~/Library/CachesYes\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2678,7 +2678,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":73,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]},{\"t\":\" \"}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":73,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]},{\"t\":\" \"}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?~/Library/CachesYes\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2686,7 +2686,7 @@
         "bytes": "fA=="
       },
       "status": 0,
-      "response": "{\"id\":74,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":74,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?~/Library/CachesYes\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2702,7 +2702,7 @@
         "bytes": "fA=="
       },
       "status": 0,
-      "response": "{\"id\":75,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":75,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?~/Library/CachesYes\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2782,7 +2782,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":76,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]},{\"t\":\" \"}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":76,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]},{\"t\":\" \"}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?~/Library/CachesYes\\n~/Work\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -2790,7 +2790,7 @@
         "bytes": "fA=="
       },
       "status": 0,
-      "response": "{\"id\":77,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":77,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?~/Library/CachesYes\\n~/Work\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -3046,7 +3046,7 @@
         "bytes": "Pg=="
       },
       "status": 0,
-      "response": "{\"id\":78,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"No\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":78,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"No\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?~/Library/CachesYes\\n~/WorkNo\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -3054,7 +3054,7 @@
         "bytes": "IA=="
       },
       "status": 0,
-      "response": "{\"id\":79,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"No\"}]},{\"t\":\" \"}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":79,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"No\"}]},{\"t\":\" \"}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?~/Library/CachesYes\\n~/WorkNo\"}"
     },
     {
       "entry": "occ_reply_chunk",
@@ -3062,7 +3062,7 @@
         "bytes": "fA=="
       },
       "status": 0,
-      "response": "{\"id\":80,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"No\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\"}"
+      "response": "{\"id\":80,\"provisional\":true,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{},\"k\":[{\"t\":\"No\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\nFolderSafe to clear?~/Library/CachesYes\\n~/WorkNo\"}"
     },
     {
       "entry": "occ_reply_finish",
@@ -3071,7 +3071,7 @@
         "tail": ""
       },
       "status": 0,
-      "response": "{\"id\":81,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{\"tone\":\"muted\"},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{\"data\":{\"snapshot\":{\"record_id\":\"22\",\"state\":\"loading\"}},\"columns\":[\"path\",\"bytes\"],\"displayRows\":{\"number\":\"6\"}},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"success\"},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"danger\"},\"k\":[{\"t\":\"No\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n\\n[table: 0 rows]\\n\\n| Folder | Safe to clear? |\\n|---|---|\\n| `~/Library/Caches` | [Yes] |\\n| `~/Work` | [No] |\"}"
+      "response": "{\"id\":81,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{\"tone\":\"muted\"},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{\"data\":{\"snapshot\":{\"record_id\":\"22\",\"state\":\"loading\"}},\"columns\":[\"path\",\"bytes\"],\"displayRows\":{\"number\":\"6\"}},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"success\"},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"danger\"},\"k\":[{\"t\":\"No\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n\\n[table: 0 rows]\\n\\n| Folder | Safe to clear? |\\n|---|---|\\n| `~/Library/Caches` | [Yes] |\\n| `~/Work` | [No] |\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n\\npath\\tbytes\\n\\n| Folder | Safe to clear? |\\n|---|---|\\n| `~/Library/Caches` | Yes |\\n| `~/Work` | No |\"}"
     },
     {
       "entry": "occ_reply_measure",
@@ -3088,7 +3088,7 @@
         "event_json": "{\"kind\":\"snapshot\",\"reference\":22,\"result\":{\"ok\":\"W3sicGF0aCI6In4vTGlicmFyeS9DYWNoZXMiLCJieXRlcyI6NTM2ODcwOTEyMH0seyJwYXRoIjoifi9Xb3JrIiwiYnl0ZXMiOjIxNDc0ODM2NDh9LHsicGF0aCI6In4vRG93bmxvYWRzIiwiYnl0ZXMiOjEwNzM3NDE4MjR9XQ==\"}}"
       },
       "status": 0,
-      "response": "{\"id\":82,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{\"tone\":\"muted\"},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{\"data\":{\"snapshot\":{\"record_id\":\"22\",\"state\":\"resolved\",\"value\":[{\"record\":{\"path\":\"~/Library/Caches\",\"bytes\":{\"number\":\"5368709120\"}}},{\"record\":{\"path\":\"~/Work\",\"bytes\":{\"number\":\"2147483648\"}}},{\"record\":{\"path\":\"~/Downloads\",\"bytes\":{\"number\":\"1073741824\"}}}]}},\"columns\":[\"path\",\"bytes\"],\"displayRows\":{\"number\":\"6\"}},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"success\"},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"danger\"},\"k\":[{\"t\":\"No\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n\\n[table: 3 rows]\\n\\n| Folder | Safe to clear? |\\n|---|---|\\n| `~/Library/Caches` | [Yes] |\\n| `~/Work` | [No] |\"}"
+      "response": "{\"id\":82,\"provisional\":false,\"tree\":{\"m\":\"root\",\"k\":[{\"m\":\"p\",\"k\":[{\"t\":\"Your three largest folders are below. \"},{\"c\":\"Styled\",\"p\":{\"tone\":\"muted\"},\"k\":[{\"t\":\"Sizes come from a scan two minutes ago.\"}]}]},{\"c\":\"Table\",\"p\":{\"data\":{\"snapshot\":{\"record_id\":\"22\",\"state\":\"resolved\",\"value\":[{\"record\":{\"path\":\"~/Library/Caches\",\"bytes\":{\"number\":\"5368709120\"}}},{\"record\":{\"path\":\"~/Work\",\"bytes\":{\"number\":\"2147483648\"}}},{\"record\":{\"path\":\"~/Downloads\",\"bytes\":{\"number\":\"1073741824\"}}}]}},\"columns\":[\"path\",\"bytes\"],\"displayRows\":{\"number\":\"6\"}},\"k\":[]},{\"m\":\"table\",\"k\":[{\"m\":\"thead\",\"k\":[{\"m\":\"cell\",\"k\":[{\"t\":\"Folder\"}]},{\"m\":\"cell\",\"k\":[{\"t\":\"Safe to clear?\"}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Library/Caches\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"success\"},\"k\":[{\"t\":\"Yes\"}]}]}]},{\"m\":\"row\",\"k\":[{\"m\":\"cell\",\"k\":[{\"m\":\"code\",\"text\":\"~/Work\",\"k\":[]}]},{\"m\":\"cell\",\"k\":[{\"c\":\"Badge\",\"p\":{\"tone\":\"danger\"},\"k\":[{\"t\":\"No\"}]}]}]}]}]},\"literals\":[],\"diagnostics\":[],\"plain_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n\\n[table: 3 rows]\\n\\n| Folder | Safe to clear? |\\n|---|---|\\n| `~/Library/Caches` | [Yes] |\\n| `~/Work` | [No] |\",\"readable_text\":\"Your three largest folders are below. Sizes come from a scan two minutes ago.\\n\\npath\\tbytes\\n~/Library/Caches\\t5368709120\\n~/Work\\t2147483648\\n~/Downloads\\t1073741824\\n\\n| Folder | Safe to clear? |\\n|---|---|\\n| `~/Library/Caches` | Yes |\\n| `~/Work` | No |\"}"
     },
     {
       "entry": "occ_reply_measure",

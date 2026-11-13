@@ -38,6 +38,7 @@ pub(crate) struct RevisionJson<'a> {
     literals: &'a [SourceSpan],
     diagnostics: &'a [Diagnostic],
     plain_text: &'a str,
+    readable_text: &'a str,
 }
 
 impl<'a> RevisionJson<'a> {
@@ -49,6 +50,7 @@ impl<'a> RevisionJson<'a> {
             literals: &revision.literals,
             diagnostics: &revision.diagnostics,
             plain_text: revision.plain_text.as_str(),
+            readable_text: revision.readable_text.as_str(),
         }
     }
 }

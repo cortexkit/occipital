@@ -21,6 +21,40 @@ pub(super) fn promotion_fuel(picture: &cortexkit_rich_ui_syntax::Revision) -> u6
     picture.nodes.iter().map(|n| cost(n)).sum()
 }
 
+/// A provisional revision's readable text: the words of its tree so far,
+/// one block per line. Tags have no evaluated props while streaming, so a
+/// table shows its rows only once the reply finishes.
+pub(super) fn provisional_text(tree: &Tree) -> DisplayText {
+    fn walk(nodes: &[T], out: &mut String) {
+        for node in nodes {
+            match node {
+                T::Text(s) => out.push_str(s.as_str()),
+                T::Markdown { kind, children } => {
+                    match kind {
+                        M::Code(s) => out.push_str(s.as_str()),
+                        M::SoftBreak => out.push(' '),
+                        M::HardBreak => out.push('\n'),
+                        _ => {}
+                    }
+                    walk(children, out);
+                    if matches!(
+                        kind,
+                        M::Paragraph | M::Heading(_) | M::Item | M::TableRow | M::CodeBlock { .. }
+                    ) && !out.ends_with('\n')
+                    {
+                        out.push('\n');
+                    }
+                }
+                T::Component { children, .. } => walk(children, out),
+                _ => {}
+            }
+        }
+    }
+    let mut out = String::new();
+    walk(&tree.blocks, &mut out);
+    DisplayText::new(out.trim_end())
+}
+
 pub(super) fn provisional(picture: &cortexkit_rich_ui_syntax::Revision) -> Tree {
     fn node(n: &DisplayNode) -> T {
         let children = n.children.iter().map(|n| node(n)).collect();
@@ -292,12 +326,16 @@ pub(super) fn render_limits(tree: &Tree, diagnostics: &mut Vec<crate::Diagnostic
     }
 }
 
+/// The reply's plain-text export (the language specification's §11.3), and
+/// its readable text: the same export with
+/// a table as its rows and a badge as its bare label, for an app that draws
+/// the reply without its catalog.
 pub(super) fn plain_text(
     program: &Resolved,
     source: &[u8],
     tree: &Tree,
     context: &CheckContext,
-) -> DisplayText {
+) -> (DisplayText, DisplayText) {
     fn components<'a>(nodes: &'a [T], out: &mut Vec<&'a T>) {
         for node in nodes {
             match node {
@@ -327,6 +365,116 @@ pub(super) fn plain_text(
             }
         }
         out
+    }
+    /// A cell as one line of text: tabs and line breaks inside it become
+    /// spaces, so each row stays one line and each cell one column.
+    fn cell(v: &V) -> String {
+        let text = match v {
+            V::Null => String::new(),
+            V::Number(n) => n.to_string(),
+            V::String(s) | V::Handle(s) | V::Site(s) => s.as_str().to_owned(),
+            V::Boolean(b) => b.to_string(),
+            V::List(items) => items.iter().map(cell).collect::<Vec<_>>().join(", "),
+            V::Snapshot { value: Some(v), .. } => cell(v),
+            V::Node(node) => text(std::slice::from_ref(node.as_ref())),
+            _ => String::new(),
+        };
+        text.replace(['\t', '\n', '\r'], " ")
+    }
+    /// `columns` as `(key, header)` pairs: a key stands for itself, a record
+    /// names its `key` and `label`.
+    fn table_columns(v: &V) -> Vec<(String, String)> {
+        let V::List(entries) = v else { return vec![] };
+        entries
+            .iter()
+            .filter_map(|entry| match entry {
+                V::String(key) => Some((key.as_str().to_owned(), key.as_str().to_owned())),
+                V::Record(members) => {
+                    let member = |name: &str| {
+                        members
+                            .iter()
+                            .find(|(k, _)| k.as_str() == name)
+                            .map(|(_, v)| cell(v))
+                    };
+                    let key = member("key")?;
+                    Some((key.clone(), member("label").unwrap_or(key)))
+                }
+                _ => None,
+            })
+            .collect()
+    }
+    /// Columns given as `Col` children rather than a `columns` prop.
+    fn col_children(children: &[T]) -> Vec<(String, String)> {
+        children
+            .iter()
+            .filter_map(|child| match child {
+                T::Component { name, props, .. } if name.as_str() == "Col" => {
+                    let prop = |wanted: &str| {
+                        props
+                            .iter()
+                            .find(|(k, _)| k.as_str() == wanted)
+                            .map(|(_, v)| cell(v))
+                    };
+                    let key = prop("key")?;
+                    Some((key.clone(), prop("label").unwrap_or(key)))
+                }
+                _ => None,
+            })
+            .collect()
+    }
+    /// A table's rows for reading without its catalog: the header, then one
+    /// line per row, cells separated by tabs. With no columns named, the first
+    /// row's keys are the columns. Long tables stop after [`READABLE_ROWS`]
+    /// rows with a line saying how many were left out.
+    fn table_rows(data: Option<&V>, mut columns: Vec<(String, String)>) -> String {
+        let records: &[V] = match data {
+            Some(V::List(rows)) => rows,
+            Some(V::Snapshot { value: Some(v), .. }) => match v.as_ref() {
+                V::List(rows) => rows,
+                _ => &[],
+            },
+            _ => &[],
+        };
+        let fields = |record: &V| match record {
+            V::Record(members) => members.clone(),
+            _ => vec![],
+        };
+        if columns.is_empty() {
+            columns = records
+                .first()
+                .map(|first| {
+                    fields(first)
+                        .iter()
+                        .map(|(k, _)| (k.as_str().to_owned(), k.as_str().to_owned()))
+                        .collect()
+                })
+                .unwrap_or_default();
+        }
+        let mut lines = vec![columns
+            .iter()
+            .map(|(_, header)| header.replace(['\t', '\n', '\r'], " "))
+            .collect::<Vec<_>>()
+            .join("\t")];
+        for record in records.iter().take(READABLE_ROWS) {
+            let members = fields(record);
+            lines.push(
+                columns
+                    .iter()
+                    .map(|(key, _)| {
+                        members
+                            .iter()
+                            .find(|(k, _)| k.as_str() == key)
+                            .map(|(_, v)| cell(v))
+                            .unwrap_or_default()
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\t"),
+            );
+        }
+        if records.len() > READABLE_ROWS {
+            lines.push(format!("…and {} more rows", records.len() - READABLE_ROWS));
+        }
+        lines.join("\n")
     }
     fn rows(v: &V) -> usize {
         match v {
@@ -393,6 +541,15 @@ pub(super) fn plain_text(
                 };
                 fields.push(("n".into(), count.to_string()));
                 fields.push(("N".into(), count.to_string()));
+                if name == "Table" {
+                    let columns = get("columns").map(table_columns).unwrap_or_default();
+                    let columns = if columns.is_empty() {
+                        col_children(children)
+                    } else {
+                        columns
+                    };
+                    fields.push(("rows".into(), table_rows(get("data"), columns)));
+                }
                 if name == "Citation" {
                     let identity = match get("source") {
                         Some(V::Snapshot { record_id, .. }) => record_id.as_str().to_owned(),
@@ -514,8 +671,15 @@ pub(super) fn plain_text(
             },
         })
         .collect();
-    crate::fallback::reply::plain_text(source, &replacements).text
+    (
+        crate::fallback::reply::plain_text(source, &replacements, false).text,
+        crate::fallback::reply::plain_text(source, &replacements, true).text,
+    )
 }
+
+/// How many rows of a table the readable text keeps (see
+/// [`Revision::readable_text`](crate::reply::Revision::readable_text)).
+const READABLE_ROWS: usize = 200;
 
 /// A value can pass the static prop type check but fail evaluation (for example,
 /// an address with a forbidden scheme). Replies keep that tag's source opaque,

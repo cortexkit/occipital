@@ -24,7 +24,16 @@ pub(crate) enum Content<'a> {
 /// Export the supplied reply source using the final parse's replacements, not
 /// any temporary rendering made while chunks were arriving. Replacement offsets
 /// refer to the supplied source, before UTF-8 repair.
-pub(crate) fn plain_text(source: &[u8], replacements: &[Replacement<'_>]) -> FallbackText {
+///
+/// `readable` asks for the text an app draws when it doesn't hold the reply's
+/// catalog: a `Table` becomes its `rows` field (header and tab-separated
+/// rows) and a `Badge` its bare `label`, where the catalog's text forms give
+/// only `[table: N rows]` and `[label]`. Every other tag keeps its text form.
+pub(crate) fn plain_text(
+    source: &[u8],
+    replacements: &[Replacement<'_>],
+    readable: bool,
+) -> FallbackText {
     let mut input = Cursor::new(source, REPLY_BYTES);
     let mut output = Output::new(REPLY_SCALARS, false);
     let mut replacements = replacements.iter().peekable();
@@ -41,6 +50,18 @@ pub(crate) fn plain_text(source: &[u8], replacements: &[Replacement<'_>]) -> Fal
         {
             match &replacement.content {
                 Content::Tag { name, fields } => {
+                    let readable_field = match *name {
+                        "Table" if readable => Some("rows"),
+                        "Badge" if readable => Some("label"),
+                        _ => None,
+                    }
+                    .and_then(|key| fields.iter().find(|(k, _)| *k == key));
+                    if let Some((_, value)) = readable_field {
+                        input.pos = replacement.end;
+                        output.write(value);
+                        replacements.next();
+                        continue;
+                    }
                     if let Some(template) = Catalog::shared()
                         .components
                         .get(*name)

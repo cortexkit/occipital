@@ -236,6 +236,7 @@ fn reply_forms_cover_every_reply_catalog_component() {
                 end: 7,
                 content: Content::Tag { name, fields },
             }],
+            false,
         );
         assert_eq!(result.text.as_str(), *expected, "{name}");
         assert_eq!(result.fuel, (7 + expected.chars().count()) as u64);
@@ -278,7 +279,7 @@ fn reply_replaces_only_drawn_spans_and_recorded_references() {
             content: Content::Reference { tool: None },
         },
     ];
-    let result = plain_text(source.as_bytes(), &replacements);
+    let result = plain_text(source.as_bytes(), &replacements, false);
     assert_eq!(
         result.text.as_str(),
         "**prose** [OK] <Broken/> [output of bash�] [tool output]\n```\n$$tc(1)\n```"
@@ -295,7 +296,8 @@ fn reply_replaces_only_drawn_spans_and_recorded_references() {
                     name: "Unknown",
                     fields: &[]
                 }
-            }]
+            }],
+            false
         )
         .text
         .as_str(),
@@ -316,11 +318,12 @@ fn reply_source_and_output_caps_are_independent_and_fuel_is_bounded() {
                 fields: &[("children", "short")],
             },
         }],
+        false,
     );
     assert_eq!(result.text.as_str(), "short…");
     assert_eq!(result.scanned_bytes, 262_144);
     assert_eq!(result.fuel, 262_150);
-    let result = plain_text(&source, &[]);
+    let result = plain_text(&source, &[], false);
     assert_eq!(result.text.as_str(), format!("{}…", "x".repeat(65_536)));
     assert_eq!(result.scanned_bytes, 65_536);
     assert_eq!(result.fuel, 131_073);
@@ -335,18 +338,19 @@ fn reply_source_and_output_caps_are_independent_and_fuel_is_bounded() {
                 fields: &[("children", &huge)],
             },
         }],
+        false,
     );
     assert_eq!(result.text.as_str().chars().count(), 65_537);
     assert_eq!(result.fuel, 327_681);
     assert!(result.fuel <= 400_000);
-    let exact = plain_text(&source[..65_536], &[]);
+    let exact = plain_text(&source[..65_536], &[], false);
     assert!(!exact.truncated);
     assert_eq!(exact.text.as_str().chars().count(), 65_536);
 }
 
 #[test]
 fn reply_literals_repair_encoding_and_keep_source_line_breaks() {
-    let result = plain_text(b"\xef\xbb\xbfA\r\nB\r\n\rC\x1b\xff", &[]);
+    let result = plain_text(b"\xef\xbb\xbfA\r\nB\r\n\rC\x1b\xff", &[], false);
     assert_eq!(result.text.as_str(), "A\nB\n\nC��");
     assert_eq!(result.scanned_bytes, 13);
     assert_eq!(result.fuel, 21);

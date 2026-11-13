@@ -592,3 +592,56 @@ fn a_reply_session_accepts_an_equal_catalog_copy_and_refuses_a_modified_one() {
     modified.vocabulary.tone.push("loud".into());
     assert!(matches!(open(&modified), Err(Error::Catalog)));
 }
+
+/// A reply drawn without its catalog reads as its readable text: a table as
+/// its rows (header first, cells tab-separated, in the named column order)
+/// and a badge as its bare label, where the plain text keeps the catalog's
+/// `[table: N rows]` and `[label]`.
+#[test]
+fn readable_text_gives_a_table_its_rows_and_a_badge_its_label() {
+    let source = "Tests finished. <Badge tone=\"success\">17 passed</Badge>\n\n<Table data={[{state: \"up\", service: \"api\"}, {state: \"down\", service: \"db\"}]} columns={[\"service\", {key: \"state\", label: \"State\"}]} />\n";
+    let done = finish(source.as_bytes());
+    assert_eq!(
+        done.plain_text.as_str(),
+        "Tests finished. [17 passed]\n\n[table: 2 rows]\n"
+    );
+    assert_eq!(
+        done.readable_text.as_str(),
+        "Tests finished. 17 passed\n\nservice\tState\napi\tup\ndb\tdown\n"
+    );
+}
+
+/// With no columns named, the first row's keys are the columns; a cell's
+/// tabs and line breaks become spaces; a long table stops at 200 rows.
+#[test]
+fn readable_text_bounds_a_long_table() {
+    let rows: Vec<String> = (0..203)
+        .map(|n| format!("{{n: {n}, note: \"a\\tb\\nc\"}}"))
+        .collect();
+    let source = format!("<Table data={{[{}]}} />", rows.join(", "));
+    let done = finish(source.as_bytes());
+    let lines: Vec<&str> = done.readable_text.as_str().lines().collect();
+    assert_eq!(lines[0], "n\tnote");
+    assert_eq!(lines[1], "0\ta b c");
+    assert_eq!(lines.len(), 1 + 200 + 1);
+    assert_eq!(lines[201], "…and 3 more rows");
+}
+
+/// While streaming, the readable text is the words so far, so an app that
+/// doesn't hold the catalog has something to draw before the reply finishes.
+#[test]
+fn a_provisional_revision_carries_the_words_so_far() {
+    let mut s = session();
+    let source = b"First paragraph.\n\nSecond one, still ";
+    let latest = source
+        .iter()
+        .filter_map(|byte| s.chunk(std::slice::from_ref(byte)).unwrap())
+        .last()
+        .unwrap();
+    assert!(latest.provisional);
+    assert_eq!(latest.plain_text.as_str(), "");
+    assert!(latest
+        .readable_text
+        .as_str()
+        .starts_with("First paragraph.\nSecond one"));
+}

@@ -35,6 +35,12 @@ pub struct Revision {
     pub diagnostics: Vec<Diagnostic>,
     /// The §11.3 plain text.
     pub plain_text: DisplayText,
+    /// The reply as plain text for an app that doesn't hold its catalog (a
+    /// reply stamped with a retired digest): the plain text with a table as
+    /// its rows (header first, cells tab-separated, at most 200 rows) and a
+    /// badge as its bare label. A provisional revision carries the words
+    /// streamed so far, one block per line.
+    pub readable_text: DisplayText,
     state_hash: String,
     _retention: Arc<Retention>,
 }
@@ -235,7 +241,9 @@ impl Session {
                 break;
             }
             let tree = render::provisional(&picture);
-            let revision = self.publish(tree, vec![], vec![], DisplayText::new(""), true)?;
+            let readable = render::provisional_text(&tree);
+            let revision =
+                self.publish(tree, vec![], vec![], (DisplayText::new(""), readable), true)?;
             latest = Some(revision);
         }
         Ok(latest)
@@ -410,8 +418,8 @@ impl Session {
         render::late_states(&mut tree, &self.context, &self.snapshots);
         render::render_limits(&tree, &mut diagnostics);
         let literals = render::literal_spans(program);
-        let plain = render::plain_text(program, &self.source, &tree, &self.context);
-        self.publish(tree, literals, diagnostics, plain, false)
+        let texts = render::plain_text(program, &self.source, &tree, &self.context);
+        self.publish(tree, literals, diagnostics, texts, false)
     }
 
     fn publish(
@@ -419,7 +427,7 @@ impl Session {
         tree: Tree,
         literals: Vec<SourceSpan>,
         diagnostics: Vec<Diagnostic>,
-        plain_text: DisplayText,
+        (plain_text, readable_text): (DisplayText, DisplayText),
         provisional: bool,
     ) -> Result<Revision, Error> {
         let retention = self.accounts.retain_tree(&tree)?;
@@ -436,6 +444,7 @@ impl Session {
             literals,
             diagnostics,
             plain_text,
+            readable_text,
             _retention: retention,
         };
         self.candidate = Some(revision.clone());
