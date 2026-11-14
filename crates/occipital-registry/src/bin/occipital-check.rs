@@ -6,10 +6,8 @@
 //! ```
 //!
 //! `--catalog` prints the tool catalog's version and digest, the values every
-//! template's `catalog` member must hold. Occipital still draws a template
-//! that names one of the catalog's earlier digests, which the catalog only
-//! grew from, but this check asks a template for the current one, since app
-//! builds that know only an earlier digest lack what was added since.
+//! template's `catalog` member must hold. Until the apps' first release the
+//! catalog changes in place, so a template naming an earlier digest fails.
 //!
 //! Each file holds one view, the input schema of the tool it is for, and
 //! optionally sample calls:
@@ -97,16 +95,8 @@ fn check(file: &str) -> Result<bool, String> {
     }
     let template = view.get("template").ok_or("the view has no template")?;
     let reports = check_view(template, &record_schema, input_schema)?;
-    let current = occipital_registry::view::tool_catalog_digest();
     for report in &reports {
-        let named = template[report.slot]["catalog"]["digest"].as_str();
-        if report.passed() && named.is_some_and(|named| named != current) {
-            println!(
-                "{file}: {}: it names an earlier tool catalog digest; name {current}",
-                report.slot
-            );
-            passed = false;
-        } else if report.passed() {
+        if report.passed() {
             println!(
                 "{file}: {}: passed ({})",
                 report.slot,

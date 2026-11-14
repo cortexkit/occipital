@@ -64,7 +64,7 @@ scripts/                 check.sh, build-xcframework.sh, xcframework-source-hash
 - **A new field on app rows or session facts:** `broca_entries.rs` or `source.rs`, and a new tagged sample set.
 - **A store table or column:** a new migration on that store's chain. Then an older build refuses the store, so rolling back needs the store files copied aside before the new build first starts; the request to place the build must say so.
 - **A C entry point:** a module in `crates/occipital-ffi/src/` through `boundary.rs`, its text in `include/occipital.h`, a Swift wrapper in `ports/swift/Sources/OccipitalKit/`, an FFI vector, and a rebuilt phone library.
-- **A catalog component:** the catalog JSON in `crates/occipital-lang/catalog/`, layout and checks in the library, the digest re-pinned in `catalog.rs`, and the old digest kept as an alias.
+- **A catalog component:** the catalog JSON in `crates/occipital-lang/catalog/`, layout and checks in the library, and the digest re-pinned in `catalog.rs`. No alias is kept for the old digest until the apps' first release.
 - **A kind of mention:** a rule in `crates/occipital-refs/src/lib.rs`, its spec in that crate's README, `RULES_VERSION` raised, and a new vector set.
 
 ## Conventions

@@ -88,7 +88,7 @@ A module that has commands provides `user-commands/v1` and serves `commands.desc
 
 ## Reply teaching and the interface language
 
-The language library parses, checks, evaluates and lays out the closed interface language: the tags a head's reply may hold, `show_ui` programs and tool templates. It has no panic paths, because apps embed it. Its catalogs are pinned by publication digest; when a catalog's text changes, the previous digest stays an accepted alias, so a stored reply keeps drawing.
+The language library parses, checks, evaluates and lays out the closed interface language: the tags a head's reply may hold, `show_ui` programs and tool templates. It has no panic paths, because apps embed it. Its catalogs are pinned by publication digest. Until the apps' first release a catalog changes in place, with no aliases: a reply stamped with an earlier digest doesn't draw as rich content (the apps show its plain text instead), and a tool template naming one is refused, so its calls draw as plain chips.
 
 - **Reply teaching:** asked for its system text, the module answers with teaching generated from the catalog, plus the stamp a runner records on each reply.
 - **Tool templates:** a row template reads the call's view (its record, completion and timing) and the clock only inside a fixed-size `Slot`, so a row's height never changes when they arrive. `occipital-check` gives tool providers the same checks in their CI.

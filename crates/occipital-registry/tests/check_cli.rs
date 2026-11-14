@@ -1,6 +1,5 @@
 //! `occipital-check` is the gate tool providers run on their templates before
-//! shipping them, so it asks for the tool catalog's current digest even though
-//! Occipital still draws a template naming an earlier one.
+//! shipping them: a template must name the tool catalog's current digest.
 
 use std::process::Command;
 
@@ -51,16 +50,13 @@ fn a_template_naming_the_current_digest_passes() {
     assert!(printed.contains(": row: passed (sha256:"), "{printed}");
 }
 
+/// The digest from before the `narrow` Slot width: retired, since the catalog
+/// changes in place until the apps' first release.
 #[test]
-fn a_template_naming_an_earlier_digest_is_asked_for_the_current_one() {
-    let earlier = "sha256:9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf";
-    let (code, printed) = check(earlier);
+fn a_template_naming_a_retired_digest_fails() {
+    let retired = "sha256:9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf";
+    let (code, printed) = check(retired);
     assert_eq!(code, 1, "{printed}");
-    assert!(
-        printed.contains(&format!(
-            ": row: it names an earlier tool catalog digest; name {}",
-            tool_catalog_digest()
-        )),
-        "{printed}"
-    );
+    assert!(!printed.contains(": row: passed"), "{printed}");
+    assert!(printed.contains(": row: "), "{printed}");
 }

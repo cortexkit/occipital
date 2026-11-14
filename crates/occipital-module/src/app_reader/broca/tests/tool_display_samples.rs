@@ -36,14 +36,17 @@ pub(super) fn reserved(module: &str) -> Principal {
     }
 }
 
-/// The tool catalog digest the sample templates name: the one the tool catalog
-/// had before the narrow Slot width, now an alias of the current digest. The
-/// set was recorded under it, and a provider's template naming it must keep
-/// passing, so the samples stay as recorded.
+/// The tool catalog digest the sample templates name, the current one: the
+/// catalog has no aliases until the apps' first release, so a template naming
+/// any other digest is refused.
 const SAMPLE_TOOL_CATALOG: &str =
-    "sha256:9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf";
+    "sha256:a95693cfabc0bf2d7e7276fd1c634128d96c11605c1cdfe480da9ac2418683a4";
 
 fn template(profile: &str, source: &str) -> Value {
+    assert_eq!(
+        SAMPLE_TOOL_CATALOG.strip_prefix("sha256:"),
+        Some(occipital_lang::Catalog::tool_templates_digest())
+    );
     json!({
         "schema": "occipital.template/1",
         "profile": profile,
@@ -239,7 +242,7 @@ async fn the_tool_display_samples_are_what_the_reader_serves() {
         .with_call_pins(slot),
     )));
     app.set_tool_display(tool);
-    let mut served = Served::new("phone-reader-tool-display-v4", app);
+    let mut served = Served::new("phone-reader-tool-display-v5", app);
     let session = json!({"session": "ses_head", "harness": "opencode2"});
     let request = |method: &str, extra: Value| {
         let mut params = session.clone();

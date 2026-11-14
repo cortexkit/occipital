@@ -29,9 +29,9 @@ pub fn tool_catalog_digest() -> String {
     format!("sha256:{}", Catalog::tool_templates_digest())
 }
 
-/// Whether `digest` names the tool catalog: its current digest or one of the
-/// earlier ones it only grew from, each as `sha256:` and lowercase hex. A
-/// template naming an earlier digest keeps checking and drawing as before.
+/// Whether `digest` names the tool catalog: its current digest or an alias
+/// the catalog lists, each as `sha256:` and lowercase hex. It lists none until
+/// the apps' first release, since the catalog changes in place until then.
 pub fn names_tool_catalog(digest: &str) -> bool {
     let Some(hex) = digest.strip_prefix("sha256:") else {
         return false;

@@ -47,22 +47,21 @@ fn template_naming(profile: &str, source: &str, digest: &str) -> Value {
     })
 }
 
-/// A template naming the tool catalog's earlier digest still passes, since
-/// the catalog only grew from it and views already served name it; one naming
-/// any other digest doesn't. A `narrow` Slot checks under the current digest.
-/// (`occipital-check`, the authors' gate, still asks new templates for the
-/// current digest.)
+/// Only the tool catalog's current digest passes. Until the apps' first
+/// release the catalog changes in place with no aliases, so a template naming
+/// a retired digest (the one from before the `narrow` Slot width) fails like
+/// any other. A `narrow` Slot checks under the current digest.
 #[test]
-fn a_template_naming_the_earlier_tool_catalog_digest_still_passes() {
-    let earlier = "sha256:9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf";
-    assert_ne!(earlier, tool_catalog_digest());
+fn only_the_current_tool_catalog_digest_passes() {
+    let retired = "sha256:9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf";
+    assert_ne!(retired, tool_catalog_digest());
     let passed = |digest: &str| {
         reports(json!({"row": template_naming("tool_row", ROW, digest)}))[0].passed()
     };
-    assert!(passed(earlier));
+    assert!(!passed(retired));
     assert!(passed(&tool_catalog_digest()));
     assert!(!passed(&format!("sha256:{}", "0".repeat(64))));
-    assert!(!passed(earlier.trim_start_matches("sha256:")));
+    assert!(!passed(tool_catalog_digest().trim_start_matches("sha256:")));
     let narrow = ROW.replace("width=\"short\"", "width=\"narrow\"");
     assert!(reports(json!({"row": template("tool_row", &narrow)}))[0].passed());
 }

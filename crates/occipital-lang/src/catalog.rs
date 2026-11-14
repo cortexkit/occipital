@@ -40,17 +40,6 @@ pub struct Catalog {
     admission: BTreeMap<String, Value>,
 }
 
-/// The tool catalog's earlier digests, oldest first. The tool catalog has
-/// only ever grown or been clarified: a later digest adds to it (a Slot
-/// `width` of `narrow`, 8 digit widths) or states how apps draw what is
-/// already measured (where a Slot's shorter content sits in its box), without
-/// changing what an earlier template means, so a template naming one of these
-/// checks, evaluates and lays out exactly as it did.
-pub(crate) const TOOL_ALIASES: &[&str] = &[
-    "9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf",
-    "3f92ca341daef684577fb26016c71449f5532715510a66ecb9677cd93a56cb84",
-];
-
 impl Catalog {
     /// The embedded component catalog v1, parsed once per process.
     pub fn v1() -> &'static Catalog {

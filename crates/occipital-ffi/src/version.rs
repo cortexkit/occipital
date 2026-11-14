@@ -90,17 +90,10 @@ mod tests {
         let tool = json["toolCatalog"]["digest"].as_str().unwrap();
         assert_eq!(tool, occipital_lang::Catalog::tool_templates_digest());
         assert_ne!(tool, digest);
-        // The tool catalog's earlier digests, oldest first: before it gained
-        // the `narrow` Slot width (8 digit widths), and before it said where a
-        // Slot's shorter content sits in its box.
-        assert_eq!(
-            json["toolCatalog"]["aliases"],
-            serde_json::json!([
-                "9a23139f4f1f48d6ed366a4a48b9221b1e5ac0ccd87473c0b241b8a37a876fbf",
-                "3f92ca341daef684577fb26016c71449f5532715510a66ecb9677cd93a56cb84"
-            ])
-        );
-        assert_eq!(json["toolCatalog"].as_object().unwrap().len(), 4);
+        // No aliases: until the apps' first release the tool catalog changes
+        // in place, so the member is left out.
+        assert_eq!(json["toolCatalog"].get("aliases"), None);
+        assert_eq!(json["toolCatalog"].as_object().unwrap().len(), 3);
     }
 
     #[test]
