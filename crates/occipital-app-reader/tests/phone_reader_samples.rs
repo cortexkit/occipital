@@ -1025,6 +1025,42 @@ fn broca_0_7_tool_events_map_to_tool_starts_and_ends() {
 #[test]
 fn the_head_rich_samples_are_complete_and_their_checksums_verify() {
     verify_published_set("test-vectors/phone-reader-head-rich-v1", 28);
+    verify_published_set("test-vectors/phone-reader-head-rich-v2", 6);
+}
+
+/// The v2 reply is stamped with catalog 1.0's current digest on the page and on
+/// its exact read, its text holds the three components the apps draw natively,
+/// and the user row carries no stamp.
+#[test]
+fn the_v2_head_reply_carries_the_current_catalog_digest() {
+    let root =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test-vectors/phone-reader-head-rich-v2");
+    let read = |name: &str| -> serde_json::Value {
+        let value: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(root.join(name)).unwrap()).unwrap();
+        value["result"].clone()
+    };
+    let page = read("02-newest-page.json");
+    let rows = page["messages"].as_array().unwrap();
+    let reply = rows.iter().find(|row| row["ordinal"] == 2).unwrap();
+    assert_eq!(reply["role"], "assistant");
+    assert_eq!(
+        reply["richUi"],
+        serde_json::json!({
+            "catalogDigest": "4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5",
+            "dialect": "1.0"
+        })
+    );
+    let text = reply["text"].as_str().unwrap();
+    for tag in ["<Badge ", "<Callout ", "<Table "] {
+        assert!(text.contains(tag), "{tag}");
+    }
+    let user = rows.iter().find(|row| row["ordinal"] == 1).unwrap();
+    assert_eq!(user["role"], "user");
+    assert!(user.get("richUi").is_none());
+    let exact = read("03-exact-read.json");
+    assert_eq!(exact["messages"][0]["ordinal"], 2);
+    assert_eq!(exact["messages"][0]["richUi"], reply["richUi"]);
 }
 
 /// The live text frames and the stored reply carry one and the same rich UI stamp, the
