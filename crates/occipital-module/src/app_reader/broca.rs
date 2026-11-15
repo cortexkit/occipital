@@ -472,7 +472,7 @@ impl RunnerBuilds {
     fn following(calls: Arc<SubcConsumer>) -> Self {
         use crate::catalog_generation::{CatalogGeneration, Held};
         Self {
-            generation: CatalogGeneration::follow(Arc::new(Held(calls))),
+            generation: CatalogGeneration::follow("runner builds", Arc::new(Held(calls))),
             state: Default::default(),
         }
     }

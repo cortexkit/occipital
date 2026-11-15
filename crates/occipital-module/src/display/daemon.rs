@@ -70,9 +70,10 @@ impl DaemonCalls {
     pub fn catalog_generation(&self) -> crate::catalog_generation::CatalogGeneration {
         self.generation
             .get_or_init(|| {
-                crate::catalog_generation::CatalogGeneration::follow(Arc::new(Follower(
-                    self.this.clone(),
-                )))
+                crate::catalog_generation::CatalogGeneration::follow(
+                    "command modules and view providers",
+                    Arc::new(Follower(self.this.clone())),
+                )
             })
             .clone()
     }

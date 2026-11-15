@@ -89,12 +89,13 @@ impl CatalogGeneration {
     }
 
     /// Follow `connection`'s catalog generation in a task. The task ends once
-    /// every clone of the returned value is dropped.
-    pub fn follow(connection: Arc<dyn Connection>) -> Self {
+    /// every clone of the returned value is dropped. `name` says in the log
+    /// which reader the watch serves.
+    pub fn follow(name: &'static str, connection: Arc<dyn Connection>) -> Self {
         let (sender, latest) = watch::channel(None);
         tokio::spawn(async move {
             tokio::select! {
-                () = run(connection.as_ref(), &sender) => {}
+                () = run(name, connection.as_ref(), &sender) => {}
                 () = sender.closed() => {}
             }
         });
@@ -129,33 +130,54 @@ impl CatalogGeneration {
     }
 }
 
-async fn run(connection: &dyn Connection, latest: &watch::Sender<Option<Position>>) {
+/// Hold the watch, opening it again after it ends. Each open and each end is
+/// logged at INFO, since nothing else shows whether the watch is live. A
+/// failed open is logged at INFO only the first time after start or after a
+/// live feed, so a daemon that refuses the watch costs one line, not one per
+/// retry.
+async fn run(
+    name: &'static str,
+    connection: &dyn Connection,
+    latest: &watch::Sender<Option<Position>>,
+) {
     let mut feed = 0u64;
     let mut backoff = Duration::from_secs(1);
+    let mut failure_logged = false;
     loop {
-        if let Some(consumer) = connection.consumer().await {
-            match consumer.catalog_watch().await {
+        match connection.consumer().await {
+            None => {
+                if !failure_logged {
+                    tracing::info!(reader = name, "catalog.watch has no daemon connection");
+                    failure_logged = true;
+                }
+            }
+            Some(consumer) => match consumer.catalog_watch().await {
                 Ok(mut subscription) => {
                     feed += 1;
-                    loop {
+                    failure_logged = false;
+                    tracing::info!(reader = name, feed, "catalog.watch opened");
+                    let reason = loop {
                         match subscription.next().await {
                             Ok(Some(response)) => {
                                 latest.send_replace(Some((feed, response.generation)));
                                 backoff = Duration::from_secs(1);
                             }
-                            Ok(None) => break,
-                            Err(error) => {
-                                tracing::debug!(%error, "catalog.watch ended");
-                                break;
-                            }
+                            Ok(None) => break "the daemon ended it".to_owned(),
+                            Err(error) => break error.to_string(),
                         }
-                    }
+                    };
+                    tracing::info!(reader = name, feed, %reason, "catalog.watch closed");
                 }
                 Err(error) => {
-                    tracing::debug!(%error, "catalog.watch couldn't be opened");
+                    if failure_logged {
+                        tracing::debug!(reader = name, %error, "catalog.watch couldn't be opened");
+                    } else {
+                        tracing::info!(reader = name, %error, "catalog.watch couldn't be opened");
+                        failure_logged = true;
+                    }
                     connection.failed().await;
                 }
-            }
+            },
         }
         latest.send_replace(None);
         tokio::time::sleep(backoff).await;
