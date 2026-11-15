@@ -315,6 +315,77 @@ fn a_recorded_interrupt_marker_leaves_the_persons_bubble() {
     assert_eq!(row["parts"][0]["hostCode"], "interrupted", "{row}");
 }
 
+/// Thalamus's recorded continuation rows (`thalamus-host-rows-v2`, real
+/// OpenCode 2.2.3, copied unchanged): for each of the three fixed texts
+/// OpenCode writes to make the model go on, the read's `host_parts` fact names
+/// the projected part's key and its code, and the row reaches the apps as host
+/// text carrying that code. The display row and the `tag_read` entry the set
+/// also holds mark the same part with the same code. Thalamus's first
+/// recording (`host-rows-v1`, not pinned) keyed the read fact `text`, the key
+/// compaction uses for that part, which names no part the projection has, so
+/// no code reached the apps.
+#[test]
+fn thalamus_recorded_continuation_rows_carry_their_codes() {
+    use cortexkit_role_llm_runner::display::{self, DisplayPart, DisplayRow};
+    use cortexkit_role_llm_runner::read::ReadMessage;
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/thalamus-host-rows-v2");
+    let sums = std::fs::read_to_string(root.join("SHA256SUMS")).unwrap();
+    // Fourteen samples and the README.
+    assert_eq!(sums.lines().count(), 15);
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(root.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+    let load = |name: String| -> Value {
+        serde_json::from_slice(&std::fs::read(root.join(&name)).unwrap())
+            .unwrap_or_else(|e| panic!("{name}: {e}"))
+    };
+    for code in [
+        "continued_after_interruption",
+        "continued_after_output_limit",
+        "continued_after_restart",
+    ] {
+        let read = load(format!("{code}-read.json"));
+        let row = broca_entries::display_rows(
+            std::slice::from_ref(&read),
+            false,
+            broca_entries::DisplayProfile::OpenCode2,
+            &[],
+        )
+        .unwrap()
+        .remove(0)
+        .display;
+        let text = &read["message"]["text"];
+        assert_eq!(
+            (&row["role"], &row["text"]),
+            (&json!("user"), &json!("")),
+            "{code}: {row}"
+        );
+        assert_eq!(
+            row["parts"],
+            json!([{"type": "injected", "text": text, "host": true,
+                "hostCode": code, "partIndex": 0, "partKey": "0"}]),
+            "{code}"
+        );
+        // The runner's fact names a key the contract's own projection has.
+        let entry: ReadMessage = serde_json::from_value(read.clone()).unwrap();
+        let projected = display::project("opencode-v2", &entry.message, None).unwrap();
+        let keys: Vec<&str> = projected.parts.iter().map(DisplayPart::part).collect();
+        entry.check_host_parts("synthetic", &keys).unwrap();
+        // Its display row and `tag_read` entry mark the same part alike.
+        let shown: DisplayRow =
+            serde_json::from_value(load(format!("{code}-display.json"))).unwrap();
+        assert_eq!(
+            (shown.parts[0].part(), shown.parts[0].host_code()),
+            ("0", Some(code))
+        );
+        let tag = load(format!("{code}-tag-read.json"));
+        assert_eq!(tag["entry"]["host_parts"], read["host_parts"], "{code}");
+        assert_eq!((&tag["host_code"], &tag["part"]), (&json!(code), &json!(0)));
+    }
+}
+
 /// The contract's samples for codes on native `synthetic` rows (runner
 /// contract 0.8.48). The coded continuation reaches the apps as a person's
 /// row of host text whose part carries the code. A `system` row the contract

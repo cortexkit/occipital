@@ -1,0 +1,82 @@
+{
+  "conditions": {
+    "context_window": 32768,
+    "last_prompt_tokens": 1,
+    "last_prompt_view": 0,
+    "model": {
+      "model": "probe",
+      "provider": "probe"
+    },
+    "output_reserve": 1024,
+    "rules": {
+      "history_edit_cost": "suffix",
+      "signed_parts": "none"
+    },
+    "system_tokens": {
+      "count": 6,
+      "exact": false
+    },
+    "tools_tokens": {
+      "count": 207,
+      "exact": false
+    }
+  },
+  "entries": [
+    {
+      "digest": "fcb9ae1f321d673dbb21e0856e51c43606200b7da3a633d389ea5a29f225135d",
+      "mid": "msg_1dd3b38010013NSIQjkCAtnHZa",
+      "ordinal": 8,
+      "parts": [
+        {
+          "digest": "88f9cc8b38e286bcb3b6288d44b46a65211928807b5f0825f6c877224cb9f4de",
+          "id": "0",
+          "kind": "text",
+          "tag": 8,
+          "text": "one two three",
+          "tokens": {
+            "count": 6
+          }
+        }
+      ],
+      "role": "assistant",
+      "usage": {
+        "output_tokens": 1,
+        "prompt_tokens": 1
+      },
+      "written_at": 1794713008159
+    },
+    {
+      "digest": "c3f0659da56c67b78e1984748d6f3b6268f13b5b1c90359ff454987f57d558ab",
+      "host_parts": [
+        {
+          "host_code": "continued_after_output_limit",
+          "part": "text"
+        }
+      ],
+      "mid": "msg_1dd3b382b002V5c6h4O1u3uNe3",
+      "ordinal": 9,
+      "parts": [
+        {
+          "digest": "174941210f71ec277a18b488a97d094472e97be95a6f8db77752c72be887ce8e",
+          "id": "text",
+          "kind": "text",
+          "tag": 9,
+          "text": "Your last response hit the output token limit (stop reason: length). Do not apologize, recap, or repeat yourself. Break the remaining work into smaller pieces.",
+          "tokens": {
+            "count": 35
+          }
+        }
+      ],
+      "role": "user",
+      "written_at": 1794713008171
+    }
+  ],
+  "newest": {
+    "digest": "c3f0659da56c67b78e1984748d6f3b6268f13b5b1c90359ff454987f57d558ab",
+    "mid": "msg_1dd3b382b002V5c6h4O1u3uNe3",
+    "ordinal": 9
+  },
+  "seq": 6,
+  "token_family": "o200k/1",
+  "token_family_exact": false
+}

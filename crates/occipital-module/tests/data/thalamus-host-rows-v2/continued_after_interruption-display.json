@@ -1,0 +1,13 @@
+{
+  "parts": [
+    {
+      "host": true,
+      "host_code": "continued_after_interruption",
+      "part": "0",
+      "text": "The previous response was interrupted. Continue from where you left off without repeating completed content.",
+      "type": "text"
+    }
+  ],
+  "role": "synthetic",
+  "text": "The previous response was interrupted. Continue from where you left off without repeating completed content."
+}

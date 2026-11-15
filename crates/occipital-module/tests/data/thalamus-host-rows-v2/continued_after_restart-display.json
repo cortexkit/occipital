@@ -1,0 +1,13 @@
+{
+  "parts": [
+    {
+      "host": true,
+      "host_code": "continued_after_restart",
+      "part": "0",
+      "text": "The server restarted while you were working. Continue from where you left off without repeating completed work.",
+      "type": "text"
+    }
+  ],
+  "role": "synthetic",
+  "text": "The server restarted while you were working. Continue from where you left off without repeating completed work."
+}

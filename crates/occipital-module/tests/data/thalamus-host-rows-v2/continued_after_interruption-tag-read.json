@@ -1,0 +1,30 @@
+{
+  "entry": {
+    "created_at": 1794713007764,
+    "host_parts": [
+      {
+        "host_code": "continued_after_interruption",
+        "part": "0"
+      }
+    ],
+    "message": {
+      "id": "msg_1dd3b3693001qTnUDixnOFNxq9",
+      "text": "The previous response was interrupted. Continue from where you left off without repeating completed content.",
+      "time": {
+        "created": 1794713007764
+      },
+      "type": "synthetic"
+    },
+    "mid": "msg_1dd3b3693001qTnUDixnOFNxq9",
+    "ordinal": 3,
+    "role": "user",
+    "time": {
+      "created": 1794713007764
+    },
+    "tool_calls": [],
+    "written_at": 1794713007764
+  },
+  "host": true,
+  "host_code": "continued_after_interruption",
+  "part": 0
+}

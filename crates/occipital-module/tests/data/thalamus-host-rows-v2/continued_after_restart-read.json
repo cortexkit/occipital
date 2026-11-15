@@ -1,0 +1,25 @@
+{
+  "created_at": 1794713008072,
+  "host_parts": [
+    {
+      "host_code": "continued_after_restart",
+      "part": "0"
+    }
+  ],
+  "message": {
+    "id": "msg_1dd3b37a8001VaLHj2y9Y5mrUr",
+    "text": "The server restarted while you were working. Continue from where you left off without repeating completed work.",
+    "time": {
+      "created": 1794713008072
+    },
+    "type": "synthetic"
+  },
+  "mid": "msg_1dd3b37a8001VaLHj2y9Y5mrUr",
+  "ordinal": 5,
+  "role": "user",
+  "time": {
+    "created": 1794713008072
+  },
+  "tool_calls": [],
+  "written_at": 1794713008072
+}

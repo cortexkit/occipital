@@ -1,0 +1,13 @@
+{
+  "parts": [
+    {
+      "host": true,
+      "host_code": "continued_after_output_limit",
+      "part": "0",
+      "text": "Your last response hit the output token limit (stop reason: length). Do not apologize, recap, or repeat yourself. Break the remaining work into smaller pieces.",
+      "type": "text"
+    }
+  ],
+  "role": "synthetic",
+  "text": "Your last response hit the output token limit (stop reason: length). Do not apologize, recap, or repeat yourself. Break the remaining work into smaller pieces."
+}

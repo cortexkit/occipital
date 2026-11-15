@@ -1,0 +1,25 @@
+{
+  "created_at": 1794713008171,
+  "host_parts": [
+    {
+      "host_code": "continued_after_output_limit",
+      "part": "0"
+    }
+  ],
+  "message": {
+    "id": "msg_1dd3b382b002V5c6h4O1u3uNe3",
+    "text": "Your last response hit the output token limit (stop reason: length). Do not apologize, recap, or repeat yourself. Break the remaining work into smaller pieces.",
+    "time": {
+      "created": 1794713008171
+    },
+    "type": "synthetic"
+  },
+  "mid": "msg_1dd3b382b002V5c6h4O1u3uNe3",
+  "ordinal": 9,
+  "role": "user",
+  "time": {
+    "created": 1794713008171
+  },
+  "tool_calls": [],
+  "written_at": 1794713008171
+}

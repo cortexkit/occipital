@@ -1,0 +1,59 @@
+{
+  "conditions": {
+    "context_window": 32768,
+    "last_prompt_tokens": 1,
+    "last_prompt_view": 0,
+    "model": {
+      "model": "probe",
+      "provider": "probe"
+    },
+    "output_reserve": 1024,
+    "rules": {
+      "history_edit_cost": "suffix",
+      "signed_parts": "none"
+    },
+    "system_tokens": {
+      "count": 6,
+      "exact": false
+    },
+    "tools_tokens": {
+      "count": 207,
+      "exact": false
+    }
+  },
+  "entries": [
+    {
+      "digest": "f97a9c116f40a2fce84942d2358a206cc7cb5e614f058aa462ae8f9bd589c455",
+      "host_parts": [
+        {
+          "host_code": "continued_after_restart",
+          "part": "text"
+        }
+      ],
+      "mid": "msg_1dd3b37a8001VaLHj2y9Y5mrUr",
+      "ordinal": 5,
+      "parts": [
+        {
+          "digest": "cce55fccca79ed1ac1e01c970d06ca81aec4a9eab7ae49028d0dc622fad5fff2",
+          "id": "text",
+          "kind": "text",
+          "tag": 5,
+          "text": "The server restarted while you were working. Continue from where you left off without repeating completed work.",
+          "tokens": {
+            "count": 22
+          }
+        }
+      ],
+      "role": "user",
+      "written_at": 1794713008072
+    }
+  ],
+  "newest": {
+    "digest": "f97a9c116f40a2fce84942d2358a206cc7cb5e614f058aa462ae8f9bd589c455",
+    "mid": "msg_1dd3b37a8001VaLHj2y9Y5mrUr",
+    "ordinal": 5
+  },
+  "seq": 4,
+  "token_family": "o200k/1",
+  "token_family_exact": false
+}
