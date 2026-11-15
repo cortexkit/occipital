@@ -56,8 +56,14 @@ pub(super) async fn serve_read(
     let session = params["session"].as_str().unwrap_or_default().to_string();
     super::observe::request(&method, &session, correlation, async {
         let work = async {
-            let result =
-                super::observe::step("reader", app.read_as(Some(&caller), &method, params)).await;
+            // Boxed: the read dispatch's future is as large as its largest
+            // operation's, and this one would otherwise carry it inline through
+            // the request's observation and deadline wrappers.
+            let result = super::observe::step(
+                "reader",
+                Box::pin(app.read_as(Some(&caller), &method, params)),
+            )
+            .await;
             super::observe::synchronous("reply_encode", || match result {
                 Ok(value) => result_outcome(value),
                 Err(error) => {

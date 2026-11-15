@@ -951,6 +951,13 @@ impl AppReader {
     }
 
     /// Serve a request already taken apart, answering through `exchange`.
+    ///
+    /// Each kind of request is served by its own boxed future. Without the boxes
+    /// this future, and every one that awaits it up to the SDK's handler, would be
+    /// as large as the largest operation's state, and in a debug build each of
+    /// those levels reserves that much stack again while it polls: six levels of
+    /// about 250 KiB overflowed a test thread's 2 MiB stack once the runner
+    /// contract's types grew.
     pub(crate) async fn serve_request(
         self: &Arc<Self>,
         binding: Option<RouteBinding>,
@@ -989,7 +996,7 @@ impl AppReader {
                         .map(|id| format!("upload:{id}"))
                 })
                 .unwrap_or_default();
-            return observe::request(&method, &subject, correlation, async {
+            return Box::pin(observe::request(&method, &subject, correlation, async {
                 match self.upload(&caller, &method, params, payload).await {
                     Ok(value) => route::result_outcome(value),
                     Err(error) => {
@@ -997,7 +1004,7 @@ impl AppReader {
                         route::error_outcome(&error)
                     }
                 }
-            })
+            }))
             .await;
         }
         if payload.is_some() {
@@ -1007,7 +1014,7 @@ impl AppReader {
             return refusal("invalid_request", "request exceeds 64 KiB");
         }
         if crate::commands::METHODS.contains(&method.as_str()) {
-            return observe::request(&method, "", correlation, async {
+            return Box::pin(observe::request(&method, "", correlation, async {
                 match self.command(binding.as_ref(), &method, params).await {
                     Ok(value) => {
                         if let Some(outcome) = value["outcome"].as_str() {
@@ -1020,7 +1027,7 @@ impl AppReader {
                         route::error_outcome(&error)
                     }
                 }
-            })
+            }))
             .await;
         }
         let records_watch = method == crate::display::app::RECORDS_WATCH;
@@ -1029,7 +1036,14 @@ impl AppReader {
             && !notices_watch
             && !matches!(method.as_str(), TRANSCRIPT_WATCH | DISPLAY_WATCH)
         {
-            return route::serve_read(self.clone(), caller, method, params, correlation).await;
+            return Box::pin(route::serve_read(
+                self.clone(),
+                caller,
+                method,
+                params,
+                correlation,
+            ))
+            .await;
         }
         let slot = match self.watches.open(WatchRoute {
             channel: channel.into(),
@@ -1051,12 +1065,24 @@ impl AppReader {
             }
         };
         if records_watch {
-            return route::serve_records_watch(self.clone(), params, exchange, slot).await;
+            return Box::pin(route::serve_records_watch(
+                self.clone(),
+                params,
+                exchange,
+                slot,
+            ))
+            .await;
         }
         if notices_watch {
-            return route::serve_notices_watch(self.clone(), params, exchange, slot).await;
+            return Box::pin(route::serve_notices_watch(
+                self.clone(),
+                params,
+                exchange,
+                slot,
+            ))
+            .await;
         }
-        route::serve(
+        Box::pin(route::serve(
             self.clone(),
             binding,
             method,
@@ -1064,7 +1090,7 @@ impl AppReader {
             exchange,
             correlation,
             slot,
-        )
+        ))
         .await
     }
 

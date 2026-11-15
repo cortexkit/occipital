@@ -597,6 +597,13 @@ impl Sender {
             states::SUPERSEDED | states::TEMPLATE_PART_GONE => json!({
                 "ok": false, "effectId": send_id, "code": reply.state, "terminal": true,
             }),
+            // A runner answers this first only to a repeat of a send that already
+            // ended undelivered; the same id stays refused, so the app sends the
+            // words again as a new message.
+            states::NOT_DELIVERED => json!({
+                "ok": false, "effectId": send_id, "code": reply.state,
+                "reason": reply.reason, "terminal": true,
+            }),
             _ => accepted(&send_id, &request),
         };
         // The log line names the mode the app asked for, how it went out (to a
@@ -1291,6 +1298,9 @@ fn steer_fate(answer: Result<Value, RunnerError>, past: bool) -> Fate {
             {
                 Fate::Unsent(reply.state)
             }
+            Ok(reply) if reply.state == states::NOT_DELIVERED => {
+                Fate::Unsent(not_delivered_reason(&reply))
+            }
             Ok(reply) if reply.state != states::PENDING || settled(&reply) => Fate::Delivered,
             Ok(_) if past => Fate::Expired,
             Ok(_) => Fate::Waiting,
@@ -1429,8 +1439,21 @@ fn head_reply_fate(reply: &SendReply) -> Fate {
                 .clone()
                 .unwrap_or_else(|| NOT_SENT_REASON.into()),
         ),
+        // The runner held the send but never got it to the host or past routing:
+        // final for this send id, so the app sends the words again as a new one.
+        states::NOT_DELIVERED => Fate::Unsent(not_delivered_reason(reply)),
         _ => Fate::Waiting,
     }
+}
+
+/// Why a `not_delivered` send wasn't delivered, as the runner names it
+/// (`handover_failed`, `routing_refused`, or a reason a later contract adds).
+/// The contract requires one, so a reply that decoded always has it.
+fn not_delivered_reason(reply: &SendReply) -> String {
+    reply
+        .reason
+        .clone()
+        .unwrap_or_else(|| NOT_SENT_REASON.into())
 }
 
 /// Take a followed send off the queued list: delivered (`reason` none) removes it,
@@ -1672,19 +1695,19 @@ pub(super) fn refused(code: &str, message: &str, detail: Option<&Value>) -> Send
 ///
 /// `class` is `transient` when the runner contract says the same request may
 /// succeed later, and `final` otherwise. Two kinds are transient. A plain retry
-/// (`errors::is_retryable`). And an account wait (`errors::is_account_wait`): the
-/// account that would serve the send is at its usage limit, or routing can't
-/// choose an account yet, so the send must wait for the named time and must
-/// never be shown as failed. An app holds any transient
-/// refusal at least `retryAfterMs` before sending it again, so an account wait
+/// (`errors::is_retryable`). And a wait (`errors::is_wait`): the account that
+/// would serve the send is at its usage limit, routing can't choose an account
+/// yet, or routing has no free capacity (`concurrency_full`), so the send must
+/// wait for the named time and must never be shown as failed. An app holds any
+/// transient refusal at least `retryAfterMs` before sending it again, so a wait
 /// needs no class of its own; its `runnerCode` lets the app say why it waits.
 ///
 /// The wait is the runner's relative hint when it gives one (`retry_after_ms`,
 /// `retry_after_s`, `retry_after_secs`), else the time until `resets_at_ms`, as
 /// the contract orders them; `now_ms` is when the refusal arrived.
 fn runner_refused_detail(code: &str, detail: Option<&Value>, now_ms: i64) -> Value {
-    use cortexkit_role_llm_runner::errors::{is_account_wait, is_retryable};
-    let class = if is_retryable(code) || is_account_wait(code) {
+    use cortexkit_role_llm_runner::errors::{is_retryable, is_wait};
+    let class = if is_retryable(code) || is_wait(code) {
         "transient"
     } else {
         "final"
@@ -1726,19 +1749,22 @@ fn named_wait_ms(detail: &Value, now_ms: i64) -> Option<u64> {
 }
 
 /// Why the run that would have carried a queued head send ended without it, when
-/// the runner says it ended in an error (`finished`, reason `error`): the code of
-/// that run's error from `run.status`, if the runner contract names it, and for
-/// an account wait the wait it names, from `now_ms`. Asked once; `None` when the
-/// runner names no run or no contract code, or doesn't answer, and the entry is
-/// then listed unsent with its reason alone.
+/// the runner says it ended in an error (`finished`, reason `error`) or never got
+/// the send delivered (`not_delivered`, whose allocated run ends in an error with
+/// no model step): the code of that run's error from `run.status`, if the runner
+/// contract names it, and for a wait (`errors::is_wait`) the wait it names, from
+/// `now_ms`. Asked once; `None` when the runner names no run or no contract code,
+/// or doesn't answer, and the entry is then listed unsent with its reason alone.
 async fn ended_run(
     target: &dyn SendTarget,
     answer: Option<&Value>,
     now_ms: i64,
 ) -> Option<super::send_queue::EndedRun> {
-    use cortexkit_role_llm_runner::errors::{is_account_wait, provider_codes};
+    use cortexkit_role_llm_runner::errors::{is_wait, provider_codes};
     let reply: SendReply = serde_json::from_value(answer?.clone()).ok()?;
-    if reply.state != states::FINISHED || reply.reason.as_deref() != Some("error") {
+    let ended_in_error =
+        reply.state == states::FINISHED && reply.reason.as_deref() == Some("error");
+    if !ended_in_error && reply.state != states::NOT_DELIVERED {
         return None;
     }
     let status = target
@@ -1752,7 +1778,7 @@ async fn ended_run(
     let code = error["provider_code"]
         .as_str()
         .filter(|code| provider_codes::CODES.contains(code))?;
-    let retry_after_ms = if is_account_wait(code) {
+    let retry_after_ms = if is_wait(code) {
         named_wait_ms(error, now_ms).and_then(|wait| i64::try_from(wait).ok())
     } else {
         None

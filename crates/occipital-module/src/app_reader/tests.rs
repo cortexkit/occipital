@@ -247,6 +247,40 @@ impl route::Exchange for TestExchange {
     }
 }
 
+/// The future that serves an app request stays small, whatever the operations
+/// it dispatches to hold, because each kind of request is served by a boxed
+/// future (see `serve_request`), and a read boxes its dispatch too (see
+/// `route::serve_read`). Unboxed, the request's future carried the largest
+/// operation's whole state, about 111 KB in a debug build, and so did every
+/// future awaiting it up to the SDK's handler; each level's poll reserved more
+/// than that again on the stack, and together they overflowed a test thread's
+/// 2 MiB stack. Boxed, the request's future is about 2 KB.
+#[test]
+fn the_request_future_holds_no_operation_state_inline() {
+    let app = Arc::new(AppReader::default());
+    let (frames, _) = mpsc::channel(1);
+    let exchange = Box::new(TestExchange {
+        key: (1, 1, 1),
+        frames,
+        cancelled: CancellationToken::new(),
+    });
+    let future = app.serve_body(None, Vec::new(), false, exchange);
+    let size = std::mem::size_of_val(&future);
+    assert!(
+        size <= 4096,
+        "serving an app request takes a {size}-byte future"
+    );
+    let read = route::serve_read(
+        app.clone(),
+        Caller::Operator,
+        "session.details".into(),
+        json!({}),
+        String::new(),
+    );
+    let size = std::mem::size_of_val(&read);
+    assert!(size <= 8192, "serving a read takes a {size}-byte future");
+}
+
 /// The frame the SDK writes for a handler's outcome.
 fn terminal(key: (u16, u32, u64), outcome: HandlerOutcome) -> Frame {
     match outcome {

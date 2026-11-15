@@ -824,6 +824,97 @@ async fn a_queued_send_refused_for_its_account_lists_the_runs_code() {
     }
 }
 
+/// A head send the runner held, then couldn't hand to its host or get past
+/// routing, reads `not_delivered` (runner contract 0.8.53). That's final for its
+/// send id, so the entry is listed unsent with the runner's reason as soon as
+/// the follower sees it, not left queued until the 8-day hold runs out. The run
+/// the runner allocated for it ended in an error with no model step, so that
+/// run's contract code is listed too, with the wait a capacity hold names.
+#[tokio::test(start_paused = true)]
+async fn a_send_the_runner_never_delivers_is_listed_unsent_with_its_reason() {
+    for (reason, provider_code, wait_ms) in [
+        ("handover_failed", None, None),
+        ("routing_refused", Some("concurrency_full"), Some(60_000)),
+    ] {
+        let f = fixture(Kind::Head);
+        {
+            let mut captured = f.runner.captured.lock().unwrap();
+            captured.insert(
+                "session.send_status",
+                json!({"result": {"state": "not_delivered", "reason": reason,
+                    "run_id": "run-nd", "submission_id": "sub-nd"}}),
+            );
+            let mut error = json!({"class": "transient", "message": "not delivered"});
+            if let Some(code) = provider_code {
+                error["provider_code"] = json!(code);
+                error["resets_at_ms"] = json!(START + 65_000);
+            }
+            captured.insert(
+                "run.status",
+                json!({"result": {"run_id": "run-nd", "state": "error", "error": error}}),
+            );
+        }
+        f.sender.send(message("nd", "words")).await.unwrap();
+        f.now.store(START + 5_000, Ordering::SeqCst);
+        let list = || f.receipts.queue().list("s", START).unwrap();
+        eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unsent")).await;
+        let (entries, _) = list().unwrap();
+        let entry = &entries[0];
+        assert_eq!(entry["reason"], reason, "{entry}");
+        assert_eq!(entry["runnerCode"].as_str(), provider_code, "{entry}");
+        assert_eq!(entry["retryAfterMs"].as_i64(), wait_ms, "{entry}");
+        let asked: Vec<Value> = f
+            .runner
+            .calls()
+            .into_iter()
+            .filter(|(method, _)| method == "run.status")
+            .map(|(_, params)| params)
+            .collect();
+        assert_eq!(asked, [json!({"run_id": "run-nd"})], "{reason}");
+    }
+}
+
+/// A held worker steer that ends `not_delivered` is unsent, never taken for
+/// delivered just because it no longer reads `pending`.
+#[tokio::test(start_paused = true)]
+async fn a_steer_the_runner_never_delivers_is_listed_unsent() {
+    let f = fixture(Kind::Worker);
+    let receipt = f
+        .sender
+        .send(message("st", "check the logs"))
+        .await
+        .unwrap();
+    assert_eq!(receipt["ok"], true);
+    assert_eq!(f.receipts.followed(1).unwrap().len(), 1);
+    f.runner.captured.lock().unwrap().insert(
+        "session.send_status",
+        json!({"result": {"state": "not_delivered", "reason": "handover_failed"}}),
+    );
+    let list = || f.receipts.queue().list("s", START).unwrap();
+    eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unsent")).await;
+    assert_eq!(list().unwrap().0[0]["reason"], "handover_failed");
+    assert!(f.receipts.followed(1).unwrap().is_empty());
+}
+
+/// A runner answers `not_delivered` first only to a repeat of a send that
+/// already ended undelivered, as when this module's receipts were restored from
+/// an older copy. The id stays refused, so the app gets a final receipt naming
+/// the reason and sends the words again as a new message; nothing is followed or
+/// listed, and its files aren't marked sent.
+#[tokio::test(start_paused = true)]
+async fn a_send_first_answered_not_delivered_is_final_for_its_id() {
+    let f = fixture(Kind::Head);
+    f.runner.scripted.lock().unwrap().push_back(Ok(
+        json!({"state": "not_delivered", "reason": "routing_refused"}),
+    ));
+    let receipt = f.sender.send(message("nd", "words")).await.unwrap();
+    assert_eq!(receipt["ok"], false, "{receipt}");
+    assert_eq!(receipt["code"], "not_delivered");
+    assert_eq!(receipt["reason"], "routing_refused");
+    assert_eq!(receipt["terminal"], true);
+    assert!(f.receipts.queue().list("s", START).unwrap().is_none());
+}
+
 /// Broca's `run.status` bodies before and after a run's error gains
 /// `account_continue` (routing's answer when it wouldn't move the run to another
 /// account), from `tests/data/broca-account-move-1112-r2/`, copied unchanged. The
@@ -1980,6 +2071,12 @@ fn an_account_wait_is_transient_with_the_wait_the_runner_named() {
             "account_limit_exhausted",
             json!({"routing_code": "limit", "class": "transient"}),
             json!({"class": "transient", "runnerCode": "account_limit_exhausted"}),
+        ),
+        // Routing's capacity hold is a wait too (runner contract 0.8.51).
+        (
+            "concurrency_full",
+            json!({"resets_at_ms": now + 60_000}),
+            json!({"class": "transient", "runnerCode": "concurrency_full", "retryAfterMs": 60_000}),
         ),
     ] {
         assert_eq!(
