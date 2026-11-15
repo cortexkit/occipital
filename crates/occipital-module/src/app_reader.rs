@@ -62,6 +62,8 @@ pub const SEND: &str = occipital_app_reader::send::OPERATION;
 pub const STOP: &str = send::stop::OPERATION;
 /// The apps' Stop everything: the turn, and what the session's tools run (`send::stop_all`).
 pub const STOP_ALL: &str = send::stop_all::OPERATION;
+/// The apps' "Send now": a waiting message into the running turn (`send::promote`).
+pub const PROMOTE: &str = send::promote::OPERATION;
 
 /// The tool display reads (`crate::display::app`): views by pin, templates by
 /// digest, a session's records and a call's detail, and the watch saying when
@@ -99,7 +101,7 @@ pub fn operations() -> Vec<ManagementOperation> {
             description: None,
         })
         .chain(
-            [SEND, STOP, STOP_ALL, crate::commands::RUN].map(|name| ManagementOperation {
+            [SEND, STOP, STOP_ALL, PROMOTE, crate::commands::RUN].map(|name| ManagementOperation {
                 name: name.into(),
                 kind: ManagementOperationKind::Mutate,
                 description: None,
@@ -688,6 +690,17 @@ impl AppReader {
                     detail: refusal.detail,
                 });
         }
+        if method == PROMOTE {
+            return self
+                .sends
+                .promote(params)
+                .await
+                .map_err(|refusal| ReadError {
+                    code: refusal.code,
+                    message: refusal.message,
+                    detail: refusal.detail,
+                });
+        }
         if method == SEND {
             let device = match caller {
                 Some(Caller::Device { fingerprint, .. }) => Some(fingerprint.as_str()),
@@ -804,6 +817,7 @@ fn served(method: &str) -> bool {
         || method == SEND
         || method == STOP
         || method == STOP_ALL
+        || method == PROMOTE
         || uploads::METHODS.contains(&method)
         || crate::commands::METHODS.contains(&method)
 }

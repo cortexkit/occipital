@@ -1,0 +1,1 @@
+{"code":"unsupported","detail":{"field":"session.promote_send"},"message":"this session's runner can't move a waiting message into its running turn"}

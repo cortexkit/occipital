@@ -1831,6 +1831,7 @@ async fn ended_run(
     })
 }
 
+pub mod promote;
 pub mod stop;
 pub mod stop_all;
 #[cfg(test)]

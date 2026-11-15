@@ -91,7 +91,7 @@ The apps reach these operations through Callosum, and the desktop app directly:
 | `display.views`, `display.template`, `session.tool_records`, `session.tool_detail` | read |
 | `session.notices`, `session.wake_records`, `session.request_context` | read |
 | `session.transcript_watch`, `session.display_watch`, `session.tool_records_watch`, `session.notices_watch` | watch |
-| `session.enqueue_user_message`, `session.stop`, `session.stop_all` | send |
+| `session.enqueue_user_message`, `session.stop`, `session.stop_all`, `session.promote_send` | send |
 | `upload.begin`, `upload.chunk`, `upload.status`, `upload.finish`, `upload.abort`, `upload.place` | upload |
 | `commands.list`, `commands.preview` | read |
 | `commands.run` | send |
@@ -117,6 +117,15 @@ An image a chat references is read with `session.media`: a thumbnail Occipital
 makes from the runner's bytes (at most 1024 pixels on its longest side, upright),
 or the original in pieces. Image file parts on a page carry the image's digest and,
 once Occipital has read its first bytes, its drawn width and height.
+
+`session.promote_send` is "Send now": a message the person sent, still waiting
+for the running turn to end, joins that turn instead. The app names it by its
+`clientMessageId`, and Occipital asks the runner's `session.promote` about the
+send its receipt recorded. The runner decides in one step with its queue and
+answers `promoted`, `delivered` (the turn ended first, nothing runs twice),
+`not_promoted` with a reason, or `not_queued`, passed on unchanged. A press
+retried under the same `clientRequestId` gets the first answer again. A runner
+that doesn't declare `send_promote` is refused `unsupported` without a call.
 
 `session.request_context` answers the system text and the tools of the plan in
 force on a session, from its runner's `session.plan_view`, with the members
