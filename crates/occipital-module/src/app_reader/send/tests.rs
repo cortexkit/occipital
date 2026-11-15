@@ -815,6 +815,99 @@ async fn a_send_first_answered_unconfirmed_is_listed_unknown_at_once() {
     }
 }
 
+/// Thalamus's recorded `session.send` and `session.send_status` bodies from Agent
+/// Runner (`tests/data/thalamus-send-unknown-1115/`, copied unchanged), for a
+/// head send in queue mode and one in steer mode. Agent Runner's `state` is the
+/// run's state, so only `delivered.as` says where the send stands: a first
+/// answer with no `delivered` is followed, `unknown` lists the send `unknown`
+/// whether the run is `finished` or still `active`, a repeat of the same send
+/// answered `unknown` is listed so at once, `pending` stays queued and `turn`
+/// leaves the list.
+#[tokio::test(start_paused = true)]
+async fn thalamus_recorded_send_outcomes_are_listed_by_delivery() {
+    let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data/thalamus-send-unknown-1115");
+    let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
+    // Eight bodies and the README.
+    assert_eq!(sums.lines().count(), 9);
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(data.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+    let body = |name: &str| -> Value {
+        serde_json::from_slice(&std::fs::read(data.join(name)).unwrap()).unwrap()
+    };
+    // (first `session.send` reply, later `session.send_status` reply, mode,
+    // the list's state once the follower has read the status: none = left it)
+    let cases = [
+        (
+            "01-head-send-reply.json",
+            Some("02-head-send-status-unknown.json"),
+            "queue",
+            Some("unknown"),
+        ),
+        (
+            "03-head-send-resend-same-id.json",
+            None,
+            "queue",
+            Some("unknown"),
+        ),
+        (
+            "04-steer-send-reply.json",
+            Some("05-steer-send-status-unknown.json"),
+            "steer",
+            Some("unknown"),
+        ),
+        (
+            "06-steer-send-resend-same-id.json",
+            None,
+            "steer",
+            Some("unknown"),
+        ),
+        (
+            "01-head-send-reply.json",
+            Some("07-head-send-status-pending.json"),
+            "queue",
+            Some("queued"),
+        ),
+        (
+            "01-head-send-reply.json",
+            Some("08-head-send-status-delivered.json"),
+            "queue",
+            None,
+        ),
+    ];
+    for (first, status, mode, listed) in cases {
+        let f = fixture(Kind::Head);
+        f.runner.scripted.lock().unwrap().push_back(Ok(body(first)));
+        if let Some(status) = status {
+            f.runner
+                .captured
+                .lock()
+                .unwrap()
+                .insert("session.send_status", json!({"result": body(status)}));
+        }
+        let mut request = message("t1", "words");
+        request["mode"] = json!(mode);
+        let receipt = f.sender.send(request).await.unwrap();
+        assert_eq!(receipt["ok"], true, "{first}");
+        let state = || {
+            f.receipts
+                .queue()
+                .list("s", START)
+                .unwrap()
+                .map(|(entries, _)| entries[0]["state"].as_str().unwrap().to_owned())
+        };
+        if status.is_some() {
+            // The first answer names no delivery, so the send is followed.
+            assert_eq!(state().as_deref(), Some("queued"), "{first}");
+            tokio::time::sleep(FOLLOW_INTERVAL * 3).await;
+        }
+        assert_eq!(state().as_deref(), listed, "{first} then {status:?}");
+    }
+}
+
 /// A held worker steer that the runner then can't confirm is listed `unknown`
 /// and no longer followed, never taken for delivered.
 #[tokio::test(start_paused = true)]
