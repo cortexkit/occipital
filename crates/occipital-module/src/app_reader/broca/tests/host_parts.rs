@@ -386,6 +386,80 @@ fn thalamus_recorded_continuation_rows_carry_their_codes() {
     }
 }
 
+/// The sample set `phone-reader-host-notes-v3`: an OpenCode 2 chat holding
+/// Thalamus's three recorded continuation rows, unchanged but numbered from
+/// ordinal 1 in their recorded order, served through Occipital's own handlers
+/// as a phone's route reaches them. Each is a `user` row with empty `text` whose one part is a
+/// host `injected` part carrying its code, so the apps can word each as their
+/// own quiet note.
+#[tokio::test]
+async fn the_host_note_v3_samples_are_what_the_reader_serves() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/thalamus-host-rows-v2");
+    // In the order the recording wrote them (ordinals 3, 5 and 9).
+    let codes = [
+        "continued_after_interruption",
+        "continued_after_restart",
+        "continued_after_output_limit",
+    ];
+    let mut recorded = 0;
+    let chat: Vec<Value> = codes
+        .iter()
+        .enumerate()
+        .map(|(index, code)| {
+            let name = format!("{code}-read.json");
+            let mut entry: Value =
+                serde_json::from_slice(&std::fs::read(root.join(&name)).unwrap()).unwrap();
+            let ordinal = entry["ordinal"].as_u64().unwrap();
+            assert!(ordinal > recorded, "{name}");
+            recorded = ordinal;
+            entry["ordinal"] = json!(index + 1);
+            entry
+        })
+        .collect();
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = chat;
+    *route.run_state.lock().unwrap() = Value::Null;
+    let app = Arc::new(super::super::super::AppReader::new(Arc::new(
+        BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(super::Hosts(
+                THALAMUS_RUNNER_MODULE_ID,
+                "opencode2",
+            )))),
+            Arc::new(super::tool_display_samples::AnyHarness(route)),
+        ),
+    )));
+    let mut served = super::served_samples::Served::new("phone-reader-host-notes-v3", app);
+    let request = json!({"method": super::super::super::TRANSCRIPT_PAGE,
+        "params": {"session": "ses_head", "harness": "opencode2", "limit": 50}});
+    let reply = served.read(1, &request).await;
+    let rows = super::served_samples::decoded(&reply)["result"]["messages"].clone();
+    let shown: Vec<(Value, Value, Value)> = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|row| {
+            assert_eq!(row["parts"].as_array().unwrap().len(), 1, "{row}");
+            let part = &row["parts"][0];
+            assert_eq!(
+                (&part["type"], &part["host"]),
+                (&json!("injected"), &json!(true))
+            );
+            (
+                row["role"].clone(),
+                row["text"].clone(),
+                part["hostCode"].clone(),
+            )
+        })
+        .collect();
+    let expected: Vec<(Value, Value, Value)> = codes
+        .iter()
+        .map(|code| (json!("user"), json!(""), json!(code)))
+        .collect();
+    assert_eq!(shown, expected);
+    served.keep("01-page-host-notes", &request, reply);
+    served.check();
+}
+
 /// The contract's samples for codes on native `synthetic` rows (runner
 /// contract 0.8.48). The coded continuation reaches the apps as a person's
 /// row of host text whose part carries the code. A `system` row the contract
