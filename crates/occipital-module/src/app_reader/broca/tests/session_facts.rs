@@ -773,6 +773,119 @@ async fn sender_promote_says_whether_send_now_is_offered() {
     served.check();
 }
 
+/// An Entorhinal with no record of any session until its flag is set, as for
+/// Magic Context's dreamer sessions, which no agent owns.
+#[derive(Default)]
+struct Unrecorded(std::sync::atomic::AtomicBool);
+
+#[async_trait]
+impl Entorhinal for Unrecorded {
+    async fn request(&self, method: &str, params: Value) -> Result<Value, ReadError> {
+        if method == "agent.session_for_runner" && self.0.load(Ordering::SeqCst) {
+            return Ok(
+                json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso",
+                "ref":"test-ref", "incarnation":"entorhinal-test", "ended_at_ms":null,
+                "runner":"broca", "session":params["session"], "harness":"broca",
+                "project_root":"/workspace/magic-context", "network":"no",
+                "network_history":[]}}),
+            );
+        }
+        Ok(json!({"code":"not_found", "detail":null, "message":"no agent session"}))
+    }
+}
+
+/// A Broca session Entorhinal has no record of is read straight from Broca,
+/// read only: its replies carry no `sender` (so the apps offer no composer or
+/// Stop) and no command subject, and the send path and uploads refuse it. Once
+/// Entorhinal records it, it is read through Entorhinal again and takes sends.
+/// The replies are kept as the sample set `phone-reader-unrecorded-v1`; its
+/// README says what each file shows.
+#[tokio::test]
+async fn a_session_entorhinal_does_not_record_is_read_only() {
+    use crate::app_reader::SourceResolver;
+    let route = sample_route();
+    set_head(&route, "model", model());
+    set_head(&route, "sender", grant());
+    let lookup = Arc::new(Unrecorded::default());
+    let sources = Arc::new(BrocaSources::new(
+        Arc::new(Resolver::new(lookup.clone())),
+        Arc::new(SendingRoutes(route.clone())),
+    ));
+    let app = Arc::new(AppReader::new(sources.clone()));
+    let mut served = super::served_samples::Served::new("phone-reader-unrecorded-v1", app.clone());
+    let session = "mc-dream:1.59:0.0";
+    let request = json!({"session": session, "harness": "broca", "limit": 3});
+    let details_request = json!({"session": session, "harness": "broca", "commandSubject": true});
+
+    let newest = page(&app, request.clone()).await;
+    assert_eq!(newest["messages"].as_array().unwrap().len(), 3, "{newest}");
+    route
+        .entries
+        .lock()
+        .unwrap()
+        .push(written("m23", 23, Some(709)));
+    let mut claimed = request.clone();
+    claimed["claim"] = json!({"heldFloorMessageId":"m20", "sinceMessageId":"m22",
+        "heldVersion":newest["version"]});
+    let matched = page(&app, claimed).await;
+    assert_eq!(matched["claim"], "matched", "{matched}");
+    let details = app.read(DETAILS, details_request.clone()).await.unwrap();
+    for (name, reply) in [
+        ("01-newest-page.json", &newest),
+        ("02-matched-claim.json", &matched),
+        ("03-details.json", &details),
+    ] {
+        assert_send_members(name, reply);
+        assert!(reply.get("sender").is_none(), "{name}: {reply}");
+        assert!(reply.get(SENDER_UNKNOWN).is_none(), "{name}: {reply}");
+        served.keep_file(name, serde_json::to_vec(reply).unwrap());
+    }
+    assert!(details.get("subject").is_none(), "{details}");
+    // Rows carry no network facts here.
+    assert!(newest["messages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|row| row["network"] == "unknown"));
+    // The send path and the upload folder resolve through Entorhinal.
+    let refused = |error: ReadError| (error.code, error.detail);
+    assert_eq!(
+        refused(
+            sources
+                .send_target(session, Some("broca"))
+                .await
+                .err()
+                .unwrap()
+        ),
+        ("session_unknown", Some(json!({"runner": null})))
+    );
+    assert_eq!(
+        refused(
+            sources
+                .project_root(session, Some("broca"))
+                .await
+                .unwrap_err()
+        ),
+        ("session_unknown", Some(json!({"runner": null})))
+    );
+
+    // Recorded now: the next read opens it through Entorhinal, with its grant
+    // and subject.
+    lookup.0.store(true, Ordering::SeqCst);
+    let details = app.read(DETAILS, details_request).await.unwrap();
+    assert_eq!(details["sender"], grant(), "{details}");
+    assert_eq!(
+        details["subject"],
+        json!({"runner":"broca", "harness":"broca", "session": session})
+    );
+    served.keep_file(
+        "04-details-once-recorded.json",
+        serde_json::to_vec(&details).unwrap(),
+    );
+    assert!(sources.send_target(session, Some("broca")).await.is_ok());
+    served.check();
+}
+
 /// The session fact samples the apps pin, `phone-session-facts-v3`, are what the
 /// handlers answer; `served_samples` says how the set is checked and rewritten.
 #[tokio::test]

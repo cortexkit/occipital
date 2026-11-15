@@ -66,6 +66,22 @@ pub struct Resolved {
 }
 
 impl Resolved {
+    /// A Broca session Entorhinal has no record of, such as one a module started
+    /// for its own work (Magic Context's dreamer runs). Broca finds it by harness
+    /// and session alone, and decides whether this module may read it. It has no
+    /// project folder and no network facts here, so it is read only: the send
+    /// path, uploads and commands, which all resolve through Entorhinal, still
+    /// refuse it.
+    pub fn unrecorded_broca(reference: SessionRef) -> Self {
+        Self {
+            reference,
+            harness: "broca".into(),
+            project_root: PathBuf::new(),
+            network: Network::Unknown,
+            network_history: Vec::new(),
+        }
+    }
+
     /// The identity a route to the session's runner opens with. Runners find an
     /// existing session by harness and session alone, so it names no project.
     pub fn identity(&self) -> BindIdentity {
@@ -498,6 +514,18 @@ fn resolved(
 
 /// A session Entorhinal doesn't know under the runner the phone named. Broca sessions
 /// never change runner, so `detail.runner` is null: no runner records it.
+/// Whether `error` says Entorhinal has no record of a Broca session at all, the
+/// one case [`Resolved::unrecorded_broca`] reads. A record under another runner
+/// names that runner in `detail.runner`, and is never read this way.
+pub fn unrecorded_broca(reference: &SessionRef, error: &ReadError) -> bool {
+    reference.runner == BROCA_RUNNER_MODULE_ID
+        && error.code == "session_unknown"
+        && error
+            .detail
+            .as_ref()
+            .is_some_and(|detail| detail["runner"].is_null())
+}
+
 fn unknown(reference: &SessionRef) -> ReadError {
     ReadError::new(
         "session_unknown",

@@ -848,9 +848,19 @@ impl BrocaSources {
                 Err(error) => return Err(error),
             }
         }
-        let resolved = self.resolver.resolve(reference).await?;
+        // A Broca session Entorhinal has no record of is read straight from
+        // Broca, which decides whether it exists and whether this module may
+        // read it. Only reads come this way: sends, uploads and Stop resolve
+        // through Entorhinal themselves and still refuse it.
+        let (resolved, recorded) = match self.resolver.resolve(reference).await {
+            Ok(resolved) => (resolved, true),
+            Err(error) if super::resolve::unrecorded_broca(reference, &error) => {
+                (Resolved::unrecorded_broca(reference.clone()), false)
+            }
+            Err(error) => return Err(error),
+        };
         let route = self.routes.open(&resolved).await?;
-        let sendable = self.routes.sender(&resolved).is_some();
+        let sendable = recorded && self.routes.sender(&resolved).is_some();
         let describe = self
             .describes
             .guard()
@@ -858,6 +868,7 @@ impl BrocaSources {
             .or_default()
             .clone();
         let source = BrocaSource::with_send_path(resolved, route, sendable, describe);
+        source.recorded.store(recorded, Ordering::Release);
         *source.resolver.guard() = Some(self.resolver.clone());
         *source.call_pins.guard() = self.call_pins.clone();
         *source.notices.guard() = self.notices.clone();
@@ -1049,6 +1060,10 @@ pub struct BrocaSource {
     /// Whether this module has a send path to this session. Without one, the apps'
     /// send refuses it, so replies say the app may not send whatever the runner grants.
     sendable: bool,
+    /// Whether Entorhinal records this session. One it doesn't is read only
+    /// (see [`Resolved::unrecorded_broca`]), and is read again through
+    /// Entorhinal once it is recorded.
+    recorded: AtomicBool,
     describe: DescribeSlot,
     /// Where the pins of the calls this source's pages carry are kept.
     call_pins: Mutex<CallPinSlot>,
@@ -1228,6 +1243,7 @@ impl BrocaSource {
             feed: tokio::sync::Mutex::new(None),
             feed_live: AtomicBool::new(false),
             sendable,
+            recorded: AtomicBool::new(true),
             describe,
             call_pins: Mutex::new(CallPinSlot::default()),
             notices: Mutex::new(NoticeSlot::default()),
@@ -1366,7 +1382,27 @@ impl BrocaSource {
         }
         let resolver = self.resolver.guard().clone();
         if let Some(resolver) = resolver {
-            let current = resolver.resolve(&reference).await?;
+            let current = match resolver.resolve(&reference).await {
+                Ok(current) => current,
+                // Still unrecorded: nothing to refresh.
+                Err(error)
+                    if !self.recorded.load(Ordering::Acquire)
+                        && super::resolve::unrecorded_broca(&reference, &error) =>
+                {
+                    return Ok(());
+                }
+                Err(error) => return Err(error),
+            };
+            // Recorded since it was read without a record: open it again through
+            // Entorhinal, so it gains its folder, network facts and send path.
+            if !self.recorded.load(Ordering::Acquire) {
+                self.retired.store(true, Ordering::Release);
+                self.lost();
+                return Err(ReadError::new(
+                    "session_binding_changed",
+                    format!("Broca session {} is now recorded", reference.session),
+                ));
+            }
             let mut old = self.resolved.guard();
             if old.project_root != current.project_root || old.harness != current.harness {
                 drop(old);
@@ -2119,6 +2155,10 @@ impl Snapshot {
 
 #[async_trait]
 impl TranscriptSource for BrocaSource {
+    fn recorded(&self) -> bool {
+        self.recorded.load(Ordering::Acquire)
+    }
+
     fn harness(&self) -> &'static str {
         match self.resolved.guard().harness.as_str() {
             "opencode2" => "opencode2",

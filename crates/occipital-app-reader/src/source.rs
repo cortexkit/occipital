@@ -412,6 +412,12 @@ pub trait TranscriptSource: Send + Sync {
     fn activity_feed_live(&self) -> bool {
         true
     }
+    /// Whether the fleet's session directory records this session. One read
+    /// without a record serves reads only, so it is named in no command
+    /// subject.
+    fn recorded(&self) -> bool {
+        true
+    }
 }
 
 /// A page read from a position: around a message, or after an ordinal.

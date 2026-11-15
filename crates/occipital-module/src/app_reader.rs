@@ -761,6 +761,8 @@ impl AppReader {
             )
             .await?;
             let found = source.is_some();
+            // A session read without a directory record takes no commands.
+            let recorded = source.as_deref().is_none_or(|source| source.recorded());
             let (mut reply, head) =
                 occipital_app_reader::details::read_with_head(source.as_deref(), &request).await?;
             // The session as its runner and the modules serving it key it, for
@@ -769,7 +771,7 @@ impl AppReader {
             // Entorhinal may record a Pi chat under `thalamus-pi`, while the
             // module hosting it is `thalamus-harness`. Only for an app that
             // asks, like `attachmentLimits`, so other details keep their bytes.
-            if found && params["commandSubject"] == true {
+            if found && recorded && params["commandSubject"] == true {
                 if let Ok(reference) = self
                     .resolver
                     .reference(&request.session, request.harness.as_deref())
