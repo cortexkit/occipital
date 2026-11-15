@@ -131,10 +131,12 @@ pub fn run(args: &[String]) -> ExitCode {
         }
         Mode::Serve => {}
     }
-    let nonce = match require_launch_nonce(subc_os::launch_nonce()) {
-        Ok(nonce) => nonce,
-        Err(fatal) => return fatal.report(),
-    };
+    // The daemon client proves this module's identity on its own connections,
+    // from the registration claim or else this same cached nonce, so the nonce
+    // is only checked here, never passed on.
+    if let Err(fatal) = require_launch_nonce(subc_os::launch_nonce()) {
+        return fatal.report();
+    }
     // The fleet log, installed before anything that logs. A start the daemon
     // did not make (no `SUBC_MODULE_ID`) serves without it rather than refusing.
     if let Err(error) = cortexkit_log::init_from_env() {
@@ -148,15 +150,9 @@ pub fn run(args: &[String]) -> ExitCode {
         )
         .report();
     };
-    // The app reader calls the runners and Entorhinal as this module, proved by
-    // the same nonce, so they see `reserved:occipital` rather than a plain caller.
-    let consumer = crate::serve::Consumer {
-        connection_file,
-        identity: subc_client_rs::ConsumerIdentity {
-            module_id: crate::MODULE_ID.into(),
-            launch_nonce: nonce.value().into(),
-        },
-    };
+    // The app reader calls the runners and Entorhinal as this module, so they
+    // see `reserved:occipital` rather than a plain caller.
+    let consumer = crate::serve::Consumer { connection_file };
     match crate::serve::run(consumer) {
         Ok(()) => ExitCode::SUCCESS,
         Err(fatal) => fatal.report(),
@@ -181,6 +177,40 @@ pub fn connection_file(args: &[String]) -> Option<std::path::PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// No call or watch this module makes names a consumer identity. Under the
+    /// daemon's registration channel every connection is bound to this module
+    /// by a claim, and the daemon client refuses a call that names one
+    /// ("consumer identity conflicts with connection binding"). The test
+    /// harness's connections aren't claim-bound, so only this check stops one
+    /// from coming back.
+    #[test]
+    fn no_call_names_a_consumer_identity() {
+        fn walk(dir: &std::path::Path, found: &mut Vec<String>) {
+            for entry in std::fs::read_dir(dir).unwrap() {
+                let path = entry.unwrap().path();
+                let name = path.file_name().unwrap().to_string_lossy().into_owned();
+                if path.is_dir() {
+                    if name != "tests" {
+                        walk(&path, found);
+                    }
+                } else if name.ends_with(".rs") && name != "tests.rs" {
+                    let text = std::fs::read_to_string(&path).unwrap();
+                    // Production code ends where its test module starts.
+                    let shipped = text.split("#[cfg(test)]").next().unwrap_or_default();
+                    if shipped.contains("consumer_identity") {
+                        found.push(path.display().to_string());
+                    }
+                }
+            }
+        }
+        let mut found = Vec::new();
+        walk(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src"),
+            &mut found,
+        );
+        assert!(found.is_empty(), "{found:?}");
+    }
 
     fn args(list: &[&str]) -> Vec<String> {
         list.iter().map(|s| (*s).to_owned()).collect()

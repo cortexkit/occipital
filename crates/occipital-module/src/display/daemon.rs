@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use serde_json::Value;
-use subc_client_rs::{CallOptions, ConsumerIdentity, ConsumerOptions, SubcConsumer};
+use subc_client_rs::{CallOptions, ConsumerOptions, SubcConsumer};
 use subc_protocol::{BindIdentity, RouteTarget};
 
 /// Why a call failed. `code` is the callee's refusal code; a failure without
@@ -41,9 +41,12 @@ impl crate::catalog_generation::Connection for Follower {
     }
 }
 
+/// Calls are made as this module, `reserved:occipital`: the daemon client
+/// proves it on the connection (by its registration claim, or else the launch
+/// nonce), so no call names an identity of its own. A claim-bound connection
+/// refuses a call that does.
 pub struct DaemonCalls {
     connection_file: PathBuf,
-    principal: ConsumerIdentity,
     consumer: tokio::sync::Mutex<Option<Arc<SubcConsumer>>>,
     /// The catalog generation followed on this connection, once asked for.
     generation: std::sync::OnceLock<crate::catalog_generation::CatalogGeneration>,
@@ -53,10 +56,9 @@ pub struct DaemonCalls {
 }
 
 impl DaemonCalls {
-    pub fn new(connection_file: PathBuf, principal: ConsumerIdentity) -> Arc<Self> {
+    pub fn new(connection_file: PathBuf) -> Arc<Self> {
         Arc::new_cyclic(|this| Self {
             connection_file,
-            principal,
             consumer: tokio::sync::Mutex::new(None),
             generation: std::sync::OnceLock::new(),
             this: this.clone(),
@@ -73,12 +75,6 @@ impl DaemonCalls {
                 )))
             })
             .clone()
-    }
-
-    /// The identity this module opens routes under, proved by its launch
-    /// nonce, for callers that make their own calls on [`Self::consumer`].
-    pub fn identity(&self) -> ConsumerIdentity {
-        self.principal.clone()
     }
 
     /// The connection, made now if there is none.
@@ -160,7 +156,6 @@ impl DaemonCalls {
                 BindIdentity::new(crate::MODULE_ID, purpose),
                 body.to_string().into_bytes(),
                 CallOptions {
-                    consumer_identity: Some(self.principal.clone()),
                     role_versions,
                     route_retry_deadline: open_within,
                     ..Default::default()

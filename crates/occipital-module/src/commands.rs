@@ -469,7 +469,6 @@ impl Modules for DaemonModules {
                     .to_string()
                     .into_bytes(),
                 subc_client_rs::CallOptions {
-                    consumer_identity: Some(self.calls.identity()),
                     timeout,
                     route_retry_deadline: defaults.route_retry_deadline.min(timeout),
                     ..defaults

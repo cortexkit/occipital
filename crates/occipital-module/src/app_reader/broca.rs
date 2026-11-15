@@ -36,7 +36,6 @@ use sha2::{Digest, Sha256};
 use subc_client_rs::consumer::{
     CallError, CallOptions, ConsumerOptions, SubcConsumer, SubscribeOptions, Subscription,
 };
-use subc_client_rs::ConsumerIdentity;
 use subc_protocol::RouteTarget;
 use tokio::sync::{broadcast, watch};
 
@@ -83,19 +82,17 @@ impl LazyBrocaSources {
     }
 
     /// Reach the runners and Entorhinal through the daemon at `connection`, as
-    /// `principal`. Once each is set, pages report to `call_pins` the tool
+    /// this module. Once each is set, pages report to `call_pins` the tool
     /// version (schema pin) the runner stored for each call, which joins a
     /// provider's records to the call, and to `notices` the notices that rode
     /// their calls.
     pub fn live(
         connection: std::path::PathBuf,
-        principal: ConsumerIdentity,
         call_pins: CallPinSlot,
         notices: NoticeSlot,
     ) -> Self {
         Self::new(Arc::new(LiveConnector {
             connection,
-            principal,
             call_pins,
             notices,
         }))
@@ -147,7 +144,6 @@ impl LazyBrocaSources {
 
 struct LiveConnector {
     connection: std::path::PathBuf,
-    principal: ConsumerIdentity,
     call_pins: CallPinSlot,
     notices: NoticeSlot,
 }
@@ -157,7 +153,6 @@ impl SourceConnector for LiveConnector {
     async fn connect(&self) -> Result<Arc<BrocaSources>, ReadError> {
         BrocaSources::live(
             &self.connection,
-            self.principal.clone(),
             subc_protocol::BindIdentity::new(crate::MODULE_ID, "app-reader"),
         )
         .await
@@ -349,10 +344,14 @@ pub trait BrocaRoutes: Send + Sync {
     }
 }
 
+/// Calls and streams to the runners. Every one is made as this module,
+/// `reserved:occipital`: the daemon client proves it on each connection (by
+/// the connection's registration claim, or else the launch nonce), so no call
+/// names an identity of its own, and a claim-bound connection would refuse
+/// one that did.
 struct DaemonRoutes {
     calls: Arc<SubcConsumer>,
     streams: Arc<SubcConsumer>,
-    principal: ConsumerIdentity,
     builds: Arc<RunnerBuilds>,
 }
 
@@ -362,7 +361,6 @@ impl BrocaRoutes for DaemonRoutes {
         Ok(Arc::new(DaemonRoute {
             calls: self.calls.clone(),
             streams: self.streams.clone(),
-            principal: self.principal.clone(),
             resolved: resolved.clone(),
             builds: self.builds.clone(),
         }))
@@ -371,7 +369,6 @@ impl BrocaRoutes for DaemonRoutes {
     fn sender(&self, resolved: &Resolved) -> Option<Arc<dyn SendTarget>> {
         Some(Arc::new(DaemonSender {
             calls: self.calls.clone(),
-            principal: self.principal.clone(),
             resolved: resolved.clone(),
         }))
     }
@@ -382,7 +379,6 @@ impl BrocaRoutes for DaemonRoutes {
 /// senders the session's plan allows.
 struct DaemonSender {
     calls: Arc<SubcConsumer>,
-    principal: ConsumerIdentity,
     resolved: Resolved,
 }
 
@@ -402,7 +398,6 @@ impl SendTarget for DaemonSender {
                     .to_string()
                     .into_bytes(),
                 CallOptions {
-                    consumer_identity: Some(self.principal.clone()),
                     role_versions: versions(),
                     ..Default::default()
                 },
@@ -446,7 +441,6 @@ pub(crate) fn runner_result(value: Value) -> Result<Value, RunnerError> {
 struct DaemonRoute {
     calls: Arc<SubcConsumer>,
     streams: Arc<SubcConsumer>,
-    principal: ConsumerIdentity,
     resolved: Resolved,
     builds: Arc<RunnerBuilds>,
 }
@@ -618,7 +612,6 @@ impl BrocaRoute for DaemonRoute {
                 self.resolved.identity(),
                 body(op, params),
                 CallOptions {
-                    consumer_identity: Some(self.principal.clone()),
                     role_versions: versions(),
                     ..Default::default()
                 },
@@ -677,7 +670,6 @@ impl BrocaRoute for DaemonRoute {
                     .to_string()
                     .into_bytes(),
                 SubscribeOptions {
-                    consumer_identity: Some(self.principal.clone()),
                     role_versions: versions(),
                     ..Default::default()
                 },
@@ -781,7 +773,6 @@ impl BrocaSources {
 
     pub async fn live(
         connection: &Path,
-        principal: ConsumerIdentity,
         lookup_identity: subc_protocol::BindIdentity,
     ) -> Result<Self, ReadError> {
         let consumer = Arc::new(
@@ -792,15 +783,10 @@ impl BrocaSources {
         let resolver = Arc::new(Resolver::new(Arc::new(DaemonEntorhinal {
             consumer,
             identity: lookup_identity,
-            principal: principal.clone(),
         })));
-        Self::connect(connection, principal, resolver).await
+        Self::connect(connection, resolver).await
     }
-    pub async fn connect(
-        connection: &Path,
-        principal: ConsumerIdentity,
-        resolver: Arc<Resolver>,
-    ) -> Result<Self, ReadError> {
+    pub async fn connect(connection: &Path, resolver: Arc<Resolver>) -> Result<Self, ReadError> {
         let connect = || SubcConsumer::connect(connection, ConsumerOptions::default());
         let calls = Arc::new(
             connect()
@@ -819,7 +805,6 @@ impl BrocaSources {
                 builds: Arc::new(RunnerBuilds::following(calls.clone())),
                 calls,
                 streams,
-                principal,
             }),
         ))
     }

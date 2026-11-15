@@ -13,7 +13,6 @@ use occipital_app_reader::source::ReadError;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
 use subc_client_rs::consumer::{CallOptions, SubcConsumer};
-use subc_client_rs::ConsumerIdentity;
 use subc_protocol::{BindIdentity, RouteTarget};
 
 pub const BROCA_RUNNER_MODULE_ID: &str = "broca";
@@ -99,10 +98,11 @@ pub trait Entorhinal: Send + Sync {
     async fn request(&self, method: &str, params: Value) -> Result<Value, ReadError>;
 }
 
+/// Entorhinal's lookups, called as this module: the daemon client proves the
+/// identity on the connection, so no call names one.
 pub struct DaemonEntorhinal {
     pub consumer: Arc<SubcConsumer>,
     pub identity: BindIdentity,
-    pub principal: ConsumerIdentity,
 }
 
 #[async_trait]
@@ -131,7 +131,6 @@ impl DaemonEntorhinal {
                     .to_string()
                     .into_bytes(),
                 CallOptions {
-                    consumer_identity: Some(self.principal.clone()),
                     timeout,
                     ..Default::default()
                 },

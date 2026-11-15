@@ -20,8 +20,8 @@ use serde::Deserialize;
 use serde_json::value::RawValue;
 use serde_json::Value;
 use subc_client_rs::{
-    BindDecision, ConsumerIdentity, HandlerOutcome, ModuleHandler, RequestClass, RequestCtx,
-    RequestPools, RouteBindRequest, RouteCloseReason, RouteHandle,
+    BindDecision, HandlerOutcome, ModuleHandler, RequestClass, RequestCtx, RequestPools,
+    RouteBindRequest, RouteCloseReason, RouteHandle,
 };
 use subc_protocol::session::{HealthReport, HealthStatus};
 use subc_protocol::{ModuleHelloAckBody, RouteTarget};
@@ -200,11 +200,11 @@ pub fn exit_with(fatal: Fatal) {
 }
 
 /// What the app reader needs to reach the runners, Entorhinal and the other
-/// modules: the daemon's connection file and the identity this process proves
-/// with its launch nonce. Absent in tests that serve no reads.
+/// modules: the daemon's connection file. The daemon client proves this
+/// module's identity on each connection itself. Absent in tests that serve no
+/// reads.
 pub struct Consumer {
     pub connection_file: PathBuf,
-    pub identity: ConsumerIdentity,
 }
 
 pub struct OccipitalHandler {
@@ -366,7 +366,6 @@ impl OccipitalHandler {
         let resolver = Arc::new(match &self.consumer {
             Some(consumer) => app_reader::broca::LazyBrocaSources::live(
                 consumer.connection_file.clone(),
-                consumer.identity.clone(),
                 self.call_pins.clone(),
                 self.notices.clone(),
             ),
@@ -635,10 +634,7 @@ impl OccipitalHandler {
         Some(
             self.daemon_calls
                 .get_or_init(|| {
-                    crate::display::daemon::DaemonCalls::new(
-                        consumer.connection_file.clone(),
-                        consumer.identity.clone(),
-                    )
+                    crate::display::daemon::DaemonCalls::new(consumer.connection_file.clone())
                 })
                 .clone(),
         )
