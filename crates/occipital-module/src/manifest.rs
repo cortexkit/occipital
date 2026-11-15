@@ -169,6 +169,11 @@ pub fn manifest() -> Result<ModuleManifest, String> {
                 must_never_reach: vec![],
             }))
             .provenance(Some(build_provenance()?))
+            // The SDK's serve path adopts the daemon's inherited registration
+            // channel when one is handed over, and its consumer connections are
+            // then bound to this module by a claim. A daemon that launches
+            // modules only through the channel needs this declared.
+            .registration_channel(true)
             .build(),
     )
 }
@@ -300,6 +305,11 @@ mod tests {
         let payloads = value["operation_payload"].as_object().unwrap();
         assert_eq!(payloads.keys().collect::<Vec<_>>(), ["upload.chunk"]);
         assert_eq!(surface["identity_scope"], json!([]));
+    }
+
+    #[test]
+    fn the_manifest_supports_the_registration_channel() {
+        assert_eq!(manifest_value()["registration_channel"], true);
     }
 
     #[test]
