@@ -1,0 +1,1 @@
+{"incarnation":"inc-a","lastRun":{"runId":"r1","state":"active"},"model":{"model":"claude-opus-4-1","provider":"anthropic","variant":"thinking"},"sender":{"interrupt":true,"modes":["tool_result","turn_system","steer","idle_start"]}}

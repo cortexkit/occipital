@@ -50,7 +50,7 @@ Until a send's message is stored, Occipital follows it with `session.send_status
 
 `session.stop` cancels the running turn through the runner; `session.stop_all` asks the runner to stop everything the agent started, and reports what stopped and what kept running.
 
-`session.promote_send` ("Send now") moves a queued message into the running turn. Occipital names the message to the runner's `session.promote` by the send id its receipt recorded; the runner decides in one step with its queue, so the message joins the turn, or has already run, and never runs twice. The send keeps its id, so its receipt and its `queuedSends` entry carry on unchanged.
+`session.promote_send` ("Send now") moves a queued message into the running turn. Occipital names the message to the runner's `session.promote` by the send id its receipt recorded; the runner decides in one step with its queue, so the message joins the turn, or has already run, and never runs twice. The send keeps its id, so its receipt and its `queuedSends` entry carry on unchanged. The session facts' `sender` carries `promote: true` when the apps may offer it: the runner declares `send_promote` for the session, and the grant includes `steer`.
 
 ## Files and images
 

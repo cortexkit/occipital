@@ -125,7 +125,9 @@ send its receipt recorded. The runner decides in one step with its queue and
 answers `promoted`, `delivered` (the turn ended first, nothing runs twice),
 `not_promoted` with a reason, or `not_queued`, passed on unchanged. A press
 retried under the same `clientRequestId` gets the first answer again. A runner
-that doesn't declare `send_promote` is refused `unsupported` without a call.
+that doesn't declare `send_promote` is refused `unsupported` without a call. A
+chat's `sender` carries `promote: true` when the app may offer it: the runner
+declares `send_promote` for the session, and the grant includes `steer`.
 
 `session.request_context` answers the system text and the tools of the plan in
 force on a session, from its runner's `session.plan_view`, with the members

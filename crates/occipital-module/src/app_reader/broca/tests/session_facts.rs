@@ -421,14 +421,20 @@ async fn session_details_reads_one_head_and_no_messages() {
         reply,
         json!({"model":model(), "serviceTier":"fast", "usage":usage(), "sender":grant(), "incarnation":"log-7f3a", "lastRun":last_run()})
     );
-    let methods: Vec<_> = route
-        .calls
-        .lock()
-        .unwrap()
-        .iter()
-        .map(|call| call["method"].clone())
-        .collect();
-    assert_eq!(methods, ["session.head"]);
+    let methods = || -> Vec<Value> {
+        route
+            .calls
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|call| call["method"].clone())
+            .collect()
+    };
+    // The first read of a session also reads the runner's description once, to
+    // say whether "Send now" is offered; later reads keep it.
+    assert_eq!(methods(), ["session.head", "role.describe"]);
+    details(&app).await;
+    assert_eq!(methods(), ["session.head", "role.describe", "session.head"]);
     assert_eq!(route.attaches.load(Ordering::Relaxed), 0);
 
     // A head naming no tier gets none: Occipital passes the head's own word.
@@ -696,6 +702,75 @@ async fn samples() -> Vec<(&'static str, Value)> {
     assert_eq!(values, ["yes", "no", "unknown"]);
     samples.push(("newest-page-network.json", network));
     samples
+}
+
+/// Whether the app may offer "Send now" for a queued message: `sender.promote`
+/// on every reply that carries the sender, only when the runner declares
+/// `send_promote` and the grant includes `steer`. The cases are kept as the
+/// sample set `phone-session-send-now-v1`; its README says what each file shows.
+#[tokio::test]
+async fn sender_promote_says_whether_send_now_is_offered() {
+    use cortexkit_role_llm_runner::capabilities::{SEND_PROMOTE, STEER};
+    let mut served =
+        super::served_samples::Served::new("phone-session-send-now-v1", sending(&sample_route()));
+    let worker = json!({"modes":["tool_result", "turn_system"], "interrupt":false});
+    for (name, groups, grant, offered) in [
+        (
+            "offered",
+            &[HEAD_SENDER, STEER, SEND_PROMOTE][..],
+            grant(),
+            true,
+        ),
+        (
+            "runner-without-send-now",
+            &[HEAD_SENDER, STEER][..],
+            grant(),
+            false,
+        ),
+        (
+            "grant-without-steer",
+            &[HEAD_SENDER, STEER, SEND_PROMOTE][..],
+            worker,
+            false,
+        ),
+    ] {
+        let route = sample_route();
+        set_head(&route, "model", model());
+        set_head(&route, "sender", grant);
+        *route.describe.lock().unwrap() = Some(describe_with(groups));
+        let app = sending(&route);
+        let newest = page(&app, params()).await;
+        // A claim reply carries the session facts with the rows it brings.
+        route
+            .entries
+            .lock()
+            .unwrap()
+            .push(written("m23", 23, Some(709)));
+        let matched = page(&app, claim(&newest, "m20", "m22")).await;
+        let details = details(&app).await;
+        for reply in [&newest, &details] {
+            assert_eq!(
+                reply["sender"].get("promote").cloned(),
+                offered.then_some(Value::Bool(true)),
+                "{name}: {reply}"
+            );
+        }
+        if offered {
+            assert_eq!(matched["claim"], "matched", "{matched}");
+            assert_eq!(matched["sender"]["promote"], true, "{name}: {matched}");
+        }
+        served.keep_file(
+            &format!("details-{name}.json"),
+            serde_json::to_vec(&details).unwrap(),
+        );
+        if offered {
+            served.keep_file(
+                "newest-page-offered.json",
+                serde_json::to_vec(&newest).unwrap(),
+            );
+        }
+    }
+    served.check();
 }
 
 /// The session fact samples the apps pin, `phone-session-facts-v3`, are what the

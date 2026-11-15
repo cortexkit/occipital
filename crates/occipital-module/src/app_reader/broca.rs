@@ -1474,9 +1474,11 @@ impl BrocaSource {
                 Sha256::digest(facts.to_string().as_bytes())
             ))
         };
-        // For send grants, only a head without `sender` needs the capability
-        // declaration. Display history consults the same cached declaration.
-        let describe = if self.sendable && meta.sender.is_none() {
+        // A head without `sender` needs the capability declaration to tell no
+        // grant from an older runner's silence, and a granted one to say whether
+        // the runner takes "Send now". It's read once per session and cached;
+        // display history consults the same declaration.
+        let describe = if self.sendable {
             self.describe().await
         } else {
             None
@@ -2425,6 +2427,13 @@ fn strings(value: &Value) -> Option<Vec<String>> {
 ///
 /// `describe` is `None` when the runner's `role.describe` couldn't be read. That
 /// leaves no group to read, so a missing `sender` stays unknown, never "no grant".
+///
+/// A granted sender gains `promote: true` when the app may offer "Send now" for a
+/// queued message (`session.promote_send`): the runner's description for this
+/// session declares `send_promote`, and the grant includes `steer`, which
+/// promotion needs. The contract's description check already refuses
+/// `send_promote` without the `steer` group. Without the member the app offers
+/// no such button, so a chat whose runner can't move a message never shows one.
 pub(crate) fn send_grant(
     head: &cortexkit_role_llm_runner::read::HeadMeta,
     describe: Option<&RoleDescribe>,
@@ -2436,7 +2445,19 @@ pub(crate) fn send_grant(
     let no_groups = RoleDescribe::default();
     match head.sender_grant(describe.unwrap_or(&no_groups)) {
         SenderGrant::Granted(sender) => match serde_json::to_value(sender) {
-            Ok(Value::Object(sender)) => SendGrant::Granted(sender),
+            Ok(Value::Object(mut sender)) => {
+                let steers = sender
+                    .get("modes")
+                    .and_then(Value::as_array)
+                    .is_some_and(|modes| modes.iter().any(|mode| mode == "steer"));
+                let promotes = describe.is_some_and(|describe| {
+                    describe.declares(cortexkit_role_llm_runner::capabilities::SEND_PROMOTE)
+                });
+                if steers && promotes {
+                    sender.insert("promote".into(), Value::Bool(true));
+                }
+                SendGrant::Granted(sender)
+            }
             _ => SendGrant::Unknown,
         },
         SenderGrant::NoGrant => SendGrant::MayNotSend,
@@ -2602,6 +2623,12 @@ pub(crate) mod tests {
         }
         if groups.contains(&"plan_view") {
             served.push(ops::SESSION_PLAN_VIEW.into());
+        }
+        if groups.contains(&"send_promote") {
+            served.push(ops::SESSION_PROMOTE.into());
+        }
+        if groups.contains(&"steer") && !served.iter().any(|op| op == ops::SESSION_SEND) {
+            served.push(ops::SESSION_SEND.into());
         }
         let mut describe = serde_json::to_value(
             RoleDescribe::new(vec![Major::new(PROVIDES, served, "alpha")], "fake-broca")
