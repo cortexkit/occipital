@@ -39,6 +39,7 @@ scripts/                 check.sh, build-xcframework.sh, xcframework-source-hash
 - `media.rs`: image reads and thumbnails.
 - `request_context.rs`: the plan's system text and tools, from the runner's `session.plan_view`.
 - `commands.rs`: the person's commands: listing the modules that declare `user-commands/v1`, and relaying previews and runs with the caller's verified facts.
+- `catalog_generation.rs`: when to read the daemon's `catalog.list` again: it follows the daemon's `catalog.watch` push, for runner builds, command modules and view providers.
 - `store.rs`, `backup.rs`: `store.db` and the Engram backup catalog.
 - `system_text.rs`: the reply teaching. `show_ui.rs` and `native.rs` exist only with the `show-ui` feature.
 

@@ -25,19 +25,54 @@ impl std::fmt::Display for CallFailure {
     }
 }
 
+/// The catalog generation follower's view of a [`DaemonCalls`].
+struct Follower(std::sync::Weak<DaemonCalls>);
+
+#[async_trait::async_trait]
+impl crate::catalog_generation::Connection for Follower {
+    async fn consumer(&self) -> Option<Arc<SubcConsumer>> {
+        self.0.upgrade()?.consumer().await.ok()
+    }
+
+    async fn failed(&self) {
+        if let Some(calls) = self.0.upgrade() {
+            calls.failed(None).await;
+        }
+    }
+}
+
 pub struct DaemonCalls {
     connection_file: PathBuf,
     principal: ConsumerIdentity,
     consumer: tokio::sync::Mutex<Option<Arc<SubcConsumer>>>,
+    /// The catalog generation followed on this connection, once asked for.
+    generation: std::sync::OnceLock<crate::catalog_generation::CatalogGeneration>,
+    /// This value, for the follower's connection: weak, so the follower never
+    /// keeps it alive.
+    this: std::sync::Weak<DaemonCalls>,
 }
 
 impl DaemonCalls {
-    pub fn new(connection_file: PathBuf, principal: ConsumerIdentity) -> Self {
-        Self {
+    pub fn new(connection_file: PathBuf, principal: ConsumerIdentity) -> Arc<Self> {
+        Arc::new_cyclic(|this| Self {
             connection_file,
             principal,
             consumer: tokio::sync::Mutex::new(None),
-        }
+            generation: std::sync::OnceLock::new(),
+            this: this.clone(),
+        })
+    }
+
+    /// The daemon catalog's generation, followed on this connection from the
+    /// first time it's asked for. Ask from inside the runtime.
+    pub fn catalog_generation(&self) -> crate::catalog_generation::CatalogGeneration {
+        self.generation
+            .get_or_init(|| {
+                crate::catalog_generation::CatalogGeneration::follow(Arc::new(Follower(
+                    self.this.clone(),
+                )))
+            })
+            .clone()
     }
 
     /// The identity this module opens routes under, proved by its launch

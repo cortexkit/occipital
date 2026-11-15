@@ -451,13 +451,10 @@ struct DaemonRoute {
     builds: Arc<RunnerBuilds>,
 }
 
-/// How often the daemon's catalog is read again for runner builds.
-const RUNNER_BUILD_CHECK: Duration = Duration::from_secs(10);
-
 /// Each runner module's build, as the daemon's catalog lists it: its
 /// `module_version`, plus `+<commit>` when its provenance names one. Shared
-/// by every session's route and read again at most every
-/// [`RUNNER_BUILD_CHECK`].
+/// by every session's route, and read again when the catalog's generation
+/// moves (see [`crate::catalog_generation`]).
 ///
 /// A runner can't change what it declares in `role.describe` without a
 /// restart, and a new build is how it gains or loses an op or group. Nothing
@@ -466,26 +463,33 @@ const RUNNER_BUILD_CHECK: Duration = Duration::from_secs(10);
 /// lose. So the describe cache keys on this build instead.
 #[derive(Default)]
 struct RunnerBuilds {
+    generation: crate::catalog_generation::CatalogGeneration,
     state: tokio::sync::Mutex<BuildsState>,
 }
 
 #[derive(Default)]
 struct BuildsState {
-    checked: Option<std::time::Instant>,
+    checked: Option<crate::catalog_generation::Checked>,
     builds: HashMap<String, String>,
 }
 
 impl RunnerBuilds {
-    /// `runner`'s build, reading the catalog first when the last read is
-    /// older than [`RUNNER_BUILD_CHECK`]. A failed read keeps the builds read
-    /// before, so a daemon hiccup doesn't make every cache look stale.
+    /// Builds read again when `calls`'s catalog generation moves.
+    fn following(calls: Arc<SubcConsumer>) -> Self {
+        use crate::catalog_generation::{CatalogGeneration, Held};
+        Self {
+            generation: CatalogGeneration::follow(Arc::new(Held(calls))),
+            state: Default::default(),
+        }
+    }
+
+    /// `runner`'s build, reading the catalog first when the last read is no
+    /// longer fresh. A failed read keeps the builds read before, so a daemon
+    /// hiccup doesn't make every cache look stale.
     async fn of(&self, calls: &SubcConsumer, runner: &str) -> Option<String> {
         let mut state = self.state.lock().await;
-        if state
-            .checked
-            .is_none_or(|checked| checked.elapsed() >= RUNNER_BUILD_CHECK)
-        {
-            state.checked = Some(std::time::Instant::now());
+        if !self.generation.fresh(state.checked.as_ref()) {
+            state.checked = Some(self.generation.check());
             match calls.catalog_list().await {
                 Ok(listed) => {
                     state.builds = listed
@@ -812,10 +816,10 @@ impl BrocaSources {
         Ok(Self::new(
             resolver,
             Arc::new(DaemonRoutes {
+                builds: Arc::new(RunnerBuilds::following(calls.clone())),
                 calls,
                 streams,
                 principal,
-                builds: Arc::default(),
             }),
         ))
     }

@@ -16,7 +16,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use async_trait::async_trait;
 use cortexkit_role_user_commands as contract;
@@ -30,9 +30,6 @@ pub const RUN: &str = "commands.run";
 /// The apps' three operations: two reads and the run.
 pub const METHODS: [&str; 3] = [LIST, PREVIEW, RUN];
 
-/// How often the daemon's catalog is read again for the modules that declare
-/// commands, and their builds.
-const CATALOG_CHECK: Duration = Duration::from_secs(10);
 /// How long a module may take to describe its commands.
 const DESCRIBE_TIMEOUT: Duration = Duration::from_secs(5);
 /// How long a module may take to preview a command. A preview is a local read,
@@ -62,6 +59,12 @@ pub trait Modules: Send + Sync {
     /// build (its `module_version`, plus `+<commit>` when known).
     async fn declaring(&self) -> Result<BTreeMap<String, String>, String>;
 
+    /// The daemon catalog's generation, which says when [`Modules::declaring`]
+    /// may have changed. Without a daemon it is unwatched.
+    fn catalog_generation(&self) -> crate::catalog_generation::CatalogGeneration {
+        crate::catalog_generation::CatalogGeneration::unwatched()
+    }
+
     /// `method` with `params` on `module`'s management surface, within
     /// `timeout`. A refusal, whether an error frame or a reply body carrying
     /// `code`, is [`Failure::Refused`].
@@ -81,7 +84,7 @@ pub struct Commands {
 
 #[derive(Default)]
 struct State {
-    checked: Option<Instant>,
+    checked: Option<crate::catalog_generation::Checked>,
     declaring: BTreeMap<String, String>,
     /// Each module's commands, under the build that described them: a new
     /// build is asked again, since a module only changes its commands when it
@@ -202,21 +205,21 @@ impl Commands {
             .ok_or_else(unknown)
     }
 
-    /// The declaring modules, read again when the last read is older than
-    /// [`CATALOG_CHECK`]. A failed read keeps the modules read before.
+    /// The declaring modules, read again when the daemon's catalog has changed
+    /// since the last read (see [`crate::catalog_generation`]). A failed read
+    /// keeps the modules read before.
     async fn declaring(&self) -> BTreeMap<String, String> {
+        let generation = self.modules.catalog_generation();
         {
             let state = self.lock();
-            if state
-                .checked
-                .is_some_and(|checked| checked.elapsed() < CATALOG_CHECK)
-            {
+            if generation.fresh(state.checked.as_ref()) {
                 return state.declaring.clone();
             }
         }
+        let checked = generation.check();
         let read = self.modules.declaring().await;
         let mut state = self.lock();
-        state.checked = Some(Instant::now());
+        state.checked = Some(checked);
         match read {
             Ok(declaring) => {
                 state
@@ -400,6 +403,10 @@ impl DaemonModules {
 
 #[async_trait]
 impl Modules for DaemonModules {
+    fn catalog_generation(&self) -> crate::catalog_generation::CatalogGeneration {
+        self.calls.catalog_generation()
+    }
+
     async fn declaring(&self) -> Result<BTreeMap<String, String>, String> {
         let consumer = self
             .calls

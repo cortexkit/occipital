@@ -25,6 +25,7 @@ compile_error!("occipital-module requires panic = \"unwind\": its panic boundary
 pub mod app_reader;
 pub mod backup;
 pub mod base64;
+pub mod catalog_generation;
 pub mod commands;
 pub mod display;
 pub mod key_digest;

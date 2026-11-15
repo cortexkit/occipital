@@ -44,6 +44,9 @@ enum Answer {
 #[derive(Default)]
 struct Fake {
     declaring: Mutex<BTreeMap<String, String>>,
+    /// How many times the catalog was read for the declaring modules.
+    catalog_reads: std::sync::atomic::AtomicUsize,
+    generation: crate::catalog_generation::CatalogGeneration,
     answers: Mutex<HashMap<(String, String), Answer>>,
     calls: Mutex<Vec<(String, String, Value)>>,
 }
@@ -70,7 +73,13 @@ impl Fake {
 #[async_trait]
 impl Modules for Fake {
     async fn declaring(&self) -> Result<BTreeMap<String, String>, String> {
+        self.catalog_reads
+            .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         Ok(self.declaring.lock().unwrap().clone())
+    }
+
+    fn catalog_generation(&self) -> crate::catalog_generation::CatalogGeneration {
+        self.generation.clone()
     }
 
     async fn call(
@@ -245,6 +254,36 @@ async fn descriptions_are_kept_per_build() {
     commands.lock().checked = None;
     commands.list(list).await.unwrap();
     assert_eq!(fake.calls("commands.describe").len(), 3);
+}
+
+/// While the daemon's catalog watch is live, the declaring modules are read
+/// again only when the catalog's generation moves, however long it has been,
+/// up to the backstop.
+#[tokio::test(start_paused = true)]
+async fn the_declaring_modules_are_read_again_when_the_catalog_moves() {
+    use crate::catalog_generation::{CatalogGeneration, POLL};
+    use std::sync::atomic::Ordering;
+    let (set, generation) = CatalogGeneration::manual();
+    set.send_replace(Some((1, 40)));
+    let fake = Arc::new(Fake {
+        generation,
+        ..Default::default()
+    });
+    *fake.declaring.lock().unwrap() = modules().declaring.lock().unwrap().clone();
+    let commands = Commands::new(fake.clone());
+    let list = sample("requests.json")["list"].clone();
+    commands.list(list.clone()).await.ok();
+    tokio::time::advance(POLL * 6).await;
+    commands.list(list.clone()).await.ok();
+    assert_eq!(fake.catalog_reads.load(Ordering::SeqCst), 1, "unchanged");
+    set.send_replace(Some((1, 41)));
+    commands.list(list.clone()).await.ok();
+    assert_eq!(fake.catalog_reads.load(Ordering::SeqCst), 2, "it moved");
+    // Without the watch, a read is used for the poll interval only.
+    set.send_replace(None);
+    tokio::time::advance(POLL).await;
+    commands.list(list).await.ok();
+    assert_eq!(fake.catalog_reads.load(Ordering::SeqCst), 3, "watch down");
 }
 
 /// A preview reaches the module as the contract's module request: the app's

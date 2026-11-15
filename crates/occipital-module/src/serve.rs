@@ -635,10 +635,10 @@ impl OccipitalHandler {
         Some(
             self.daemon_calls
                 .get_or_init(|| {
-                    Arc::new(crate::display::daemon::DaemonCalls::new(
+                    crate::display::daemon::DaemonCalls::new(
                         consumer.connection_file.clone(),
                         consumer.identity.clone(),
-                    ))
+                    )
                 })
                 .clone(),
         )

@@ -58,10 +58,6 @@ const QUEUE: usize = 1024;
 /// provider that is down isn't asked once per write.
 const REST_AFTER_FAILURE: Duration = Duration::from_secs(60);
 
-/// How long the writers' versions read from the daemon are used before they
-/// are read again, so a burst of wants costs one daemon read.
-const VERSIONS_FRESH: Duration = Duration::from_secs(10);
-
 /// How long a kept answer is trusted under an unchanged writer version: past
 /// this, the next want for its pin asks the writer again. One `tool.views`
 /// call per writer an hour at most, and only while its calls are drawn.
@@ -85,6 +81,11 @@ pub struct ModuleFacts {
 pub trait Providers: Send + Sync {
     /// Every registered module, by module id.
     async fn modules(&self) -> Result<HashMap<String, ModuleFacts>, String>;
+    /// The daemon catalog's generation, which says when [`Providers::modules`]
+    /// may have changed. Without a daemon it is unwatched.
+    fn catalog_generation(&self) -> crate::catalog_generation::CatalogGeneration {
+        crate::catalog_generation::CatalogGeneration::unwatched()
+    }
     /// The writer's catalog, every tool it serves.
     async fn catalog(&self, writer: &str) -> Result<Vec<CatalogTool>, String>;
     /// The writer's `tool.views` answer for `request`.
@@ -141,7 +142,13 @@ pub fn start(
     let (queue, mut wanted) = mpsc::channel::<Want>(QUEUE);
     let task = tokio::spawn(async move {
         let mut resting: HashMap<String, Instant> = HashMap::new();
-        let mut modules: Option<(Instant, HashMap<String, ModuleFacts>)> = None;
+        // The writers' versions, read again when the daemon's catalog has
+        // changed, so a burst of wants costs one daemon read.
+        let generation = providers.catalog_generation();
+        let mut modules: Option<(
+            crate::catalog_generation::Checked,
+            HashMap<String, ModuleFacts>,
+        )> = None;
         while let Some(first) = wanted.recv().await {
             // Take everything already queued, so one catalog read and one
             // `tool.views` call serve every pin a writer is waiting on.
@@ -149,12 +156,10 @@ pub fn start(
             while let Ok(next) = wanted.try_recv() {
                 queued.push(next);
             }
-            if modules
-                .as_ref()
-                .is_none_or(|(read, _)| read.elapsed() >= VERSIONS_FRESH)
-            {
+            if !generation.fresh(modules.as_ref().map(|(read, _)| read)) {
+                let checked = generation.check();
                 match providers.modules().await {
-                    Ok(read) => modules = Some((Instant::now(), read)),
+                    Ok(read) => modules = Some((checked, read)),
                     Err(error) => {
                         // Nothing can be compared without them; the pins are
                         // asked for again by the next write or page.
@@ -452,6 +457,10 @@ impl DaemonProviders {
 
 #[async_trait]
 impl Providers for DaemonProviders {
+    fn catalog_generation(&self) -> crate::catalog_generation::CatalogGeneration {
+        self.calls.catalog_generation()
+    }
+
     async fn modules(&self) -> Result<HashMap<String, ModuleFacts>, String> {
         let consumer = self
             .calls
@@ -742,23 +751,23 @@ mod tests {
 
         // Same version: nothing is asked, even though aft serves a view now.
         step("1.0", Some(manifest()));
-        tokio::time::sleep(VERSIONS_FRESH).await;
+        tokio::time::sleep(crate::catalog_generation::POLL).await;
         let calls = aft.calls.lock().unwrap().len();
         fetcher.want("aft", &pin("bash"));
         tokio::time::sleep(Duration::from_millis(50)).await;
         assert_eq!(aft.calls.lock().unwrap().len(), calls);
 
-        tokio::time::sleep(VERSIONS_FRESH).await;
+        tokio::time::sleep(crate::catalog_generation::POLL).await;
         step("1.1", Some(manifest()));
         until(bash_at("1.1")).await;
         assert_eq!(kept(&pin("bash")).unwrap().state, view(&manifest()));
 
-        tokio::time::sleep(VERSIONS_FRESH).await;
+        tokio::time::sleep(crate::catalog_generation::POLL).await;
         step("1.2", Some(revised(0, "changed without a revision")));
         until(bash_at("1.2")).await;
         assert_eq!(kept(&pin("bash")).unwrap().state, view(&manifest()));
 
-        tokio::time::sleep(VERSIONS_FRESH).await;
+        tokio::time::sleep(crate::catalog_generation::POLL).await;
         step("1.3", Some(revised(1, "fixed")));
         until(bash_at("1.3")).await;
         assert_eq!(
@@ -844,7 +853,7 @@ mod tests {
             .unwrap()
             .insert(pin("legacy"), carried.clone());
         *aft.version.lock().unwrap() = "1.1".into();
-        tokio::time::sleep(VERSIONS_FRESH).await;
+        tokio::time::sleep(crate::catalog_generation::POLL).await;
         fetcher.want("aft", &pin("legacy"));
         until(|| {
             matches!(
