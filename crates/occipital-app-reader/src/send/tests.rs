@@ -1,6 +1,6 @@
 use super::*;
 
-/// Core's published idempotency samples, copied byte for byte from prefrontal
+/// Prefrontal's published idempotency samples, copied byte for byte from prefrontal
 /// `test-vectors/phone-message-idempotency-v1/` at `6b36afc14`. The checksums are
 /// that directory's `SHA256SUMS`.
 pub(crate) const VECTORS: [(&str, &str, &str); 7] = [
@@ -93,7 +93,7 @@ fn cores_text_requests_parse_and_ignore_the_caller_fields_a_route_once_stamped()
     assert_ne!(first.content(), conflict.content());
 }
 
-/// Core's attachment records: the repeat re-uploaded the same photo under a new
+/// Prefrontal's attachment records: the repeat re-uploaded the same photo under a new
 /// upload id, and the conflict names different bytes. Matched by the files' bytes,
 /// the repeat is the same message and the conflict is not.
 #[test]
@@ -251,7 +251,7 @@ fn a_request_may_name_more_files_than_any_fixed_count() {
     assert_eq!(request.attachments().len(), 40);
 }
 
-/// Core's `send_id_validation_accepts_only_the_bounded_opaque_charset`.
+/// Prefrontal's `send_id_validation_accepts_only_the_bounded_opaque_charset`.
 #[test]
 fn send_id_validation_accepts_only_the_bounded_opaque_charset() {
     assert_eq!(

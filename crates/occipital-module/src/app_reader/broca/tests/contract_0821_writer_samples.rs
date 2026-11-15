@@ -84,7 +84,7 @@ fn the_0821_writer_describes_decode_and_choose_the_media_form() {
 }
 
 /// With display facts, a head's words to its worker read as that agent's and
-/// core's own message reads as a notice. The default read carries neither
+/// prefrontal's own message reads as a notice. The default read carries neither
 /// mark, so its rows are left unmarked.
 #[test]
 fn the_0821_writer_marks_reach_the_rows() {

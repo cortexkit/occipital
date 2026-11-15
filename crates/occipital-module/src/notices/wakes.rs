@@ -1,6 +1,6 @@
 //! Wake records (`wake-record-display/v1`, tool-display's §8): what a module
 //! that woke an agent says the wake held, such as the peer messages and room
-//! posts in core's inbox bundle, so the apps draw it as chips instead of the
+//! posts in prefrontal's inbox bundle, so the apps draw it as chips instead of the
 //! prompt text the model received.
 //!
 //! The waking module writes the record before it sends the wake, through
@@ -488,7 +488,7 @@ mod tests {
         }
     }
 
-    /// A peer message's id is opaque (tool-display 0.1.7): core delivers room
+    /// A peer message's id is opaque (tool-display 0.1.7): prefrontal delivers room
     /// invites, removals and probe messages under ids like `room-invite-<hex>`,
     /// not only `pm_…`, and those wakes are stored like any other. An id that
     /// breaks the opaque-field rule (empty, or with a space) is still refused.

@@ -7,7 +7,7 @@
 //!   and a `live_id` reaches only a subscriber that asked for one.
 //!
 //! Each README, also Thalamus's, says what each file is; "the plan" there is the
-//! session's plan from core, which sets the head's system text and the tools it
+//! session's plan from prefrontal, which sets the head's system text and the tools it
 //! may call. Pi heads run on `thalamus-pi` with `harness: "pi"`. A message's
 //! `mid` is the runner's id for it once stored, which the apps see as
 //! `messageID`; a `live_id` stands in for it while Pi hasn't stored the message.

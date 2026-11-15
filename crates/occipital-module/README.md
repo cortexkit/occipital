@@ -6,7 +6,7 @@ The `ck-occipital` binary runs under the CortexKit daemon. It serves three thing
   desktop apps use for a chat. See [App reader](#app-reader).
 - **Tool display data** (`tool-display/v1`): what tool providers write for
   their calls, and the apps' reads of it. See [Tool display](#tool-display).
-- **The rich-UI reply teaching**, as a tool provider: Core copies the teaching
+- **The rich-UI reply teaching**, as a tool provider: Prefrontal copies the teaching
   text and its `rich_ui` stamp from the `tool.catalog` answer's `system_text`
   into plans for runners that stamp replies. The default build's catalog lists
   no tools.
@@ -227,7 +227,7 @@ refusal `command_refused` with the module's code in `detail.moduleCode`.
 ## Notices
 
 A notice is a module's message to the agent, such as Magic Context's
-reminders or core's status line. A runner delivers one either as its own
+reminders or prefrontal's status line. A runner delivers one either as its own
 message, which is a transcript entry like any other, or riding the next tool
 result, which makes no entry. Occipital keeps each riding notice it learns of,
 from a page read's `notices` fact or the runner's `notice_delivered` event, in

@@ -5,18 +5,18 @@
 //! `validate_enqueue_send_id`, the `parts` shape check) and
 //! `crates/prefrontal-core-module/src/task_lifecycle/runtime.rs`
 //! (`enqueue_user_message_inner`: the order of the checks, their codes and messages,
-//! and the content the duplicate check compares). The request keeps core's shape,
+//! and the content the duplicate check compares). The request keeps prefrontal's shape,
 //! `{session, text, clientMessageId?, send_id?, parts?}`, plus the optional `mode`
-//! the apps now name. Unknown top-level fields are ignored, as core ignores them.
+//! the apps now name. Unknown top-level fields are ignored, as prefrontal ignores them.
 //!
 //! Who may send is decided by the route before this parser runs; the caller fields
-//! core's route handler stamped (`callerPairedPhone` and the like) are not read here.
+//! prefrontal's route handler stamped (`callerPairedPhone` and the like) are not read here.
 
 use serde_json::{json, Value};
 
 pub const OPERATION: &str = "session.enqueue_user_message";
 
-/// Maximum number of ASCII characters in a client-chosen `send_id` (core's
+/// Maximum number of ASCII characters in a client-chosen `send_id` (prefrontal's
 /// `ENQUEUE_SEND_ID_MAX_CHARS`).
 pub const ENQUEUE_SEND_ID_MAX_CHARS: usize = 128;
 
@@ -42,7 +42,7 @@ impl SendRefusal {
     }
 }
 
-/// How the app wants its message delivered. Core had no modes: the host decided,
+/// How the app wants its message delivered. Prefrontal had no modes: the host decided,
 /// and the apps only queued. An absent mode therefore means `queue`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
@@ -85,14 +85,14 @@ pub struct SendRequest {
     /// `None` when the request names no mode.
     pub mode: Option<Mode>,
     /// The `parts` value exactly as sent, or `[]` when absent: the duplicate check
-    /// compares it byte for byte, as core's digest does.
+    /// compares it byte for byte, as prefrontal's digest does.
     parts: Value,
     /// The `attachment_id` each part names, in order.
     attachments: Vec<String>,
 }
 
 impl SendRequest {
-    /// Parse in core's order, so the same malformed request gets the same refusal.
+    /// Parse in prefrontal's order, so the same malformed request gets the same refusal.
     pub fn parse(params: &Value) -> Result<Self, SendRefusal> {
         validate_client_message_id(params.get("clientMessageId"))?;
         let session = required_str(params, "session")?;
@@ -145,14 +145,14 @@ impl SendRequest {
         &self.attachments
     }
 
-    /// The bytes a repeat must match: core hashes exactly this JSON,
+    /// The bytes a repeat must match: prefrontal hashes exactly this JSON,
     /// `{"text": text, "parts": parts}`, to tell a duplicate from a conflict.
     pub fn content(&self) -> Value {
         json!({"text": self.text, "parts": self.parts})
     }
 
     /// [`Self::content`] with each part's `attachment_id` replaced by the SHA-256
-    /// of the file it names, `sha256[i]` for the i-th part, as core's digest does:
+    /// of the file it names, `sha256[i]` for the i-th part, as prefrontal's digest does:
     /// a retry that uploaded the same bytes again, under a new upload id, is the
     /// same message. Filenames, media types and part order still count.
     pub fn content_by_bytes(&self, sha256: &[String]) -> Value {
@@ -168,7 +168,7 @@ impl SendRequest {
 
 /// The `attachment_id` of each file part, in order. Absent, `null` and `[]` carry
 /// nothing. Each part is `{type: "file", attachment_id, mime?, filename?}`, the
-/// shape core took; `mime` and `filename` are the app's own labels and are only
+/// shape prefrontal took; `mime` and `filename` are the app's own labels and are only
 /// compared by the duplicate check, never trusted, since the upload records both.
 fn attachment_ids(parts: &Value) -> Result<Vec<String>, SendRefusal> {
     let parts = match parts {

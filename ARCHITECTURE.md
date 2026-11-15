@@ -25,7 +25,7 @@ Occipital is how agents' work reaches and renders in the CortexKit phone and des
 
 The phone reaches the computer through Callosum, the federation module: every phone call arrives on a route stamped `reserved:callosum` with the device it came from. The desktop app connects to the daemon directly. Admission reads only what the daemon attests on the route: the route's principal, and the operator-app stamp that names the desktop. While the desktop is in development, a plain local caller is admitted too. Everything else is refused before the request is read further.
 
-Occipital in turn calls runners, Entorhinal, tool providers and command modules as `reserved:occipital`, proved by its launch nonce. A runner admits Occipital's reads and sends by the session's plan, which core writes: Occipital is listed as a reader and as a sender, with the send modes the plan grants.
+Occipital in turn calls runners, Entorhinal, tool providers and command modules as `reserved:occipital`, proved by its launch nonce. A runner admits Occipital's reads and sends by the session's plan, which prefrontal writes: Occipital is listed as a reader and as a sender, with the send modes the plan grants.
 
 ## Reading a chat
 
@@ -78,7 +78,7 @@ How many files a message may carry follows the session's model: `session.details
 
 Occipital keeps each riding notice it learns of, from a page read's notices fact or the runner's live event, under its call (the runner that minted the call's key, and the key) and its sender and send id. The apps read a call's notices with `session.notices` and hear of new ones from `session.notices_watch`. A notice sent as its own message stays a chat row, marked so the apps draw it as a notice rather than the person's words.
 
-**Wake records** say what a wake held, so the apps draw it as chips rather than the prompt text. The waking module (core) writes each record before it sends the wake, with `display.write` and `kind: "wake"`, keyed by its own send id; the sender is the route's attested writer. Occipital keeps it once per session, sender and send id, never changed. A row names its send only through the runner's read facts, so every page read records which send each message came from, in memory at once and in the file. The apps read the records of the rows they draw with `session.wake_records {messageIds}`, and a riding notice carries its send's record in `session.notices`. A row whose history moved from another session takes the one record its send has in any session, and none when two sessions hold one. There is no watch: the apps fetch a row's record before inserting the row, and a record that arrives later never replaces its plain card.
+**Wake records** say what a wake held, so the apps draw it as chips rather than the prompt text. The waking module (prefrontal) writes each record before it sends the wake, with `display.write` and `kind: "wake"`, keyed by its own send id; the sender is the route's attested writer. Occipital keeps it once per session, sender and send id, never changed. A row names its send only through the runner's read facts, so every page read records which send each message came from, in memory at once and in the file. The apps read the records of the rows they draw with `session.wake_records {messageIds}`, and a riding notice carries its send's record in `session.notices`. A row whose history moved from another session takes the one record its send has in any session, and none when two sessions hold one. There is no watch: the apps fetch a row's record before inserting the row, and a record that arrives later never replaces its plain card.
 
 ## Commands
 
@@ -99,7 +99,7 @@ The language library parses, checks, evaluates and lays out the closed interface
 - **The phone:** `crates/occipital-ffi` exposes the library as a C interface that turns any panic into a status code, built into `ports/swift/OccipitalCore.xcframework`; `OccipitalKit` wraps it in Swift.
 - **Facts:** `format_fact` words a command preview's or result's facts ("about 18k tokens", "Building, 40%") and gives each a tone, so both apps draw them alike; a fact's value is never the module's own text.
 - **Schedules:** `format_schedule` words a module's recurring schedule ("Every day at 03:00", "Mondays and Thursdays at 09:30") in the person's own clock. The app passes the minutes between its zone and the schedule's, since the library carries no zone rules; a cron-only schedule is refused, and each app draws its own fallback.
-- **Links and chips:** `crates/occipital-refs` finds "Issue N", "PR #N" and `owner/repo#N` mentions in text and returns byte ranges with URLs, from the project record core serves beside each agent, and `@NAME` mentions with the name, which the apps look up among the agents they know. The apps draw the links and chips; the text is never changed.
+- **Links and chips:** `crates/occipital-refs` finds "Issue N", "PR #N" and `owner/repo#N` mentions in text and returns byte ranges with URLs, built from the repository named in the project record prefrontal serves beside each agent, and `@NAME` mentions with the name, which the apps look up among the agents they know. The apps draw the links and chips; the text is never changed.
 
 ## Storage
 

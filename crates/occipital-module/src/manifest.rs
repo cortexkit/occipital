@@ -17,7 +17,7 @@ use subc_protocol::PROTOCOL_VERSION;
 /// changes once deployed.
 pub const MODULE_ID: &str = "occipital";
 
-/// "This module serves the app reader's operations." CortexKit core, which
+/// "This module serves the app reader's operations." Prefrontal, which
 /// composes the plan a runner receives for each session, lists the one module
 /// declaring it in that plan: as a sender, allowed to pass the apps' messages
 /// and Stop to the session with the same grants as `thalamus-harness`, and as a
@@ -84,7 +84,7 @@ pub fn show_ui_schema() -> Value {
 ///
 /// It declares a management surface serving the apps' chat operations, and a
 /// tool provider serving reply teaching, with `show_ui` only when enabled at
-/// build time. It has no `rich-ui-carrier/v1` capability. Core and the
+/// build time. It has no `rich-ui-carrier/v1` capability. Prefrontal and the
 /// phone find a carrier by that capability and then read its targets from the
 /// `ui.registry` operation, which this build does not serve, so declaring it
 /// would advertise routes that cannot work.
@@ -153,7 +153,7 @@ pub fn manifest() -> Result<ModuleManifest, String> {
                 // fetches their views (see `crate::display`).
                 //
                 // `wake-record-display/v1` tells a module that wakes agents,
-                // such as core, that it may write each wake's record here
+                // such as prefrontal, that it may write each wake's record here
                 // (`display.write` with `kind: "wake"`, see
                 // `crate::notices::wakes`).
                 provides: vec![

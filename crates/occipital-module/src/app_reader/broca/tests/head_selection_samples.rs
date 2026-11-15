@@ -12,7 +12,7 @@
 //!   reports the model each run used, so the two can differ.
 //!
 //! Three kinds of file are only checksummed here: `session_refresh_accepted.json`
-//! answers a plan refresh, which only core sends; and the `step.finished` events
+//! answers a plan refresh, which only prefrontal sends; and the `step.finished` events
 //! are live hints this reader doesn't subscribe to.
 
 use super::*;

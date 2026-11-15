@@ -153,7 +153,7 @@ async fn the_notices_samples_are_what_the_reader_serves() {
 }
 
 /// The marked chat the second set serves: the person's own message, a head's
-/// brief its worker got through core (`speaks_for`), core's own status line
+/// brief its worker got through prefrontal (`speaks_for`), prefrontal's own status line
 /// (`notice`), a module's message with neither mark, and an answer whose call
 /// a peer message rode.
 fn marked_chat() -> Vec<Value> {

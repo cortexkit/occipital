@@ -2020,7 +2020,7 @@ fn encode_cursor(cursor: &Cursor) -> String {
 ///   a head's brief or steer to its worker, or a peer message to a head. The
 ///   apps draw it as that agent's.
 /// - `notice: {sender, deliveredAs}`: the module's own message to the agent,
-///   such as core's status line or Magic Context's reminders. The apps fold it.
+///   such as prefrontal's status line or Magic Context's reminders. The apps fold it.
 ///   `deliveredAs` is the runner's delivery mode, when it names one.
 /// - `sentBy: {module}`: a module's message with neither mark. The apps show it
 ///   labelled with the module, so nothing is hidden on a sender's mistake.

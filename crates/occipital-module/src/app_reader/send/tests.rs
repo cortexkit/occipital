@@ -618,7 +618,7 @@ async fn a_worker_takes_only_a_steer_into_its_running_turn_with_a_backstop_expir
     assert_eq!(steer["send_id"], receipt["effectId"]);
     assert_ne!(steer["send_id"], calls[2].1["send_id"]);
     assert_eq!(f.runner.written(), vec![steer.clone()]);
-    // An explicit steer is the same delivery; an interrupt stays core's.
+    // An explicit steer is the same delivery; an interrupt stays prefrontal's.
     let steered = f
         .sender
         .send(json!({"session": "s", "text": "t", "clientMessageId": "w2", "mode": "steer"}))
@@ -1401,7 +1401,7 @@ async fn pruning_removes_only_receipts_past_retention_in_bounded_chunks() {
 #[tokio::test]
 async fn runner_refusals_reach_the_app_by_code_and_nothing_is_recorded() {
     let f = fixture(Kind::Head);
-    // A session whose frozen plan predates core naming this module as a sender.
+    // A session whose frozen plan predates prefrontal naming this module as a sender.
     f.runner.named.store(false, Ordering::SeqCst);
     let refusal = f.sender.send(message("m1", "hello")).await.unwrap_err();
     assert_eq!(refusal.code, "enqueue_not_authorized");
@@ -1477,7 +1477,7 @@ async fn runner_refusals_reach_the_app_by_code_and_nothing_is_recorded() {
     assert_eq!(sent["effectId"], lost["effectId"]);
 }
 
-/// Core's vectors, replayed through the send: the first send's receipt, the
+/// Prefrontal's vectors, replayed through the send: the first send's receipt, the
 /// repeat's, and the conflict's refusal, byte for byte except the opaque effect id.
 #[tokio::test]
 async fn cores_idempotency_vectors_replay_through_the_send() {
@@ -1718,7 +1718,7 @@ async fn a_not_pending_retract_preserves_an_undelivered_terminal_status() {
     assert!(f.receipts.followed(1).unwrap().is_empty());
 }
 
-/// Retract is owner-only, and a worker's owner is core, not the phone's sender. A
+/// Retract is owner-only, and a worker's owner is prefrontal, not the phone's sender. A
 /// runner that refuses the sender's withdraw once refuses it every time, so the
 /// follower stops asking and the steer settles at its deadline.
 #[tokio::test(start_paused = true)]

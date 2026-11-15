@@ -4,7 +4,7 @@
 //! Both apps ask here, so they always show a model the same way and the phone
 //! needs no route of its own to the model catalog. The names come from
 //! fusiform's model catalog (`catalog.get`, the `model.name` and
-//! `provider.name` facts), which keys each model `<provider>/<model>`. Core's
+//! `provider.name` facts), which keys each model `<provider>/<model>`. Prefrontal's
 //! model ids can differ from those keys in two ways, both undone here:
 //!
 //! - **Effort:** an id may end in `:<variant>`, such as `openai/gpt-6.1-sol:xhigh`.

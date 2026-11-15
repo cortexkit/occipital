@@ -55,7 +55,7 @@ pub const METHODS: [&str; 7] = [
     MEDIA,
     REQUEST_CONTEXT,
 ];
-/// The apps' send keeps core's operation name, so the apps change only the module
+/// The apps' send keeps prefrontal's operation name, so the apps change only the module
 /// they address.
 pub const SEND: &str = occipital_app_reader::send::OPERATION;
 /// The apps' Stop for the session's running turn (`send::stop`).

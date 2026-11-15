@@ -1,9 +1,9 @@
 //! The wake records samples the apps pin, `phone-reader-wake-records-v1`: what
-//! core's wakes held, which the apps draw as chips instead of the prompt text
+//! prefrontal's wakes held, which the apps draw as chips instead of the prompt text
 //! (`crate::notices::wakes`). Its README says what each file shows. A test
-//! OpenCode 2 session on Thalamus's runner holds core's wakes, one of them
+//! OpenCode 2 session on Thalamus's runner holds prefrontal's wakes, one of them
 //! riding a tool result, the person's own message, and a wake whose history
-//! moved here from another session. Core writes each wake's record before it
+//! moved here from another session. Prefrontal writes each wake's record before it
 //! sends, here straight through the write handler. `served_samples` says how
 //! the set is checked and rewritten.
 
@@ -23,7 +23,7 @@ fn send(n: u32) -> String {
     format!("inbox-send_{n:016x}")
 }
 
-/// A user-role row core sent, or the person sent through Occipital.
+/// A user-role row prefrontal sent, or the person sent through Occipital.
 fn user(ordinal: u64, sender: &str, send_id: &str, text: &str, notice: bool) -> Value {
     let mut entry = json!({"mid": format!("msg_{ordinal}"), "ordinal": ordinal, "role": "user",
         "written_at": 1_793_600_000_000_u64 + ordinal * 1_000,
@@ -134,8 +134,8 @@ async fn the_wake_records_samples_are_what_the_reader_serves() {
     let slot = crate::notices::NoticeSlot::default();
     let _ = slot.set(notices.clone());
 
-    // Core's writes, each before its send. Message 4's send has none, as when
-    // the write missed core's deadline.
+    // Prefrontal's writes, each before its send. Message 4's send has none, as when
+    // the write missed prefrontal's deadline.
     let riding = json!({"items": [item("work_result", json!({"task": "bg_example"}),
         "Delivered: the flaky test is fixed.")]});
     let cut = json!({"items": [
@@ -192,7 +192,7 @@ async fn the_wake_records_samples_are_what_the_reader_serves() {
         json!({"method": method, "params": params})
     };
 
-    // 01: the page draws core's wakes as notice rows, and carries no record.
+    // 01: the page draws prefrontal's wakes as notice rows, and carries no record.
     let page_request = request(super::super::super::TRANSCRIPT_PAGE, "limit", json!(50));
     let page = served.read(1, &page_request).await;
     let rows = decoded(&page)["result"]["messages"].clone();

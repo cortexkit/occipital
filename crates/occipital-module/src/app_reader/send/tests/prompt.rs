@@ -518,7 +518,7 @@ async fn a_resent_message_reuses_the_runners_copy() {
     );
 }
 
-/// The app may upload a message's file again before retrying it, as core's
+/// The app may upload a message's file again before retrying it, as prefrontal's
 /// records show: the new upload id carries the same bytes, so the message is the
 /// same one.
 #[tokio::test]

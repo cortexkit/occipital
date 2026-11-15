@@ -2,7 +2,7 @@
 //! apps can show each one under the call that carried it.
 //!
 //! A notice is a module's message to the agent, such as Magic Context's
-//! reminders or core's status line. A runner delivers one either as its own
+//! reminders or prefrontal's status line. A runner delivers one either as its own
 //! message, which makes a transcript entry the pages carry, or riding the next
 //! tool result, which makes none (llm-runner's `notices` group). A riding
 //! notice is learned two ways: a page read lists it in the `notices` display

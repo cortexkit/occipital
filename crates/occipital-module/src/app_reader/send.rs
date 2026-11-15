@@ -1,8 +1,8 @@
 //! The apps' send: `session.enqueue_user_message`, from an app through this module to
 //! the session's runner.
 //!
-//! The request, its refusals and its duplicate handling are core's (see
-//! `occipital_app_reader::send` and `send_store`). What changes is the path: core put
+//! The request, its refusals and its duplicate handling are prefrontal's (see
+//! `occipital_app_reader::send` and `send_store`). What changes is the path: prefrontal put
 //! the message on its own delivery outbox, while this module hands it to the runner
 //! that hosts the session, through the runner contract's `session.send`, as a sender
 //! the session's plan names. The runner's reply is final for the app, except for a
@@ -102,7 +102,7 @@ pub const PRUNE_INTERVAL: Duration = Duration::from_secs(10 * 60);
 /// Chunks removed per prune pass, each [`super::send_store::PRUNE_CHUNK`] rows.
 const PRUNE_CHUNKS_PER_PASS: usize = 8;
 
-/// Whether the session is a lead agent's (a head) or a worker's. Core's plans grant
+/// Whether the session is a lead agent's (a head) or a worker's. Prefrontal's plans grant
 /// them different deliveries: a head lets this module queue, steer and interrupt; a
 /// worker lets it only steer the run in progress.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1558,7 +1558,7 @@ pub fn runner_send_id(reference: &SessionRef, request: &SendRequest, role: Role)
     let (kind, id) = match (&request.client_message_id, &request.send_id) {
         (Some(id), _) => ("client_message_id", id.clone()),
         (None, Some(id)) => ("send_id", id.clone()),
-        // Core's sends without either id were not idempotent either.
+        // Prefrontal's sends without either id were not idempotent either.
         (None, None) => ("attempt", uuid::Uuid::new_v4().to_string()),
     };
     let role = match role {
@@ -1611,7 +1611,7 @@ fn runner_body(
 ///
 /// The send reads an `invalid_params` refusal naming `delivery`, answered to the
 /// head delivery it tries first, as "this session is a worker". That rests on one
-/// assumption: core's plans grant a head's entry for this module `idle_start` and
+/// assumption: prefrontal's plans grant a head's entry for this module `idle_start` and
 /// `interrupt`, and a worker's entry neither, so only a worker's
 /// plan refuses the head delivery this way. The refusal writes nothing, so the
 /// probe is safe. No direct signal for the session's kind exists yet: Entorhinal's

@@ -373,7 +373,7 @@ async fn the_claude_code_samples_are_what_the_reader_serves() {
     );
     served.keep("04-photo-full", &media, full);
 
-    // 05, 06: core's notice and words it passed on carry their marks, and a
+    // 05, 06: prefrontal's notice and words it passed on carry their marks, and a
     // note that rode a call is read beside the page.
     let (corr_05, request) = page(entries("08-notices-and-marks"));
     let reply = served.read(corr_05, &request).await;

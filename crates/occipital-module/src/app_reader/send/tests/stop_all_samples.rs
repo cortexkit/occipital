@@ -52,7 +52,7 @@ fn describe(stop_all: bool) -> Value {
 }
 
 /// Every provider answered: AFT killed a shell command and cancelled a remote build,
-/// core paused a worker and a consult, and Basal's program had already finished.
+/// prefrontal paused a worker and a consult, and Basal's program had already finished.
 fn full_answer() -> Value {
     json!({"providers": [
         {"provider": "aft", "outcome": "answered", "items": [
@@ -66,7 +66,7 @@ fn full_answer() -> Value {
         "runner": {"items": []}})
 }
 
-/// AFT answered, but one shell command wouldn't stop; core didn't answer within the
+/// AFT answered, but one shell command wouldn't stop; prefrontal didn't answer within the
 /// runner's 15 seconds; Cerebellum doesn't offer the operation.
 fn partial_answer() -> Value {
     json!({"providers": [

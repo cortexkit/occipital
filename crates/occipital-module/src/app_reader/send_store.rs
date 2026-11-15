@@ -4,9 +4,10 @@
 //! `crates/prefrontal-core-store/src/phone_message.rs` and
 //! `migrations/280_phone_message.sql`): one row per session and `clientMessageId`,
 //! with the digest of the content it was accepted for, the receipt it was answered
-//! with, and its age. Core also kept a host message id and attachment digests on the
-//! row; the runner now keeps the app's id on the user entry itself, and attachments
-//! arrive in a later change, so neither column is carried over.
+//! with, and its age. Prefrontal also kept a host message id and attachment digests on the
+//! row; the runner now keeps the app's id on the user entry itself, and the
+//! content digest covers each attached file's bytes, so neither column is
+//! carried over.
 
 use std::sync::Arc;
 
@@ -52,7 +53,7 @@ CREATE TABLE harness_app_send_run (
 /// check still keeps it from being delivered twice.
 pub const RETENTION_MS: i64 = 48 * 60 * 60 * 1000;
 
-/// Rows removed per prune statement, as core's retention pass removes them: a
+/// Rows removed per prune statement, as prefrontal's retention pass removes them: a
 /// bounded statement never holds the store's writer for long.
 pub const PRUNE_CHUNK: usize = 128;
 

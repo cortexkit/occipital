@@ -29,7 +29,7 @@ fn the_speaks_for_name_samples_keep_their_checksums() {
     }
 }
 
-/// The newest page: core's two messages carrying agent-a's words read as
+/// The newest page: prefrontal's two messages carrying agent-a's words read as
 /// agent-a's, with no notice or sender label beside it, and the reply as the
 /// agent's own.
 #[tokio::test]

@@ -257,7 +257,7 @@ fn shared_files_are_file_parts_the_media_read_serves() {
     assert_eq!(files[0]["sha256"], format!("{:x}", Sha256::digest(&bytes)));
 }
 
-/// Core's notice reads as a notice, words core passed on read as the agent's,
+/// Prefrontal's notice reads as a notice, words prefrontal passed on read as the agent's,
 /// and the phone's message carries the app message id it was sent under.
 #[test]
 fn marks_and_app_message_ids_reach_the_rows() {
