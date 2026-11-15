@@ -69,7 +69,7 @@ scripts/                 check.sh, build-xcframework.sh, xcframework-source-hash
 
 ## Conventions
 
-- **Builds:** Rust builds and tests run on the Linux build server; release builds of `ck-occipital` on the build Mac, from a tree with no modified tracked files. `scripts/check.sh` runs on the Mac, because it reads the local git index.
+- **Builds:** on the Rust toolchain `rust-toolchain.toml` pins. Rust builds and tests run on the Linux build server; release builds of `ck-occipital` on the build Mac, from a tree with no modified tracked files. `scripts/check.sh` runs on the Mac, because it reads the local git index.
 - **No panics in shipped code:** the language library, the C interface, the registry and the module deny `unwrap`, `expect` and `panic!` outside tests. A broken assumption becomes a status or an error code.
 - **Logging:** through `cortexkit-log` only. Never log message text, file names or credentials.
 - **Public wording:** the repository is public. Prose calls the phone and desktop apps "the apps"; module names are fine.

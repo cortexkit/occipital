@@ -3,9 +3,9 @@
 # embed occipital-lang, and records its source hash in
 # ports/swift/OccipitalCore.source-hash.
 #
-# Runs on the Linux build server with its shared Rust 1.99.0 toolchain, which
-# must carry the aarch64-apple-ios and aarch64-apple-ios-sim targets and the
-# llvm-tools component. The script never installs a toolchain, target or
+# Runs on the Linux build server with its shared Rust 1.100.0 toolchain, the one
+# rust-toolchain.toml pins, which must carry the aarch64-apple-ios and
+# aarch64-apple-ios-sim targets and the llvm-tools component. The script never installs a toolchain, target or
 # component: if one is missing it stops and names it.
 #
 # Every dependency of occipital-ffi is pure Rust, so building a static library
@@ -69,7 +69,7 @@ fail() {
   exit 1
 }
 
-required_rust="1.99.0"
+required_rust="1.100.0"
 xcframework="ports/swift/OccipitalCore.xcframework"
 hash_file="ports/swift/OccipitalCore.source-hash"
 header="crates/occipital-ffi/include/occipital.h"

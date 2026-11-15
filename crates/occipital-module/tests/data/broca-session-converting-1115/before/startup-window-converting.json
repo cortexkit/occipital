@@ -1,0 +1,1 @@
+{"code":"session_converting","message":"live sessions are converting before service starts","detail":{"class":"transient","refusal_class":"live logs are converting before session service starts","retryable":true}}

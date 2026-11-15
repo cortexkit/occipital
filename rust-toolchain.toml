@@ -1,0 +1,8 @@
+# The one Rust toolchain this repository builds, tests and ships with: the Linux
+# build server's gate, the phone library (scripts/build-xcframework.sh checks for
+# this version) and the ck-occipital release build on the build Mac. Compiler
+# versions lay out async poll frames differently, so testing on one version and
+# shipping another can let a stack regression through.
+[toolchain]
+channel = "1.100.0"
+components = ["rustfmt", "clippy"]
