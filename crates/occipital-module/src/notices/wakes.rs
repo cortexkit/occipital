@@ -488,6 +488,45 @@ mod tests {
         }
     }
 
+    /// A peer message's id is opaque (tool-display 0.1.7): core delivers room
+    /// invites, removals and probe messages under ids like `room-invite-<hex>`,
+    /// not only `pm_…`, and those wakes are stored like any other. An id that
+    /// breaks the opaque-field rule (empty, or with a space) is still refused.
+    #[tokio::test]
+    async fn a_peer_message_wake_takes_any_opaque_id() {
+        let dir = ScratchDir::new("occipital-wake-peer-ids");
+        let (_main, notices) = started(&dir);
+        let base = vectors()["writes"][0]["write"].clone();
+        assert_eq!(base["body"]["items"][0]["kind"], "peer_message");
+        for (index, id) in [
+            "room-invite-9f3c2a1b",
+            "room-removal-4d5e6f70",
+            "scenario-peer:s10",
+            "ad_0a1b2c3d",
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let mut write = base.clone();
+            write["send_id"] = json!(format!("send-opaque-{index}"));
+            write["body"]["items"][0]["refs"]["id"] = json!(id);
+            assert_eq!(
+                answer(write_one(&notices, "wake-writer", &write).await),
+                Ok(json!({"result": "stored"})),
+                "{id}"
+            );
+        }
+        for (index, id) in ["", "room invite"].into_iter().enumerate() {
+            let mut write = base.clone();
+            write["send_id"] = json!(format!("send-bad-{index}"));
+            write["body"]["items"][0]["refs"]["id"] = json!(id);
+            assert!(
+                answer(write_one(&notices, "wake-writer", &write).await).is_err(),
+                "{id:?}"
+            );
+        }
+    }
+
     /// The sender comes only from the route: a write naming one is refused,
     /// naming the member; so is one before the daemon stamped a writer, and
     /// one before the file is open.
