@@ -1621,8 +1621,6 @@ fn names_delivery(detail: Option<&Value>) -> bool {
     detail.and_then(|detail| detail["field"].as_str()) == Some("delivery")
 }
 
-/// Whether a reply says the send left the queue: rendered into a step or a turn,
-/// or handed to a run that cannot confirm it (`unknown`, which is never re-sent).
 /// The runner handed the send on but can't confirm it ran (`delivered.as:
 /// unknown`): it records the outcome as unknown and never sends it again.
 fn unconfirmed(reply: &SendReply) -> bool {
@@ -1631,6 +1629,8 @@ fn unconfirmed(reply: &SendReply) -> bool {
     })
 }
 
+/// Whether a reply says the send left the queue: rendered into a step or a turn,
+/// or handed to a run that cannot confirm it (`unknown`, which is never re-sent).
 fn settled(reply: &SendReply) -> bool {
     reply.delivered.as_ref().is_some_and(|delivered| {
         delivered.is_delivered()
