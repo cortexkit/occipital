@@ -4564,6 +4564,7 @@ pub(crate) mod tests {
     mod moved_calls;
     mod notice_writer_1107;
     mod open_transient_1113;
+    mod queued_sends_samples;
     mod read_role_samples;
     mod request_context;
     mod request_context_samples;

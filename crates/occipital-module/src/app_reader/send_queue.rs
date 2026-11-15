@@ -1,12 +1,14 @@
-//! The apps' sends that a runner accepted but whose message isn't stored yet, and
-//! those that ended without being delivered, so the phone can show "waiting to reach
-//! <agent>" or "didn't reach <agent>" instead of a delivered tick.
+//! The apps' sends that a runner accepted but whose message isn't stored yet, those
+//! that ended without being delivered, and those the runner can't confirm, so the
+//! apps can show "waiting to reach <agent>", "didn't reach <agent>" or "may not
+//! have arrived" instead of a delivered tick.
 //!
 //! A row is written when a send is accepted and not already delivered. A follower
 //! asks the runner (`session.send_status`) until the send settles: delivered removes the row,
-//! and any undelivered end keeps it as `unsent` with the runner's reason for
-//! [`UNSENT_RETENTION_MS`]. A queued row is never pruned by age: the runner holds the
-//! send, and the follower settles it however long that takes.
+//! any undelivered end keeps it as `unsent` with the runner's reason, and a send the
+//! runner handed on but can't confirm (`delivered.as: unknown`) keeps it as
+//! `unknown`, each for [`UNSENT_RETENTION_MS`]. A queued row is never pruned by age:
+//! the runner holds the send, and the follower settles it however long that takes.
 //!
 //! It is its own namespace, not a change to `harness_app_send`, so a build without
 //! it can still open the store after a rollback. For the same reason the code a
@@ -64,6 +66,9 @@ pub const LIST_CAP: usize = 20;
 
 pub const QUEUED: &str = "queued";
 pub const UNSENT: &str = "unsent";
+/// The runner can't confirm the send ran, and never sends it again; sending the
+/// words again could run them twice, so the apps offer no resend.
+pub const UNKNOWN: &str = "unknown";
 
 /// A send the follower still watches.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -159,6 +164,23 @@ impl SendQueue {
         })? > 0)
     }
 
+    /// The runner handed the send on but can't confirm it ran: it stays listed as
+    /// unknown, with no reason. Only a queued row changes.
+    pub fn unconfirmed(
+        &self,
+        session: &str,
+        client_message_id: &str,
+        now: i64,
+    ) -> Result<bool, crate::Error> {
+        Ok(self.0.with_conn(|conn| {
+            conn.execute(
+                "UPDATE harness_app_send_queue SET state=?3, ended_at=?4 \
+                 WHERE session=?1 AND client_message_id=?2 AND state='queued'",
+                params![session, client_message_id, UNKNOWN, now],
+            )
+        })? > 0)
+    }
+
     /// Up to `limit` queued head sends, the oldest first, for the follower to resume.
     /// A worker steer is resumed from its receipt instead.
     pub fn queued_heads(&self, limit: usize) -> Result<Vec<Queued>, crate::Error> {
@@ -182,7 +204,8 @@ impl SendQueue {
     }
 
     /// The session's list as the apps read it: queued sends and those that ended
-    /// unsent within [`UNSENT_RETENTION_MS`], oldest first, at most [`LIST_CAP`].
+    /// unsent or unknown within [`UNSENT_RETENTION_MS`], oldest first, at most
+    /// [`LIST_CAP`].
     /// `None` when there are none; the flag says more than the cap exist.
     pub fn list(&self, session: &str, now: i64) -> Result<Option<(Value, bool)>, crate::Error> {
         let rows =
@@ -229,7 +252,8 @@ impl SendQueue {
         Ok(Some((Value::Array(shown), truncated)))
     }
 
-    /// Remove unsent rows whose listing window has passed, at most `chunk` at once.
+    /// Remove unsent and unknown rows whose listing window has passed, at most
+    /// `chunk` at once.
     pub fn prune(&self, now: i64, chunk: usize) -> Result<usize, crate::Error> {
         Ok(self.0.with_conn(|conn| {
             let pruned = conn.execute(

@@ -105,6 +105,8 @@ impl FakeRunner {
             "delivered" => {
                 json!({"state": "active", "run_id": "r1", "delivered": {"as": "step", "ref": "row-1"}})
             }
+            // Handed on, but the runner can't confirm it ran.
+            "unconfirmed" => json!({"state": "finished", "delivered": {"as": "unknown"}}),
             state => json!({"state": state, "submission_id": "sub-1"}),
         })
     }
@@ -745,6 +747,91 @@ async fn a_head_send_is_listed_until_delivered_or_listed_unsent() {
     let mut reply = json!({"messages": []});
     f.sender.attach_queued(&mut reply, "s").await;
     assert_eq!(reply["queuedSends"], unsent);
+}
+
+/// A head send the runner handed on but can't confirm (`delivered.as: unknown`)
+/// is listed `unknown`, never dropped as delivered: the apps say it may not have
+/// arrived. The runner never sends it again, so neither does this module, and
+/// its run isn't asked about.
+#[tokio::test(start_paused = true)]
+async fn a_head_send_the_runner_cant_confirm_is_listed_unknown() {
+    let f = fixture(Kind::Head);
+    let mut changes = f.sender.queue_changes();
+    let list = || f.receipts.queue().list("s", START).unwrap();
+    let receipt = f.sender.send(message("u1", "words")).await.unwrap();
+    assert_eq!(receipt["ok"], true);
+    assert_eq!(changes.recv().await.unwrap(), "s");
+    f.now.store(START + 5_000, Ordering::SeqCst);
+    f.runner.set_state(&receipt["effectId"], "unconfirmed");
+    eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unknown")).await;
+    assert_eq!(changes.recv().await.unwrap(), "s");
+    let (entries, _) = list().unwrap();
+    assert_eq!(
+        entries,
+        json!([{"clientMessageId": "u1", "effectId": receipt["effectId"],
+            "acceptedAtMs": START, "state": "unknown", "endedAtMs": START + 5_000}])
+    );
+    let polls = f.runner.calls().len();
+    tokio::time::sleep(FOLLOW_INTERVAL * 3).await;
+    let calls = f.runner.calls();
+    assert_eq!(calls.len(), polls, "the follower stopped");
+    assert_eq!(
+        calls
+            .iter()
+            .filter(|(method, _)| method == "session.send" || method == "run.status")
+            .count(),
+        1,
+        "{calls:?}"
+    );
+    // Still listed, with the unsent ones, until 48 hours after it ended.
+    let later = START + 5_000 + super::super::send_queue::UNSENT_RETENTION_MS;
+    assert!(f.receipts.queue().list("s", later).unwrap().is_some());
+    assert!(f.receipts.queue().list("s", later + 1).unwrap().is_none());
+}
+
+/// A send whose first answer already says the runner can't confirm it is listed
+/// `unknown` at once, and not followed.
+#[tokio::test(start_paused = true)]
+async fn a_send_first_answered_unconfirmed_is_listed_unknown_at_once() {
+    for kind in [Kind::Head, Kind::Worker] {
+        let f = fixture(kind);
+        f.runner.scripted.lock().unwrap().push_back(Ok(
+            json!({"state": "finished", "delivered": {"as": "unknown"}}),
+        ));
+        let receipt = f.sender.send(message("u2", "words")).await.unwrap();
+        assert_eq!(receipt["ok"], true, "{kind:?}");
+        let (entries, _) = f.receipts.queue().list("s", START).unwrap().unwrap();
+        assert_eq!(entries[0]["state"], "unknown", "{kind:?}");
+        assert_eq!(entries[0]["endedAtMs"], START, "{kind:?}");
+        tokio::time::sleep(FOLLOW_INTERVAL * 2).await;
+        assert!(
+            !f.runner
+                .calls()
+                .iter()
+                .any(|(method, _)| method == "session.send_status"),
+            "{kind:?}"
+        );
+        assert!(f.receipts.followed(10).unwrap().is_empty(), "{kind:?}");
+    }
+}
+
+/// A held worker steer that the runner then can't confirm is listed `unknown`
+/// and no longer followed, never taken for delivered.
+#[tokio::test(start_paused = true)]
+async fn a_held_steer_the_runner_cant_confirm_is_listed_unknown() {
+    let f = fixture(Kind::Worker);
+    let receipt = f
+        .sender
+        .send(message("st", "check the logs"))
+        .await
+        .unwrap();
+    assert_eq!(receipt["ok"], true);
+    assert_eq!(f.receipts.followed(1).unwrap().len(), 1);
+    f.runner.set_state(&receipt["effectId"], "unconfirmed");
+    let list = || f.receipts.queue().list("s", START).unwrap();
+    eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unknown")).await;
+    assert!(list().unwrap().0[0].get("reason").is_none());
+    assert!(f.receipts.followed(1).unwrap().is_empty());
 }
 
 /// Broca's recorded bodies for a send queued behind a running turn and refused at

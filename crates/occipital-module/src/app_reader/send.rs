@@ -639,6 +639,9 @@ impl Sender {
                 give_up_at: (self.clock)().saturating_add(HEAD_HOLD.as_millis() as i64),
             }),
         };
+        // Accepted, but the runner already can't confirm it ran: nothing to follow,
+        // and it is listed `unknown` at once rather than taken for delivered.
+        let unconfirmed_now = receipt["ok"] == true && unconfirmed(&reply);
         if let (Some(id), Some(receipts)) = (&request.client_message_id, &self.receipts) {
             let (session, id, row) = (request.session.clone(), id.clone(), receipt.clone());
             let receipts = receipts.clone();
@@ -649,7 +652,8 @@ impl Sender {
                 Some(Follow::Steer { run_id, .. }) => run_id.clone(),
                 _ => None,
             };
-            let queued = follow.as_ref().map(|_| super::send_queue::Queued {
+            let listed = follow.is_some() || unconfirmed_now;
+            let queued = listed.then(|| super::send_queue::Queued {
                 session: session.clone(),
                 client_message_id: id.clone(),
                 harness: request.harness.clone(),
@@ -673,13 +677,20 @@ impl Sender {
                 )?;
                 if let Some(queued) = queued {
                     receipts.queue().queue(&queued)?;
+                    if unconfirmed_now {
+                        receipts.queue().unconfirmed(
+                            &queued.session,
+                            &queued.client_message_id,
+                            now,
+                        )?;
+                    }
                 }
                 Ok::<_, crate::Error>(())
             })
             .await
             .map_err(|error| store_error(error.to_string()))?
             .map_err(|error| store_error(error.to_string()))?;
-            if follow.is_some() {
+            if listed {
                 let _ = self.queue_changed.send(request.session.clone());
             }
         }
@@ -1103,7 +1114,7 @@ impl Sender {
                         fate => fate,
                     },
                 };
-                let ended = match &fate {
+                let ended = match fate {
                     Fate::Expired => {
                         let mut receipt = steer_expired_for(&send_id, client_message_id.as_deref());
                         settle(
@@ -1118,34 +1129,34 @@ impl Sender {
                             session: session.clone(),
                             notice: json!({"sendOutcome": receipt}),
                         });
-                        Some(Some(codes::STEER_EXPIRED.to_owned()))
+                        Some(End::Unsent(codes::STEER_EXPIRED.to_owned()))
                     }
-                    Fate::Delivered => {
+                    Fate::Delivered | Fate::Unsent(_) | Fate::Unconfirmed => {
                         if matches!(follow, Follow::Steer { .. }) {
                             settle(&receipts, &session, client_message_id.as_deref(), None).await;
                         }
-                        Some(None)
-                    }
-                    Fate::Unsent(reason) => {
-                        if matches!(follow, Follow::Steer { .. }) {
-                            settle(&receipts, &session, client_message_id.as_deref(), None).await;
-                        }
-                        Some(Some(reason.clone()))
+                        Some(match fate {
+                            Fate::Unsent(reason) => End::Unsent(reason),
+                            Fate::Unconfirmed => End::Unconfirmed,
+                            _ => End::Delivered,
+                        })
                     }
                     Fate::Unanswered if past => break,
                     Fate::Waiting | Fate::Unanswered => None,
                 };
-                if let Some(reason) = ended {
+                if let Some(end) = ended {
                     let now = clock();
-                    let run_end = match reason {
-                        Some(_) => ended_run(target.as_ref(), head_answer.as_ref(), now).await,
-                        None => None,
+                    let run_end = match end {
+                        End::Unsent(_) => {
+                            ended_run(target.as_ref(), head_answer.as_ref(), now).await
+                        }
+                        End::Delivered | End::Unconfirmed => None,
                     };
                     if dequeue(
                         &receipts,
                         &session,
                         client_message_id.as_deref(),
-                        reason.as_deref(),
+                        end,
                         run_end,
                         now,
                     )
@@ -1279,8 +1290,23 @@ enum Fate {
     Expired,
     /// A head send that ended undelivered, with the reason the phone shows.
     Unsent(String),
+    /// The runner handed the send on but can't confirm it ran (`delivered.as:
+    /// unknown`), and never sends it again.
+    Unconfirmed,
     Waiting,
     Unanswered,
+}
+
+/// How a followed send ended, for its entry on the apps' list.
+enum End {
+    /// Its message is in a step or a turn: the entry leaves the list.
+    Delivered,
+    /// The runner ended it undelivered: listed `unsent` with this reason.
+    Unsent(String),
+    /// It may or may not have run: listed `unknown`, so the apps can say it may
+    /// not have arrived. Sending the words again could run them twice, so only
+    /// the person decides that.
+    Unconfirmed,
 }
 
 /// A held worker steer's fate from one `session.send_status` answer. Past its deadline, an
@@ -1301,6 +1327,7 @@ fn steer_fate(answer: Result<Value, RunnerError>, past: bool) -> Fate {
             Ok(reply) if reply.state == states::NOT_DELIVERED => {
                 Fate::Unsent(not_delivered_reason(&reply))
             }
+            Ok(reply) if unconfirmed(&reply) => Fate::Unconfirmed,
             Ok(reply) if reply.state != states::PENDING || settled(&reply) => Fate::Delivered,
             Ok(_) if past => Fate::Expired,
             Ok(_) => Fate::Waiting,
@@ -1397,9 +1424,10 @@ async fn pending_steer_fate(
 }
 
 /// A head send's fate from one `session.send_status` answer (or the send's own reply).
-/// Delivered once its message is in a step or a turn, or handed to a run that can't
-/// confirm it; unsent when the runner ended it undelivered, naming why; waiting while
-/// it is queued or handed to the host without a confirmed landing.
+/// Delivered once its message is in a step or a turn; unconfirmed when it was handed
+/// to a run that can't confirm it; unsent when the runner ended it undelivered,
+/// naming why; waiting while it is queued or handed to the host without a confirmed
+/// landing.
 fn head_fate(answer: Result<&Value, &RunnerError>) -> Fate {
     match answer {
         Ok(reply) => match serde_json::from_value::<SendReply>(reply.clone()) {
@@ -1425,6 +1453,9 @@ fn head_fate(answer: Result<&Value, &RunnerError>) -> Fate {
 }
 
 fn head_reply_fate(reply: &SendReply) -> Fate {
+    if unconfirmed(reply) {
+        return Fate::Unconfirmed;
+    }
     if settled(reply) {
         return Fate::Delivered;
     }
@@ -1456,26 +1487,29 @@ fn not_delivered_reason(reply: &SendReply) -> String {
         .unwrap_or_else(|| NOT_SENT_REASON.into())
 }
 
-/// Take a followed send off the queued list: delivered (`reason` none) removes it,
-/// and an undelivered end keeps it as unsent, with the code its run ended with
-/// when there is one. Whether the list changed.
+/// Take a followed send off the queued list: delivered removes it, an undelivered
+/// end keeps it as unsent, with the code its run ended with when there is one, and
+/// an unconfirmed one keeps it as unknown. Whether the list changed.
 async fn dequeue(
     receipts: &Option<Arc<Receipts>>,
     session: &str,
     id: Option<&str>,
-    reason: Option<&str>,
+    end: End,
     run_end: Option<super::send_queue::EndedRun>,
     now: i64,
 ) -> bool {
     let (Some(receipts), Some(id)) = (receipts.clone(), id) else {
         return false;
     };
-    let (session, id, reason) = (session.to_owned(), id.to_owned(), reason.map(str::to_owned));
-    let result = tokio::task::spawn_blocking(move || match reason {
-        None => receipts.queue().delivered(&session, &id),
-        Some(reason) => receipts
-            .queue()
-            .unsent(&session, &id, &reason, run_end.as_ref(), now),
+    let (session, id) = (session.to_owned(), id.to_owned());
+    let result = tokio::task::spawn_blocking(move || match end {
+        End::Delivered => receipts.queue().delivered(&session, &id),
+        End::Unsent(reason) => {
+            receipts
+                .queue()
+                .unsent(&session, &id, &reason, run_end.as_ref(), now)
+        }
+        End::Unconfirmed => receipts.queue().unconfirmed(&session, &id, now),
     })
     .await;
     match result {
@@ -1589,6 +1623,14 @@ fn names_delivery(detail: Option<&Value>) -> bool {
 
 /// Whether a reply says the send left the queue: rendered into a step or a turn,
 /// or handed to a run that cannot confirm it (`unknown`, which is never re-sent).
+/// The runner handed the send on but can't confirm it ran (`delivered.as:
+/// unknown`): it records the outcome as unknown and never sends it again.
+fn unconfirmed(reply: &SendReply) -> bool {
+    reply.delivered.as_ref().is_some_and(|delivered| {
+        delivered.r#as() == cortexkit_role_llm_runner::send::DeliveredAs::Unknown
+    })
+}
+
 fn settled(reply: &SendReply) -> bool {
     reply.delivered.as_ref().is_some_and(|delivered| {
         delivered.is_delivered()
