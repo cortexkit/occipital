@@ -1256,6 +1256,65 @@ async fn a_send_first_answered_not_delivered_is_final_for_its_id() {
     assert!(f.receipts.queue().list("s", START).unwrap().is_none());
 }
 
+/// Agent Runner's not-delivered step 2, every ending's recorded send replies
+/// and `run.status`, from `tests/data/thalamus-not-delivered-step2-1116/`:
+/// - a prompt proven never forwarded (five endings) is first held (`pending`),
+///   then reads `not_delivered`, `handover_failed`: listed unsent with that
+///   reason and its run's code, `provider_error`; a repeat of its id is refused
+///   as final;
+/// - a permanent refusal (five endings) answers `finished` with `delivered.as:
+///   unknown` at once and on repeat: listed unknown, never followed or sent
+///   again. Its run's error reaches the chat through the head instead.
+#[tokio::test(start_paused = true)]
+async fn the_step2_endings_list_each_send_as_the_runner_ends_it() {
+    use crate::app_reader::broca::tests::not_delivered_step2_1116::{body, ENDINGS};
+    let mut never_forwarded = 0;
+    for (ending, _) in ENDINGS {
+        let file = |surface: &str| body(&format!("{ending}--{surface}.json"));
+        let f = fixture(Kind::Head);
+        f.runner
+            .scripted
+            .lock()
+            .unwrap()
+            .push_back(Ok(file("send-first")));
+        {
+            let mut captured = f.runner.captured.lock().unwrap();
+            captured.insert(
+                "session.send_status",
+                json!({"result": file("send-status")}),
+            );
+            captured.insert("run.status", json!({"result": file("run.status")}));
+        }
+        let receipt = f.sender.send(message("held", "words")).await.unwrap();
+        assert_eq!(receipt["ok"], true, "{ending}: {receipt}");
+        let list = || f.receipts.queue().list("s", START).unwrap();
+        let repeat = file("send-repeat");
+        if file("send-first")["state"] == "pending" {
+            never_forwarded += 1;
+            f.now.store(START + 5_000, Ordering::SeqCst);
+            eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unsent")).await;
+            let entry = list().unwrap().0[0].clone();
+            assert_eq!(entry["reason"], "handover_failed", "{ending}: {entry}");
+            assert_eq!(entry["runnerCode"], "provider_error", "{ending}: {entry}");
+            assert!(entry.get("retryAfterMs").is_none(), "{ending}: {entry}");
+            assert_eq!(repeat["state"], "not_delivered", "{ending}");
+            let f = fixture(Kind::Head);
+            f.runner.scripted.lock().unwrap().push_back(Ok(repeat));
+            let receipt = f.sender.send(message("again", "words")).await.unwrap();
+            assert_eq!(receipt["code"], "not_delivered", "{ending}: {receipt}");
+            assert_eq!(receipt["reason"], "handover_failed", "{ending}");
+            assert_eq!(receipt["terminal"], true, "{ending}");
+        } else {
+            let entry = list().unwrap().0[0].clone();
+            assert_eq!(entry["state"], "unknown", "{ending}: {entry}");
+            assert!(f.receipts.followed(10).unwrap().is_empty(), "{ending}");
+            assert_eq!(repeat, file("send-first"), "{ending}");
+            assert_eq!(file("send-status"), repeat, "{ending}");
+        }
+    }
+    assert_eq!(never_forwarded, 5);
+}
+
 /// Broca's `run.status` bodies before and after a run's error gains
 /// `account_continue` (routing's answer when it wouldn't move the run to another
 /// account), from `tests/data/broca-account-move-1112-r2/`, copied unchanged. The

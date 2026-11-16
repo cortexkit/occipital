@@ -1,0 +1,1 @@
+{"headers":{"Ck-Content-Digest":["317e235eb4c0e6eef58d02b64e96964f372fdb20ae005bc65d1f5f74cb1c5ab6"],"Nats-Msg-Id":["195525b9a0da4dd28bb9ce4e999404ce:turn_ended:8193"],"session_ref":["195525b9a0da4dd28bb9ce4e999404ce"]},"payload":"","subject":"ck.synthetic_account.event.thalamus-harness.turn_ended.v1"}

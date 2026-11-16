@@ -1,0 +1,1 @@
+{"error":{"cause":"attachment_unreadable","class":"handover_failed","message":"a stored attachment could not be read","provider_code":"provider_error"},"run_id":"run_685832dab5bea7a31bc54fd1","state":"error","usage":{"by_model":[],"steps":0,"unreported_steps":0}}
