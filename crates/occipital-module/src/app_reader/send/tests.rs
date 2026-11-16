@@ -942,6 +942,89 @@ async fn thalamus_recorded_send_outcomes_are_listed_by_delivery() {
     }
 }
 
+/// Thalamus's recorded bodies for a send Agent Runner proved never reached its
+/// host (`tests/data/thalamus-send-not-delivered-1116/`, copied unchanged). The
+/// first reply is now `pending` with no run id, so the send is followed; once
+/// the runner reads `not_delivered` the send is listed `unsent` with the
+/// runner's reason and the code of the run it was given (`provider_error`, from
+/// `run.status`), so the app may send the words again as a new message. A
+/// reason no runner writes yet (`withdrawn`) is kept as said. A repeat of the
+/// same send, which the runner answers `not_delivered` at once, is refused with
+/// that reason as final, so the app sends the words again as a new message.
+#[tokio::test(start_paused = true)]
+async fn thalamus_recorded_undelivered_sends_are_listed_unsent() {
+    let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data/thalamus-send-not-delivered-1116");
+    let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
+    // Seven bodies and the README.
+    assert_eq!(sums.lines().count(), 8);
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(data.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+    let body = |name: &str| -> Value {
+        serde_json::from_slice(&std::fs::read(data.join(name)).unwrap()).unwrap()
+    };
+
+    let f = fixture(Kind::Head);
+    f.runner
+        .scripted
+        .lock()
+        .unwrap()
+        .push_back(Ok(body("03-send-resend-same-id-not-delivered.json")));
+    let receipt = f.sender.send(message("t1", "words")).await.unwrap();
+    assert_eq!(
+        receipt,
+        json!({"ok": false, "effectId": receipt["effectId"], "code": "not_delivered",
+            "reason": "handover_failed", "terminal": true}),
+    );
+    assert!(f.receipts.followed(10).unwrap().is_empty());
+
+    // (later `session.send_status` reply, the reason the list names)
+    let cases = [
+        (
+            "02-send-status-not-delivered-handover-failed.json",
+            "handover_failed",
+        ),
+        ("07-send-status-not-delivered-withdrawn.json", "withdrawn"),
+    ];
+    for (status, reason) in cases {
+        let f = fixture(Kind::Head);
+        f.runner
+            .scripted
+            .lock()
+            .unwrap()
+            .push_back(Ok(body("01-send-reply-pending.json")));
+        f.runner.captured.lock().unwrap().insert(
+            "run.status",
+            json!({"result": body("04-run-status-handover-failed.json")}),
+        );
+        f.runner
+            .captured
+            .lock()
+            .unwrap()
+            .insert("session.send_status", json!({"result": body(status)}));
+        let receipt = f.sender.send(message("t1", "words")).await.unwrap();
+        assert_eq!(receipt["ok"], true, "{status}");
+        let entry = || {
+            f.receipts
+                .queue()
+                .list("s", START)
+                .unwrap()
+                .map(|(entries, _)| entries[0].clone())
+        };
+        // `pending` names no delivery, so the send is followed.
+        assert_eq!(entry().unwrap()["state"], "queued", "{status}");
+        tokio::time::sleep(FOLLOW_INTERVAL * 3).await;
+        let entry = entry().unwrap();
+        assert_eq!(entry["state"], "unsent", "{status}: {entry}");
+        assert_eq!(entry["reason"], reason, "{entry}");
+        assert_eq!(entry["runnerCode"], "provider_error", "{entry}");
+        assert!(entry.get("retryAfterMs").is_none(), "{entry}");
+        assert!(f.receipts.followed(10).unwrap().is_empty(), "{status}");
+    }
+}
 /// A held worker steer that the runner then can't confirm is listed `unknown`
 /// and no longer followed, never taken for delivered.
 #[tokio::test(start_paused = true)]

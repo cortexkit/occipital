@@ -3474,6 +3474,36 @@ pub(crate) mod tests {
         assert!(lease.events.try_recv().is_err());
     }
 
+    /// Agent Runner's recorded `run_finished` for a send it never handed to its
+    /// host (`tests/data/thalamus-send-not-delivered-1116/06-…`, copied
+    /// unchanged) ends that run's live view and wakes the chat's watches, like
+    /// any run's end.
+    #[tokio::test]
+    async fn a_recorded_end_of_a_run_never_handed_over_ends_its_live_view() {
+        let route = FakeRoute::new();
+        let source = BrocaSource::new(resolved(), route.clone());
+        let mut lease = source.acquire().await.unwrap();
+        lease.events.recv().await.unwrap();
+        let mut changes = source.changes();
+        let event: Value = serde_json::from_slice(
+            &std::fs::read(
+                std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
+                    "tests/data/thalamus-send-not-delivered-1116/06-run-ended-event-handover-failed.json",
+                ),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        route.emit(event).await;
+        assert_eq!(
+            lease.events.recv().await.unwrap(),
+            DisplayInput::TurnEnd {
+                run_id: Some("run_ab7fd675779cf1c22289bc02".into())
+            }
+        );
+        changes.changed().await.unwrap();
+    }
+
     #[tokio::test]
     async fn controls_wake_history_update_activity_and_unknown_events_reset_display() {
         let route = FakeRoute::new();
