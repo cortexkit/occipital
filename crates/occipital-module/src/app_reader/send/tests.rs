@@ -6,6 +6,7 @@
 use super::*;
 use occipital_app_reader::source::ReadError;
 
+mod host_refused_0858;
 mod host_unavailable_1116;
 mod mode_samples;
 mod promote_1116;

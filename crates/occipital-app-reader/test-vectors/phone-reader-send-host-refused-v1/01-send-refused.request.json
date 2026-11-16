@@ -1,0 +1,1 @@
+{"method":"session.enqueue_user_message","params":{"clientMessageId":"c-refused","harness":"opencode2","session":"ses_head","text":"Summarize the attached report."}}

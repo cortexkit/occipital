@@ -64,9 +64,9 @@ fn the_step2_samples_keep_their_checksums() {
 
 /// Every ending's head reaches the apps as `lastRun` byte for byte on details,
 /// the newest page, a claim and a watch: state `error` with the run's class.
-/// `providerCode` reads `provider_error` for the eight endings that carry it,
-/// and is left out for `host_policy_refused` and `future-permanent`, which the
-/// contract doesn't name.
+/// `providerCode` reads `provider_error` for the eight endings that carry it
+/// and `host_policy_refused` for the policy refusal, which contract 0.8.58
+/// names; it is left out for `future-permanent`, which the contract doesn't.
 #[tokio::test]
 async fn every_ending_reaches_the_apps_as_its_last_run() {
     let mut coded = 0;
@@ -80,18 +80,20 @@ async fn every_ending_reaches_the_apps_as_its_last_run() {
         expected["error"] = expected_error(&error);
         match expected["error"].get("providerCode") {
             Some(code) => {
-                assert_eq!(code, "provider_error", "{ending}");
+                let named = if ending == "host_policy_refused" {
+                    "host_policy_refused"
+                } else {
+                    "provider_error"
+                };
+                assert_eq!(code, named, "{ending}");
                 coded += 1;
             }
-            None => assert!(
-                matches!(ending, "host_policy_refused" | "future-permanent"),
-                "{ending}"
-            ),
+            None => assert_eq!(ending, "future-permanent"),
         }
         let expected = serde_json::to_string(&expected).unwrap();
         assert_last_run_phone_bytes(state, Some(error), &expected).await;
     }
-    assert_eq!(coded, 8);
+    assert_eq!(coded, 9);
 }
 
 /// A prompt never forwarded writes no entry, so each ending's read is an empty

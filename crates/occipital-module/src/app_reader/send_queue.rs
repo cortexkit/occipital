@@ -43,9 +43,10 @@ CREATE INDEX harness_app_send_queue_ended ON harness_app_send_queue(ended_at) WH
 
 /// The chain for the code an unsent send's run ended with ([`EndedRun`]).
 pub(crate) const WAIT_NAMESPACE: &str = "harness_app_send_wait";
-pub(crate) const WAIT_MIGRATIONS: &[Migration] = &[Migration {
-    version: 1,
-    statements: "
+pub(crate) const WAIT_MIGRATIONS: &[Migration] = &[
+    Migration {
+        version: 1,
+        statements: "
 CREATE TABLE harness_app_send_wait (
     session TEXT NOT NULL,
     client_message_id TEXT NOT NULL,
@@ -53,7 +54,13 @@ CREATE TABLE harness_app_send_wait (
     retry_after_ms INTEGER,
     PRIMARY KEY (session, client_message_id)
 );",
-}];
+    },
+    // The named cause of a host's refusal (runner contract 0.8.58).
+    Migration {
+        version: 2,
+        statements: "ALTER TABLE harness_app_send_wait ADD COLUMN cause TEXT;",
+    },
+];
 
 /// An unsent send stays listed this long after it ended, the same 48 hours a
 /// repeat of the send is answered from its receipt.
@@ -88,10 +95,13 @@ pub struct Queued {
 /// as `runnerCode`, and for an account wait `retryAfterMs`: how long after the
 /// entry's `endedAtMs` the same words may go again, as a new send under a new
 /// `clientMessageId` (the runner answers the old send id with its record forever).
+/// When the host refused the send for good (`host_refused`), `cause` names why,
+/// so the apps can say what to change before sending the words again.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EndedRun {
     pub runner_code: String,
     pub retry_after_ms: Option<i64>,
+    pub cause: Option<String>,
 }
 
 pub struct SendQueue(Arc<SqliteStore>);
@@ -155,9 +165,15 @@ impl SendQueue {
             )?;
             if let (true, Some(ended)) = (changed > 0, ended) {
                 conn.execute(
-                    "INSERT OR REPLACE INTO harness_app_send_wait(session,client_message_id,runner_code,retry_after_ms) \
-                     VALUES(?1,?2,?3,?4)",
-                    params![session, client_message_id, ended.runner_code, ended.retry_after_ms],
+                    "INSERT OR REPLACE INTO harness_app_send_wait(session,client_message_id,runner_code,retry_after_ms,cause) \
+                     VALUES(?1,?2,?3,?4,?5)",
+                    params![
+                        session,
+                        client_message_id,
+                        ended.runner_code,
+                        ended.retry_after_ms,
+                        ended.cause
+                    ],
                 )?;
             }
             Ok(changed)
@@ -212,7 +228,7 @@ impl SendQueue {
             self.0.with_read(|conn| {
                 conn.prepare(
                 "SELECT q.client_message_id,q.send_id,q.accepted_at,q.state,q.reason,q.ended_at,\
-                 w.runner_code,w.retry_after_ms FROM harness_app_send_queue q \
+                 w.runner_code,w.retry_after_ms,w.cause FROM harness_app_send_queue q \
                  LEFT JOIN harness_app_send_wait w \
                  ON w.session=q.session AND w.client_message_id=q.client_message_id \
                  WHERE q.session=?1 AND (q.state='queued' OR q.ended_at>=?2) \
@@ -238,6 +254,9 @@ impl SendQueue {
                     }
                     if let Some(after) = row.get::<_, Option<i64>>(7)? {
                         entry["retryAfterMs"] = json!(after);
+                    }
+                    if let Some(cause) = row.get::<_, Option<String>>(8)? {
+                        entry["cause"] = json!(cause);
                     }
                     Ok(entry)
                 },
@@ -355,11 +374,13 @@ mod tests {
         let wait = EndedRun {
             runner_code: "account_limit_exhausted".into(),
             retry_after_ms: Some(120_000),
+            cause: None,
         };
         assert!(q.unsent("ses", "a", "error", Some(&wait), 40).unwrap());
         let final_code = EndedRun {
             runner_code: "account_selection_final".into(),
             retry_after_ms: None,
+            cause: None,
         };
         assert!(q
             .unsent("ses", "b", "error", Some(&final_code), 50)

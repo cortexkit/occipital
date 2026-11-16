@@ -4645,6 +4645,7 @@ pub(crate) mod tests {
     mod fork_answer_1112;
     mod head_provider_code_1112;
     mod head_selection_samples;
+    mod host_refused_samples;
     mod imported_heads_1110;
     mod input_cap_withdrawn_1116;
     mod model_fallback_1113;

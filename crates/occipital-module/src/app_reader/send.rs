@@ -1861,7 +1861,28 @@ async fn ended_run(
     Some(super::send_queue::EndedRun {
         runner_code: code.to_owned(),
         retry_after_ms,
+        cause: refusal_cause(error),
     })
+}
+
+/// Why the host refused a send for good (`host_refused`), when the run's error
+/// names one of the contract's causes. Causes are open strings, so one this
+/// module doesn't know is left out, as an unnamed code is, rather than shown
+/// to the person as text it can't word.
+fn refusal_cause(error: &Value) -> Option<String> {
+    use cortexkit_role_llm_runner::errors::{causes, run_error_classes};
+    if error["class"].as_str() != Some(run_error_classes::HOST_REFUSED) {
+        return None;
+    }
+    let cause = error["cause"].as_str()?;
+    [
+        causes::ATTACHMENT_UNREADABLE,
+        causes::HOST_CONFIGURATION_INVALID,
+        causes::HOST_VERSION_UNSUPPORTED,
+        causes::HOST_POLICY_REFUSED,
+    ]
+    .contains(&cause)
+    .then(|| cause.to_owned())
 }
 
 pub mod promote;
