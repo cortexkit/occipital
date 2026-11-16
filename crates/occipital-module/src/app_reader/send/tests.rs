@@ -961,24 +961,42 @@ async fn send_outcomes_are_listed_by_delivery(set: &str) {
 /// copied unchanged). It now answers `pending` right after its durable write,
 /// already naming the run it committed, and hands the prompt to the host after.
 /// That records acceptance only: the send is accepted, listed `queued` and
-/// followed, never taken for delivered or for a run already running.
+/// followed, never taken for delivered or for a run already running. The second
+/// set's Pi answer names no `submission_id`, as Pi can't retract a send; the send
+/// is followed by its own id all the same.
 #[tokio::test(start_paused = true)]
 async fn an_early_pending_answer_naming_its_run_is_only_accepted() {
+    for (set, bodies) in [
+        (
+            "thalamus-send-answers-early-1116",
+            &[
+                "01-opencode2-send-reply.json",
+                "02-pi-send-reply.json",
+                "03-claude-code-send-reply.json",
+            ][..],
+        ),
+        (
+            "thalamus-send-answers-early-v2-1116",
+            &["02-pi-send-reply.json"][..],
+        ),
+    ] {
+        early_answers_are_only_accepted(set, bodies).await;
+    }
+}
+
+async fn early_answers_are_only_accepted(set: &str, bodies: &[&str]) {
     let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/data/thalamus-send-answers-early-1116");
+        .join("tests/data")
+        .join(set);
     let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
-    // Three bodies and the README.
-    assert_eq!(sums.lines().count(), 4);
+    // The bodies and the README.
+    assert_eq!(sums.lines().count(), bodies.len() + 1, "{set}");
     for line in sums.lines() {
         let (expected, name) = line.split_once("  ").unwrap();
         let bytes = std::fs::read(data.join(name)).unwrap();
         assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
     }
-    for name in [
-        "01-opencode2-send-reply.json",
-        "02-pi-send-reply.json",
-        "03-claude-code-send-reply.json",
-    ] {
+    for name in bodies {
         let first: Value =
             serde_json::from_slice(&std::fs::read(data.join(name)).unwrap()).unwrap();
         assert_eq!(first["state"], "pending", "{name}");
