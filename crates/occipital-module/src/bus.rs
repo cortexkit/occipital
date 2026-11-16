@@ -26,6 +26,7 @@
 //! read (a recognised subject with a body that doesn't decode, or a record the
 //! client can't parse) is terminated, so it isn't redelivered forever.
 
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -116,6 +117,44 @@ pub struct Handlers {
     pub records: Option<(Arc<dyn pull::Providers>, pull::Sink)>,
     /// Where views a provider puts in its views bucket are kept.
     pub views: Option<Fetcher>,
+    /// What the reader has done, for the module's health report.
+    pub stats: Arc<Stats>,
+}
+
+/// What the reader has done since the module started, counted for the health
+/// report: a wake is logged at debug only, so these are how an operator sees
+/// that events arrive and are handled.
+#[derive(Default)]
+pub struct Stats {
+    attached: AtomicBool,
+    send_states: AtomicU64,
+    catalog_changes: AtomicU64,
+    records_stored: AtomicU64,
+    records_refused: AtomicU64,
+    records_again: AtomicU64,
+    views_served: AtomicU64,
+    unreadable: AtomicU64,
+}
+
+impl Stats {
+    /// The counts as the health report's `bus` member.
+    pub fn metrics(&self) -> serde_json::Value {
+        let count = |counter: &AtomicU64| counter.load(Ordering::Relaxed);
+        serde_json::json!({
+            "readerAttached": self.attached.load(Ordering::Relaxed),
+            "sendStates": count(&self.send_states),
+            "catalogChanges": count(&self.catalog_changes),
+            "recordsStored": count(&self.records_stored),
+            "recordsRefused": count(&self.records_refused),
+            "recordsRetried": count(&self.records_again),
+            "viewsServed": count(&self.views_served),
+            "unreadable": count(&self.unreadable),
+        })
+    }
+
+    fn add(counter: &AtomicU64) {
+        counter.fetch_add(1, Ordering::Relaxed);
+    }
 }
 
 /// What to do with an event once its wake is handed on.
@@ -130,10 +169,12 @@ impl Handlers {
     async fn hand_on(&self, wake: &Wake) -> Done {
         match wake {
             Wake::SendState { send_id } => {
+                Stats::add(&self.stats.send_states);
                 self.sends.nudge(send_id);
                 Done::Ack
             }
             Wake::CatalogChanged => {
+                Stats::add(&self.stats.catalog_changes);
                 if let Some(names) = &self.model_names {
                     names.catalog_changed();
                 }
@@ -147,12 +188,17 @@ impl Handlers {
                     return Done::Again(RECORD_RETRY);
                 };
                 match pull::pull(providers.as_ref(), sink, provider, record_id).await {
-                    Pulled::Stored => Done::Ack,
+                    Pulled::Stored => {
+                        Stats::add(&self.stats.records_stored);
+                        Done::Ack
+                    }
                     Pulled::Final(why) => {
+                        Stats::add(&self.stats.records_refused);
                         tracing::warn!(%provider, %record_id, %why, "an announced tool record is not stored");
                         Done::Ack
                     }
                     Pulled::Retry(why) => {
+                        Stats::add(&self.stats.records_again);
                         tracing::debug!(%provider, %record_id, %why, "an announced tool record waits");
                         Done::Again(RECORD_RETRY)
                     }
@@ -194,8 +240,9 @@ pub fn start(calls: Arc<DaemonCalls>, handlers: Handlers) -> tokio::task::JoinHa
             let mut watches = tokio::task::JoinSet::new();
             if let Some(fetcher) = &handlers.views {
                 for owner in view_buckets() {
-                    let (bus, fetcher) = (bus.clone(), fetcher.clone());
-                    watches.spawn(async move { watch_views(&bus, owner, &fetcher).await });
+                    let (bus, fetcher, stats) =
+                        (bus.clone(), fetcher.clone(), handlers.stats.clone());
+                    watches.spawn(async move { watch_views(&bus, owner, &fetcher, &stats).await });
                 }
             }
             loop {
@@ -213,7 +260,9 @@ pub fn start(calls: Arc<DaemonCalls>, handlers: Handlers) -> tokio::task::JoinHa
                 };
                 backoff = Backoff::default();
                 tracing::info!(durable = DURABLE, "message bus reader attached");
+                handlers.stats.attached.store(true, Ordering::Relaxed);
                 let reason = read(&mut reader, &handlers).await;
+                handlers.stats.attached.store(false, Ordering::Relaxed);
                 tracing::info!(durable = DURABLE, %reason, "message bus reader lost");
                 break;
             }
@@ -235,7 +284,7 @@ fn view_buckets() -> impl Iterator<Item = &'static str> {
 /// each view it puts to the fetcher, which keeps it as if fetched. A watch that
 /// fails is opened again after a pause; until then, and for any view not in
 /// the bucket, the fetcher still asks the writer with `tool.views`.
-async fn watch_views(bus: &BusClient, owner: &'static str, fetcher: &Fetcher) {
+async fn watch_views(bus: &BusClient, owner: &'static str, fetcher: &Fetcher, stats: &Stats) {
     let mut backoff = Backoff::default();
     loop {
         let reason = match bus.bucket(owner, VIEWS) {
@@ -247,7 +296,10 @@ async fn watch_views(bus: &BusClient, owner: &'static str, fetcher: &Fetcher) {
                         match watch.next().await {
                             Ok(BucketItem::Put { key, value, .. }) => {
                                 match served_view(&key, &value) {
-                                    Ok((pin, reply)) => fetcher.offer(owner, &pin, reply).await,
+                                    Ok((pin, reply)) => {
+                                        Stats::add(&stats.views_served);
+                                        fetcher.offer(owner, &pin, reply).await
+                                    }
                                     Err(why) => {
                                         tracing::warn!(%owner, %key, %why, "a served display view can't be read")
                                     }
@@ -317,6 +369,7 @@ async fn read(reader: &mut cortexkit_bus_client::EventReader, handlers: &Handler
                         }
                     }
                     Err(Unreadable(why)) => {
+                        Stats::add(&handlers.stats.unreadable);
                         tracing::warn!(
                             module = %subject.module,
                             event = %subject.event,
@@ -328,6 +381,7 @@ async fn read(reader: &mut cortexkit_bus_client::EventReader, handlers: &Handler
                 }
             }
             Ok(EventItem::Malformed(record)) => {
+                Stats::add(&handlers.stats.unreadable);
                 tracing::warn!(
                     reason = ?record.reason,
                     "a malformed message bus record is terminated"
@@ -418,6 +472,22 @@ mod tests {
         }
         // Cerebellum's old `tool_display` event name is not read.
         assert_eq!(wake("cerebellum", "tool_display", 1, None, b"{}"), Ok(None));
+    }
+
+    /// The health report carries every count under its own name.
+    #[test]
+    fn the_counts_reach_the_health_report() {
+        let stats = Stats::default();
+        stats.attached.store(true, Ordering::Relaxed);
+        Stats::add(&stats.records_stored);
+        Stats::add(&stats.records_stored);
+        Stats::add(&stats.send_states);
+        assert_eq!(
+            stats.metrics(),
+            serde_json::json!({"readerAttached": true, "sendStates": 1, "catalogChanges": 0,
+                "recordsStored": 2, "recordsRefused": 0, "recordsRetried": 0,
+                "viewsServed": 0, "unreadable": 0})
+        );
     }
 
     /// Bus naming declares AFT's and Cerebellum's views buckets with this

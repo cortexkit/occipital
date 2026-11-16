@@ -237,6 +237,8 @@ pub struct OccipitalHandler {
     /// What the message bus reader wakes, kept by the app reader's start until
     /// the display store is open and the reader starts.
     bus_parts: Mutex<BusParts>,
+    /// The message bus reader's counts, once it has started.
+    bus_stats: OnceLock<Arc<crate::bus::Stats>>,
     on_fatal: OnFatal,
     /// What each live route was bound with: admission and `show_ui`'s provenance
     /// read only these daemon-attested facts.
@@ -262,6 +264,7 @@ impl OccipitalHandler {
             consumer,
             daemon_calls: OnceLock::new(),
             bus_parts: Mutex::new(None),
+            bus_stats: OnceLock::new(),
             on_fatal,
             routes: Mutex::new(HashMap::new()),
             background: Mutex::new(Vec::new()),
@@ -538,7 +541,10 @@ impl ModuleHandler for OccipitalHandler {
                 [] => HealthReport {
                     status: HealthStatus::Ok,
                     detail: Some(format!("store open at lease epoch {}", store.epoch())),
-                    metrics: None,
+                    metrics: self
+                        .bus_stats
+                        .get()
+                        .map(|stats| serde_json::json!({"bus": stats.metrics()})),
                 },
                 // Reads still work, but held sends are no longer followed or
                 // expired receipts no longer pruned, and nothing else says so.
@@ -673,6 +679,7 @@ impl OccipitalHandler {
                     records,
                 )),
                 views: self.display_views.get().cloned(),
+                stats: self.bus_stats.get_or_init(Default::default).clone(),
             },
         );
         if let Ok(mut tasks) = self.background.lock() {
