@@ -36,6 +36,8 @@ Occipital in turn calls runners, Entorhinal, tool providers and command modules 
 
 A page's version moves only when the runner's history counter or log identity does. A change in how Occipital renders rows doesn't move it, so apps holding a chat keep their copy until it reloads.
 
+An append doesn't move it either, yet a row can change in place: Broca stores a step before its calls run, and a call's row gains its result when the result lands as a later entry. So a claim at an unchanged version is also checked against the copy its claimant was served, kept per chat in memory (`claim.rs`), and a held row that changed answers `diverged` with a resync from that row. The kept copies are shared by every reader of the chat, so the one checked is the oldest whose newest row is the claim's `sinceMessageId`. After a restart none is kept, and an equal version answers `matched`.
+
 ## Live text and tool frames
 
 Each open chat has one subscription to its runner's live events, shared by every app watching it (`app_reader/display_hub.rs`). Text arrives in a ring that batches deltas for 300 ms; a watch or read that starts mid-reply first gets the text written so far. A reader that opts in with `acceptToolFrames` also gets a frame for each call as it starts and ends, matched to the stored part by `callId`; a run that ends with calls still running marks them unanswered. A run's end ends the live view only when it names the run that is running, since a new run's start can arrive before the previous run's end. A display `run_status`, which says the run's state changed (a provider retry starting or ending), makes the chat's watches re-read the head and leaves the live words alone: a runner that drops words it streamed sends `display_reset` for that.

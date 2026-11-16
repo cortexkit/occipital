@@ -1,0 +1,1 @@
+{"result":{"acceptedModalities":["image","pdf"],"acceptsAttachments":true,"activity":"busy","activityAtMs":730,"claim":"matched","diagnostics":{"deltaRead":"native","identity":"durable","invalidation":"none"},"historyVersion":7,"lastRun":{"runId":"r1","state":"active"},"newTurns":[],"version":"history:7:incarnation:inc-a","vouchedFromMessageId":"m40"}}

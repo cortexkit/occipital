@@ -735,7 +735,25 @@ impl TranscriptReader {
                 Ok(snapshot) => snapshot,
                 Err(_) => return Ok(claim::identity_unsupported_reply()),
             };
-            let mut reply = if native {
+            // An equal version proves the runner's entries unchanged, but a row can still
+            // change in place: a runner that stores a step before its calls run sends each
+            // result as a later entry, which gives the call's row its finish. So a native
+            // claim is also checked against the copy its claimant was served, when one is
+            // kept, and a changed held row answers `diverged` with a resync from it.
+            let changed = (native && held.held_version == version)
+                .then(|| {
+                    let claims = self.claims.lock().expect("transcript claims poisoned");
+                    claims.share_unchanged(&request.session_id, &mut current);
+                    claims.held_snapshot(&request.session_id, held)
+                })
+                .flatten()
+                .map(|previous| claim::evaluate_claim(held, Some(&previous), &current))
+                .filter(|evaluation| matches!(evaluation, claim::ClaimEvaluation::Diverged { .. }));
+            let mut reply = if let Some(diverged) = changed {
+                let mut reply = claim::claim_reply(&version, diverged);
+                reply["diagnostics"] = claim::diagnostics("durable", "native");
+                reply
+            } else if native {
                 let evaluation = if held.held_version == version {
                     let messages = mapped["messages"].as_array().expect("mapped messages");
                     if let Some(index) = messages
