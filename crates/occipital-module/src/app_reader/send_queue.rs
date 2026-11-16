@@ -158,13 +158,16 @@ impl SendQueue {
         now: i64,
     ) -> Result<bool, crate::Error> {
         Ok(self.0.with_conn(|conn| {
-            let changed = conn.execute(
+            // One transaction, so a read on another connection never sees the entry
+            // unsent without the code its run ended with.
+            let tx = conn.unchecked_transaction()?;
+            let changed = tx.execute(
                 "UPDATE harness_app_send_queue SET state='unsent', reason=?3, ended_at=?4 \
                  WHERE session=?1 AND client_message_id=?2 AND state='queued'",
                 params![session, client_message_id, reason, now],
             )?;
             if let (true, Some(ended)) = (changed > 0, ended) {
-                conn.execute(
+                tx.execute(
                     "INSERT OR REPLACE INTO harness_app_send_wait(session,client_message_id,runner_code,retry_after_ms,cause) \
                      VALUES(?1,?2,?3,?4,?5)",
                     params![
@@ -176,6 +179,7 @@ impl SendQueue {
                     ],
                 )?;
             }
+            tx.commit()?;
             Ok(changed)
         })? > 0)
     }
