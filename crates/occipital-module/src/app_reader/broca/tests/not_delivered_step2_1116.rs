@@ -121,3 +121,26 @@ fn every_run_finished_frame_ends_its_run() {
         assert_eq!(display_events::map(&event), plain, "{ending}");
     }
 }
+
+/// Agent Runner's `host_unavailable` ending (runner contract 0.8.57,
+/// `tests/data/thalamus-host-unavailable-1116/`) ends its run's live view the
+/// same way.
+#[test]
+fn the_host_unavailable_run_finished_frame_ends_its_run() {
+    let frame: Value =
+        serde_json::from_slice(
+            &std::fs::read(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(
+                "tests/data/thalamus-host-unavailable-1116/04-session-run-finished-event.json",
+            ))
+            .unwrap(),
+        )
+        .unwrap();
+    let run = frame["run_id"].clone();
+    assert!(carries_live_event(&frame));
+    let event = normalize(frame).unwrap();
+    assert_eq!(
+        display_events::map(&event),
+        display_events::map(&json!({"kind": "control", "event": {"type": "run_finished",
+            "run_id": run, "reason": "error"}}))
+    );
+}

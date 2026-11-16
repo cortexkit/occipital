@@ -1,0 +1,1 @@
+{"cursor":{"session":"00e01c18b76c0892","sub_index":0,"wal_seq":8},"event":{"reason":"error","run_id":"run_329a3789829e44220b31d629","type":"run_finished"},"kind":"control","run_id":"run_329a3789829e44220b31d629","runner_event":"run_ended","seq":12,"state":"error"}
