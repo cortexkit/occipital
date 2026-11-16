@@ -10,6 +10,8 @@
 //! writer as a pushed one (`check_writer`). A record pushed and pulled is
 //! stored once.
 
+use std::collections::BTreeSet;
+use std::future::Future;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -19,6 +21,7 @@ use subc_protocol::{ErrorBody, Principal, RouteTarget};
 
 use super::daemon::{CallFailure, DaemonCalls};
 use super::{app, views, State};
+use crate::catalog_generation::{CatalogGeneration, Checked};
 
 /// What became of one announced record, which says what to do with its event.
 #[derive(Debug, PartialEq, Eq)]
@@ -118,32 +121,76 @@ pub async fn pull(providers: &dyn Providers, sink: &Sink, module: &str, record_i
 /// The providers, reached through the daemon as this module.
 pub struct DaemonProviders {
     calls: Arc<DaemonCalls>,
+    verified: VerifiedModules,
 }
 
 impl DaemonProviders {
     pub fn new(calls: Arc<DaemonCalls>) -> Self {
-        Self { calls }
+        Self {
+            calls,
+            verified: VerifiedModules::default(),
+        }
+    }
+}
+
+/// The daemon-verified modules as the last catalog read listed them. A
+/// provider announces every record it writes, so reading the catalog per
+/// record would cost the daemon a full catalog per tool call; the list is
+/// read again only once the catalog's generation moves.
+#[derive(Default)]
+struct VerifiedModules(tokio::sync::Mutex<Option<(Checked, BTreeSet<String>)>>);
+
+impl VerifiedModules {
+    /// Whether `module` is verified, from the kept list while `generation`
+    /// says it is fresh, else from `read`, a new catalog read.
+    async fn contains<Read>(
+        &self,
+        module: &str,
+        generation: &CatalogGeneration,
+        read: Read,
+    ) -> Result<bool, String>
+    where
+        Read: Future<Output = Result<BTreeSet<String>, String>>,
+    {
+        let mut kept = self.0.lock().await;
+        if let Some((checked, modules)) = kept.as_ref() {
+            if generation.fresh(Some(checked)) {
+                return Ok(modules.contains(module));
+            }
+        }
+        let checked = generation.check();
+        let modules = read.await?;
+        let verified = modules.contains(module);
+        *kept = Some((checked, modules));
+        Ok(verified)
     }
 }
 
 #[async_trait]
 impl Providers for DaemonProviders {
     async fn verified(&self, module: &str) -> Result<bool, String> {
-        let consumer = self
-            .calls
-            .consumer()
-            .await
-            .map_err(|failure| failure.to_string())?;
-        match consumer.catalog_list().await {
-            Ok(listed) => Ok(listed
-                .modules
-                .iter()
-                .any(|entry| entry.module_id == module && entry.nonce_verified)),
-            Err(error) => {
-                self.calls.failed(error.code()).await;
-                Err(error.to_string())
+        let read = async {
+            let consumer = self
+                .calls
+                .consumer()
+                .await
+                .map_err(|failure| failure.to_string())?;
+            match consumer.catalog_list().await {
+                Ok(listed) => Ok(listed
+                    .modules
+                    .into_iter()
+                    .filter(|entry| entry.nonce_verified)
+                    .map(|entry| entry.module_id)
+                    .collect()),
+                Err(error) => {
+                    self.calls.failed(error.code()).await;
+                    Err(error.to_string())
+                }
             }
-        }
+        };
+        self.verified
+            .contains(module, &self.calls.catalog_generation(), read)
+            .await
     }
 
     async fn read(&self, module: &str, record_id: &str) -> Result<Value, CallFailure> {

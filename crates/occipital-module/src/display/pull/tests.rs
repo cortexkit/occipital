@@ -162,3 +162,49 @@ async fn a_malformed_reply_is_final_and_a_closed_store_waits() {
         Pulled::Retry(_)
     ));
 }
+
+/// The verified list is read from the catalog once and kept while the
+/// catalog's generation stays; a move reads it again, and a failed read keeps
+/// nothing.
+#[tokio::test(start_paused = true)]
+async fn the_verified_list_is_read_once_per_catalog_generation() {
+    let (set, generation) = CatalogGeneration::manual();
+    set.send_replace(Some((1, 7)));
+    let kept = VerifiedModules::default();
+    let reads = Mutex::new(0);
+    let read = |modules: &'static [&'static str]| {
+        let reads = &reads;
+        async move {
+            *reads.lock().unwrap() += 1;
+            Ok(modules.iter().map(|module| (*module).to_owned()).collect())
+        }
+    };
+    assert_eq!(
+        kept.contains("aft", &generation, read(&["aft"])).await,
+        Ok(true)
+    );
+    // While the generation stays, the kept list answers and no read runs.
+    assert_eq!(kept.contains("aft", &generation, read(&[])).await, Ok(true));
+    assert_eq!(
+        kept.contains("core", &generation, read(&["core"])).await,
+        Ok(false)
+    );
+    assert_eq!(*reads.lock().unwrap(), 1);
+    set.send_replace(Some((1, 8)));
+    assert_eq!(
+        kept.contains("aft", &generation, read(&[])).await,
+        Ok(false)
+    );
+    assert_eq!(*reads.lock().unwrap(), 2);
+    let failed = std::future::ready(Err("down".to_owned()));
+    set.send_replace(Some((1, 9)));
+    assert_eq!(
+        kept.contains("aft", &generation, failed).await,
+        Err("down".into())
+    );
+    assert_eq!(
+        kept.contains("aft", &generation, read(&["aft"])).await,
+        Ok(true)
+    );
+    assert_eq!(*reads.lock().unwrap(), 3);
+}
