@@ -111,6 +111,9 @@ struct Names {
     /// Credential provider to catalog provider.
     aliases: HashMap<String, String>,
     fresh_until: Instant,
+    /// [`ModelNames::changes`] when the read began. A catalog change since
+    /// makes these names old at once, whatever `fresh_until` says.
+    changes: u64,
 }
 
 /// One model's row: its name and its provider's, when served, and its
@@ -194,6 +197,9 @@ pub struct ModelNames {
     /// The latest names a read left, for the attachment limits, which never
     /// wait on a read in progress once one has finished.
     latest: tokio::sync::watch::Sender<Option<Arc<Names>>>,
+    /// How many times Fusiform has said its catalog changed (see
+    /// [`ModelNames::catalog_changed`]).
+    changes: std::sync::atomic::AtomicU64,
 }
 
 impl ModelNames {
@@ -202,7 +208,22 @@ impl ModelNames {
             sources,
             held: tokio::sync::Mutex::new(None),
             latest: tokio::sync::watch::channel(None).0,
+            changes: std::sync::atomic::AtomicU64::new(0),
         }
+    }
+
+    /// Fusiform's catalog changed (its `catalog_changed.v1` event on the
+    /// message bus): the names held are old, and the next answer reads them
+    /// again. The time limit stays as a backstop for a missed event.
+    pub fn catalog_changed(&self) {
+        self.changes
+            .fetch_add(1, std::sync::atomic::Ordering::AcqRel);
+    }
+
+    /// Whether `names` may still be served without reading them again.
+    fn fresh(&self, names: &Names) -> bool {
+        Instant::now() < names.fresh_until
+            && names.changes == self.changes.load(std::sync::atomic::Ordering::Acquire)
     }
 
     /// `display.model_names {ids}`: `{"models": {id: answer}}`, where an
@@ -243,9 +264,7 @@ impl ModelNames {
     ) -> AttachmentLimits {
         let mut latest = self.latest.subscribe();
         let current = latest.borrow_and_update().clone();
-        let old = current
-            .as_ref()
-            .is_none_or(|names| Instant::now() >= names.fresh_until);
+        let old = current.as_ref().is_none_or(|names| !self.fresh(names));
         // A held lock is a read already running; it will publish its names.
         if old && self.held.try_lock().is_ok() {
             let names = Arc::clone(self);
@@ -282,10 +301,7 @@ impl ModelNames {
     /// keeps serving the names held, which are only ever old, never wrong.
     async fn names(&self) -> Result<Arc<Names>, ReadError> {
         let mut held = self.held.lock().await;
-        if let Some(names) = held
-            .as_ref()
-            .filter(|names| Instant::now() < names.fresh_until)
-        {
+        if let Some(names) = held.as_ref().filter(|names| self.fresh(names)) {
             return Ok(names.clone());
         }
         match self.read(held.as_deref()).await {
@@ -312,6 +328,9 @@ impl ModelNames {
     /// Read every page of names, starting over when the catalog changes
     /// between pages, and routing's provider map beside them.
     async fn read(&self, previous: Option<&Names>) -> Result<Names, CallFailure> {
+        // Taken before the first page, so a change during the read makes the
+        // next answer read again.
+        let changes = self.changes.load(std::sync::atomic::Ordering::Acquire);
         let mut restarts = 0;
         let models = loop {
             match self.read_pages().await {
@@ -341,6 +360,7 @@ impl ModelNames {
             models,
             aliases,
             fresh_until: Instant::now() + fresh_for,
+            changes,
         })
     }
 

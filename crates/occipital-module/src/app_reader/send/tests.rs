@@ -750,6 +750,39 @@ async fn a_head_send_is_listed_until_delivered_or_listed_unsent() {
     assert_eq!(reply["queuedSends"], unsent);
 }
 
+/// A runner's notice that one of this module's sends changed state (its
+/// `send_state.v1` event on the message bus) makes that send's follower ask the
+/// runner at once instead of at its next timed check. A send nothing here
+/// follows is not nudged.
+#[tokio::test(start_paused = true)]
+async fn a_nudged_send_is_asked_about_at_once() {
+    let f = fixture(Kind::Head);
+    let receipt = f.sender.send(message("u1", "words")).await.unwrap();
+    assert_eq!(receipt["ok"], true);
+    let statuses = || {
+        f.runner
+            .calls()
+            .iter()
+            .filter(|(method, _)| method == "session.send_status")
+            .count()
+    };
+    let settle = || async {
+        for _ in 0..50 {
+            tokio::task::yield_now().await;
+        }
+    };
+    settle().await;
+    let before = statuses();
+    // Well inside the timed interval, so only the nudge can bring a check.
+    tokio::time::advance(FOLLOW_INTERVAL / 5).await;
+    settle().await;
+    assert_eq!(statuses(), before, "no timed check yet");
+    assert!(f.sender.nudge(receipt["effectId"].as_str().unwrap()));
+    settle().await;
+    assert_eq!(statuses(), before + 1, "asked at once");
+    assert!(!f.sender.nudge("app-not-followed-here"));
+}
+
 /// A head send the runner handed on but can't confirm (`delivered.as: unknown`)
 /// is listed `unknown`, never dropped as delivered: the apps say it may not have
 /// arrived. The runner never sends it again, so neither does this module, and

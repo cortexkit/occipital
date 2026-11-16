@@ -28,6 +28,9 @@ occipital-lang = { package = "cortexkit-occipital-lang", path = "../occipital-la
 occipital-registry = { package = "cortexkit-occipital-registry", path = "../occipital-registry" }
 async-trait = "0.1"
 cortexkit-agent-identity = "=0.1.2"
+# The local message bus: the credential, the connection and the durable reader
+# (`crate::bus`).
+cortexkit-bus-client = "=0.1.1"
 # The fleet log: one file a day in the module's data folder, filtered by CK_LOG.
 cortexkit-log = "0.3.6"
 cortexkit-project-identity = "=0.1.4"

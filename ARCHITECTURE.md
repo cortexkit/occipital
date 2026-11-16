@@ -46,7 +46,7 @@ Watches run in a long-held pool of handler slots, so open chats never hold up re
 
 `session.enqueue_user_message` forwards the person's message to the runner's `session.send`. Its send id comes from the app's message id, the chat and the runner, so a retry reaches the runner under the same key and is answered with the existing send, never delivered twice. A receipt answers a repeated send for 48 hours. Modes are queue (the default), steer and interrupt, as the plan grants. Occipital never sends anything on its own and never resends after an unknown outcome.
 
-Until a send's message is stored, Occipital follows it with `session.send_status` and lists it on every page and details reply, and on a watch that opts in, as the chat's `queuedSends` (`send_queue.rs`): `queued` while the runner holds it, `unsent` with the runner's reason when it ended undelivered, and `unknown` when the runner handed it on but can't confirm it ran. A delivered send leaves the list; the other two stay for 48 hours.
+Until a send's message is stored, Occipital follows it with `session.send_status` and lists it on every page and details reply, and on a watch that opts in, as the chat's `queuedSends` (`send_queue.rs`): `queued` while the runner holds it, `unsent` with the runner's reason when it ended undelivered, and `unknown` when the runner handed it on but can't confirm it ran. A delivered send leaves the list; the other two stay for 48 hours. The follower asks every 5 seconds, and at once when the runner's `send_state.v1` event on the message bus says the send changed (see Message bus).
 
 `session.stop` cancels the running turn through the runner; `session.stop_all` asks the runner to stop everything the agent started, and reports what stopped and what kept running.
 
@@ -72,7 +72,7 @@ How many files a message may carry follows the session's model: `session.details
 - **Reading:** the apps read views, templates, records and details beside the pages (`display.views`, `display.template`, `session.tool_records`, `session.tool_detail`), cache them for good, and hear of new ones from `session.tool_records_watch`. Keeping them beside the pages keeps page versions the runner's alone: a record that lands after its row never reloads a chat.
 - **Moved calls:** Occipital files a call under the runner that minted its key and finds it by the session and key the app asks about, so a chat moved to another runner keeps its tool rows and notices.
 
-`display.model_names` resolves model ids to the names the apps show, from Fusiform's catalog and routing's credential-provider map (`route.catalog_targets`, on whichever module the daemon's catalog lists as providing `routing/v1`), cached for 30 minutes (60 seconds when the map couldn't be read). The same read takes each model's attachment limits.
+`display.model_names` resolves model ids to the names the apps show, from Fusiform's catalog and routing's credential-provider map (`route.catalog_targets`, on whichever module the daemon's catalog lists as providing `routing/v1`), cached for 30 minutes (60 seconds when the map couldn't be read), or until Fusiform's `catalog_changed.v1` event on the message bus. The same read takes each model's attachment limits.
 
 ## Notices
 
@@ -117,6 +117,16 @@ All stores sit in Occipital's data folder, normally `<data home>/cortexkit/occip
 - **Migrations only move forward.** Each file, and each table group in `store.db`, has its own version, and a binary refuses to start on one ahead of what it knows. So a build that adds a migration makes rollback a store step, not a plain binary swap: copy the changed files aside before placing it.
 - **Backups:** at every start the module writes `engram-catalog.json`, so Engram backs up the files marked yes, live.
 - **Restores are safe:** an older restored copy never makes Occipital resend: sends are deduplicated by the runner, and uploads resume.
+
+## Message bus
+
+Occipital reads one durable on the local message bus (ck-bus, NATS), `m_occipital`, and publishes nothing (`bus.rs`). Each event is only a wake, and the fact is read again through the call that owns it:
+
+- a runner's `send_state.v1.occipital` makes that send's follower ask `session.send_status` at once;
+- Fusiform's `catalog_changed.v1` makes the model names held old;
+- Cerebellum's `tool_display.v1` and AFT's `display_record_ready.v1` are acknowledged and not read yet, since each writer still sends its record by `display.write`.
+
+An event is acknowledged once its wake is handed on, and one that can never be read is terminated. The timed checks stay as backstops, so a bus that is down only slows these updates.
 
 ## Failure handling
 

@@ -377,16 +377,25 @@ impl OccipitalHandler {
         );
         let mut background = sends.start();
         background.push(("upload cleanup", uploads.start()));
-        let app = AppReader::with_sender(resolver, sends).with_uploads(Some(uploads));
+        let app = AppReader::with_sender(resolver, sends.clone()).with_uploads(Some(uploads));
         if let Some(calls) = self.daemon_calls() {
-            app.set_model_names(Arc::new(crate::display::model_names::ModelNames::new(
-                Arc::new(crate::display::model_names::DaemonNameSources::new(
-                    calls.clone(),
-                )),
+            let names = Arc::new(crate::display::model_names::ModelNames::new(Arc::new(
+                crate::display::model_names::DaemonNameSources::new(calls.clone()),
             )));
+            app.set_model_names(names.clone());
             app.set_commands(Arc::new(crate::commands::Commands::new(Arc::new(
-                crate::commands::DaemonModules::new(calls),
+                crate::commands::DaemonModules::new(calls.clone()),
             ))));
+            background.push((
+                "message bus reader",
+                crate::bus::start(
+                    calls,
+                    crate::bus::Handlers {
+                        sends,
+                        model_names: Some(names),
+                    },
+                ),
+            ));
         }
         if self.app.set(Arc::new(app)).is_ok() {
             if let Ok(mut tasks) = self.background.lock() {

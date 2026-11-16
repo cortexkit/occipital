@@ -18,7 +18,7 @@
 
 use crate::app_reader::Guard as _;
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     sync::{Arc, Mutex, Weak},
     time::Duration,
 };
@@ -205,6 +205,10 @@ type Clock = Arc<dyn Fn() -> i64 + Send + Sync>;
 /// One lock per session and `clientMessageId`, dropped when no attempt holds it.
 type MessageLocks = HashMap<(String, String), Weak<tokio::sync::Mutex<()>>>;
 
+/// The sends a task follows, by session and runner `send_id`, with each one's
+/// nudge signal.
+type Following = HashMap<(String, String), Arc<tokio::sync::Notify>>;
+
 pub struct Sender {
     targets: Arc<dyn SendTargets>,
     receipts: Option<Arc<Receipts>>,
@@ -216,8 +220,10 @@ pub struct Sender {
     late: broadcast::Sender<LateOutcome>,
     /// The session whose queued or unsent list just changed.
     queue_changed: broadcast::Sender<String>,
-    /// Sends a task here follows, by session and runner `send_id`.
-    following: Arc<Mutex<HashSet<(String, String)>>>,
+    /// Sends a task here follows, by session and runner `send_id`, each with the
+    /// signal that makes its task ask the runner now rather than at its next
+    /// [`FOLLOW_INTERVAL`] (see [`Sender::nudge`]).
+    following: Arc<Mutex<Following>>,
     /// The follow tasks; dropping the sender stops them.
     tasks: Mutex<tokio::task::JoinSet<()>>,
     /// Stop answers by session and `clientRequestId`, so a repeat gets the first answer.
@@ -1053,8 +1059,13 @@ impl Sender {
         follow: Follow,
     ) {
         let key = (session.clone(), send_id.clone());
-        if !self.following.guard().insert(key.clone()) {
-            return;
+        let nudged = Arc::new(tokio::sync::Notify::new());
+        {
+            let mut following = self.following.guard();
+            if following.contains_key(&key) {
+                return;
+            }
+            following.insert(key.clone(), nudged.clone());
         }
         let following = self.following.clone();
         let receipts = self.receipts.clone();
@@ -1075,7 +1086,10 @@ impl Sender {
             let mut wait = clock() <= settle_after;
             loop {
                 if wait {
-                    tokio::time::sleep(FOLLOW_INTERVAL).await;
+                    tokio::select! {
+                        () = tokio::time::sleep(FOLLOW_INTERVAL) => {}
+                        () = nudged.notified() => {}
+                    }
                 }
                 wait = true;
                 let past = clock() > settle_after;
@@ -1171,6 +1185,25 @@ impl Sender {
         });
     }
 
+    /// The runner says the send `send_id` changed state: its follower asks
+    /// `session.send_status` now instead of at its next [`FOLLOW_INTERVAL`]. A
+    /// runner publishes this on the message bus (`send_state.v1`), and the
+    /// notice carries no state worth trusting, so the follower's own read
+    /// decides what happened, exactly as on a timed check. Answers whether a
+    /// task here follows the send; a send it doesn't is not this module's, or
+    /// has already been settled.
+    pub fn nudge(&self, send_id: &str) -> bool {
+        let following = self.following.guard();
+        let mut found = false;
+        for ((_, followed), nudged) in following.iter() {
+            if followed == send_id {
+                nudged.notify_one();
+                found = true;
+            }
+        }
+        found
+    }
+
     /// Resume following every stored worker steer no task here follows yet: those
     /// held when the module last stopped, and those a sweep could not settle
     /// because the runner did not answer. Bounded by [`RECOVERY_BATCH`] per sweep.
@@ -1189,7 +1222,7 @@ impl Sender {
         };
         for row in rows {
             let key = (row.session.clone(), row.send_id.clone());
-            if self.following.guard().contains(&key) {
+            if self.following.guard().contains_key(&key) {
                 continue;
             }
             // An unreachable lookup leaves the row for the next sweep. Only Broca workers
@@ -1227,7 +1260,7 @@ impl Sender {
         };
         for row in queued {
             let key = (row.session.clone(), row.send_id.clone());
-            if self.following.guard().contains(&key) {
+            if self.following.guard().contains_key(&key) {
                 continue;
             }
             let Ok(target) = self

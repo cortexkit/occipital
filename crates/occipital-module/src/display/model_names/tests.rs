@@ -183,6 +183,27 @@ async fn names_are_read_once_and_again_after_thirty_minutes() {
     assert_eq!(models["openai/gpt-6.1-sol"]["name"], "GPT-6.1 Sol");
 }
 
+/// Fusiform's catalog-changed event makes the names held old at once, well
+/// inside the 30 minutes.
+#[tokio::test(start_paused = true)]
+async fn a_catalog_changed_event_reads_the_names_again() {
+    let fake = Arc::new(Fake::default());
+    fake.page(Ok(fixture("fusiform-one-model-current.json")));
+    fake.targets(Ok(fixture("routing-resolved.json")));
+    let names = names(&fake);
+    ask(&names, &["anthropic/claude-sonnet-4-5"]).await;
+    ask(&names, &["anthropic/claude-sonnet-4-5"]).await;
+    assert_eq!(fake.asked.lock().unwrap().len(), 1, "held");
+    names.catalog_changed();
+    fake.page(Ok(fixture("fusiform-provider-default-endpoint.json")));
+    fake.targets(Ok(fixture("routing-resolved.json")));
+    let models = ask(&names, &["openai/gpt-6.1-sol"]).await;
+    assert_eq!(fake.asked.lock().unwrap().len(), 2, "read again");
+    assert_eq!(models["openai/gpt-6.1-sol"]["name"], "GPT-6.1 Sol");
+    ask(&names, &["openai/gpt-6.1-sol"]).await;
+    assert_eq!(fake.asked.lock().unwrap().len(), 2, "held again");
+}
+
 /// A catalog that changes between pages is read again from page one.
 #[tokio::test(start_paused = true)]
 async fn a_catalog_change_mid_read_starts_over() {
