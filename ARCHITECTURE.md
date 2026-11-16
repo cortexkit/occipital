@@ -67,6 +67,7 @@ How many files a message may carry follows the session's model: `session.details
 ## Tool display
 
 - **Writing:** a tool provider writes each call's record, completion and detail with `display.write` on Occipital's tool-provider route. The writer is the module the daemon attests, never a name in the body; an unverified caller is refused.
+- **Pulling:** a provider may instead announce each stored record on the message bus (`display_record_ready.v1`, its id only). Occipital calls that provider's `display.read`, which answers the `display.write` params it would have pushed, and stores them with the called module as the writer, only when the daemon's catalog lists that module as daemon-verified. A record that arrives both ways is stored once. Providers keep `display.write` until this path has run on them.
 - **Views:** Occipital fetches each provider's views (`tool.views`) off the write path: when it first meets a pin, when the provider's build changes, and when a read finds the last fetch an hour old. It learns of a new build from the daemon's catalog: the daemon pushes the catalog's generation (`catalog.watch`), and Occipital reads `catalog.list` again only when that moves, at the latest after 5 minutes, or after 10 seconds while the push is down. Runner builds (which key each session's cached `role.describe`) and the modules that declare commands are read the same way. A template that fails Occipital's checks is left out, and its calls draw as a plain chip.
 - **Joining:** a record joins a call only through a view its own writer serves for the pin the runner stored for that call. If two writers qualify, neither is served.
 - **Reading:** the apps read views, templates, records and details beside the pages (`display.views`, `display.template`, `session.tool_records`, `session.tool_detail`), cache them for good, and hear of new ones from `session.tool_records_watch`. Keeping them beside the pages keeps page versions the runner's alone: a record that lands after its row never reloads a chat.
@@ -124,9 +125,9 @@ Occipital reads one durable on the local message bus (ck-bus, NATS), `m_occipita
 
 - a runner's `send_state.v1.occipital` makes that send's follower ask `session.send_status` at once;
 - Fusiform's `catalog_changed.v1` makes the model names held old;
-- Cerebellum's `tool_display.v1` and AFT's `display_record_ready.v1` are acknowledged and not read yet, since each writer still sends its record by `display.write`.
+- a tool provider's `display_record_ready.v1` names a record it stored, which Occipital reads back with `display.read` (`display/pull.rs`; see Tool display).
 
-An event is acknowledged once its wake is handed on, and one that can never be read is terminated. The timed checks stay as backstops, so a bus that is down only slows these updates.
+A send-state or catalog event is acknowledged once its wake is handed on. A record event is acknowledged once its record is stored or refused for good, and delivered again 30 seconds later when the provider or the display store can't be reached. One that can never be read is terminated. The timed checks stay as backstops, so a bus that is down only slows these updates.
 
 ## Failure handling
 

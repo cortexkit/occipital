@@ -33,7 +33,7 @@ scripts/                 check.sh, build-xcframework.sh, xcframework-source-hash
 - `app_reader/display_hub.rs`: one live subscription per open chat, shared by its watches.
 - `app_reader/send.rs`, `send/`: sends, Stop and Stop everything. `send_store.rs` keeps the receipts that answer a repeated send; `send_queue.rs` the sends a runner accepted but hasn't stored, or didn't deliver.
 - `app_reader/uploads.rs`, `uploads/`: uploads, their store, and placing files in a project.
-- `display.rs`, `display/`: `display.write`, the display stores, view fetching, call pins, the apps' tool reads, model names, and `display/daemon.rs`, the connection those view fetches and name lookups call other modules on (the app reader connects on its own to call runners and Entorhinal, in `app_reader/broca.rs`).
+- `display.rs`, `display/`: `display.write` and the records pulled after a provider's bus event (`display/pull.rs`), the display stores, view fetching, call pins, the apps' tool reads, model names, and `display/daemon.rs`, the connection those view fetches and name lookups call other modules on (the app reader connects on its own to call runners and Entorhinal, in `app_reader/broca.rs`).
 - `notices.rs`: riding notices, their store, and the apps' notice reads.
 - `notices/wakes.rs`: wake records in the same file: the `display.write` wake kind, the sends page reads name, and `session.wake_records`.
 - `media.rs`: image reads and thumbnails.

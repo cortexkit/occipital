@@ -11,30 +11,41 @@
 //!   backstop.
 //! - Fusiform's `catalog_changed.v1` makes the model names held old
 //!   ([`ModelNames::catalog_changed`]).
-//! - Cerebellum's `tool_display.v1` and AFT's `display_record_ready.v1` are
-//!   acknowledged and not read yet: each writer still sends the record by its
-//!   direct `display.write` call, which stays until this reader takes the
-//!   records from the bus.
+//! - A tool provider's `display_record_ready.v1` names a record it stored.
+//!   This module reads it back with `display.read` and stores it
+//!   ([`crate::display::pull`]). Providers still push each record by
+//!   `display.write` too, until this reader has stored records pulled from
+//!   them in production; a record that arrives both ways is stored once.
 //!
-//! An event is acknowledged once its wake is handed on. Nothing it wakes needs
-//! the event again: a follower's send is stored, and the recovery sweep follows
-//! it after a restart. An event that can never be read (a recognised subject
-//! with a body that doesn't decode, or a record the client can't parse) is
-//! terminated, so it isn't redelivered forever.
+//! A send-state or catalog event is acknowledged once its wake is handed on.
+//! Nothing it wakes needs the event again: a followed send is stored, and after
+//! a restart the sender's periodic sweep of stored sends asks the runner about
+//! each one again (`Sender::start`). A record event is acknowledged
+//! once its record is stored or refused for good, and delivered again later
+//! when the provider or the store can't be reached. An event that can never be
+//! read (a recognised subject with a body that doesn't decode, or a record the
+//! client can't parse) is terminated, so it isn't redelivered forever.
 
 use std::sync::Arc;
 use std::time::Duration;
 
 use cortexkit_bus_client::{BusClient, BusClientOptions, EventItem};
+use cortexkit_role_tool_display::{
+    DisplayRecordReady, DISPLAY_RECORD_READY_EVENT, DISPLAY_RECORD_READY_VERSION,
+};
 
 use crate::app_reader::send::Sender;
 use crate::display::daemon::DaemonCalls;
 use crate::display::model_names::ModelNames;
+use crate::display::pull::{self, Pulled};
 
 /// The durable this module reads.
 pub const DURABLE: &str = "m_occipital";
 /// The longest wait before connecting or attaching again after a failure.
 const MAX_BACKOFF: Duration = Duration::from_secs(60);
+/// How long a record event waits before it is delivered again, when its
+/// provider or the display store couldn't be reached.
+const RECORD_RETRY: Duration = Duration::from_secs(30);
 
 /// What one event asks of this module.
 #[derive(Debug, PartialEq, Eq)]
@@ -43,8 +54,8 @@ pub enum Wake {
     SendState { send_id: String },
     /// Fusiform's catalog changed.
     CatalogChanged,
-    /// A tool record notice, which this module doesn't read from the bus yet.
-    ToolRecord,
+    /// A tool provider stored the record `record_id`.
+    ToolRecord { provider: String, record_id: String },
 }
 
 /// Why an event can never be read.
@@ -60,6 +71,22 @@ pub fn wake(
     reader: Option<&str>,
     body: &[u8],
 ) -> Result<Option<Wake>, Unreadable> {
+    if event == DISPLAY_RECORD_READY_EVENT
+        && u64::from(version) == DISPLAY_RECORD_READY_VERSION
+        && reader.is_none()
+    {
+        // Any provider may publish it. Its record is taken only from a module
+        // the daemon has verified, which the pull checks.
+        let ready: DisplayRecordReady = serde_json::from_slice(body)
+            .map_err(|error| Unreadable(format!("{event} body: {error}")))?;
+        ready
+            .validate()
+            .map_err(|_| Unreadable(format!("{event} body: a record_id that isn't an id")))?;
+        return Ok(Some(Wake::ToolRecord {
+            provider: module.to_owned(),
+            record_id: ready.record_id,
+        }));
+    }
     match (module, event, version, reader) {
         ("thalamus-harness" | "broca", "send_state", 1, Some(crate::MODULE_ID)) => {
             #[derive(serde::Deserialize)]
@@ -73,9 +100,6 @@ pub fn wake(
             }))
         }
         ("fusiform", "catalog_changed", 1, None) => Ok(Some(Wake::CatalogChanged)),
-        ("cerebellum", "tool_display", 1, None) | ("aft", "display_record_ready", 1, None) => {
-            Ok(Some(Wake::ToolRecord))
-        }
         _ => Ok(None),
     }
 }
@@ -84,24 +108,53 @@ pub fn wake(
 pub struct Handlers {
     pub sends: Arc<Sender>,
     pub model_names: Option<Arc<ModelNames>>,
+    /// The providers a record is read from, and where it is stored.
+    pub records: Option<(Arc<dyn pull::Providers>, pull::Sink)>,
+}
+
+/// What to do with an event once its wake is handed on.
+#[derive(Debug, PartialEq, Eq)]
+enum Done {
+    Ack,
+    /// Deliver it again after this long.
+    Again(Duration),
 }
 
 impl Handlers {
-    fn hand_on(&self, wake: &Wake) {
+    async fn hand_on(&self, wake: &Wake) -> Done {
         match wake {
             Wake::SendState { send_id } => {
                 self.sends.nudge(send_id);
+                Done::Ack
             }
             Wake::CatalogChanged => {
                 if let Some(names) = &self.model_names {
                     names.catalog_changed();
                 }
+                Done::Ack
             }
-            Wake::ToolRecord => {}
+            Wake::ToolRecord {
+                provider,
+                record_id,
+            } => {
+                let Some((providers, sink)) = &self.records else {
+                    return Done::Again(RECORD_RETRY);
+                };
+                match pull::pull(providers.as_ref(), sink, provider, record_id).await {
+                    Pulled::Stored => Done::Ack,
+                    Pulled::Final(why) => {
+                        tracing::warn!(%provider, %record_id, %why, "an announced tool record is not stored");
+                        Done::Ack
+                    }
+                    Pulled::Retry(why) => {
+                        tracing::debug!(%provider, %record_id, %why, "an announced tool record waits");
+                        Done::Again(RECORD_RETRY)
+                    }
+                }
+            }
         }
     }
 }
-
 /// Read the durable for as long as the module runs. One connection is kept: a
 /// failed attach (the durable isn't provisioned yet, say) is retried on it, so
 /// each retry doesn't take a fresh credential. Only a lost reader, or a
@@ -168,10 +221,14 @@ async fn read(reader: &mut cortexkit_bus_client::EventReader, handlers: &Handler
                     &delivery.body,
                 ) {
                     Ok(found) => {
-                        if let Some(wake) = &found {
-                            handlers.hand_on(wake);
+                        let done = match &found {
+                            Some(wake) => handlers.hand_on(wake).await,
+                            None => Done::Ack,
+                        };
+                        match done {
+                            Done::Ack => delivery.ack().await,
+                            Done::Again(after) => delivery.nak(after).await,
                         }
-                        delivery.ack().await
                     }
                     Err(Unreadable(why)) => {
                         tracing::warn!(
@@ -258,20 +315,46 @@ mod tests {
             ),
             Ok(Some(Wake::CatalogChanged))
         );
+        for provider in ["aft", "cerebellum"] {
+            assert_eq!(
+                wake(
+                    provider,
+                    "display_record_ready",
+                    1,
+                    None,
+                    br#"{"record_id":"r1"}"#
+                ),
+                Ok(Some(Wake::ToolRecord {
+                    provider: provider.into(),
+                    record_id: "r1".into()
+                }))
+            );
+        }
+        // Cerebellum's old `tool_display` event name is not read.
+        assert_eq!(wake("cerebellum", "tool_display", 1, None, b"{}"), Ok(None));
+    }
+
+    /// The contract's record event body is `{record_id}` and nothing else.
+    #[test]
+    fn a_record_event_with_another_body_is_unreadable() {
+        for body in [
+            &br#"{}"#[..],
+            br#"{"record_id":"r1","call_key":"c1"}"#,
+            br#"{"record_id":"has space"}"#,
+        ] {
+            assert!(
+                wake("aft", "display_record_ready", 1, None, body).is_err(),
+                "{}",
+                String::from_utf8_lossy(body)
+            );
+        }
+        // Addressed to a reader, or another version: not this module's event.
+        let body = br#"{"record_id":"r1"}"#;
         assert_eq!(
-            wake("cerebellum", "tool_display", 1, None, b"{}"),
-            Ok(Some(Wake::ToolRecord))
+            wake("aft", "display_record_ready", 1, Some("occipital"), body),
+            Ok(None)
         );
-        assert_eq!(
-            wake(
-                "aft",
-                "display_record_ready",
-                1,
-                None,
-                br#"{"record_id":"r1"}"#
-            ),
-            Ok(Some(Wake::ToolRecord))
-        );
+        assert_eq!(wake("aft", "display_record_ready", 2, None, body), Ok(None));
     }
 
     #[test]

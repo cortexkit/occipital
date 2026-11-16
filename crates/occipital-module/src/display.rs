@@ -9,6 +9,7 @@ pub mod app;
 pub mod call_pins;
 pub mod daemon;
 pub mod model_names;
+pub mod pull;
 pub mod store;
 pub mod views;
 
@@ -23,6 +24,7 @@ use subc_protocol::{ErrorBody, Principal};
 use store::DisplayStore;
 
 /// The display store, once HELLO_ACK has named the module's data folder.
+#[derive(Clone)]
 pub enum State {
     Open(Arc<DisplayStore>),
     /// The file couldn't be opened. Display data is never needed to serve a
@@ -43,12 +45,31 @@ pub async fn write(
     writer: Option<Principal>,
     arguments: &Value,
 ) -> HandlerOutcome {
+    match store_write(state, views, hints, writer, arguments).await {
+        Ok(reply) => match serde_json::to_vec(&reply) {
+            Ok(bytes) => HandlerOutcome::Response(bytes),
+            Err(error) => refused(ErrorBody::new("internal", error.to_string())),
+        },
+        Err(refusal) => refused(refusal),
+    }
+}
+
+/// Store one write's `arguments` (`display.write`'s params) as `writer`'s,
+/// whichever way they arrived: pushed by `display.write`, or read back from the
+/// writer with `display.read` after its bus event ([`pull`]).
+pub(crate) async fn store_write(
+    state: Option<&State>,
+    views: Option<&views::Fetcher>,
+    hints: Option<&tokio::sync::broadcast::Sender<app::Hint>>,
+    writer: Option<Principal>,
+    arguments: &Value,
+) -> Result<WriteReply, ErrorBody> {
     let store = match state {
         // Before HELLO_ACK: the contract's retryable refusal for a server that
         // isn't ready, which a provider may also skip.
-        None => return refused(cortexkit_role_tool_display::not_ready()),
+        None => return Err(cortexkit_role_tool_display::not_ready()),
         Some(State::Failed(reason)) => {
-            return refused(ErrorBody::new(
+            return Err(ErrorBody::new(
                 "provider_unavailable",
                 format!("display store unavailable: {reason}"),
             ))
@@ -56,13 +77,8 @@ pub async fn write(
         Some(State::Open(store)) => store.clone(),
     };
     let writer = writer.unwrap_or(Principal::Unverified);
-    if let Err(refusal) = check_writer(&writer) {
-        return refused(refusal);
-    }
-    let write = match params(arguments) {
-        Ok(write) => write,
-        Err(refusal) => return refused(refusal),
-    };
+    check_writer(&writer)?;
+    let write = params(arguments)?;
     let pin = write.schema_pin.clone();
     let call_key = write.call_key.clone();
     let runner = match &write.runner {
@@ -85,12 +101,8 @@ pub async fn write(
         }
     }
     match stored {
-        Ok(Ok(reply)) => match serde_json::to_vec(&reply) {
-            Ok(bytes) => HandlerOutcome::Response(bytes),
-            Err(error) => refused(ErrorBody::new("internal", error.to_string())),
-        },
-        Ok(Err(refusal)) => refused(refusal),
-        Err(error) => refused(ErrorBody::new("internal", error.to_string())),
+        Ok(result) => result,
+        Err(error) => Err(ErrorBody::new("internal", error.to_string())),
     }
 }
 

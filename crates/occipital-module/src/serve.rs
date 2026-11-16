@@ -207,6 +207,13 @@ pub struct Consumer {
     pub connection_file: PathBuf,
 }
 
+/// The sender whose held sends a runner's bus event nudges, and the model
+/// names a catalog change makes old.
+type BusParts = Option<(
+    Arc<app_reader::send::Sender>,
+    Option<Arc<crate::display::model_names::ModelNames>>,
+)>;
+
 pub struct OccipitalHandler {
     store: OnceLock<Arc<Store>>,
     app: OnceLock<Arc<AppReader>>,
@@ -227,6 +234,9 @@ pub struct OccipitalHandler {
     consumer: Option<Consumer>,
     /// The connection to other modules, made from `consumer` when first needed.
     daemon_calls: OnceLock<Arc<crate::display::daemon::DaemonCalls>>,
+    /// What the message bus reader wakes, kept by the app reader's start until
+    /// the display store is open and the reader starts.
+    bus_parts: Mutex<BusParts>,
     on_fatal: OnFatal,
     /// What each live route was bound with: admission and `show_ui`'s provenance
     /// read only these daemon-attested facts.
@@ -251,6 +261,7 @@ impl OccipitalHandler {
             tool_display: OnceLock::new(),
             consumer,
             daemon_calls: OnceLock::new(),
+            bus_parts: Mutex::new(None),
             on_fatal,
             routes: Mutex::new(HashMap::new()),
             background: Mutex::new(Vec::new()),
@@ -386,16 +397,11 @@ impl OccipitalHandler {
             app.set_commands(Arc::new(crate::commands::Commands::new(Arc::new(
                 crate::commands::DaemonModules::new(calls.clone()),
             ))));
-            background.push((
-                "message bus reader",
-                crate::bus::start(
-                    calls,
-                    crate::bus::Handlers {
-                        sends,
-                        model_names: Some(names),
-                    },
-                ),
-            ));
+            // Started once the display store is open too ([`Self::start_bus`]),
+            // since the records the bus announces are stored there.
+            if let Ok(mut parts) = self.bus_parts.lock() {
+                *parts = Some((sends, Some(names)));
+            }
         }
         if self.app.set(Arc::new(app)).is_ok() {
             if let Ok(mut tasks) = self.background.lock() {
@@ -516,6 +522,7 @@ impl ModuleHandler for OccipitalHandler {
         }
         self.open_display(ack, &opened);
         self.open_notices(ack, &opened);
+        self.start_bus();
         // Without the catalog, Engram skips the store; serving goes on.
         if let Err(error) = crate::backup::write_catalog(opened.data_root(), opened.file_name()) {
             tracing::warn!(%error, "cannot write the Engram backup catalog");
@@ -634,6 +641,42 @@ impl OccipitalHandler {
             }
         };
         let _ = self.display.set(state);
+    }
+
+    /// Start the message bus reader once the app reader and the display store
+    /// are open, with what each event wakes. Without a daemon connection there
+    /// is no bus to read.
+    fn start_bus(&self) {
+        let Some(calls) = self.daemon_calls() else {
+            return;
+        };
+        let Some((sends, model_names)) = self
+            .bus_parts
+            .lock()
+            .ok()
+            .and_then(|mut parts| parts.take())
+        else {
+            return;
+        };
+        let records = crate::display::pull::Sink {
+            state: self.display.get().cloned(),
+            views: self.display_views.get().cloned(),
+            hints: self.tool_display.get().map(|tool| tool.hints().clone()),
+        };
+        let task = crate::bus::start(
+            calls.clone(),
+            crate::bus::Handlers {
+                sends,
+                model_names,
+                records: Some((
+                    Arc::new(crate::display::pull::DaemonProviders::new(calls)),
+                    records,
+                )),
+            },
+        );
+        if let Ok(mut tasks) = self.background.lock() {
+            tasks.push(("message bus reader", task));
+        }
     }
 
     /// The one connection this module calls other modules on, for views and

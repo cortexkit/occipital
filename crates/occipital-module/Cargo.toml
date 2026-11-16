@@ -35,7 +35,7 @@ cortexkit-bus-client = "=0.1.1"
 cortexkit-log = "0.3.6"
 cortexkit-project-identity = "=0.1.4"
 cortexkit-role-llm-runner = "=0.8.56"
-cortexkit-role-tool-display = "=0.1.7"
+cortexkit-role-tool-display = "=0.1.8"
 cortexkit-role-tool-provider = "=0.15.8"
 # The person's commands: their declarations, previews, runs and facts.
 cortexkit-role-user-commands = "=0.1.4"
@@ -80,7 +80,7 @@ cortexkit-test-support = "0.1.6"
 # here, so the harness never reaches a production build.
 subc-client-rs = { version = "=0.40.3", features = ["test-support"] }
 # The contract's own wake vectors, for the wake record tests.
-cortexkit-role-tool-display = { version = "=0.1.7", features = ["test-vectors"] }
+cortexkit-role-tool-display = { version = "=0.1.8", features = ["test-vectors"] }
 # The runner contract's own vectors, for the host-written part tests.
 cortexkit-role-llm-runner = { version = "=0.8.56", features = ["test-vectors"] }
 tempfile = "3"
