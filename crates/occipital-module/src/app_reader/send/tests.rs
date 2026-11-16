@@ -1167,12 +1167,15 @@ async fn a_send_whose_turn_the_provider_refused_as_too_long_names_context_overfl
 /// send id, so the entry is listed unsent with the runner's reason as soon as
 /// the follower sees it, not left queued until the 8-day hold runs out. The run
 /// the runner allocated for it ended in an error with no model step, so that
-/// run's contract code is listed too, with the wait a capacity hold names.
+/// run's contract code is listed too, with the wait a capacity hold names. A
+/// reason added later (`host_unavailable`, 0.8.57, after five minutes with its
+/// host down) is final the same way and passes through as named.
 #[tokio::test(start_paused = true)]
 async fn a_send_the_runner_never_delivers_is_listed_unsent_with_its_reason() {
     for (reason, provider_code, wait_ms) in [
         ("handover_failed", None, None),
         ("routing_refused", Some("concurrency_full"), Some(60_000)),
+        ("host_unavailable", None, None),
     ] {
         let f = fixture(Kind::Head);
         {
