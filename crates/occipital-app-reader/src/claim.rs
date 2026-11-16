@@ -669,14 +669,16 @@ impl TranscriptClaimState {
     /// A page's version is the runner's history counter, which appends don't move, and a
     /// row can change in place under one version: when a runner stores a step before its
     /// tool calls run, a call's row gains its finish only when the result lands as a later
-    /// entry. So several kept versions can share the claimed
-    /// version, and every reader of the session records into them. The claimant holds the
-    /// copy it was last served, whose newest row is its sinceMessageId. So a claim is
-    /// evaluated against the oldest such copy that also holds its floor. A copy recorded
-    /// later by another reader may already show a held row's change, and comparing against
-    /// it would answer `matched` and leave the claimant's row stale for good. Choosing the
-    /// oldest means a claimant that already has a later in-place change can be sent it
-    /// again, which costs a small resync and never a missed row.
+    /// entry. So several kept versions can share the claimed version, and every reader of
+    /// the session records into them. The claimant holds the copy it was last served, whose
+    /// newest row is its sinceMessageId. So a claim is evaluated against the oldest such
+    /// copy: one that holds the claimant's floor, else an untrimmed one. The floor
+    /// can't be required, because a watch keeps the floor of the page it started from while
+    /// each later page of the same size starts further on. A copy recorded later by another
+    /// reader may already show a held row's change, and comparing against it would answer
+    /// `matched` and leave the claimant's row stale for good. Choosing the oldest means a
+    /// claimant that already has a later in-place change can be sent it again, which costs
+    /// a small resync and never a missed row.
     ///
     /// Failing that, the newest copy at the claimed version that contains both
     /// sinceMessageId and heldFloorMessageId, trimmed or not; failing that,
@@ -685,21 +687,22 @@ impl TranscriptClaimState {
     /// version (history paged with beforeOrdinal) is compared against a full page.
     pub fn held_snapshot(&self, session_id: &str, claim: &TranscriptClaim) -> Option<KeptVersion> {
         let kept = &self.sessions.get(session_id)?.kept;
-        let holds_floor = |kept: &&KeptVersion| {
-            kept.version == claim.held_version && kept.contains(&claim.held_floor_message_id)
-        };
-        kept.iter()
-            .filter(holds_floor)
-            .find(|kept| {
+        let at_version = |kept: &&KeptVersion| kept.version == claim.held_version;
+        let served_last = || {
+            kept.iter().filter(at_version).filter(|kept| {
                 kept.rows
                     .last()
                     .is_some_and(|row| row.message_id == claim.since_message_id)
             })
+        };
+        served_last()
+            .find(|kept| kept.contains(&claim.held_floor_message_id))
+            .or_else(|| served_last().find(|kept| !kept.trimmed))
             .or_else(|| {
-                kept.iter()
-                    .rev()
-                    .filter(holds_floor)
-                    .find(|kept| kept.contains(&claim.since_message_id))
+                kept.iter().rev().filter(at_version).find(|kept| {
+                    kept.contains(&claim.since_message_id)
+                        && kept.contains(&claim.held_floor_message_id)
+                })
             })
             .cloned()
             .or_else(|| {
@@ -843,15 +846,36 @@ pub fn evaluate_claim(
         .rows
         .iter()
         .position(|row| row.message_id == claim.held_floor_message_id);
-    let current_start = current_floor.unwrap_or(0).min(current_since);
+    let window_start = current_floor.unwrap_or(0).min(current_since);
+    // The held copy can start later than that: a copy the claimant was served after its
+    // page's window moved on lacks the older rows. Then only the rows both hold are
+    // compared, from the held copy's oldest one, and the verdict vouches from there, as
+    // a comparison by position would pair different messages and report a false
+    // divergence.
+    let held_starts_later = !held
+        .rows
+        .iter()
+        .any(|row| row.message_id == current.rows[window_start].message_id);
+    let current_start = held
+        .rows
+        .first()
+        .filter(|_| held_starts_later)
+        .and_then(|oldest| {
+            current
+                .rows
+                .iter()
+                .position(|row| row.message_id == oldest.message_id)
+        })
+        .filter(|start| (window_start..=current_since).contains(start))
+        .unwrap_or(window_start);
     // The comparison below covers current rows from current_start through sinceMessageId, so the
     // row at current_start is the oldest message the server vouches for. It always exists because
     // current_since indexes a row and current_start <= current_since. That row is the held floor
-    // when the floor is inside the window, the window's oldest row when the floor is below it, and
-    // sinceMessageId itself when the claimed floor sits after sinceMessageId.
+    // when the floor is inside the window, the window's oldest row when the floor is below it,
+    // the held copy's oldest row when that copy starts later, and sinceMessageId itself when the
+    // claimed floor sits after sinceMessageId.
     let vouched_from_message_id = current.rows[current_start].message_id.clone();
-    let below_window_vouch = current_floor
-        .is_none()
+    let below_window_vouch = (current_floor.is_none() || current_start != window_start)
         .then(|| vouched_from_message_id.clone());
     let held_floor = held
         .rows
@@ -1385,6 +1409,48 @@ mod tests {
             ClaimEvaluation::Matched { ref new_turns, .. } if new_turns.is_empty()
         ));
 
+        // A watch keeps the floor of the page it started from, while each later page of
+        // the same size starts further on: the copy it was served last (`c`..`d`) lacks
+        // its floor `a`, and must still be the one it's checked against.
+        let mut state = TranscriptClaimState::default();
+        state.record(
+            "s",
+            snapshot(
+                "v1",
+                1,
+                vec![message(1, "a", "one"), message(2, "b", "two")],
+            ),
+        );
+        state.record(
+            "s",
+            snapshot(
+                "v1",
+                1,
+                vec![message(3, "c", "three"), message(4, "d", "call running")],
+            ),
+        );
+        let watch = claim("a", "d", "v1");
+        let mut finished = snapshot(
+            "v1",
+            1,
+            vec![message(4, "d", "call finished"), message(5, "e", "result")],
+        );
+        state.share_unchanged("s", &mut finished);
+        state.record("s", finished.clone());
+        let mut current = finished.clone();
+        state.share_unchanged("s", &mut current);
+        let slid = evaluate_claim(&watch, state.held_snapshot("s", &watch).as_ref(), &current);
+        assert!(
+            matches!(
+                slid,
+                ClaimEvaluation::Diverged {
+                    valid_through_message_id: None,
+                    ..
+                }
+            ),
+            "{slid:?}"
+        );
+
         // A change with nothing appended: `b` gains its end while `b` stays newest.
         let mut state = TranscriptClaimState::default();
         state.record("s", snapshot("v1", 1, running));
@@ -1757,11 +1823,15 @@ mod tests {
                 vouched_from_message_id: "B".to_string(),
             }
         );
-        // The trimmed snapshot would have reported a false divergence for that claimant.
-        assert!(matches!(
+        // The trimmed snapshot holds only C and D, so a claim checked against it compares
+        // those two and vouches from C, never pairing its rows with others by position.
+        assert_eq!(
             evaluate_claim(&below, Some(&trimmed.kept()), &current),
-            ClaimEvaluation::Diverged { .. }
-        ));
+            ClaimEvaluation::Matched {
+                new_turns: vec![message(4, "E", "ee")],
+                vouched_from_message_id: "C".to_string(),
+            }
+        );
 
         // A claimant holding the trimmed page gets the oldest snapshot holding its floor
         // whose newest row is D: the full page, which holds the same rows from C on.
