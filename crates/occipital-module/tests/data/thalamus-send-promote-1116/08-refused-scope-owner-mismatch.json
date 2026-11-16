@@ -1,0 +1,10 @@
+{
+  "refusal": {
+    "code": "scope_owner_mismatch",
+    "message": "only the session's owner may do this"
+  },
+  "request": {
+    "request_id": "promote-5",
+    "send_id": "queued-1"
+  }
+}

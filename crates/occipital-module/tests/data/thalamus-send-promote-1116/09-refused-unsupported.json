@@ -1,0 +1,10 @@
+{
+  "refusal": {
+    "code": "unsupported",
+    "message": "this session's harness does not declare send_promote"
+  },
+  "request": {
+    "request_id": "promote-6",
+    "send_id": "queued-1"
+  }
+}

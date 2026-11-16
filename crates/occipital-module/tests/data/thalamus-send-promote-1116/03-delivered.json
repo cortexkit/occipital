@@ -1,0 +1,9 @@
+{
+  "reply": {
+    "outcome": "delivered"
+  },
+  "request": {
+    "request_id": "promote-2",
+    "send_id": "legacy-1"
+  }
+}

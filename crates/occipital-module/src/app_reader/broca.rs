@@ -4660,6 +4660,7 @@ pub(crate) mod tests {
     mod run_provider_code_1113;
     mod runner_0842_samples;
     mod send_ids_1110;
+    mod send_promote_1116;
     mod session_converting_1115;
     mod signed_reasoning_cause_1112;
     mod speaks_for_name_1109;

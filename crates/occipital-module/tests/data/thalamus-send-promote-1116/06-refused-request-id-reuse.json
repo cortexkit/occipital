@@ -1,0 +1,13 @@
+{
+  "refusal": {
+    "code": "request_id_reuse",
+    "detail": {
+      "field": "send_id"
+    },
+    "message": "request_id was used to promote another send"
+  },
+  "request": {
+    "request_id": "promote-1",
+    "send_id": "legacy-1"
+  }
+}

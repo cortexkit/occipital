@@ -7,6 +7,7 @@ use super::*;
 use occipital_app_reader::source::ReadError;
 
 mod mode_samples;
+mod promote_1116;
 mod promote_samples;
 mod prompt;
 mod stop_all_samples;

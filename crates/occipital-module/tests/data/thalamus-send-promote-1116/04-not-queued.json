@@ -1,0 +1,9 @@
+{
+  "reply": {
+    "outcome": "not_queued"
+  },
+  "request": {
+    "request_id": "promote-3",
+    "send_id": "never-sent"
+  }
+}

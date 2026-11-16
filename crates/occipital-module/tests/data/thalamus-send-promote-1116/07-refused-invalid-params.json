@@ -1,0 +1,14 @@
+{
+  "refusal": {
+    "code": "invalid_params",
+    "detail": {
+      "field": "session"
+    },
+    "message": "invalid or unsupported parameter session"
+  },
+  "request": {
+    "request_id": "promote-4",
+    "send_id": "queued-1",
+    "session": "s2"
+  }
+}

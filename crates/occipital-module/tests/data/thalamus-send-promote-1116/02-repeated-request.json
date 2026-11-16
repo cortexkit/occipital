@@ -1,0 +1,9 @@
+{
+  "reply": {
+    "outcome": "promoted"
+  },
+  "request": {
+    "request_id": "promote-1",
+    "send_id": "queued-1"
+  }
+}
