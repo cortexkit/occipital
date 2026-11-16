@@ -1122,6 +1122,46 @@ async fn a_queued_send_refused_for_its_account_lists_the_runs_code() {
     }
 }
 
+/// Agent Runner's recorded `run.status` for a run the model provider refused as
+/// too long (`tests/data/thalamus-length-refusal-1116/03-…`, copied unchanged):
+/// `error` with `provider_code: context_overflow`, the provider's own code in
+/// `provider_detail_code`. A queued send whose turn ended so is listed unsent
+/// with `runnerCode: context_overflow` and no wait, since waiting can't make
+/// the conversation fit.
+#[tokio::test(start_paused = true)]
+async fn a_send_whose_turn_the_provider_refused_as_too_long_names_context_overflow() {
+    let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data/thalamus-length-refusal-1116");
+    let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(data.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+    let status: Value = serde_json::from_slice(
+        &std::fs::read(data.join("03-context-overflow-run-status.json")).unwrap(),
+    )
+    .unwrap();
+    let f = fixture(Kind::Head);
+    {
+        let mut captured = f.runner.captured.lock().unwrap();
+        captured.insert(
+            "session.send_status",
+            json!({"result": {"state": "finished", "reason": "error",
+                "run_id": "run-long", "submission_id": "sub-long"}}),
+        );
+        captured.insert("run.status", json!({"result": status}));
+    }
+    f.sender.send(message("long", "words")).await.unwrap();
+    let list = || f.receipts.queue().list("s", START).unwrap();
+    eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unsent")).await;
+    let (entries, _) = list().unwrap();
+    let entry = &entries[0];
+    assert_eq!(entry["reason"], "error", "{entry}");
+    assert_eq!(entry["runnerCode"], "context_overflow", "{entry}");
+    assert!(entry.get("retryAfterMs").is_none(), "{entry}");
+}
+
 /// A head send the runner held, then couldn't hand to its host or get past
 /// routing, reads `not_delivered` (runner contract 0.8.53). That's final for its
 /// send id, so the entry is listed unsent with the runner's reason as soon as
