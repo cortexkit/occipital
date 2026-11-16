@@ -854,17 +854,27 @@ async fn a_send_first_answered_unconfirmed_is_listed_unknown_at_once() {
 }
 
 /// Thalamus's recorded `session.send` and `session.send_status` bodies from Agent
-/// Runner (`tests/data/thalamus-send-unknown-1115/`, copied unchanged), for a
-/// head send in queue mode and one in steer mode. Agent Runner's `state` is the
-/// run's state, so only `delivered.as` says where the send stands: a first
-/// answer with no `delivered` is followed, `unknown` lists the send `unknown`
-/// whether the run is `finished` or still `active`, a repeat of the same send
-/// answered `unknown` is listed so at once, `pending` stays queued and `turn`
-/// leaves the list.
+/// Runner, copied unchanged, for a head send in queue mode and one in steer mode.
+/// Agent Runner's `state` is the run's state, so only `delivered.as` says where the
+/// send stands: a first answer with no `delivered` is followed, `unknown` lists the
+/// send `unknown` whether the run is `finished` or still `active`, a repeat of the
+/// same send answered `unknown` is listed so at once, `pending` stays queued and
+/// `turn` leaves the list. The second set's first head answer is `pending` and
+/// already names its run, which still says nothing of delivery.
 #[tokio::test(start_paused = true)]
 async fn thalamus_recorded_send_outcomes_are_listed_by_delivery() {
+    for set in [
+        "thalamus-send-unknown-1115",
+        "thalamus-send-unknown-v2-1116",
+    ] {
+        send_outcomes_are_listed_by_delivery(set).await;
+    }
+}
+
+async fn send_outcomes_are_listed_by_delivery(set: &str) {
     let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/data/thalamus-send-unknown-1115");
+        .join("tests/data")
+        .join(set);
     let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
     // Eight bodies and the README.
     assert_eq!(sums.lines().count(), 9);
@@ -929,7 +939,7 @@ async fn thalamus_recorded_send_outcomes_are_listed_by_delivery() {
         let mut request = message("t1", "words");
         request["mode"] = json!(mode);
         let receipt = f.sender.send(request).await.unwrap();
-        assert_eq!(receipt["ok"], true, "{first}");
+        assert_eq!(receipt["ok"], true, "{set}: {first}");
         let state = || {
             f.receipts
                 .queue()
@@ -939,26 +949,78 @@ async fn thalamus_recorded_send_outcomes_are_listed_by_delivery() {
         };
         if status.is_some() {
             // The first answer names no delivery, so the send is followed.
-            assert_eq!(state().as_deref(), Some("queued"), "{first}");
+            assert_eq!(state().as_deref(), Some("queued"), "{set}: {first}");
             tokio::time::sleep(FOLLOW_INTERVAL * 3).await;
         }
-        assert_eq!(state().as_deref(), listed, "{first} then {status:?}");
+        assert_eq!(state().as_deref(), listed, "{set}: {first} then {status:?}");
+    }
+}
+
+/// Agent Runner's first answers to a send that starts a run, recorded on its
+/// OpenCode 2, Pi and Claude Code hosts (`tests/data/thalamus-send-answers-early-1116/`,
+/// copied unchanged). It now answers `pending` right after its durable write,
+/// already naming the run it committed, and hands the prompt to the host after.
+/// That records acceptance only: the send is accepted, listed `queued` and
+/// followed, never taken for delivered or for a run already running.
+#[tokio::test(start_paused = true)]
+async fn an_early_pending_answer_naming_its_run_is_only_accepted() {
+    let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data/thalamus-send-answers-early-1116");
+    let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
+    // Three bodies and the README.
+    assert_eq!(sums.lines().count(), 4);
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(data.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+    for name in [
+        "01-opencode2-send-reply.json",
+        "02-pi-send-reply.json",
+        "03-claude-code-send-reply.json",
+    ] {
+        let first: Value =
+            serde_json::from_slice(&std::fs::read(data.join(name)).unwrap()).unwrap();
+        assert_eq!(first["state"], "pending", "{name}");
+        assert!(first["run_id"].is_string(), "{name}");
+        let f = fixture(Kind::Head);
+        f.runner.scripted.lock().unwrap().push_back(Ok(first));
+        let receipt = f.sender.send(message("t1", "words")).await.unwrap();
+        assert_eq!(receipt["ok"], true, "{name}: {receipt}");
+        assert!(receipt.get("code").is_none(), "{name}: {receipt}");
+        let entries = f.receipts.queue().list("s", START).unwrap().unwrap().0;
+        assert_eq!(entries[0]["state"], "queued", "{name}: {entries:?}");
+        assert_eq!(
+            f.receipts.queue().queued_heads(10).unwrap().len(),
+            1,
+            "{name}"
+        );
     }
 }
 
 /// Thalamus's recorded bodies for a send Agent Runner proved never reached its
-/// host (`tests/data/thalamus-send-not-delivered-1116/`, copied unchanged). The
-/// first reply is now `pending` with no run id, so the send is followed; once
-/// the runner reads `not_delivered` the send is listed `unsent` with the
-/// runner's reason and the code of the run it was given (`provider_error`, from
-/// `run.status`), so the app may send the words again as a new message. A
-/// reason no runner writes yet (`withdrawn`) is kept as said. A repeat of the
-/// same send, which the runner answers `not_delivered` at once, is refused with
-/// that reason as final, so the app sends the words again as a new message.
+/// host, copied unchanged. The first reply is `pending` (in the second set already
+/// naming its run), so the send is followed; once the runner reads `not_delivered`
+/// the send is listed `unsent` with the runner's reason and the code of the run it
+/// was given (`provider_error`, from `run.status`), so the app may send the words
+/// again as a new message. A reason no runner writes yet (`withdrawn`) is kept as
+/// said. A repeat of the same send, which the runner answers `not_delivered` at
+/// once, is refused with that reason as final, so the app sends the words again as
+/// a new message.
 #[tokio::test(start_paused = true)]
 async fn thalamus_recorded_undelivered_sends_are_listed_unsent() {
+    for set in [
+        "thalamus-send-not-delivered-1116",
+        "thalamus-send-not-delivered-v2-1116",
+    ] {
+        undelivered_sends_are_listed_unsent(set).await;
+    }
+}
+
+async fn undelivered_sends_are_listed_unsent(set: &str) {
     let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/data/thalamus-send-not-delivered-1116");
+        .join("tests/data")
+        .join(set);
     let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
     // Seven bodies and the README.
     assert_eq!(sums.lines().count(), 8);
