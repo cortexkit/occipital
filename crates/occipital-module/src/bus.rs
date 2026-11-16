@@ -29,18 +29,22 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use cortexkit_bus_client::{BusClient, BusClientOptions, EventItem};
+use cortexkit_bus_client::{BucketItem, BusClient, BusClientOptions, EventItem};
 use cortexkit_role_tool_display::{
     DisplayRecordReady, DISPLAY_RECORD_READY_EVENT, DISPLAY_RECORD_READY_VERSION,
 };
+use cortexkit_role_tool_provider::views::ViewsReply;
 
 use crate::app_reader::send::Sender;
 use crate::display::daemon::DaemonCalls;
 use crate::display::model_names::ModelNames;
 use crate::display::pull::{self, Pulled};
+use crate::display::views::Fetcher;
 
 /// The durable this module reads.
 pub const DURABLE: &str = "m_occipital";
+/// The name of a tool provider's bucket of `tool.views` answers.
+const VIEWS: &str = "views";
 /// The longest wait before connecting or attaching again after a failure.
 const MAX_BACKOFF: Duration = Duration::from_secs(60);
 /// How long a record event waits before it is delivered again, when its
@@ -110,6 +114,8 @@ pub struct Handlers {
     pub model_names: Option<Arc<ModelNames>>,
     /// The providers a record is read from, and where it is stored.
     pub records: Option<(Arc<dyn pull::Providers>, pull::Sink)>,
+    /// Where views a provider puts in its views bucket are kept.
+    pub views: Option<Fetcher>,
 }
 
 /// What to do with an event once its wake is handed on.
@@ -176,13 +182,22 @@ pub fn start(calls: Arc<DaemonCalls>, handlers: Handlers) -> tokio::task::JoinHa
                 Err(failure) => Err(failure.to_string()),
             };
             let bus = match connected {
-                Ok(bus) => bus,
+                Ok(bus) => Arc::new(bus),
                 Err(error) => {
                     backoff.failed("connect", error).await;
                     continue;
                 }
             };
             let upkeep = bus.connection_changes();
+            // The view watches live as long as this connection: dropping the
+            // set when it is replaced ends them.
+            let mut watches = tokio::task::JoinSet::new();
+            if let Some(fetcher) = &handlers.views {
+                for owner in view_buckets() {
+                    let (bus, fetcher) = (bus.clone(), fetcher.clone());
+                    watches.spawn(async move { watch_views(&bus, owner, &fetcher).await });
+                }
+            }
             loop {
                 let mut reader = match bus.event_reader(DURABLE).await {
                     Ok(reader) => reader,
@@ -205,6 +220,77 @@ pub fn start(calls: Arc<DaemonCalls>, handlers: Handlers) -> tokio::task::JoinHa
             backoff.wait().await;
         }
     })
+}
+
+/// The modules whose views bucket this module reads, as bus naming declares
+/// them: every `views` bucket that names this module as a reader.
+fn view_buckets() -> impl Iterator<Item = &'static str> {
+    cortexkit_bus_naming::MODULE_BUCKETS
+        .iter()
+        .filter(|bucket| bucket.name == VIEWS && bucket.readers.contains(&crate::MODULE_ID))
+        .map(|bucket| bucket.owner)
+}
+
+/// Watch `owner`'s views bucket for as long as the connection lasts, offering
+/// each view it puts to the fetcher, which keeps it as if fetched. A watch that
+/// fails is opened again after a pause; until then, and for any view not in
+/// the bucket, the fetcher still asks the writer with `tool.views`.
+async fn watch_views(bus: &BusClient, owner: &'static str, fetcher: &Fetcher) {
+    let mut backoff = Backoff::default();
+    loop {
+        let reason = match bus.bucket(owner, VIEWS) {
+            Ok(bucket) => match bucket.watch().await {
+                Ok(mut watch) => {
+                    backoff = Backoff::default();
+                    tracing::info!(%owner, "message bus views watch opened");
+                    loop {
+                        match watch.next().await {
+                            Ok(BucketItem::Put { key, value, .. }) => {
+                                match served_view(&key, &value) {
+                                    Ok((pin, reply)) => fetcher.offer(owner, &pin, reply).await,
+                                    Err(why) => {
+                                        tracing::warn!(%owner, %key, %why, "a served display view can't be read")
+                                    }
+                                }
+                            }
+                            // A provider keeps serving every pin it ever offered, so a
+                            // deleted key changes nothing kept here.
+                            Ok(_) => {}
+                            Err(error) => break error.to_string(),
+                        }
+                    }
+                }
+                Err(error) => error.to_string(),
+            },
+            Err(error) => error.to_string(),
+        };
+        backoff
+            .failed(&format!("{owner} views watch"), reason)
+            .await;
+    }
+}
+
+/// The pin and `tool.views` answer of one views-bucket entry. The key is the
+/// lowercase hex of the pin's UTF-8 bytes, since a bucket key can't hold the
+/// pin's colons; the value is the writer's `tool.views` reply for that pin.
+fn served_view(key: &str, value: &[u8]) -> Result<(String, ViewsReply), String> {
+    let digit = |byte: u8| match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        _ => None,
+    };
+    let bytes = key.as_bytes();
+    if bytes.is_empty() || !bytes.len().is_multiple_of(2) {
+        return Err("the key isn't lowercase hex".into());
+    }
+    let pin = bytes
+        .chunks(2)
+        .map(|pair| Some(digit(pair[0])? << 4 | digit(pair[1])?))
+        .collect::<Option<Vec<u8>>>()
+        .ok_or("the key isn't lowercase hex")?;
+    let pin = String::from_utf8(pin).map_err(|_| "the key's pin isn't UTF-8")?;
+    let reply = serde_json::from_slice(value).map_err(|error| format!("the value: {error}"))?;
+    Ok((pin, reply))
 }
 
 /// Hand on each event until the reader fails, and say why it did.
@@ -332,6 +418,31 @@ mod tests {
         }
         // Cerebellum's old `tool_display` event name is not read.
         assert_eq!(wake("cerebellum", "tool_display", 1, None, b"{}"), Ok(None));
+    }
+
+    /// Bus naming declares AFT's and Cerebellum's views buckets with this
+    /// module as a reader, so both are watched.
+    #[test]
+    fn the_declared_views_buckets_are_watched() {
+        let mut owners: Vec<&str> = view_buckets().collect();
+        owners.sort_unstable();
+        assert_eq!(owners, ["aft", "cerebellum"]);
+    }
+
+    /// A views-bucket key is the pin's UTF-8 bytes in lowercase hex, and its
+    /// value the writer's `tool.views` reply.
+    #[test]
+    fn a_views_bucket_entry_decodes_to_its_pin_and_reply() {
+        let pin = "tp1:bash:0123:1";
+        let key: String = pin.bytes().map(|byte| format!("{byte:02x}")).collect();
+        let value = serde_json::to_vec(&serde_json::json!({"views": {pin: "unknown"}})).unwrap();
+        let (decoded, reply) = served_view(&key, &value).unwrap();
+        assert_eq!(decoded, pin);
+        assert_eq!(reply.views.len(), 1);
+        for bad in ["", "7", "74P0", &key.to_uppercase(), "ff"] {
+            assert!(served_view(bad, &value).is_err(), "{bad:?}");
+        }
+        assert!(served_view(&key, b"not json").is_err());
     }
 
     /// The contract's record event body is `{record_id}` and nothing else.

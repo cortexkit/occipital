@@ -30,7 +30,9 @@ async-trait = "0.1"
 cortexkit-agent-identity = "=0.1.2"
 # The local message bus: the credential, the connection and the durable reader
 # (`crate::bus`).
-cortexkit-bus-client = "=0.1.1"
+cortexkit-bus-client = "=0.1.3"
+# The buckets the bus declares, to find the views buckets this module reads.
+cortexkit-bus-naming = "=0.4.3"
 # The fleet log: one file a day in the module's data folder, filtered by CK_LOG.
 cortexkit-log = "0.3.6"
 cortexkit-project-identity = "=0.1.4"

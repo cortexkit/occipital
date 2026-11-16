@@ -672,6 +672,7 @@ impl OccipitalHandler {
                     Arc::new(crate::display::pull::DaemonProviders::new(calls)),
                     records,
                 )),
+                views: self.display_views.get().cloned(),
             },
         );
         if let Ok(mut tasks) = self.background.lock() {
