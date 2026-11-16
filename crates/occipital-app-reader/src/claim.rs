@@ -664,21 +664,42 @@ impl TranscriptClaimState {
             .cloned()
     }
 
-    /// The version a claim is evaluated against: the newest version at the claimed version
-    /// that contains both sinceMessageId and heldFloorMessageId, trimmed or not; failing that,
+    /// The version a claim is evaluated against.
+    ///
+    /// A page's version is the runner's history counter, which appends don't move, and a
+    /// row can change in place under one version: when a runner stores a step before its
+    /// tool calls run, a call's row gains its finish only when the result lands as a later
+    /// entry. So several kept versions can share the claimed
+    /// version, and every reader of the session records into them. The claimant holds the
+    /// copy it was last served, whose newest row is its sinceMessageId. So a claim is
+    /// evaluated against the oldest such copy that also holds its floor. A copy recorded
+    /// later by another reader may already show a held row's change, and comparing against
+    /// it would answer `matched` and leave the claimant's row stale for good. Choosing the
+    /// oldest means a claimant that already has a later in-place change can be sent it
+    /// again, which costs a small resync and never a missed row.
+    ///
+    /// Failing that, the newest copy at the claimed version that contains both
+    /// sinceMessageId and heldFloorMessageId, trimmed or not; failing that,
     /// [`Self::snapshot`]'s choice among untrimmed versions. A trimmed version therefore
     /// serves only claimants whose floor it holds, and a claimant whose floor lies below every
     /// version (history paged with beforeOrdinal) is compared against a full page.
     pub fn held_snapshot(&self, session_id: &str, claim: &TranscriptClaim) -> Option<KeptVersion> {
-        self.sessions
-            .get(session_id)?
-            .kept
-            .iter()
-            .rev()
+        let kept = &self.sessions.get(session_id)?.kept;
+        let holds_floor = |kept: &&KeptVersion| {
+            kept.version == claim.held_version && kept.contains(&claim.held_floor_message_id)
+        };
+        kept.iter()
+            .filter(holds_floor)
             .find(|kept| {
-                kept.version == claim.held_version
-                    && kept.contains(&claim.since_message_id)
-                    && kept.contains(&claim.held_floor_message_id)
+                kept.rows
+                    .last()
+                    .is_some_and(|row| row.message_id == claim.since_message_id)
+            })
+            .or_else(|| {
+                kept.iter()
+                    .rev()
+                    .filter(holds_floor)
+                    .find(|kept| kept.contains(&claim.since_message_id))
             })
             .cloned()
             .or_else(|| {
@@ -1317,6 +1338,71 @@ mod tests {
         ));
     }
 
+    /// Two readers follow one chat whose version doesn't move. A call's row (`b`) changes in
+    /// place when its result (`c`) lands. The first reader's claim records the new copy; the
+    /// second reader, still holding `b` as it was, must get `diverged` from `b`, not a
+    /// `matched` that only appends `c` and leaves its `b` stale. The same holds when the row
+    /// changes with nothing appended.
+    #[test]
+    fn a_row_changed_in_place_reaches_every_claimant_under_one_version() {
+        let mut state = TranscriptClaimState::default();
+        let running = vec![message(1, "a", "one"), message(2, "b", "call running")];
+        state.record("s", snapshot("v1", 1, running.clone()));
+        let held = claim("a", "b", "v1");
+        let mut finished = snapshot(
+            "v1",
+            1,
+            vec![
+                message(1, "a", "one"),
+                message(2, "b", "call finished"),
+                message(3, "c", "result"),
+            ],
+        );
+        // The first reader's claim, then its record.
+        state.share_unchanged("s", &mut finished);
+        let first = evaluate_claim(&held, state.held_snapshot("s", &held).as_ref(), &finished);
+        assert!(
+            matches!(first, ClaimEvaluation::Diverged { valid_through_message_id: Some(ref through), .. } if through == "a"),
+            "{first:?}"
+        );
+        state.record("s", finished.clone());
+        // The second reader still holds `b` running.
+        let mut current = finished.clone();
+        state.share_unchanged("s", &mut current);
+        let second = evaluate_claim(&held, state.held_snapshot("s", &held).as_ref(), &current);
+        assert!(
+            matches!(second, ClaimEvaluation::Diverged { valid_through_message_id: Some(ref through), .. } if through == "a"),
+            "{second:?}"
+        );
+        // A reader that took the resync holds `c` as its newest row and matches.
+        let caught_up = claim("a", "c", "v1");
+        assert!(matches!(
+            evaluate_claim(
+                &caught_up,
+                state.held_snapshot("s", &caught_up).as_ref(),
+                &current
+            ),
+            ClaimEvaluation::Matched { ref new_turns, .. } if new_turns.is_empty()
+        ));
+
+        // A change with nothing appended: `b` gains its end while `b` stays newest.
+        let mut state = TranscriptClaimState::default();
+        state.record("s", snapshot("v1", 1, running));
+        let mut ended = snapshot(
+            "v1",
+            1,
+            vec![message(1, "a", "one"), message(2, "b", "call unanswered")],
+        );
+        state.share_unchanged("s", &mut ended);
+        state.record("s", ended.clone());
+        let mut current = ended;
+        state.share_unchanged("s", &mut current);
+        assert!(matches!(
+            evaluate_claim(&held, state.held_snapshot("s", &held).as_ref(), &current),
+            ClaimEvaluation::Diverged { .. }
+        ));
+    }
+
     #[test]
     fn trimming_a_boundary_page_replaces_the_cursor_and_reached_start_marker() {
         let mut raw = page(vec![message(1, "a", "one"), message(2, "b", "two")]);
@@ -1677,11 +1763,12 @@ mod tests {
             ClaimEvaluation::Diverged { .. }
         ));
 
-        // A claimant holding the trimmed page gets the newest snapshot holding its floor.
+        // A claimant holding the trimmed page gets the oldest snapshot holding its floor
+        // whose newest row is D: the full page, which holds the same rows from C on.
         let trimmed_claimant = claim("C", "D", "version-v");
         assert_eq!(
             state.held_snapshot(session, &trimmed_claimant),
-            Some(trimmed.kept())
+            Some(full.kept())
         );
         assert_eq!(
             evaluate_claim(
