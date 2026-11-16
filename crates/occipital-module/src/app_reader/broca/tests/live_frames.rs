@@ -258,6 +258,66 @@ async fn replay_bytes(
     connection.shutdown().await;
 }
 
+/// Broca's control lane for one step that calls a tool, as its own serializer writes
+/// it, before and after it stopped pairing the step's `tool_call` and `step_finished`
+/// units with a `display_reset` (Broca's recording, in
+/// `tests/data/broca-control-no-reset-1116`). Those resets came
+/// right after the step's `message_finished`, so every app dropped words it had just
+/// been told were final, at each tool call. Without them those units carry no live
+/// event: they never reach the display, keep the feed, and still wake the
+/// transcript. Every other frame reads the same in both streams.
+#[tokio::test(start_paused = true)]
+async fn broca_control_units_without_an_event_drop_no_live_words() {
+    let folder = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data/broca-control-no-reset-1116");
+    let frames = |side: &str| {
+        let mut files: Vec<_> = std::fs::read_dir(folder.join(side))
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .collect();
+        files.sort();
+        files
+            .iter()
+            .map(|path| {
+                let bytes = std::fs::read(path).unwrap();
+                let name = path.file_name().unwrap().to_string_lossy().into_owned();
+                (
+                    name,
+                    String::from_utf8(bytes).unwrap().trim_end().to_owned(),
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    let (before, after) = (frames("before"), frames("after"));
+    assert_eq!(before.len(), 15);
+    // Every control frame wakes the transcript and keeps the feed, in both streams.
+    let every_line: Vec<usize> = (1..=15).collect();
+    for (side, stream) in [("before", &before), ("after", &after)] {
+        let bytes = stream
+            .iter()
+            .map(|(_, line)| line.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+        replay_bytes(side, bytes.as_bytes(), &[], &every_line, 1).await;
+    }
+    let live = |line: &str| {
+        normalize(serde_json::from_str(line).unwrap())
+            .map(|frame| frame["event"]["type"].as_str().unwrap().to_owned())
+    };
+    for ((name, old), (_, new)) in before.iter().zip(&after) {
+        let (old, new) = (live(old), live(new));
+        if matches!(
+            name.as_str(),
+            "05-tool_call.json" | "06-step_finished.json" | "13-step_finished.json"
+        ) {
+            assert_eq!(old.as_deref(), Some("display_reset"), "{name}");
+            assert_eq!(new, None, "{name}");
+        } else {
+            assert!(old.is_some() && old == new, "{name}: {old:?} {new:?}");
+        }
+    }
+}
+
 /// The OpenCode runner also streams control frames that carry only a `runner_event`
 /// string, such as a send's `send_accepted`, with no `event` the display maps. One of
 /// those arriving as a run starts must not end the live feed: the reply's text that
