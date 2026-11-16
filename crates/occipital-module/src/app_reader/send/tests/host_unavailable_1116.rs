@@ -66,3 +66,31 @@ async fn a_send_whose_host_stayed_unavailable_is_unsent_and_final() {
     assert_eq!(receipt["reason"], "host_unavailable", "{receipt}");
     assert_eq!(receipt["terminal"], true, "{receipt}");
 }
+
+/// A send that never started a turn of its own has no run the runner can be
+/// asked about, so its `not_delivered` reply leaves `run_id` out. It's listed
+/// unsent with its reason alone, and `run.status` is never asked.
+#[tokio::test(start_paused = true)]
+async fn a_not_delivered_reply_without_a_run_lists_the_reason_alone() {
+    for reason in ["host_unavailable", "handover_failed"] {
+        let f = fixture(Kind::Head);
+        f.runner.captured.lock().unwrap().insert(
+            "session.send_status",
+            json!({"result": {"state": "not_delivered", "reason": reason}}),
+        );
+        f.sender.send(message("held", "words")).await.unwrap();
+        f.now.store(START + 5_000, Ordering::SeqCst);
+        let list = || f.receipts.queue().list("s", START).unwrap();
+        eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unsent")).await;
+        let entry = list().unwrap().0[0].clone();
+        assert_eq!(entry["reason"], reason, "{entry}");
+        assert!(entry.get("runnerCode").is_none(), "{entry}");
+        assert!(
+            !f.runner
+                .calls()
+                .iter()
+                .any(|(method, _)| method == "run.status"),
+            "{reason}"
+        );
+    }
+}
