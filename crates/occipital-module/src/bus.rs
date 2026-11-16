@@ -434,6 +434,56 @@ impl Backoff {
 mod tests {
     use super::*;
 
+    /// Broca's send-state notices as its publisher sends them, copied unchanged
+    /// (`tests/data/broca-send-state-1116/`): each subject goes through the bus
+    /// naming parser the reader uses, then `wake`. Occipital's four notices each
+    /// give `Wake::SendState` for their `send_id`, whatever the state hint says;
+    /// AFT's four, under AFT's reader token, give no wake.
+    #[test]
+    fn broca_send_state_notices_wake_occipitals_sends_only() {
+        let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/data/broca-send-state-1116");
+        let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
+        let names = cortexkit_bus_naming::AccountNames::derive("box_test").unwrap();
+        let mut woken = 0;
+        for line in sums.lines() {
+            let (expected, name) = line.split_once("  ").unwrap();
+            let bytes = std::fs::read(data.join(name)).unwrap();
+            assert_eq!(
+                format!("{:x}", <sha2::Sha256 as sha2::Digest>::digest(&bytes)),
+                expected,
+                "{name}"
+            );
+            if !name.ends_with(".json") {
+                continue;
+            }
+            let notice: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            let subject = names
+                .parse_event_subject(notice["subject"].as_str().unwrap())
+                .unwrap();
+            let got = wake(
+                &subject.module,
+                &subject.event,
+                subject.version,
+                subject.reader.as_deref(),
+                notice["body"].as_str().unwrap().as_bytes(),
+            );
+            if name.contains("-occipital-") {
+                assert_eq!(
+                    got,
+                    Ok(Some(Wake::SendState {
+                        send_id: "app-send-7".into()
+                    })),
+                    "{name}"
+                );
+                woken += 1;
+            } else {
+                assert_eq!(got, Ok(None), "{name}");
+            }
+        }
+        assert_eq!(woken, 4);
+    }
+
     #[test]
     fn each_read_subject_wakes_what_it_names() {
         let notice = br#"{"v":1,"session_ref":"32db1a5342168526c10b5dedf01c1760","send_id":"app-7f","seq":4,"state":"finished"}"#;

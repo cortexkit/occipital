@@ -5,10 +5,14 @@
 # ports/swift/OccipitalCore.source-hash. It does not inspect the archives'
 # contents. It also checks the layout: the two expected slices are present,
 # each archive is nonempty, and each copied header matches the crate's
-# occipital.h.
+# occipital.h. A stale or broken library is rebuilt with
+# scripts/build-xcframework.sh on the build server.
 #
-# Exits 0 when everything matches. Otherwise it names each problem and exits
-# 1; rebuild with scripts/build-xcframework.sh on the build server.
+# It also checks that every hand-written source file stays under 5,000 lines,
+# so a one-line edit rebuilds quickly and no file grows into one that every
+# feature passes through. Tests and generated files are exempt.
+#
+# Exits 0 when everything matches. Otherwise it names each problem and exits 1.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -65,8 +69,21 @@ else
   fi
 fi
 
+max_lines=5000
+while IFS= read -r file; do
+  case "$file" in
+    */tests/* | */tests.rs | *_tests.rs | */test-vectors/* | */vectors/*) continue ;;
+  esac
+  # A generated file says so on its first line (the Unicode tables do).
+  head -n 1 "$file" | grep -q 'Generated' && continue
+  lines="$(wc -l <"$file")"
+  if [ "$lines" -ge "$max_lines" ]; then
+    problem "$file has $((lines)) lines; split it by area (hand-written source stays under $max_lines)"
+  fi
+done < <(git ls-files '*.rs' '*.swift' '*.py' '*.sh')
+
 if [ "$problems" -gt 0 ]; then
-  echo "check: $problems problem(s); rebuild with scripts/build-xcframework.sh" >&2
+  echo "check: $problems problem(s)" >&2
   exit 1
 fi
-echo "check: $xcframework matches its sources ($current)"
+echo "check: $xcframework matches its sources ($current); every source file is under $max_lines lines"
