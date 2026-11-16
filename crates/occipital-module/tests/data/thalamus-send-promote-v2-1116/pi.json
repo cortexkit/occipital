@@ -1,0 +1,26 @@
+{
+  "delivery": "queue",
+  "session.promote": {
+    "outcome": "promoted"
+  },
+  "session.promote.delivered": {
+    "outcome": "delivered"
+  },
+  "session.send": {
+    "state": "pending",
+    "submission_id": "[\"notifier\",\"queued\"]"
+  },
+  "session.send_status.landed": {
+    "delivered": {
+      "as": "step",
+      "ref": "24f330bb"
+    },
+    "run_id": "run_e34b12728e04b18003ea3c35",
+    "state": "finished"
+  },
+  "session.send_status.pending": {
+    "state": "pending",
+    "submission_id": "[\"notifier\",\"queued\"]"
+  },
+  "commit_sha": "1c4c34c10abc910725b29c2c521959b558732165"
+}

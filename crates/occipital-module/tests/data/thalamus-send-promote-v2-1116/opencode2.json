@@ -1,0 +1,26 @@
+{
+  "delivery": "queue",
+  "session.promote": {
+    "outcome": "promoted"
+  },
+  "session.promote.delivered": {
+    "outcome": "delivered"
+  },
+  "session.send": {
+    "state": "pending",
+    "submission_id": "[\"occipital\",\"queued\"]"
+  },
+  "session.send_status.landed": {
+    "delivered": {
+      "as": "step",
+      "ref": "msg_1e44c6d13001UqVCDLai779rxh"
+    },
+    "run_id": "run_3f8dedcf9a9ff6cda863dd36",
+    "state": "finished"
+  },
+  "session.send_status.pending": {
+    "state": "pending",
+    "submission_id": "[\"occipital\",\"queued\"]"
+  },
+  "commit_sha": "c9d99b357171b6087192b31265bfda28d2cd477c"
+}
