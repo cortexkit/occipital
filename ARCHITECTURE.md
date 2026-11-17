@@ -129,7 +129,7 @@ Occipital reads one durable on the local message bus (ck-bus, NATS), `m_occipita
 - Fusiform's `catalog_changed.v1` makes the model names held old;
 - a tool provider's `display_record_ready.v1` names a record it stored, which Occipital reads back with `display.read` (`display/pull.rs`; see Tool display).
 
-It also watches each tool provider's `views` bucket that bus naming declares it a reader of (AFT's and Cerebellum's). The key is the lowercase hex of a schema pin, the value the provider's `tool.views` answer for it, and Occipital keeps each put view through the same checks as a fetched one, without asking. A pin missing from the bucket is still fetched with `tool.views`.
+It also watches each tool provider's `views` bucket that bus naming declares it a reader of (AFT's and Cerebellum's). The key is the lowercase hex of a schema pin, the value the provider's `tool.views` answer for it, and Occipital keeps each put view through the same checks as a fetched one, without asking. While the watch is open, a pin the bucket holds is never fetched, not even after the provider's build changes, since the provider puts it again when its answer changes. A pin missing from the bucket, or any pin while the watch is down, is still fetched with `tool.views`.
 
 A send-state or catalog event is acknowledged once its wake is handed on. A record event is acknowledged once its record is stored or refused for good, and delivered again 30 seconds later when the provider or the display store can't be reached. One that can never be read is terminated. The timed checks stay as backstops, so a bus that is down only slows these updates.
 
