@@ -18,10 +18,11 @@
 //! build can serve a revised template under an unchanged `module_version`:
 //! many modules keep one across builds.
 //! A view with a higher template revision replaces the kept one, and any other
-//! difference keeps it. A pin its writer put in its views bucket on the message
-//! bus is the exception: while that bucket is watched, the writer puts the pin
-//! again whenever its answer changes, so a kept answer for it is never due and
-//! `tool.views` isn't asked about it, even after the writer's version changes.
+//! difference keeps it. A writer whose views bucket on the message bus is
+//! watched is the exception: it puts every pin it serves there and puts it again
+//! whenever its answer changes, so while the watch is open (or opening) none of
+//! its kept answers falls due, and `tool.views` is asked only about a pin with
+//! nothing kept, even after the writer's version changes.
 //! A failed fetch keeps nothing new: the next write or page that names the pin
 //! asks again.
 //!
@@ -108,15 +109,17 @@ pub enum Want {
     Served(String, String, ViewsReply),
 }
 
-/// The pins each writer has put in its views bucket, since its bucket watch
-/// last opened. A writer is absent while its bucket isn't watched.
-type Bucketed = Arc<std::sync::Mutex<HashMap<String, BTreeSet<String>>>>;
+/// The writers whose views bucket is being watched, or about to be: each puts
+/// every pin it serves in its bucket and puts it again when its answer changes,
+/// and a watch that opens delivers every pin anew, so none of their kept
+/// answers ever falls due.
+type Watched = Arc<std::sync::Mutex<BTreeSet<String>>>;
 
 /// Asks for views to be fetched; the fetch itself runs in the fetcher's task.
 #[derive(Clone)]
 pub struct Fetcher {
     queue: mpsc::Sender<Want>,
-    bucketed: Bucketed,
+    watched: Watched,
 }
 
 impl Fetcher {
@@ -125,13 +128,14 @@ impl Fetcher {
     pub(crate) fn from_queue(queue: mpsc::Sender<Want>) -> Self {
         Self {
             queue,
-            bucketed: Bucketed::default(),
+            watched: Watched::default(),
         }
     }
 
     /// Fetch `writer`'s view for `pin`, unless it is already kept under the
-    /// writer's current version or the writer doesn't serve views. Never waits: when the queue is full the pin
-    /// is dropped and asked for later.
+    /// writer's current version, or kept at all while the writer's bucket is
+    /// watched, or the writer doesn't serve views. Never waits: when the queue
+    /// is full the pin is dropped and asked for later.
     pub fn want(&self, writer: &str, pin: &str) {
         let _ = self
             .queue
@@ -148,25 +152,28 @@ impl Fetcher {
     /// Keep `reply`, `writer`'s `tool.views` answer for `pin` from its views
     /// bucket, through the same checks as a fetched one. Unlike a want, it waits
     /// for room in the queue, since nothing would offer it again until the
-    /// writer changes it. From now until [`Fetcher::bucket_closed`], the pin's
-    /// kept answer is the bucket's to change, so wants for it ask nothing.
+    /// writer changes it.
     pub async fn offer(&self, writer: &str, pin: &str, reply: ViewsReply) {
-        self.bucketed
-            .guard()
-            .entry(writer.to_owned())
-            .or_default()
-            .insert(pin.to_owned());
         let _ = self
             .queue
             .send(Want::Served(writer.to_owned(), pin.to_owned(), reply))
             .await;
     }
 
-    /// `writer`'s bucket watch ended: a change to its views would go unseen, so
-    /// its kept answers fall due again by version and age, as for a writer
-    /// with no bucket. A watch that opens again offers every pin anew.
+    /// `writer`'s bucket watch is opening: from now its kept answers change only
+    /// by what it puts, so wants for a pin already kept ask nothing, even after
+    /// the writer's version changes. Called before the watch opens, so a want
+    /// that arrives before the watch delivers the bucket's pins asks nothing
+    /// either. A pin with nothing kept is still fetched.
+    pub fn bucket_watched(&self, writer: &str) {
+        self.watched.guard().insert(writer.to_owned());
+    }
+
+    /// `writer`'s bucket watch ended or couldn't open: a change to its views
+    /// would go unseen, so its kept answers fall due again by version and age,
+    /// as for a writer with no bucket, until the watch opens again.
     pub fn bucket_closed(&self, writer: &str) {
-        self.bucketed.guard().remove(writer);
+        self.watched.guard().remove(writer);
     }
 }
 
@@ -187,8 +194,8 @@ pub fn start(
     hints: Option<broadcast::Sender<Hint>>,
 ) -> (Fetcher, tokio::task::JoinHandle<()>) {
     let (queue, mut wanted) = mpsc::channel::<Want>(QUEUE);
-    let bucketed = Bucketed::default();
-    let in_bucket = bucketed.clone();
+    let watched = Watched::default();
+    let in_bucket = watched.clone();
     let task = tokio::spawn(async move {
         let mut resting: HashMap<String, Instant> = HashMap::new();
         // The writers' versions, read again when the daemon's catalog has
@@ -259,17 +266,15 @@ pub fn start(
                     continue;
                 };
                 let now = now_ms();
-                let bucketed = in_bucket.guard().get(&writer).cloned().unwrap_or_default();
-                // A pin the writer just served needs no asking, and nor does one
-                // its watched bucket holds, which it puts again when it changes.
+                let watched = in_bucket.guard().contains(&writer);
+                // A pin the writer just served needs no asking, and nor does a
+                // kept one while its bucket is watched: it puts what changes.
                 let due: Vec<(String, Option<ViewState>)> = wanted
                     .into_iter()
                     .filter(|pin| !served.iter().any(|(served, _)| served == pin))
                     .filter_map(|pin| match store.kept_view(&writer, &pin) {
                         Ok(None) => Some((pin, None)),
-                        Ok(Some(kept))
-                            if !bucketed.contains(&pin) && is_due(&kept, version, now) =>
-                        {
+                        Ok(Some(kept)) if !watched && is_due(&kept, version, now) => {
                             Some((pin, Some(kept.state)))
                         }
                         _ => None,
@@ -296,7 +301,7 @@ pub fn start(
             }
         }
     });
-    (Fetcher { queue, bucketed }, task)
+    (Fetcher { queue, watched }, task)
 }
 
 /// A writer's version as [`ModuleFacts::version`] keeps it: `module_version`,
@@ -834,22 +839,18 @@ mod tests {
         assert_eq!(store.view("aft", &pin("bash")).unwrap(), kept(&revised));
     }
 
-    /// A view kept from the writer's watched bucket isn't fetched again when the
-    /// writer's version changes: the writer puts it again when it changes. Once
-    /// the bucket watch closes, the kept view falls due by version as for any
-    /// writer.
+    /// While a writer's bucket is watched (from the moment the watch starts
+    /// opening), a pin with a kept answer isn't fetched again when the writer's
+    /// version changes, whether the answer came from the bucket or from an
+    /// earlier fetch, as at a restart before the bucket's pins arrive: the
+    /// writer puts what changes. A pin with nothing kept is still fetched. Once
+    /// the watch closes, kept answers fall due by version as for any writer.
     #[tokio::test(start_paused = true)]
-    async fn a_bucketed_view_is_not_fetched_again_while_the_bucket_is_watched() {
+    async fn a_watched_writer_s_kept_views_are_not_fetched_again() {
         let dir = ScratchDir::new("occipital-views-bucketed");
         let store = opened(&dir);
         let aft = Aft::new(false);
         let (fetcher, _task) = start(store.clone(), aft.clone(), None);
-        let served = ViewsReply::new(BTreeMap::from([(
-            pin("bash"),
-            ViewEntry::Manifest(manifest()),
-        )]));
-        fetcher.offer("aft", &pin("bash"), served).await;
-        until(|| matches!(store.view("aft", &pin("bash")), Ok(Some(_)))).await;
         let views = || {
             aft.calls
                 .lock()
@@ -858,14 +859,30 @@ mod tests {
                 .filter(|call| call.contains("views"))
                 .count()
         };
-        assert_eq!(views(), 0);
+        // `bash` kept by a fetch under 1.0, before any watch.
+        fetcher.want("aft", &pin("bash"));
+        until(|| matches!(store.view("aft", &pin("bash")), Ok(Some(_)))).await;
+        assert_eq!(views(), 1);
 
-        // A new build of the writer: still not asked.
+        // The watch starts opening and puts `old`; then a new build of aft.
+        fetcher.bucket_watched("aft");
+        let served = ViewsReply::new(BTreeMap::from([(
+            pin("old"),
+            ViewEntry::Manifest(manifest().with_tool(ViewTool::from(&tool("old")))),
+        )]));
+        fetcher.offer("aft", &pin("old"), served).await;
+        until(|| matches!(store.view("aft", &pin("old")), Ok(Some(_)))).await;
         tokio::time::sleep(crate::catalog_generation::POLL).await;
         *aft.version.lock().unwrap() = "1.1".into();
         fetcher.want("aft", &pin("bash"));
+        fetcher.want("aft", &pin("old"));
         tokio::time::sleep(Duration::from_millis(50)).await;
-        assert_eq!(views(), 0);
+        assert_eq!(views(), 1, "kept views of a watched writer asked again");
+
+        // A pin with nothing kept is still asked about.
+        fetcher.want("aft", &pin("edit"));
+        until(|| matches!(store.view("aft", &pin("edit")), Ok(Some(_)))).await;
+        assert_eq!(views(), 2);
 
         // The watch closed: the kept view is due under the new version.
         fetcher.bucket_closed("aft");
@@ -877,7 +894,7 @@ mod tests {
                 .is_some_and(|kept| kept.module_version == "1.1")
         })
         .await;
-        assert_eq!(views(), 1);
+        assert_eq!(views(), 3);
     }
 
     /// When the writer's version changes, a kept `unknown` and a kept view are

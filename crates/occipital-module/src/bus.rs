@@ -281,13 +281,14 @@ fn view_buckets() -> impl Iterator<Item = &'static str> {
 }
 
 /// Watch `owner`'s views bucket for as long as the connection lasts, offering
-/// each view it puts to the fetcher, which keeps it as if fetched and asks no
-/// more about it. A watch that fails is opened again after a pause; until then,
-/// and for any view not in the bucket, the fetcher asks the writer with
-/// `tool.views`.
+/// each view it puts to the fetcher, which keeps it as if fetched. While the
+/// watch is open or opening, the fetcher asks the writer with `tool.views` only
+/// about a pin with nothing kept; a watch that fails is opened again after a
+/// pause, and until then the writer's kept views fall due as for any writer.
 async fn watch_views(bus: &BusClient, owner: &'static str, fetcher: &Fetcher, stats: &Stats) {
     let mut backoff = Backoff::default();
     loop {
+        fetcher.bucket_watched(owner);
         let reason = match bus.bucket(owner, VIEWS) {
             Ok(bucket) => match bucket.watch().await {
                 Ok(mut watch) => {
