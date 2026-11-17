@@ -222,7 +222,7 @@ pub(crate) fn command_caller(
                 .harness
                 .strip_prefix("fed-")?
                 .split_once(':')?;
-            if class.is_empty()
+            if !APP_DEVICE_CLASSES.contains(&class)
                 || fingerprint.is_empty()
                 || !fingerprint.bytes().all(|b| b.is_ascii_hexdigit())
             {
@@ -235,6 +235,10 @@ pub(crate) fn command_caller(
         _ => None,
     }
 }
+
+/// The device classes Callosum stamps for a person's own app: the phone, and the
+/// phone simulator, whose grants Callosum keeps to reads.
+const APP_DEVICE_CLASSES: [&str; 2] = ["phone", "sim"];
 
 /// The admission a route's principal earns on its own, whichever method it calls.
 fn admit_principal(binding: Option<&RouteBinding>) -> Option<Caller> {
@@ -258,6 +262,14 @@ fn admit_principal(binding: Option<&RouteBinding>) -> Option<Caller> {
                 .and_then(|label| label.split_once(':'))
                 .filter(|(class, fingerprint)| !class.is_empty() && !fingerprint.is_empty())
             {
+                // Only a device that is the person's own app may read and send
+                // in their name. A paired computer relays its agents and modules,
+                // not the person, so it is refused even where Callosum's profile
+                // exposes these operations to it; so is a class Callosum couldn't
+                // name.
+                if !APP_DEVICE_CLASSES.contains(&class) {
+                    return None;
+                }
                 return Some(Caller::Device {
                     class: class.into(),
                     fingerprint: fingerprint.into(),

@@ -733,6 +733,42 @@ async fn reads_retry_a_failed_consumer_connect_and_health_never_connects() {
     connection.shutdown().await;
 }
 
+/// Through Callosum, only the person's own app is admitted: the phone and the
+/// phone simulator. A paired computer, or a class Callosum couldn't name, is
+/// refused before the request is read, even where Callosum's profile would
+/// expose these operations to it, so nothing on another computer can send in
+/// the person's name.
+#[tokio::test]
+async fn only_the_persons_own_app_is_admitted_through_callosum() {
+    for (harness, admitted) in [
+        ("fed-phone:0123abcd", true),
+        ("fed-sim:0123abcd", true),
+        ("fed-computer:0123abcd", false),
+        ("fed-unknown:0123abcd", false),
+    ] {
+        let mut h = Harness::new();
+        h.bind(7, 1, binding(harness)).await;
+        h.request(SEND, 1, params(SEND, "s")).await;
+        let reply = h.next().await;
+        if admitted {
+            assert_eq!(reply.header.ty, FrameType::Response, "{harness}");
+        } else {
+            assert_eq!(reply.header.ty, FrameType::Error, "{harness}");
+            assert_eq!(
+                body(&reply)["code"],
+                "carrier_op_not_permitted",
+                "{harness}"
+            );
+            assert_eq!(
+                h.sends.calls.load(Ordering::SeqCst),
+                0,
+                "{harness}: nothing reached the runner"
+            );
+        }
+        h.finish().await;
+    }
+}
+
 #[test]
 fn the_manifest_declares_every_watch_as_a_subscribable_stream() {
     let manifest = serde_json::to_value(crate::manifest::manifest().unwrap()).unwrap();
@@ -996,14 +1032,19 @@ async fn rebind_without_operator_app_does_not_retain_desktop_admission() {
 #[tokio::test]
 async fn app_reads_admit_unscoped_callosum_routes_and_development_direct_callers() {
     let mut cases = vec![];
+    for label in ["operator", "fed-phone:fp", "fed-sim:fp"] {
+        cases.push((label, binding(label), true));
+    }
+    // Callosum's other device classes aren't the person's app: a paired
+    // computer, a class it couldn't name, and any class added later until it is
+    // named here.
     for label in [
-        "operator",
-        "fed-phone:fp",
-        "fed-sim:fp",
+        "fed-computer:fp",
+        "fed-unknown:fp",
         "fed-desktop:fp",
         "fed-future-device:fp",
     ] {
-        cases.push((label, binding(label), true));
+        cases.push((label, binding(label), false));
     }
     // A plain local direct caller is admitted while apps are in development.
     let mut direct = binding("fed-phone:spoofed");

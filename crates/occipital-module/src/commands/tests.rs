@@ -574,6 +574,9 @@ fn caller_facts_come_from_the_route() {
     for refused in [
         route(callosum(), "callosum"),
         route(callosum(), "fed-phone:not-hex!"),
+        // A paired computer relays its agents and modules, not the person.
+        route(callosum(), "fed-computer:0123456789abcdef"),
+        route(callosum(), "fed-unknown:0123456789abcdef"),
         route(
             Principal::Reserved {
                 module_id: "magic-context".into(),
