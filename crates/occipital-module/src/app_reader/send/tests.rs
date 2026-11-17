@@ -722,9 +722,11 @@ async fn a_steer_the_run_never_takes_expires_and_the_app_is_told_late() {
 /// and one the runner ended undelivered stays listed as unsent, with the reason,
 /// so the phone never shows an undelivered message as delivered. Each change is
 /// broadcast for the session; a transcript watch passes it on as a notice only when it
-/// opted in with `acceptQueuedSends`.
+/// opted in with `acceptQueuedSends`. Each listing and each settling is logged.
 #[tokio::test(start_paused = true)]
 async fn a_head_send_is_listed_until_delivered_or_listed_unsent() {
+    let log = crate::test_tracing::Lines::default();
+    let _guard = crate::test_tracing::enter(log.clone());
     let f = fixture(Kind::Head);
     let mut changes = f.sender.queue_changes();
     let list = || f.receipts.queue().list("s", START).unwrap();
@@ -756,6 +758,21 @@ async fn a_head_send_is_listed_until_delivered_or_listed_unsent() {
     let mut reply = json!({"messages": []});
     f.sender.attach_queued(&mut reply, "s").await;
     assert_eq!(reply["queuedSends"], unsent);
+    for (message, id, outcome) in [
+        ("queued send listed", "h1", ""),
+        ("queued send settled", "h1", "outcome=delivered"),
+        ("queued send listed", "h2", ""),
+        ("queued send settled", "h2", "outcome=unsent:not_sent"),
+    ] {
+        let line = log
+            .find(message, &format!("client_message_id={id:?}"))
+            .or_else(|| log.find(message, &format!("client_message_id={id} ")))
+            .unwrap_or_else(|| panic!("no {message} line for {id}"));
+        assert!(
+            line.contains("level=INFO") && line.contains(outcome),
+            "{line}"
+        );
+    }
 }
 
 /// A runner's notice that one of this module's sends changed state (its

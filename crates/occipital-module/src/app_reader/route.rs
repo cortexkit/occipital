@@ -131,6 +131,10 @@ struct Watch {
     cancelled: CancellationToken,
     source: Option<Arc<dyn TranscriptSource>>,
     quiet: watch::Sender<u64>,
+    /// Notices this watch sent, and how many of them were a list-only change of
+    /// the waiting messages, for the line logged when it ends.
+    notices: std::sync::atomic::AtomicU32,
+    queue_lists: std::sync::atomic::AtomicU32,
 }
 
 async fn signalled(mut receiver: watch::Receiver<bool>) {
@@ -188,11 +192,16 @@ impl Watch {
         if body.len() > transcript_watch::NOTICE_BOUND {
             return Err(());
         }
-        tokio::select! {
+        let sent = tokio::select! {
             biased;
             _ = self.stop() => Err(()),
             result = self.exchange.emit(body) => result,
+        };
+        if sent.is_ok() {
+            self.notices
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         }
+        sent
     }
 }
 
@@ -252,6 +261,8 @@ async fn forward_late(
                     if host.emit_body(body).await.is_err() {
                         match idle().await {}
                     }
+                    host.queue_lists
+                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 }
                 Err(RecvError::Closed) => queue = None,
             },
@@ -462,8 +473,15 @@ pub(super) async fn serve(
         cancelled: cancelled.clone(),
         source: None,
         quiet: watch::channel(0).0,
+        notices: std::sync::atomic::AtomicU32::new(0),
+        queue_lists: std::sync::atomic::AtomicU32::new(0),
     };
     let ended = slot.ended();
+    let started = std::time::Instant::now();
+    let logged_correlation = correlation.clone();
+    // Set once the session resolved and the watch started, so only a watch that
+    // ran logs its end; a refused opening is logged by its request line.
+    let opened = std::sync::atomic::AtomicBool::new(false);
     // Subscribed before the watch starts, so an outcome settled while the session
     // is still being resolved is not missed.
     let late = host.app.sends.late_outcomes();
@@ -503,6 +521,7 @@ pub(super) async fn serve(
         };
         host.source = source_watch.source;
         let _lease = source_watch.lease;
+        opened.store(true, std::sync::atomic::Ordering::Relaxed);
         let running = async {
             if method == DISPLAY_WATCH {
                 return display_watch::run(&host, host.params.clone())
@@ -529,13 +548,24 @@ pub(super) async fn serve(
         }
     };
     // Keep independent receivers: `work` may be borrowing the host mutably during resolution.
-    let result = tokio::select! {
+    let (end, result) = tokio::select! {
         biased;
-        _ = signalled(ended) => Ok(()),
-        _ = cancelled.cancelled() => Ok(()),
-        result = work => result,
+        _ = signalled(ended) => ("route_ended", Ok(())),
+        _ = cancelled.cancelled() => ("cancelled", Ok(())),
+        result = work => (if result.is_ok() { "stream_ended" } else { "refused" }, result),
     };
     drop(slot);
+    // One line per watch that ran: when the app's view of a chat opened (its
+    // duration back from now), how it ended, and how many notices reached it,
+    // so a missed update can be told apart from one never sent.
+    if opened.load(std::sync::atomic::Ordering::Relaxed) {
+        let session = host.params["session"].as_str().unwrap_or_default();
+        tracing::info!(method = %method, session = %session, correlation = %logged_correlation,
+            duration_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+            notices = host.notices.load(std::sync::atomic::Ordering::Relaxed),
+            queue_lists = host.queue_lists.load(std::sync::atomic::Ordering::Relaxed),
+            end, "app watch ended");
+    }
     match result {
         Ok(()) => HandlerOutcome::Streamed,
         Err((code, message, detail)) => detailed_error(&code, &message, detail),

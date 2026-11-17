@@ -86,3 +86,39 @@ impl tracing::Subscriber for Forward {
     fn enter(&self, _: &tracing::span::Id) {}
     fn exit(&self, _: &tracing::span::Id) {}
 }
+
+/// Every event of every target, one line each: its level, then each field as
+/// `name=value` (strings quoted, `%`-formatted values bare), the message
+/// included as `message=…`.
+#[derive(Clone, Default)]
+pub(crate) struct Lines(Arc<std::sync::Mutex<Vec<String>>>);
+
+impl Capture for Lines {
+    fn event(&self, event: &tracing::Event<'_>) {
+        struct Fields(String);
+        impl tracing::field::Visit for Fields {
+            fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+                use std::fmt::Write;
+                let _ = write!(&mut self.0, "{}={value:?} ", field.name());
+            }
+        }
+        let mut fields = Fields(format!("level={} ", event.metadata().level()));
+        event.record(&mut fields);
+        if let Ok(mut lines) = self.0.lock() {
+            lines.push(fields.0);
+        }
+    }
+}
+
+impl Lines {
+    /// The first line logged with `message` that also holds `with`.
+    pub(crate) fn find(&self, message: &str, with: &str) -> Option<String> {
+        let wanted = format!("message={message}");
+        self.0
+            .lock()
+            .ok()?
+            .iter()
+            .find(|line| line.contains(&wanted) && line.contains(with))
+            .cloned()
+    }
+}

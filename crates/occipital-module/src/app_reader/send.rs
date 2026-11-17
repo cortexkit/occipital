@@ -700,6 +700,13 @@ impl Sender {
             .map_err(|error| store_error(error.to_string()))?
             .map_err(|error| store_error(error.to_string()))?;
             if listed {
+                // The apps' list of waiting messages changed. Logged, as is each
+                // send's later settling, so a message the apps showed wrongly can
+                // be traced; the client id names the app's message, never its words.
+                tracing::info!(target: "app_send", session = %request.session,
+                    client_message_id = request.client_message_id.as_deref().unwrap_or_default(),
+                    unconfirmed = unconfirmed_now,
+                    "queued send listed");
                 let _ = self.queue_changed.send(request.session.clone());
             }
         }
@@ -1549,7 +1556,13 @@ async fn dequeue(
     let (Some(receipts), Some(id)) = (receipts.clone(), id) else {
         return false;
     };
+    let outcome = match &end {
+        End::Delivered => "delivered".to_owned(),
+        End::Unsent(reason) => format!("unsent:{reason}"),
+        End::Unconfirmed => "unknown".to_owned(),
+    };
     let (session, id) = (session.to_owned(), id.to_owned());
+    let (logged_session, logged_id) = (session.clone(), id.clone());
     let result = tokio::task::spawn_blocking(move || match end {
         End::Delivered => receipts.queue().delivered(&session, &id),
         End::Unsent(reason) => {
@@ -1561,7 +1574,14 @@ async fn dequeue(
     })
     .await;
     match result {
-        Ok(Ok(changed)) => changed,
+        Ok(Ok(changed)) => {
+            if changed {
+                tracing::info!(target: "app_send", session = %logged_session,
+                    client_message_id = %logged_id, outcome = %outcome,
+                    "queued send settled");
+            }
+            changed
+        }
         _ => {
             tracing::warn!(target: "app_send", reason = "queue_settle_failed", "an app send's queued entry was not updated");
             false

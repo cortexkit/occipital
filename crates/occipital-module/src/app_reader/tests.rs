@@ -577,9 +577,22 @@ struct Harness {
 
 impl Harness {
     fn new() -> Self {
+        Self::with(None)
+    }
+
+    /// A harness whose sends are recorded in a real receipt store, so accepted
+    /// sends are listed as waiting; the folder holds the store.
+    fn with_receipts() -> (Self, tempfile::TempDir) {
+        let dir = tempfile::tempdir().unwrap();
+        let store = crate::store::tests::shared(&dir.path().join("store.db"));
+        let receipts = super::send_store::Receipts::open(store).unwrap();
+        (Self::with(Some(receipts)), dir)
+    }
+
+    fn with(receipts: Option<Arc<super::send_store::Receipts>>) -> Self {
         let resolver = Arc::new(FakeResolver::default());
         let sends = Arc::new(FakeSends::default());
-        let sender = send::Sender::new(Arc::new(SharedSends(sends.clone())), None);
+        let sender = send::Sender::new(Arc::new(SharedSends(sends.clone())), receipts);
         let app = Arc::new(AppReader::with_sender(resolver.clone(), Arc::new(sender)));
         let (tx, output) = mpsc::channel(256);
         Self {
@@ -1180,6 +1193,78 @@ async fn an_expired_worker_steer_is_reported_on_the_sessions_transcript_watch() 
     assert_eq!(notice["sendOutcome"]["clientMessageId"], "m1");
     assert_eq!(notice["sendOutcome"]["session"], "s");
     assert_eq!(notice["sendOutcome"]["terminal"], true);
+    h.finish().await;
+}
+
+/// A chat watch's opening and end are logged at INFO, and the end names how it
+/// ended and how many notices reached the app, with the list-only changes of the
+/// waiting messages counted apart; each send listed is logged too. Together
+/// they tell a phone that missed a change from one that was never told.
+#[tokio::test(start_paused = true)]
+async fn a_watch_logs_its_opening_and_its_end_with_the_notices_it_sent() {
+    let log = crate::test_tracing::Lines::default();
+    let _guard = crate::test_tracing::enter(log.clone());
+    let (mut h, _store) = Harness::with_receipts();
+    h.sends.worker.store(true, Ordering::SeqCst);
+    h.bind(7, 1, binding("fed-phone:fp")).await;
+    let mut watch = params(TRANSCRIPT_WATCH, "s");
+    watch["acceptQueuedSends"] = json!(true);
+    h.request(TRANSCRIPT_WATCH, 1, watch).await;
+    assert_eq!(h.next().await.header.ty, FrameType::StreamData);
+    h.request(SEND, 2, params(SEND, "s")).await;
+    let (mut receipt, mut listed) = (false, false);
+    for _ in 0..4 {
+        let frame = h.next_within(15).await;
+        match (frame.header.corr, frame.header.ty) {
+            (2, FrameType::Response) => receipt = true,
+            (1, FrameType::StreamData) if body(&frame).get("queuedSends").is_some() => {
+                listed = true;
+            }
+            _ => {}
+        }
+        if receipt && listed {
+            break;
+        }
+    }
+    assert!(
+        receipt && listed,
+        "the send's receipt and the list notice both arrive"
+    );
+    h.cancel(7, 1, 1);
+    let ended = h.next().await;
+    assert_eq!(
+        (ended.header.corr, ended.header.ty),
+        (1, FrameType::StreamEnd)
+    );
+    h.barrier().await;
+
+    let opening = log
+        .find(
+            "app reader request finished",
+            "method=session.transcript_watch",
+        )
+        .expect("the watch's opening is logged");
+    assert!(opening.contains("level=INFO"), "{opening}");
+    let end = log
+        .find("app watch ended", "")
+        .expect("the watch's end is logged");
+    for field in [
+        "level=INFO",
+        "method=session.transcript_watch",
+        "session=s",
+        "end=\"cancelled\"",
+        "notices=2",
+        "queue_lists=1",
+    ] {
+        assert!(end.contains(field), "missing {field}: {end}");
+    }
+    let listed = log
+        .find("queued send listed", "")
+        .expect("the listing is logged");
+    assert!(
+        listed.contains("session=s") && listed.contains("m1"),
+        "{listed}"
+    );
     h.finish().await;
 }
 

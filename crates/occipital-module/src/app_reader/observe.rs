@@ -119,6 +119,9 @@ const CONSEQUENTIAL: [&str; 8] = [
     crate::commands::RUN,
 ];
 
+/// The watches whose opening is logged at INFO: an app's view of one chat.
+const WATCH_OPENINGS: [&str; 2] = [super::TRANSCRIPT_WATCH, super::DISPLAY_WATCH];
+
 fn summary_level(
     method: &str,
     outcome: Option<&str>,
@@ -131,6 +134,9 @@ fn summary_level(
     // An unset outcome means the request was dropped, rather than refused.
     match outcome {
         Some("ok") if CONSEQUENTIAL.contains(&method) => tracing::Level::INFO,
+        // A chat watch's line is its opening, paired with the line logged when it
+        // ends, so the log tells when an app was following a chat.
+        Some("ok") if WATCH_OPENINGS.contains(&method) => tracing::Level::INFO,
         Some("ok") if elapsed > std::time::Duration::from_secs(2) => tracing::Level::INFO,
         Some("ok") | None => tracing::Level::DEBUG,
         _ => tracing::Level::WARN,
@@ -507,14 +513,18 @@ pub(crate) mod tests {
         }
 
         // A successful send, Stop, upload finish, abort or place is always
-        // logged, even when fast; an upload chunk is not.
+        // logged, even when fast, and so is a chat watch's opening; an upload
+        // chunk and a page read are not.
         for (method, level) in [
             (super::super::SEND, "INFO"),
             (super::super::STOP, "INFO"),
             (super::super::uploads::FINISH, "INFO"),
             (super::super::uploads::ABORT, "INFO"),
             (super::super::uploads::PLACE, "INFO"),
+            (super::super::TRANSCRIPT_WATCH, "INFO"),
+            (super::super::DISPLAY_WATCH, "INFO"),
             (super::super::uploads::CHUNK, "DEBUG"),
+            (super::super::TRANSCRIPT_PAGE, "DEBUG"),
         ] {
             let (log, _guard) = capture();
             request(method, "session", "1:1:2".into(), async {}).await;
