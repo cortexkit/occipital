@@ -1,9 +1,10 @@
 [package]
 name = "cortexkit-occipital-lang"
-version = "0.1.9"
+version = "0.1.10"
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
+repository.workspace = true
 description = "The rich UI language the CortexKit apps draw agent replies, pages and tool rows with: parser, checker, evaluator and layout"
 readme = "README.md"
 keywords = ["cortexkit", "rich-ui", "language", "layout"]
