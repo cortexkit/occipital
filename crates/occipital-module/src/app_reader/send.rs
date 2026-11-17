@@ -75,6 +75,9 @@ pub const SESSION_ENDED: &str = "session_ended";
 pub const NOT_SENT_REASON: &str = "not_sent";
 /// A worker steer withdrawn because the run it was sent into is no longer active.
 pub const RUN_ENDED: &str = "run_ended";
+/// A head send the session's owner withdrew (`session.retract`) before it ran,
+/// which `session.send_status` answers by refusing `send_retracted`.
+pub const WITHDRAWN: &str = "withdrawn";
 
 /// A file the send names can't go into this model's prompt: its runner takes no
 /// files, or its model refuses the type. Nothing was sent; the app can place the
@@ -1348,7 +1351,6 @@ fn steer_fate(answer: Result<Value, RunnerError>, past: bool) -> Fate {
     match answer {
         Ok(reply) => match serde_json::from_value::<SendReply>(reply) {
             Ok(reply) if reply.state == states::EXPIRED => Fate::Expired,
-            Ok(reply) if reply.state == "retracted" => Fate::Unsent(RUN_ENDED.into()),
             Ok(reply)
                 if matches!(
                     reply.state.as_str(),
@@ -1371,6 +1373,13 @@ fn steer_fate(answer: Result<Value, RunnerError>, past: bool) -> Fate {
             if code == cortexkit_role_llm_runner::errors::UNKNOWN_SEND && past =>
         {
             Fate::Expired
+        }
+        // Withdrawn before it joined a step: the run it was sent into is over,
+        // and `session.send_status` answers as a re-send would, by refusing.
+        Err(RunnerError::Refused { code, .. })
+            if code == cortexkit_role_llm_runner::errors::SEND_RETRACTED =>
+        {
+            Fate::Unsent(RUN_ENDED.into())
         }
         Err(_) => Fate::Unanswered,
     }
@@ -1480,6 +1489,12 @@ fn head_fate(answer: Result<&Value, &RunnerError>) -> Fate {
             if code == cortexkit_role_llm_runner::errors::UNKNOWN_SEND =>
         {
             Fate::Unsent(NOT_SENT_REASON.into())
+        }
+        // Withdrawn before it ran, so the words never reached the agent.
+        Err(RunnerError::Refused { code, .. })
+            if code == cortexkit_role_llm_runner::errors::SEND_RETRACTED =>
+        {
+            Fate::Unsent(WITHDRAWN.into())
         }
         Err(_) => Fate::Unanswered,
     }

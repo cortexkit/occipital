@@ -487,6 +487,55 @@ mod tests {
         assert_eq!(woken, 4);
     }
 
+    /// Agent Runner's send-state notice bodies as recorded from its runner store,
+    /// copied unchanged (`tests/data/thalamus-send-state-1117/`), each on the
+    /// subject its README names for the sender in the file name. Occipital's two
+    /// wake their send, `retracted` included, a state only the notice has; the
+    /// one for the other reader module, `aft`, gives no wake here.
+    #[test]
+    fn thalamus_send_state_notices_wake_occipitals_sends_only() {
+        let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/data/thalamus-send-state-1117");
+        let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
+        let names = cortexkit_bus_naming::AccountNames::derive("box_test").unwrap();
+        let mut woken = Vec::new();
+        for line in sums.lines() {
+            let (expected, name) = line.split_once("  ").unwrap();
+            let bytes = std::fs::read(data.join(name)).unwrap();
+            assert_eq!(
+                format!("{:x}", <sha2::Sha256 as sha2::Digest>::digest(&bytes)),
+                expected,
+                "{name}"
+            );
+            let Some((sender, _)) = name.strip_suffix(".json").and_then(|n| n.split_once('-'))
+            else {
+                continue;
+            };
+            let subject = names
+                .parse_event_subject(&format!(
+                    "ck.box_test.event.thalamus-harness.send_state.v1.{sender}"
+                ))
+                .unwrap();
+            let got = wake(
+                &subject.module,
+                &subject.event,
+                subject.version,
+                subject.reader.as_deref(),
+                &bytes,
+            );
+            if sender == "occipital" {
+                let Ok(Some(Wake::SendState { send_id })) = got else {
+                    panic!("{name}: {got:?}");
+                };
+                woken.push(send_id);
+            } else {
+                assert_eq!(got, Ok(None), "{name}");
+            }
+        }
+        woken.sort();
+        assert_eq!(woken, ["delivered", "retracted"]);
+    }
+
     #[test]
     fn each_read_subject_wakes_what_it_names() {
         let notice = br#"{"v":1,"session_ref":"32db1a5342168526c10b5dedf01c1760","send_id":"app-7f","seq":4,"state":"finished"}"#;

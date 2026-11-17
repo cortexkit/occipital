@@ -106,6 +106,10 @@ impl FakeRunner {
         let Some((_, state)) = sends.get(params["send_id"].as_str().unwrap()) else {
             return Self::refuse("unknown_send", None);
         };
+        // As a re-send of a withdrawn send would be answered.
+        if state == "retracted" {
+            return Self::refuse("send_retracted", None);
+        }
         Ok(match state.as_str() {
             "delivered" => {
                 json!({"state": "active", "run_id": "r1", "delivered": {"as": "step", "ref": "row-1"}})
@@ -785,6 +789,26 @@ async fn a_nudged_send_is_asked_about_at_once() {
     settle().await;
     assert_eq!(statuses(), before + 1, "asked at once");
     assert!(!f.sender.nudge("app-not-followed-here"));
+}
+
+/// A head send the session's owner withdrew before it ran, which
+/// `session.send_status` answers by refusing `send_retracted`, is listed unsent
+/// as `withdrawn` and no longer followed: its words never reached the agent, so
+/// the app may send them again as a new message.
+#[tokio::test(start_paused = true)]
+async fn a_withdrawn_head_send_is_listed_unsent() {
+    let f = fixture(Kind::Head);
+    let list = || f.receipts.queue().list("s", START).unwrap();
+    let receipt = f.sender.send(message("r1", "words")).await.unwrap();
+    assert_eq!(receipt["ok"], true);
+    f.now.store(START + 5_000, Ordering::SeqCst);
+    f.runner.set_state(&receipt["effectId"], "retracted");
+    eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unsent")).await;
+    let (entries, _) = list().unwrap();
+    assert_eq!(entries[0]["reason"], "withdrawn", "{entries:?}");
+    let polls = f.runner.calls().len();
+    tokio::time::sleep(FOLLOW_INTERVAL * 3).await;
+    assert_eq!(f.runner.calls().len(), polls, "the follower stopped");
 }
 
 /// A head send the runner handed on but can't confirm (`delivered.as: unknown`)
