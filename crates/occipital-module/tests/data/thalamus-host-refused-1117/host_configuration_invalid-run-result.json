@@ -1,0 +1,15 @@
+{
+ "error": {
+  "cause": "host_configuration_invalid",
+  "class": "host_refused",
+  "message": "the session host could not be started",
+  "provider_code": "provider_error"
+ },
+ "run_id": "run_a0ee31e925cb783e1113ee5a",
+ "state": "error",
+ "usage": {
+  "by_model": [],
+  "steps": 0,
+  "unreported_steps": 0
+ }
+}

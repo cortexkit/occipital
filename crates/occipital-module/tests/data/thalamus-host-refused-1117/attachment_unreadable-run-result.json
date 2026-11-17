@@ -1,0 +1,15 @@
+{
+ "error": {
+  "cause": "attachment_unreadable",
+  "class": "host_refused",
+  "message": "a stored attachment could not be read",
+  "provider_code": "provider_error"
+ },
+ "run_id": "run_097a70bfa391e9a66e3d8605",
+ "state": "error",
+ "usage": {
+  "by_model": [],
+  "steps": 0,
+  "unreported_steps": 0
+ }
+}

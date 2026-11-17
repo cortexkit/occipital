@@ -1,0 +1,25 @@
+{
+ "baseline": {
+  "accepted_generation": 0,
+  "applied_generation": 0,
+  "items": [],
+  "rungs": {
+   "system_text": [
+    "on_prefix_rebuild",
+    "on_system_rebuild",
+    "on_history_rebuild",
+    "immediately"
+   ],
+   "tools": [
+    "on_prefix_rebuild",
+    "on_system_rebuild",
+    "on_history_rebuild",
+    "immediately"
+   ]
+  },
+  "tool_names": []
+ },
+ "reason": "host_refused",
+ "run_id": "run_097a70bfa391e9a66e3d8605",
+ "state": "not_delivered"
+}

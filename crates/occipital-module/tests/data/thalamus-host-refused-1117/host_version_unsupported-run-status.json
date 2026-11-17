@@ -1,0 +1,15 @@
+{
+ "error": {
+  "cause": "host_version_unsupported",
+  "class": "host_refused",
+  "message": "the session host could not be started",
+  "provider_code": "provider_error"
+ },
+ "state": "error",
+ "undelivered_steers": [],
+ "usage": {
+  "by_model": [],
+  "steps": 0,
+  "unreported_steps": 0
+ }
+}

@@ -88,6 +88,66 @@ async fn a_host_refused_send_lists_its_cause_and_is_final() {
     assert_eq!(receipt["terminal"], true, "{receipt}");
 }
 
+/// Agent Runner's recorded bodies for each of the four causes, copied unchanged
+/// (`tests/data/thalamus-host-refused-1117/`): the first answer is `pending`
+/// naming its run, so the send is followed; `session.send_status` then says
+/// `not_delivered`, reason `host_refused`, with no cause of its own; and the
+/// run's status carries the cause. The send is listed unsent with the reason, the
+/// run's code and the cause, and is no longer followed.
+#[tokio::test(start_paused = true)]
+async fn agent_runners_recorded_host_refusals_list_their_cause() {
+    let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data/thalamus-host-refused-1117");
+    let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
+    // Sixteen bodies; the set's sums leave out its README.
+    assert_eq!(sums.lines().count(), 16);
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(data.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+    let body = |name: String| -> Value {
+        serde_json::from_slice(&std::fs::read(data.join(name)).unwrap()).unwrap()
+    };
+    for (cause, code) in [
+        ("attachment_unreadable", "provider_error"),
+        ("host_configuration_invalid", "provider_error"),
+        ("host_version_unsupported", "provider_error"),
+        ("host_policy_refused", "host_policy_refused"),
+    ] {
+        let first = body(format!("{cause}-send-reply.json"));
+        assert_eq!(first["state"], "pending", "{cause}");
+        let f = fixture(Kind::Head);
+        f.runner.scripted.lock().unwrap().push_back(Ok(first));
+        {
+            let mut captured = f.runner.captured.lock().unwrap();
+            captured.insert(
+                "session.send_status",
+                json!({"result": body(format!("{cause}-send-status.json"))}),
+            );
+            captured.insert(
+                "run.status",
+                json!({"result": body(format!("{cause}-run-status.json"))}),
+            );
+        }
+        let receipt = f.sender.send(message("held", "words")).await.unwrap();
+        assert_eq!(receipt["ok"], true, "{cause}: {receipt}");
+        f.now.store(START + 5_000, Ordering::SeqCst);
+        let list = || f.receipts.queue().list("s", START).unwrap();
+        eventually(|| list().is_some_and(|(entries, _)| entries[0]["state"] == "unsent")).await;
+        let entry = list().unwrap().0[0].clone();
+        assert_eq!(entry["reason"], "host_refused", "{cause}: {entry}");
+        assert_eq!(entry["runnerCode"], code, "{cause}: {entry}");
+        assert_eq!(entry["cause"], cause, "{cause}: {entry}");
+        assert!(entry.get("retryAfterMs").is_none(), "{cause}: {entry}");
+        assert!(f.receipts.followed(10).unwrap().is_empty(), "{cause}");
+        // The run's final answer decodes too, with the same cause.
+        let result = body(format!("{cause}-run-result.json"));
+        assert_eq!(result["error"]["class"], "host_refused", "{cause}");
+        assert_eq!(result["error"]["cause"], cause, "{cause}");
+    }
+}
+
 /// A cause the contract doesn't name, or a cause on another class of error,
 /// isn't passed on: the app gets the reason and code alone.
 #[tokio::test(start_paused = true)]

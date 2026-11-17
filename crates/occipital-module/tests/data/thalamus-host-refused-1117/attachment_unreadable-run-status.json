@@ -1,0 +1,15 @@
+{
+ "error": {
+  "cause": "attachment_unreadable",
+  "class": "host_refused",
+  "message": "a stored attachment could not be read",
+  "provider_code": "provider_error"
+ },
+ "state": "error",
+ "undelivered_steers": [],
+ "usage": {
+  "by_model": [],
+  "steps": 0,
+  "unreported_steps": 0
+ }
+}

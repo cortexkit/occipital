@@ -1,0 +1,15 @@
+{
+ "error": {
+  "cause": "host_policy_refused",
+  "class": "host_refused",
+  "message": "the host's policy refused the prompt",
+  "provider_code": "host_policy_refused"
+ },
+ "state": "error",
+ "undelivered_steers": [],
+ "usage": {
+  "by_model": [],
+  "steps": 0,
+  "unreported_steps": 0
+ }
+}
