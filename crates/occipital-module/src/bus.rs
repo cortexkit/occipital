@@ -261,7 +261,11 @@ pub fn start(calls: Arc<DaemonCalls>, handlers: Handlers) -> tokio::task::JoinHa
                 backoff = Backoff::default();
                 tracing::info!(durable = DURABLE, "message bus reader attached");
                 handlers.stats.attached.store(true, Ordering::Relaxed);
+                // Runners' send-state notices now wake the send followers, whose
+                // timed checks stretch to a backstop until the reader is lost.
+                handlers.sends.set_state_notices(true);
                 let reason = read(&mut reader, &handlers).await;
+                handlers.sends.set_state_notices(false);
                 handlers.stats.attached.store(false, Ordering::Relaxed);
                 tracing::info!(durable = DURABLE, %reason, "message bus reader lost");
                 break;

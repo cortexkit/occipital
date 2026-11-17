@@ -808,6 +808,54 @@ async fn a_nudged_send_is_asked_about_at_once() {
     assert!(!f.sender.nudge("app-not-followed-here"));
 }
 
+/// While runners' state notices reach this module, a held send's timed checks
+/// are only a backstop: the first still comes after `FOLLOW_INTERVAL`, in case a
+/// notice arrived before the send was followed, and the rest only every
+/// `BACKSTOP_INTERVAL`. Once the notices stop, the check is every
+/// `FOLLOW_INTERVAL` again.
+#[tokio::test(start_paused = true)]
+async fn with_state_notices_live_the_timed_check_is_a_backstop() {
+    let f = fixture(Kind::Head);
+    f.sender.set_state_notices(true);
+    let receipt = f.sender.send(message("b1", "words")).await.unwrap();
+    assert_eq!(receipt["ok"], true);
+    let statuses = || {
+        f.runner
+            .calls()
+            .iter()
+            .filter(|(method, _)| method == "session.send_status")
+            .count()
+    };
+    let settle = || async {
+        for _ in 0..50 {
+            tokio::task::yield_now().await;
+        }
+    };
+    settle().await;
+    let start = statuses();
+    tokio::time::advance(FOLLOW_INTERVAL).await;
+    settle().await;
+    assert_eq!(
+        statuses(),
+        start + 1,
+        "the first check keeps its short interval"
+    );
+    tokio::time::advance(FOLLOW_INTERVAL * 3).await;
+    settle().await;
+    assert_eq!(statuses(), start + 1, "no check before the backstop");
+    tokio::time::advance(BACKSTOP_INTERVAL - FOLLOW_INTERVAL * 3).await;
+    settle().await;
+    assert_eq!(statuses(), start + 2, "the backstop check");
+    // The reader is lost: the check after the pending backstop is short again.
+    f.sender.set_state_notices(false);
+    tokio::time::advance(BACKSTOP_INTERVAL).await;
+    settle().await;
+    assert_eq!(statuses(), start + 3);
+    tokio::time::advance(FOLLOW_INTERVAL).await;
+    settle().await;
+    assert_eq!(statuses(), start + 4, "every FOLLOW_INTERVAL again");
+}
+
 /// A head send the session's owner withdrew before it ran, which
 /// `session.send_status` answers by refusing `send_retracted`, is listed unsent
 /// as `withdrawn` and no longer followed: its words never reached the agent, so

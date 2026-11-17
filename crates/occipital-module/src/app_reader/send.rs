@@ -50,8 +50,17 @@ use super::{
 /// a worker steer when its target run ends, not while a long tool call is running.
 pub const WORKER_STEER_EXPIRY: Duration = Duration::from_secs(30 * 60);
 
-/// How often a held worker steer is checked until it lands or expires.
+/// How often a held send is checked until it lands or ends, while the runners'
+/// state notices don't reach this module.
 pub const FOLLOW_INTERVAL: Duration = Duration::from_secs(5);
+
+/// How often a held send is checked while the message bus reader is attached:
+/// the runner's state notice then makes its follower ask at once, so the timed
+/// check is only a backstop for a notice lost or never sent. The first check
+/// still comes after [`FOLLOW_INTERVAL`]: a notice that arrives before the
+/// follower is registered (between the runner's answer and this module recording
+/// the send) finds nothing to wake.
+pub const BACKSTOP_INTERVAL: Duration = Duration::from_secs(30);
 
 /// A steer still undelivered at its expiry can never be delivered: the runner drops
 /// it at its next boundary. Past the expiry and this margin for clock reads, an
@@ -234,6 +243,10 @@ pub struct Sender {
     /// The model catalog that bounds how many files a message carries. Until
     /// `set_model_names` supplies it, the fallback limits apply.
     model_names: std::sync::OnceLock<Arc<crate::display::model_names::ModelNames>>,
+    /// Whether runners' state notices reach this module (the message bus
+    /// reader is attached), which stretches the followers' timed checks to
+    /// [`BACKSTOP_INTERVAL`].
+    notices_live: Arc<std::sync::atomic::AtomicBool>,
 }
 
 fn wall_clock() -> i64 {
@@ -264,7 +277,15 @@ impl Sender {
             tasks: Mutex::default(),
             stops: Mutex::default(),
             model_names: std::sync::OnceLock::new(),
+            notices_live: Arc::default(),
         }
+    }
+
+    /// Whether runners' send-state notices now reach this module: the message bus
+    /// reader says so when it attaches and when it is lost.
+    pub fn set_state_notices(&self, live: bool) {
+        self.notices_live
+            .store(live, std::sync::atomic::Ordering::Relaxed);
     }
 
     pub fn with_uploads(mut self, uploads: Option<Arc<Uploads>>) -> Self {
@@ -1082,6 +1103,7 @@ impl Sender {
         let late = self.late.clone();
         let changed = self.queue_changed.clone();
         let clock = self.clock.clone();
+        let notices_live = self.notices_live.clone();
         let mut tasks = self.tasks.guard();
         while tasks.try_join_next().is_some() {}
         tasks.spawn(async move {
@@ -1094,12 +1116,20 @@ impl Sender {
             let mut retractable = None;
             // A row recovered after its deadline is settled at once.
             let mut wait = clock() <= settle_after;
+            let mut first = true;
             loop {
                 if wait {
+                    let interval =
+                        if !first && notices_live.load(std::sync::atomic::Ordering::Relaxed) {
+                            BACKSTOP_INTERVAL
+                        } else {
+                            FOLLOW_INTERVAL
+                        };
                     tokio::select! {
-                        () = tokio::time::sleep(FOLLOW_INTERVAL) => {}
+                        () = tokio::time::sleep(interval) => {}
                         () = nudged.notified() => {}
                     }
+                    first = false;
                 }
                 wait = true;
                 let past = clock() > settle_after;
