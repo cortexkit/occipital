@@ -488,14 +488,36 @@ mod tests {
     }
 
     /// Agent Runner's send-state notice bodies as recorded from its runner store,
-    /// copied unchanged (`tests/data/thalamus-send-state-1117/`), each on the
-    /// subject its README names for the sender in the file name. Occipital's two
-    /// wake their send, `retracted` included, a state only the notice has; the
-    /// one for the other reader module, `aft`, gives no wake here.
+    /// copied unchanged, each on the subject its README names for the sender in
+    /// the file name. Occipital's wake their send in every state the runner
+    /// produces, `retracted` included, a state only the notice has; those for
+    /// the other reader module, `aft`, give no wake here. The first set
+    /// (`thalamus-send-state-1117/`) has two of Occipital's; the second
+    /// (`thalamus-send-state-v2-1117/`, llm-runner 0.8.60) has six, one per state.
     #[test]
     fn thalamus_send_state_notices_wake_occipitals_sends_only() {
+        assert_eq!(
+            thalamus_wakes("thalamus-send-state-1117"),
+            ["delivered", "retracted"]
+        );
+        assert_eq!(
+            thalamus_wakes("thalamus-send-state-v2-1117"),
+            [
+                "delivered",
+                "delivered",
+                "delivered",
+                "retracted",
+                "retracted",
+                "retracted"
+            ]
+        );
+    }
+
+    /// The send ids Occipital's notices in the set `folder` wake, sorted.
+    fn thalamus_wakes(folder: &str) -> Vec<String> {
         let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/data/thalamus-send-state-1117");
+            .join("tests/data")
+            .join(folder);
         let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
         let names = cortexkit_bus_naming::AccountNames::derive("box_test").unwrap();
         let mut woken = Vec::new();
@@ -533,7 +555,7 @@ mod tests {
             }
         }
         woken.sort();
-        assert_eq!(woken, ["delivered", "retracted"]);
+        woken
     }
 
     #[test]
