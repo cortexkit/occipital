@@ -1004,10 +1004,14 @@ async fn send_outcomes_are_listed_by_delivery(set: &str) {
 /// That records acceptance only: the send is accepted, listed `queued` and
 /// followed, never taken for delivered or for a run already running. The second
 /// set's Pi answer names no `submission_id`, as Pi can't retract a send; the send
-/// is followed by its own id all the same.
+/// is followed by its own id all the same. The third is a send to an idle agent
+/// that the runner hands over only through a delivery list (`idle_start`), which
+/// creates the run at hand-over (`thalamus-send-ordered-early-v1-1117/`). Its
+/// answer comes before that run exists, so `{"state":"pending"}` names no run at
+/// all: it is accepted and followed the same way.
 #[tokio::test(start_paused = true)]
 async fn an_early_pending_answer_naming_its_run_is_only_accepted() {
-    for (set, bodies) in [
+    for (set, bodies, names_run) in [
         (
             "thalamus-send-answers-early-1116",
             &[
@@ -1015,17 +1019,24 @@ async fn an_early_pending_answer_naming_its_run_is_only_accepted() {
                 "02-pi-send-reply.json",
                 "03-claude-code-send-reply.json",
             ][..],
+            true,
         ),
         (
             "thalamus-send-answers-early-v2-1116",
             &["02-pi-send-reply.json"][..],
+            true,
+        ),
+        (
+            "thalamus-send-ordered-early-v1-1117",
+            &["pi-after-send-reply.json"][..],
+            false,
         ),
     ] {
-        early_answers_are_only_accepted(set, bodies).await;
+        early_answers_are_only_accepted(set, bodies, names_run).await;
     }
 }
 
-async fn early_answers_are_only_accepted(set: &str, bodies: &[&str]) {
+async fn early_answers_are_only_accepted(set: &str, bodies: &[&str], names_run: bool) {
     let data = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests/data")
         .join(set);
@@ -1041,7 +1052,7 @@ async fn early_answers_are_only_accepted(set: &str, bodies: &[&str]) {
         let first: Value =
             serde_json::from_slice(&std::fs::read(data.join(name)).unwrap()).unwrap();
         assert_eq!(first["state"], "pending", "{name}");
-        assert!(first["run_id"].is_string(), "{name}");
+        assert_eq!(first["run_id"].is_string(), names_run, "{name}");
         let f = fixture(Kind::Head);
         f.runner.scripted.lock().unwrap().push_back(Ok(first));
         let receipt = f.sender.send(message("t1", "words")).await.unwrap();
