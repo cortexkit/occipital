@@ -148,7 +148,7 @@ fn the_claude_code_describe_is_read() {
     ] {
         assert!(describe.declares(group), "{group}");
     }
-    assert!(stored_media(Some(&describe)).is_some());
+    assert!(stored_media(Some(&describe)).0.is_some());
 }
 
 /// Every call names its key and both times, and every answer its finish time.

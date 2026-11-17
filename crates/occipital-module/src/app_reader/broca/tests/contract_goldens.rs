@@ -709,9 +709,11 @@ async fn broca_0_7_approved_read_reaches_source_windows_and_run_state() {
     }
 }
 
-/// The renumbering samples the apps pin, `phone-reader-broca-renumber-v1`: one
-/// Broca chat as Occipital served it before Broca's runner moved to the current
-/// runner contract, and after. Broca recorded both replies from one session
+/// The renumbering samples, `phone-reader-broca-renumber-v2`: one Broca chat as
+/// Occipital served it before Broca's runner moved to the current runner
+/// contract, and after. The first version, which the apps pin, stays frozen;
+/// this one differs only in the tool call's `outputBytes`, which now counts the
+/// text the model read rather than Broca's stored envelope. Broca recorded both replies from one session
 /// (`tests/data/broca-renumber-1103`, whose README says how): its entries go from
 /// ordinals 0–3 to 1–4 under the same message ids, and the log gains a history
 /// counter. Occipital `8745905`, the last build that read both contracts, served
@@ -721,7 +723,7 @@ async fn broca_0_7_approved_read_reaches_source_windows_and_run_state() {
 #[tokio::test]
 async fn the_renumbering_samples_are_what_the_reader_serves() {
     use super::served_samples::{decoded, Served};
-    const SET: &str = "phone-reader-broca-renumber-v1";
+    const SET: &str = "phone-reader-broca-renumber-v2";
     let data = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/broca-renumber-1103");
     // Broca's replies are exactly as recorded.
     let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
@@ -740,9 +742,10 @@ async fn the_renumbering_samples_are_what_the_reader_serves() {
         json!({"result": describe_with(&["read_display_facts"])}),
     );
     let mut served = Served::new(SET, Arc::new(app));
+    // The before page is the recorded bytes the first version keeps.
     let set = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../occipital-app-reader/test-vectors")
-        .join(SET);
+        .join("phone-reader-broca-renumber-v1");
     let before_request = std::fs::read(set.join("01-before-newest-page.request.json")).unwrap();
     let before_reply = std::fs::read(set.join("01-before-newest-page.json")).unwrap();
     let before = decoded(&before_reply)["result"].clone();

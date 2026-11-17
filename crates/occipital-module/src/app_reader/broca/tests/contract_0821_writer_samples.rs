@@ -76,7 +76,7 @@ fn the_0821_writer_describes_decode_and_choose_the_media_form() {
             }
         }
         assert_eq!(
-            super::super::stored_media(Some(&checked)).is_some(),
+            super::super::stored_media(Some(&checked)).0.is_some(),
             writer,
             "{name}"
         );

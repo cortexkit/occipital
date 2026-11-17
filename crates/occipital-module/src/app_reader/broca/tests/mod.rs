@@ -2046,7 +2046,7 @@ fn a_runner_listing_a_newer_delivery_mode_is_still_described() {
     ] {
         value["delivery_order_modes"] = modes;
         let describe = check_describe(&value).unwrap();
-        assert!(stored_media(Some(&describe)).is_some());
+        assert!(stored_media(Some(&describe)).0.is_some());
     }
 }
 
@@ -2095,6 +2095,7 @@ mod signed_reasoning_cause_1112;
 mod speaks_for_name_1109;
 mod temperature_0844_1112;
 mod text_upload_1108;
+mod tool_output_samples;
 mod unreadable_samples;
 mod wake_records_samples;
 

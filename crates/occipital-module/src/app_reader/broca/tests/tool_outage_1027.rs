@@ -124,7 +124,8 @@ fn the_outage_session_read_decodes_in_compact_and_full_form() {
         assert!(rows[3].display.get("isError").is_none(), "full={full}");
     }
     // Compact form folds the tool result into its call: no result body is shown,
-    // but the call carries the error flag and the output size.
+    // but the call carries the error flag and the size of the text the model
+    // read: the error's rendered lines, not the stored envelope.
     let compact = broca_entries::rows(&entries, false).unwrap();
     let call = &compact[1].display["parts"][0];
     assert_eq!(call["tool"], "work");
@@ -132,7 +133,11 @@ fn the_outage_session_read_decodes_in_compact_and_full_form() {
     assert_eq!(call["isError"], true);
     let output = &entries[2]["message"]["content"][0]["output"];
     assert_eq!(output["message"], EXPECTED_MESSAGE);
-    assert_eq!(call["outputBytes"], json!(output.to_string().len()));
+    let rendered =
+        cortexkit_role_llm_runner::serializer_profile::error_output::ErrorOutput::decode(output)
+            .unwrap()
+            .render();
+    assert_eq!(call["outputBytes"], json!(rendered.len()));
     assert_eq!(
         compact[1].display["toolCalls"][0]["outputBytes"],
         call["outputBytes"]
@@ -147,19 +152,14 @@ fn the_outage_session_read_decodes_in_compact_and_full_form() {
             .contains(EXPECTED_MESSAGE),
         "compact pages carry the error flag, not the error text"
     );
-    // Full form shows the tool result as its own part with the producer's text.
+    // Full form shows the tool result as its own part with the text the model
+    // read.
     let full = broca_entries::rows(&entries, true).unwrap();
     let result = &full[2].display["parts"][0];
     assert_eq!(result["type"], "tool");
     assert_eq!(result["callId"], "call-1");
     assert_eq!(result["isError"], true);
-    assert!(
-        result["content"]
-            .as_str()
-            .unwrap()
-            .contains(EXPECTED_MESSAGE),
-        "{result}"
-    );
+    assert_eq!(result["content"], rendered, "{result}");
 }
 
 /// The `session.history` row carries the same tool error through entry decoding.

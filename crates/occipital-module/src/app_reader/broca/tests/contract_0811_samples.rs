@@ -294,12 +294,12 @@ async fn a_tool_result_that_carried_a_notice_stays_on_pages() {
 /// every read once the notice is recorded the new way, so the notice shows
 /// once, folded under the call from the `notices` fact. A ride recorded before
 /// keeps the notice joined into the output and has no fact, so it shows once
-/// there too. `outputBytes` measures the stored output as served: 31 bytes
-/// for `worked` alone, 55 with the notice joined.
+/// there too. `outputBytes` measures the text the model read: 6 bytes for
+/// `worked` alone, 28 with the notice joined.
 #[test]
 fn a_notice_riding_a_call_is_never_joined_into_its_output_and_fact_both() {
     let source = BrocaSource::new(resolved(), FakeRoute::new());
-    for (side, bytes) in [("after", 31), ("before", 55)] {
+    for (side, bytes) in [("after", 6), ("before", 28)] {
         for name in [
             "session.read.default.json",
             "session.read.facts.json",

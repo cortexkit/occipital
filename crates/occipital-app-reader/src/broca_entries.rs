@@ -207,9 +207,13 @@ enum Part {
         input: Value,
         provider_executed: bool,
     },
+    /// A tool's answer. `content` is what the model was given as text; `media`
+    /// holds a file descriptor for each picture or document the answer carried,
+    /// which the apps fetch by its digest (`session.media`).
     Result {
         content: Value,
         is_error: bool,
+        media: Vec<Value>,
     },
     File {
         raw: Value,
@@ -628,6 +632,7 @@ fn display_part(part: DisplayPart) -> Option<(String, Part, Option<String>)> {
             Part::Result {
                 content: Value::String(result.content),
                 is_error: result.is_error,
+                media: Vec::new(),
             },
             call(result.tool_call_id),
         ),
@@ -972,18 +977,21 @@ fn decode_part(value: Value) -> Option<Part> {
                     // provider for a hosted tool.
                     provider_executed: false,
                 },
-                Some("tool_result") => Part::Result {
-                    content: map
-                        .get("content")
-                        .or_else(|| map.get("output"))
-                        .cloned()
-                        .unwrap_or(Value::Null),
-                    is_error: map
+                Some("tool_result") => {
+                    let is_error = map
                         .get("is_error")
                         .or_else(|| map.get("isError"))
                         .and_then(Value::as_bool)
-                        .unwrap_or(false),
-                },
+                        .unwrap_or(false);
+                    match (map.get("content"), map.get("output")) {
+                        (None, Some(output)) => stored_output(output, is_error),
+                        (content, _) => Part::Result {
+                            content: content.cloned().unwrap_or(Value::Null),
+                            is_error,
+                            media: Vec::new(),
+                        },
+                    }
+                }
                 Some("turn_end") => return None,
                 // The provider handing a reply from one model to another: bookkeeping
                 // Broca echoes back to the provider, with no text for the model or the
@@ -998,9 +1006,46 @@ fn decode_part(value: Value) -> Option<Part> {
     }
 }
 
+/// A tool result stored as Broca's `output` envelope, as the model was given
+/// it: the runner contract's own conversion (`owned_broca::tool_output`) turns
+/// text, JSON, a denial or an error into the text the model read, and lists
+/// each picture or document apart. An envelope that conversion refuses is shown
+/// as stored rather than dropped, so a call never loses its answer.
+fn stored_output(output: &Value, is_error: bool) -> Part {
+    match cortexkit_role_llm_runner::serializer_profile::owned_broca::tool_output(output, is_error)
+    {
+        Ok(view) => Part::Result {
+            content: Value::String(view.text),
+            is_error: view.is_error,
+            media: view.media.iter().map(media_descriptor).collect(),
+        },
+        Err(_) => Part::Result {
+            content: output.clone(),
+            is_error,
+            media: Vec::new(),
+        },
+    }
+}
+
+/// The apps' file descriptor for a picture or document in a tool's answer: the
+/// same members a stored photo's file part has, without a part index, since it
+/// sits inside the call rather than in the message.
+fn media_descriptor(
+    media: &cortexkit_role_llm_runner::serializer_profile::owned_broca::MediaRef,
+) -> Value {
+    let mut descriptor = json!({"type": "file", "mime": media.mime, "sha256": media.sha256,
+        "byteCount": media.byte_size});
+    if let (Some(width), Some(height)) = (media.width, media.height) {
+        descriptor["width"] = json!(width);
+        descriptor["height"] = json!(height);
+    }
+    descriptor
+}
+
 struct Outcome {
     content: Value,
     is_error: bool,
+    media: Vec<Value>,
 }
 
 fn tool_outcomes(messages: &[Option<Parsed>], full: bool) -> HashMap<(usize, usize), Outcome> {
@@ -1015,7 +1060,11 @@ fn tool_outcomes(messages: &[Option<Parsed>], full: bool) -> HashMap<(usize, usi
             let id = decoded.call_id.as_deref();
             match &decoded.part {
                 Part::Call { .. } => unanswered.push_back((index, part_index, id)),
-                Part::Result { content, is_error } => {
+                Part::Result {
+                    content,
+                    is_error,
+                    media,
+                } => {
                     let slot = match id {
                         Some(id) => unanswered
                             .iter()
@@ -1037,6 +1086,7 @@ fn tool_outcomes(messages: &[Option<Parsed>], full: bool) -> HashMap<(usize, usi
                             Outcome {
                                 content: content.clone(),
                                 is_error: *is_error,
+                                media: media.clone(),
                             },
                         );
                     }
@@ -1118,6 +1168,9 @@ fn project(
                     if full {
                         value["content"] = json!(result_text(&outcome.content));
                         value["isError"] = json!(outcome.is_error);
+                        if !outcome.media.is_empty() {
+                            value["media"] = json!(outcome.media);
+                        }
                     }
                 } else if full {
                     incomplete.push(name.to_string());
@@ -1135,8 +1188,17 @@ fn project(
                 value
             }
             Part::Result { .. } if decoded.folded => continue,
-            Part::Result { content, is_error } if full => {
-                json!({"type":"tool", "content":result_text(content), "isError":is_error})
+            Part::Result {
+                content,
+                is_error,
+                media,
+            } if full => {
+                let mut value =
+                    json!({"type":"tool", "content":result_text(content), "isError":is_error});
+                if !media.is_empty() {
+                    value["media"] = json!(media);
+                }
+                value
             }
             Part::Result { .. } => continue,
             Part::File { .. } | Part::Unknown(_) | Part::Unreadable if full => continue,
@@ -1500,12 +1562,8 @@ mod tests {
         let arguments: Value = serde_json::from_str(part["arguments"].as_str().unwrap()).unwrap();
         assert_eq!(arguments["filePath"], ".");
         assert_eq!(part["isError"], true);
-        assert_eq!(
-            part["outputBytes"],
-            json!({"kind":"error", "message":"tool plane unavailable"})
-                .to_string()
-                .len()
-        );
+        // The stored error envelope counts as the text the model read.
+        assert_eq!(part["outputBytes"], "tool plane unavailable".len());
         assert_eq!(turn["toolCalls"][0]["outputBytes"], part["outputBytes"]);
         assert_eq!(mapped[1].display["parts"], json!([]));
         assert!(
@@ -1660,6 +1718,87 @@ mod tests {
         assert_eq!(mapped[0].display["parts"][0]["argumentsTruncated"], false);
         assert_eq!(mapped[0].display["parts"][0]["content"], result);
         assert_eq!(mapped[0].display["parts"][0]["isError"], true);
+    }
+
+    /// A Broca tool result's stored `output` envelope reads as the text the
+    /// model was given, through the runner contract's own conversion: text as
+    /// is, JSON as compact text, a denial as `denied: <reason>`, an error as its
+    /// rendered lines, and pictures listed apart as file descriptors the apps
+    /// fetch by digest. `outputBytes` counts that text. An envelope the
+    /// conversion refuses is shown as stored.
+    #[test]
+    fn a_broca_tool_output_reads_as_the_model_was_given_it() {
+        let png = "2bb3f6f7eb60006453f46d1a1f6fb72cb30be54fbe604d29a31a8a41cc0a5fe7";
+        let picture = json!({"sha256":png, "mime":"image/png", "kind":"image",
+            "byte_size":4749, "width":640, "height":160});
+        let malformed = json!({"kind":"text", "text":"x", "extra":1});
+        for (output, stored_error, content, error, media) in [
+            (
+                json!({"kind":"text", "text":"2026\n"}),
+                false,
+                "2026\n".to_owned(),
+                false,
+                json!(null),
+            ),
+            (
+                json!({"kind":"json", "value":{"a":[1, 2]}}),
+                false,
+                r#"{"a":[1,2]}"#.to_owned(),
+                false,
+                json!(null),
+            ),
+            (
+                json!({"kind":"denied", "reason":"input denied"}),
+                false,
+                "denied: input denied".to_owned(),
+                true,
+                json!(null),
+            ),
+            (
+                json!({"kind":"error", "message":"tool plane unavailable", "code":"route_busy"}),
+                true,
+                "tool plane unavailable\ncode: route_busy".to_owned(),
+                true,
+                json!(null),
+            ),
+            (
+                json!({"kind":"parts", "parts":[{"kind":"text", "text":"before"},
+                    {"kind":"media", "media":picture}, {"kind":"text", "text":"after"}]}),
+                false,
+                "before\nafter".to_owned(),
+                false,
+                json!([{"type":"file", "mime":"image/png", "sha256":png, "byteCount":4749,
+                    "width":640, "height":160}]),
+            ),
+            (
+                malformed.clone(),
+                false,
+                malformed.to_string(),
+                false,
+                json!(null),
+            ),
+        ] {
+            let blocks = json!([
+                {"type":"tool_call", "tool_call_id":"a", "name":"read", "input":{}},
+                {"type":"tool_result", "tool_call_id":"a", "output":output, "is_error":stored_error},
+            ]);
+            let exact = rows(&[entry(blocks.clone())], true).unwrap();
+            let call = &exact[0].display["parts"][0];
+            assert_eq!(call["content"], content, "{output}");
+            assert_eq!(call["isError"], error, "{output}");
+            assert_eq!(
+                call.get("media").cloned().unwrap_or(json!(null)),
+                media,
+                "{output}"
+            );
+            let page = rows(&[entry(blocks)], false).unwrap();
+            let row = &page[0].display["parts"][0];
+            assert_eq!(row["outputBytes"], content.len(), "{output}");
+            assert!(
+                row.get("content").is_none() && row.get("media").is_none(),
+                "{output}"
+            );
+        }
     }
 
     #[test]

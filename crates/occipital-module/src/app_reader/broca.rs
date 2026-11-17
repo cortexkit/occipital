@@ -19,7 +19,7 @@ use cortexkit_role_llm_runner::{
     display::DisplayPage,
     history::{HistoryForm, HistoryRequest},
     plan_view::{PlanView, PlanViewRequest},
-    read::{MediaMode, ReadRequest, SenderGrant},
+    read::{MediaMode, ReadRequest, SenderGrant, ToolMedia},
 };
 use futures_util::future::{BoxFuture, FutureExt, Shared};
 use occipital_app_reader::{
@@ -1742,7 +1742,7 @@ impl BrocaSource {
         let display_facts = describe
             .as_ref()
             .is_some_and(|describe| describe.declares("read_display_facts"));
-        let media = stored_media(describe.as_deref());
+        let (media, tool_media) = stored_media(describe.as_deref());
         while next < end {
             let request = ReadRequest::range(next)
                 .with_limit((end - next).min(u64::from(SOURCE_PAGE_LIMIT)))
@@ -1751,6 +1751,10 @@ impl BrocaSource {
                 .with_include_display_facts(display_facts);
             let request = match media {
                 Some(media) => request.with_media(media),
+                None => request,
+            };
+            let request = match tool_media {
+                Some(tool_media) => request.with_tool_media(tool_media),
                 None => request,
             };
             let value = self.remote_read(ReadOp::Read, json_of(&request)?).await?;
@@ -2421,18 +2425,25 @@ fn normalize(mut envelope: Value) -> Option<Value> {
     Some(envelope)
 }
 
-/// The media form a page read asks for. A default read renders each stored
-/// photo or file as a text marker (`[media not shown: … reason=not_requested]`).
-/// A runner declaring `media_refs` serves it instead as a reference (sha256,
-/// mime, size and pixel size), which rows show as a file part, keeping every
-/// other payload as a default read serves it. Any other runner refuses the
-/// value, so it's asked for nothing and its pages keep the markers.
-fn stored_media(describe: Option<&RoleDescribe>) -> Option<MediaMode> {
-    describe
-        .is_some_and(|describe| {
-            describe.declares(cortexkit_role_llm_runner::capabilities::MEDIA_REFS)
-        })
-        .then_some(MediaMode::MediaRefs)
+/// The media forms a read asks for. A default read renders each stored photo or
+/// file as a text marker (`[media not shown: … reason=not_requested]`). A runner
+/// declaring `media_refs` serves a message's photo instead as a reference
+/// (sha256, mime, size and pixel size), which rows show as a file part, keeping
+/// every other payload as a default read serves it. One also declaring
+/// `tool_media_refs` does the same for a picture or document in a tool's answer
+/// when asked (`tool_media: "refs"`), so the call lists it rather than carrying a
+/// marker the model never saw. Any other runner refuses either value, so it's
+/// asked for neither and its pages keep the markers.
+fn stored_media(describe: Option<&RoleDescribe>) -> (Option<MediaMode>, Option<ToolMedia>) {
+    use cortexkit_role_llm_runner::capabilities::{MEDIA_REFS, TOOL_MEDIA_REFS};
+    let declares = |capability| describe.is_some_and(|describe| describe.declares(capability));
+    if !declares(MEDIA_REFS) {
+        return (None, None);
+    }
+    (
+        Some(MediaMode::MediaRefs),
+        declares(TOOL_MEDIA_REFS).then_some(ToolMedia::Refs),
+    )
 }
 
 fn strings(value: &Value) -> Option<Vec<String>> {

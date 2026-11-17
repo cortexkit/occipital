@@ -71,7 +71,7 @@ fn a_describe_with_step_events_reads_as_the_same_runner() {
     }
 
     assert_eq!(stored_media(Some(&before)), stored_media(Some(&after)));
-    assert!(stored_media(Some(&after)).is_some());
+    assert!(stored_media(Some(&after)).0.is_some());
     for (b, a) in [(&before, &after), (&before_plain, &after_plain)] {
         assert_eq!(
             send_grant(&head, Some(b), false),
