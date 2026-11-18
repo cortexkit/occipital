@@ -288,6 +288,12 @@ keeps the draft. A send answered before the move keeps its receipt. Each
 move's step is a file in `moves/` in the store's folder, synced before an op
 replies.
 
+Once the runner here has let a moved session go, it refuses reads of it too,
+and a page, details or other read reaches the app as the same
+`session_held_elsewhere`, with `detail.holder` when the runner names the new
+computer, so the app reads the chat where the agent lives rather than
+retrying here (`phone-reader-read-moved-v1`).
+
 ## Store
 
 The daemon names the store in HELLO_ACK's storage descriptor, normally

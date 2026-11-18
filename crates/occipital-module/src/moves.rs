@@ -66,10 +66,32 @@ const DOOR_CHUNK: u64 = 1_048_576;
 /// lives.
 pub const SESSION_MOVING: &str = "session_moving";
 
-/// A send to a session whose agent now lives on another computer, which
-/// `holder` names when known. The app looks the agent up again and sends
-/// there.
+/// A send or read for a session whose agent now lives on another computer,
+/// which `holder` names when known. The app looks the agent up again and
+/// reaches the chat there.
 pub const SESSION_HELD_ELSEWHERE: &str = "session_held_elsewhere";
+
+/// The new computer a runner's `session_held_elsewhere` refusal names in its
+/// `detail`, or empty when it names none. A `holder` that isn't a box id
+/// (32 lowercase hex digits) is left out, so the app never looks up
+/// something that can't be a computer.
+pub(crate) fn runner_holder(detail: Option<&Value>) -> String {
+    detail
+        .and_then(|detail| {
+            serde_json::from_value::<
+                cortexkit_role_llm_runner::session_retention::SessionHeldElsewhereDetail,
+            >(detail.clone())
+            .ok()
+        })
+        .and_then(|detail| detail.holder)
+        .filter(|holder| {
+            holder.len() == 32
+                && holder
+                    .bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        })
+        .unwrap_or_default()
+}
 
 /// The refusal for a send a move holds.
 pub(crate) fn refusal(hold: &Hold) -> SendRefusal {

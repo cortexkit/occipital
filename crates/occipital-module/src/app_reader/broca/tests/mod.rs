@@ -30,6 +30,9 @@ struct FakeRoute {
     /// The log identity on every head and page.
     incarnation: Mutex<String>,
     unavailable: AtomicBool,
+    /// A runner refusal every read gets, as the runner's daemon call returns
+    /// it, mapped the way a live read maps it ([`super::read_call_error`]).
+    refusal: Mutex<Option<subc_protocol::ErrorBody>>,
     stuck: AtomicBool,
     updated_at: AtomicU64,
     run_state: Mutex<Value>,
@@ -229,6 +232,7 @@ impl FakeRoute {
             history: AtomicU64::new(7),
             incarnation: Mutex::new("inc-a".into()),
             unavailable: AtomicBool::new(false),
+            refusal: Mutex::new(None),
             stuck: AtomicBool::new(false),
             updated_at: AtomicU64::new(730),
             run_state: Mutex::new(json!({"run_id":"r1", "state":"active"})),
@@ -296,6 +300,13 @@ impl BrocaRoute for FakeRoute {
         self.calls.lock().unwrap().push(request.clone());
         if self.unavailable.load(Ordering::Relaxed) {
             return Err(ReadError::new("provider_unavailable", "Broca route lost"));
+        }
+        if let Some(body) = self.refusal.lock().unwrap().clone() {
+            return Err(super::read_call_error(
+                op,
+                BROCA_RUNNER_MODULE_ID,
+                CallError::Module(body),
+            ));
         }
         match request["method"].as_str().unwrap() {
             "session.head" => {
@@ -2082,6 +2093,7 @@ pub(crate) mod not_delivered_step2_1116;
 mod notice_writer_1107;
 mod open_transient_1113;
 mod queued_sends_samples;
+mod read_moved_samples;
 mod read_role_samples;
 mod request_context;
 mod request_context_samples;

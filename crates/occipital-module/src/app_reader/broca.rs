@@ -583,21 +583,49 @@ fn own_refusal(op: ReadOp, code: Option<&str>, detail: Option<&Value>) -> Option
 }
 
 /// A failed call of `op` to `runner`, as the app sees it: under its own code
-/// when [`own_refusal`] keeps one, else as [`call_error`] says.
+/// when [`own_refusal`] keeps one, or as a chat that moved away
+/// ([`held_elsewhere`]), else as [`call_error`] says.
 fn read_call_error(op: ReadOp, runner: &str, error: CallError) -> ReadError {
     let detail = match &error {
         CallError::Module(body) => body.detail.as_ref(),
         _ => None,
     };
+    if let Some(moved) = held_elsewhere(error.code(), detail) {
+        return moved;
+    }
     match own_refusal(op, error.code(), detail) {
         Some(code) => ReadError::new(code, format!("{runner}: {error}")),
         None => call_error(runner, error),
     }
 }
 
+/// A read of a session whose agent moved to another computer, where the
+/// runner here no longer serves it. It's final on this computer, so the app
+/// gets the same `session_held_elsewhere` a send to it gets, naming the new
+/// computer when the runner does, and looks the agent up again instead of
+/// retrying as it would for a runner that's away.
+fn held_elsewhere(code: Option<&str>, detail: Option<&Value>) -> Option<ReadError> {
+    if code != Some(crate::moves::SESSION_HELD_ELSEWHERE) {
+        return None;
+    }
+    let moved = ReadError::new(
+        crate::moves::SESSION_HELD_ELSEWHERE,
+        "this chat's agent lives on another computer now",
+    );
+    let holder = crate::moves::runner_holder(detail);
+    Some(if holder.is_empty() {
+        moved
+    } else {
+        moved.with_detail(json!({ "holder": holder }))
+    })
+}
+
 /// A runner's reply: its result, or its refusal as the app sees it.
 fn result(value: Value) -> Result<Value, ReadError> {
     if let Some(code) = value.get("code").and_then(Value::as_str) {
+        if let Some(moved) = held_elsewhere(Some(code), value.get("detail")) {
+            return Err(moved);
+        }
         return Err(ReadError::new(
             match code {
                 "unknown_mid" | "unknown_ordinal" | "cursor_expired" => "cursor_expired",

@@ -1827,23 +1827,9 @@ pub(super) fn refused(code: &str, message: &str, detail: Option<&Value>) -> Send
         // the session go. It's the same answer Occipital gives for a session a
         // move released (`crate::moves`), with the new computer as `holder`
         // when the runner names it, so the app looks the agent up again
-        // either way. A `holder` that isn't a box id is left out.
+        // either way.
         "session_held_elsewhere" => {
-            let holder = detail
-                .and_then(|detail| {
-                    serde_json::from_value::<
-                        cortexkit_role_llm_runner::session_retention::SessionHeldElsewhereDetail,
-                    >(detail.clone())
-                    .ok()
-                })
-                .and_then(|detail| detail.holder)
-                .filter(|holder| {
-                    holder.len() == 32
-                        && holder
-                            .bytes()
-                            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
-                })
-                .unwrap_or_default();
+            let holder = crate::moves::runner_holder(detail);
             crate::moves::refusal(&crate::moves::state::Hold::Elsewhere { holder })
         }
         // The model can't take a file's type. The app places the file in the
