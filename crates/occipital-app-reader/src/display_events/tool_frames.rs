@@ -375,3 +375,65 @@ fn the_tool_frame_samples_are_what_the_reader_serves() {
     keep("04-same-run-without-tool-frames", read(Some(0), false));
     super::keep_sample_set("phone-reader-tool-frames-v1", &files);
 }
+
+/// Pi's and Claude Code's call events from real hosts (`call_times_v1/`, copied
+/// unchanged), where `started_at` is when the module dispatched the call and
+/// `finished_at` when its answer was recorded. Each reaches the app's tool
+/// frames as that call's `startedAtMs` and `finishedAtMs`. A call event
+/// without them, as for a call the module's tool lane never saw, still makes
+/// its frames, with the members left out rather than set to zero.
+#[test]
+fn hosts_call_times_reach_the_tool_frames() {
+    for (host, recorded) in [
+        ("pi", include_str!("call_times_v1/pi.jsonl")),
+        (
+            "claude-code",
+            include_str!("call_times_v1/claude-code.jsonl"),
+        ),
+    ] {
+        let events: Vec<Value> = recorded
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect();
+        assert_eq!(events.len(), 2, "{host}");
+        let (start, end) = (&events[0]["event"], &events[1]["event"]);
+        let session = FakeSession::new("ses", 64);
+        run(&session, &events);
+        let reply = with_tools(&session, Some(0));
+        assert_eq!(
+            kinds(&reply),
+            ["tool sample-call running", "tool sample-call answered"],
+            "{host}: {reply}"
+        );
+        let running = &reply["frames"][0]["frame"];
+        assert_eq!(running["startedAtMs"], start["started_at"], "{host}");
+        assert_eq!(running["callKey"], start["call_key"], "{host}");
+        assert_eq!(running["schemaPin"], start["schema_pin"], "{host}");
+        let answered = &reply["frames"][1]["frame"];
+        assert_eq!(answered["finishedAtMs"], end["finished_at"], "{host}");
+        assert_eq!(answered["outputBytes"], end["output_bytes"], "{host}");
+
+        let untimed: Vec<Value> = events
+            .iter()
+            .map(|event| {
+                let mut event = event.clone();
+                let fields = event["event"].as_object_mut().unwrap();
+                fields.remove("started_at");
+                fields.remove("finished_at");
+                event
+            })
+            .collect();
+        let session = FakeSession::new("ses", 64);
+        run(&session, &untimed);
+        let reply = with_tools(&session, Some(0));
+        assert_eq!(kinds(&reply).len(), 2, "{host}: {reply}");
+        assert!(
+            reply["frames"][0]["frame"].get("startedAtMs").is_none(),
+            "{host}"
+        );
+        assert!(
+            reply["frames"][1]["frame"].get("finishedAtMs").is_none(),
+            "{host}"
+        );
+    }
+}
