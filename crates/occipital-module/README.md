@@ -119,6 +119,15 @@ gives it prefrontal's `say`, and leaves the member out otherwise. The apps
 offer their Simple view only where it's present. Occipital reads it from the
 session's plan view and keeps each chat's answer for a minute.
 
+On such a chat, each answered `say` call is drawn as the agent's message: a
+`message` part in the call's place, with the call's whole `text`. Prefrontal
+writes each call's message record before answering it (`display.write` with
+`kind: "message"`, refused `display_writer_unverified` from any other writer),
+and the part takes from it the message it answers (`replyTo`, with the quote
+prefrontal verified), its media and how it alerted. A `say` still running is
+left out of its row, and one that failed stays a tool card. The sample sets
+`phone-reader-say-v1` and `-v2` show each case.
+
 An image a chat references is read with `session.media`: a thumbnail Occipital
 makes from the runner's bytes (at most 1024 pixels on its longest side, upright),
 or the original in pieces. Image file parts on a page carry the image's digest and,

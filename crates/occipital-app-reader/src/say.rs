@@ -18,6 +18,15 @@ pub const TOOL: &str = "say";
 /// never reaches the apps.
 pub const SAY_TEXT: &str = "sayText";
 
+/// Prefrontal's message record for a marked call, attached before
+/// [`resolve`]: the message it answers, the verified quote, media and how the
+/// message alerted. [`resolve`] always removes it too.
+pub const SAY_RECORD: &str = "sayRecord";
+
+/// The members of a message the record decides when there is one, in place
+/// of what the call's input wrote.
+const RECORD_SETTINGS: [&str; 4] = ["level", "key", "done", "deliver"];
+
 /// The alert levels `say` takes. Any other value is left out of the message.
 const LEVELS: [&str; 4] = ["chat", "info", "attention", "urgent"];
 
@@ -36,6 +45,39 @@ pub fn mark(part: &mut Value, name: &str, input: &Value) {
         part[SAY_TEXT] = json!(text);
         if let Some(fields) = settings(input) {
             part["saySettings"] = Value::Object(fields);
+        }
+    }
+}
+
+/// The call key and, for a call moved here from another runner, the runner
+/// that minted it (`callCarrier`), of each marked part of one row: where
+/// prefrontal filed each call's message record.
+pub fn marked_calls(display: &Value) -> Vec<(String, Option<String>)> {
+    display["parts"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|part| part.get(SAY_TEXT).is_some())
+        .filter_map(|part| {
+            let key = part.get("callKey")?.as_str()?.to_owned();
+            let carrier = part
+                .get("callCarrier")
+                .and_then(Value::as_str)
+                .map(str::to_owned);
+            Some((key, carrier))
+        })
+        .collect()
+}
+
+/// Attach `record`, prefrontal's checked message record, to the marked part of
+/// one row whose call key is `call_key`.
+pub fn attach_record(display: &mut Value, call_key: &str, record: Value) {
+    for part in display["parts"].as_array_mut().into_iter().flatten() {
+        if part.get(SAY_TEXT).is_some()
+            && part.get("callKey").and_then(Value::as_str) == Some(call_key)
+        {
+            part[SAY_RECORD] = record;
+            return;
         }
     }
 }
@@ -72,6 +114,7 @@ pub fn resolve(display: &mut Value, say_is_the_message_tool: bool) {
             continue;
         };
         let settings = fields.remove("saySettings");
+        let record = fields.remove(SAY_RECORD);
         if !say_is_the_message_tool {
             continue;
         }
@@ -94,8 +137,13 @@ pub fn resolve(display: &mut Value, say_is_the_message_tool: bool) {
             }
         }
         message.insert("text".into(), json!(text));
-        if let Some(Value::Object(settings)) = settings {
-            message.extend(settings);
+        match record {
+            Some(Value::Object(record)) => add_record(&mut message, &record),
+            _ => {
+                if let Some(Value::Object(settings)) = settings {
+                    message.extend(settings);
+                }
+            }
         }
         *part = Value::Object(message);
         sent.push(call_id);
@@ -128,6 +176,32 @@ pub fn resolve(display: &mut Value, say_is_the_message_tool: bool) {
             if let Some(at) = summaries.iter().position(|name| name == TOOL) {
                 summaries.remove(at);
             }
+        }
+    }
+}
+
+/// Add what prefrontal's `record` says to `message`: the message it answers
+/// (`replyTo`, with the quote prefrontal verified against the person's own
+/// words), its media, and how it alerted, which the record decides instead of
+/// the call's input since it says what prefrontal delivered.
+fn add_record(message: &mut Map<String, Value>, record: &Map<String, Value>) {
+    if let Some(id) = record.get("reply_to").and_then(Value::as_str) {
+        let mut reply = json!({"messageId": id});
+        if let Some(quote) = record.get("quote").and_then(Value::as_str) {
+            reply["quote"] = json!(quote);
+            reply["verified"] = json!(true);
+        }
+        message.insert("replyTo".into(), reply);
+    }
+    if let Some(media) = record
+        .get("media")
+        .filter(|media| media.as_array().is_some_and(|items| !items.is_empty()))
+    {
+        message.insert("media".into(), media.clone());
+    }
+    for setting in RECORD_SETTINGS {
+        if let Some(value) = record.get(setting) {
+            message.insert(setting.into(), value.clone());
         }
     }
 }

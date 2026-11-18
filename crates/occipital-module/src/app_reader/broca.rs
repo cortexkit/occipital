@@ -1127,8 +1127,25 @@ impl BrocaSource {
                 call_pins.seen(&reference.runner, &reference.session, calls);
             }
         }
-        // A moved call's minting runner is this module's to know, not the app's.
         let mut rows = rows;
+        // Each `say` call's message record, filed under the runner that minted
+        // the call's key, so read while its carrier is still on the part.
+        if let Some(call_pins) = call_pins.get() {
+            let runner = self.resolved.guard().reference.runner.clone();
+            for row in &mut rows {
+                for (call_key, carrier) in occipital_app_reader::say::marked_calls(&row.display) {
+                    let minted_by = carrier.as_deref().unwrap_or(&runner);
+                    if let Some(record) = call_pins.message_record(minted_by, &call_key) {
+                        occipital_app_reader::say::attach_record(
+                            &mut row.display,
+                            &call_key,
+                            record,
+                        );
+                    }
+                }
+            }
+        }
+        // A moved call's minting runner is this module's to know, not the app's.
         for row in &mut rows {
             occipital_app_reader::tool_times::take_carriers(&mut row.display);
         }

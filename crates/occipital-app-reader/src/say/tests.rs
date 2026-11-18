@@ -111,6 +111,31 @@ fn bad_settings_are_left_out() {
     );
 }
 
+/// Prefrontal's record decides the reply, quote, media and alert, in place of
+/// the call's own settings, and is removed either way.
+#[test]
+fn the_record_joins_the_message() {
+    let mut display = row(json!({"outputBytes": 4}));
+    assert_eq!(marked_calls(&display), [("ck_1".to_owned(), None)]);
+    attach_record(
+        &mut display,
+        "ck_1",
+        json!({"v": 1, "reply_to": "m1", "quote": "Did it pass?", "media": [],
+            "level": "chat"}),
+    );
+    let mut elsewhere = display.clone();
+    resolve(&mut display, true);
+    assert_eq!(
+        display["parts"][1],
+        json!({"type": "message", "partIndex": 1, "partKey": "1", "callId": "c1", "callKey": "ck_1",
+            "text": "Build passed. <Badge tone=\"success\">ok</Badge>",
+            "replyTo": {"messageId": "m1", "quote": "Did it pass?", "verified": true},
+            "level": "chat"})
+    );
+    resolve(&mut elsewhere, false);
+    assert!(elsewhere["parts"][1].get(SAY_RECORD).is_none());
+}
+
 /// Only a call named `say` with a string `text` is marked.
 #[test]
 fn only_a_say_with_text_is_marked() {

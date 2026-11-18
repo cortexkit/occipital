@@ -81,6 +81,8 @@ pub(crate) async fn store_write(
     let write = params(arguments)?;
     let pin = write.schema_pin.clone();
     let call_key = write.call_key.clone();
+    // A `say` message record draws through no provider's view.
+    let wants_view = write.kind != cortexkit_role_tool_display::DisplayKind::Message;
     let runner = match &write.runner {
         Principal::Reserved { module_id } => Some(module_id.clone()),
         _ => None,
@@ -92,7 +94,7 @@ pub(crate) async fn store_write(
     let stored =
         tokio::task::spawn_blocking(move || store.write(&writer, &write, store::now_ms())).await;
     if let Ok(Ok(WriteReply::Stored)) = &stored {
-        if let Some(views) = views {
+        if let Some(views) = views.filter(|_| wants_view) {
             views.want(&module, &pin);
         }
         if let (Some(hints), Some(runner)) = (hints, runner) {

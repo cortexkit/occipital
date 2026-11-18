@@ -18,8 +18,8 @@ use std::path::Path;
 use std::sync::Arc;
 
 use cortexkit_role_tool_display::{
-    check_writer, idempotency_key, validate_write, write_outcome, DisplayKind, DisplayLimits,
-    DisplayWrite, Principal, WriteReply,
+    idempotency_key, validate_write, DisplayKind, DisplayLimits, DisplayWrite, Principal,
+    WriteReply,
 };
 use cortexkit_store::{open_sqlite, SqliteStore, StorageBackend, StorageDescriptor, StoreError};
 use rusqlite::OptionalExtension;
@@ -232,7 +232,8 @@ impl DisplayStore {
         write: &DisplayWrite,
         now_ms: i64,
     ) -> Result<WriteReply, ErrorBody> {
-        check_writer(writer)?;
+        // Also refuses a `say` message record from any writer but prefrontal.
+        write.check_writer(writer)?;
         let body = validate_write(write, &self.limits)?;
         let key = idempotency_key(writer, write).map_err(|_| invalid("body"))?;
         let writer_text = principal_json(writer).map_err(|_| invalid("writer"))?;
@@ -246,7 +247,9 @@ impl DisplayStore {
                         |row| row.get(0),
                     )
                     .optional()?;
-                let decided = write_outcome(previous.as_deref(), &body);
+                // A message record that differs from the one kept is refused
+                // as a conflict, never silently kept as the first.
+                let decided = write.write_outcome(previous.as_deref(), &body);
                 if matches!(decided, Ok(WriteReply::Stored)) {
                     tx.execute(
                         "INSERT INTO display_writes

@@ -6,7 +6,11 @@
 //! chat's message tool to an app that asks. Its README says what each file shows.
 
 use super::served_samples::{decoded, Served};
+use super::tool_display_samples::{pin, reserved};
 use super::*;
+use crate::display::store::DisplayStore;
+use cortexkit_role_tool_display::{DisplayKind, DisplayWrite};
+use cortexkit_test_support::ScratchDir;
 
 const SESSION: &str = "alfonso:head";
 const TEXT: &str = "Build passed. <Badge tone=\"success\">1,651 tests</Badge>";
@@ -212,6 +216,143 @@ async fn the_say_samples_are_what_the_reader_serves() {
     let reply = served.read(5, &details).await;
     assert!(decoded(&reply)["result"].get("messageTool").is_none());
     served.keep("05-details-without-say", &details, reply);
+
+    served.check();
+}
+
+/// The same chat with each call's key and pin, as a runner serving call
+/// identity stores them, and a second `say` that answers without a quote.
+fn entries_with_keys() -> Vec<Value> {
+    let mut entries = entries();
+    let times = |id: &str, key: &str, tool: &str| {
+        json!({"tool_call_id": id, "started_at": 1_500, "finished_at": 1_600,
+            "call_key": key, "schema_pin": pin(tool, 's')})
+    };
+    entries[1]["tool_times"] = json!([
+        times("call_read", "ck_read", "read"),
+        times("call_say", "ck_say", "say")
+    ]);
+    entries[4]["tool_times"] = json!([times("call_failed", "ck_failed", "say")]);
+    entries[6]["tool_times"] = json!([times("call_running", "ck_running", "say")]);
+    entries.push(json!({"mid": "m8", "ordinal": 8, "written_at": 8_000,
+        "rich_ui": {"dialect": "1.0", "catalog_digest": CATALOG},
+        "tool_times": [times("call_later", "ck_later", "say")],
+        "message": {"role": "assistant", "content": [{"type": "tool_call",
+            "tool_call_id": "call_later", "tool_name": "say",
+            "input": {"reply_to": "1", "quote": "Did it pass?", "text": "Also: the docs build passed."}}]}}));
+    entries.push(json!({"mid": "m9", "ordinal": 9, "written_at": 9_000,
+        "message": {"role": "tool", "content": [{"type": "tool_result",
+            "tool_call_id": "call_later", "output": {"kind": "text", "text": "sent"},
+            "is_error": false}]}}));
+    entries
+}
+
+/// Prefrontal's message record for `call_key`, as it writes it before
+/// answering the call.
+fn message(call_key: &str, body: Value) -> DisplayWrite {
+    DisplayWrite::new(
+        reserved("broca"),
+        call_key,
+        DisplayKind::Message,
+        pin("say", 's'),
+        body.as_object().unwrap().clone(),
+    )
+}
+
+/// `phone-reader-say-v2`: the messages with prefrontal's records joined. The
+/// first answers the person's message with a verified quote, carries a picture
+/// and a link, and alerts; the second answers without a quote, since its quote
+/// didn't match the person's words, so prefrontal left it out.
+#[tokio::test]
+async fn the_say_record_samples_are_what_the_reader_serves() {
+    let dir = ScratchDir::new("occipital-say-records");
+    let descriptor = crate::store::tests::descriptor(&dir);
+    let store = Arc::new(DisplayStore::open(&descriptor, dir.path()).unwrap());
+    let first = message(
+        "ck_say",
+        json!({"v": 1, "reply_to": "m1", "quote": "Did the build pass?",
+            "media": [
+                {"kind": "image", "artifact": "art_1234abcd", "mime": "image/png",
+                    "byteCount": 48_211, "width": 1280, "height": 720},
+                {"kind": "link", "url": "https://github.com/cortexkit/occipital/actions",
+                    "title": "Gate run"}
+            ],
+            "level": "attention", "key": "build", "deliver": "phone"}),
+    );
+    let later = message(
+        "ck_later",
+        json!({"v": 1, "reply_to": "m1", "media": [], "level": "chat"}),
+    );
+    for write in [&first, &later] {
+        let stored = store.write(&reserved("prefrontal-core"), write, 1).unwrap();
+        assert_eq!(stored, cortexkit_role_tool_display::WriteReply::Stored);
+    }
+    // Only prefrontal writes a message record, under either of its names.
+    let refused = store.write(&reserved("aft"), &first, 1).unwrap_err();
+    assert_eq!(refused.code, "display_writer_unverified");
+    assert_eq!(
+        store.write(&reserved("prefrontal"), &first, 2).unwrap(),
+        cortexkit_role_tool_display::WriteReply::AlreadyStored
+    );
+
+    let (call_pins, _task) = crate::display::call_pins::start(store.clone(), None);
+    let slot = crate::display::call_pins::CallPinSlot::default();
+    let _ = slot.set(call_pins);
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = entries_with_keys();
+    *route.run_state.lock().unwrap() = Value::Null;
+    *route.describe.lock().unwrap() = Some(describe_with(&[
+        "attachments",
+        "transcript_reads",
+        "plan_view",
+    ]));
+    *route.plan_view.lock().unwrap() = Some(Ok(plan(true)));
+    let app = Arc::new(super::super::super::AppReader::new(Arc::new(
+        BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(OneChat))),
+            Arc::new(OneRoute(route.clone())),
+        )
+        .with_call_pins(slot),
+    )));
+    let mut served = Served::new("phone-reader-say-v2", app);
+    let newest = json!({"method": super::super::super::TRANSCRIPT_PAGE,
+        "params": {"session": SESSION}});
+    let reply = served.read(1, &newest).await;
+    let page = decoded(&reply);
+    assert_eq!(
+        parts(&page, "m2")[2],
+        json!({"type": "message", "partIndex": 2, "partKey": "2", "callId": "call_say",
+            "callKey": "ck_say", "text": TEXT,
+            "replyTo": {"messageId": "m1", "quote": "Did the build pass?", "verified": true},
+            "media": first.body["media"],
+            "level": "attention", "key": "build", "deliver": "phone"}),
+        "{page}"
+    );
+    assert_eq!(
+        parts(&page, "m8")[0],
+        json!({"type": "message", "partIndex": 0, "partKey": "0", "callId": "call_later",
+            "callKey": "ck_later", "text": "Also: the docs build passed.",
+            "replyTo": {"messageId": "m1"}, "level": "chat"}),
+        "{page}"
+    );
+    assert_eq!(parts(&page, "m5")[0]["type"], "tool", "{page}");
+    for marker in [
+        occipital_app_reader::say::SAY_TEXT,
+        occipital_app_reader::say::SAY_RECORD,
+    ] {
+        assert!(
+            !String::from_utf8_lossy(&reply).contains(marker),
+            "{marker}"
+        );
+    }
+    served.keep("01-newest-page", &newest, reply);
+
+    let exact = json!({"method": super::super::super::TRANSCRIPT_PAGE,
+        "params": {"session": SESSION, "messageOrdinal": 2}});
+    let reply = served.read(2, &exact).await;
+    let message = decoded(&reply)["result"]["messages"][0]["parts"][2].clone();
+    assert_eq!(message["replyTo"]["verified"], true, "{message}");
+    served.keep("02-exact-read", &exact, reply);
 
     served.check();
 }

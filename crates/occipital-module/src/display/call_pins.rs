@@ -16,6 +16,10 @@
 //! Page building never waits on this: sightings go to a task through a
 //! bounded queue, and one that doesn't fit is dropped. A dropped call is kept
 //! the next time a page carrying it is built.
+//!
+//! Page building also reads prefrontal's message record for each `say` call
+//! here, since only the store holds it and a message is drawn from it in the
+//! page itself (`occipital_app_reader::say`).
 
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex, OnceLock};
@@ -47,6 +51,9 @@ pub type CallPinSlot = Arc<OnceLock<CallPins>>;
 
 pub struct CallPins {
     queue: mpsc::Sender<Sighting>,
+    /// The display store, also read while a page is built for the message
+    /// records of its `say` calls ([`CallPins::message_record`]).
+    store: Arc<DisplayStore>,
     /// The digest of `(minting runner, call key, session)` of each call already kept. The
     /// minting runner is the one that gave the call its key: the call's carrier when it
     /// moved from another runner, else the runner whose page carries it.
@@ -89,6 +96,27 @@ impl CallPins {
             kept.extend(remembered);
         }
     }
+
+    /// Prefrontal's message record for the `say` call `call_key` that `runner`
+    /// minted, as the store kept it after checking it, or `None` when there is
+    /// none yet or it can't be read. The call still draws as a message from its
+    /// own input then, without the record's reply, quote and media.
+    pub fn message_record(&self, runner: &str, call_key: &str) -> Option<serde_json::Value> {
+        let runner = subc_protocol::Principal::Reserved {
+            module_id: runner.to_owned(),
+        };
+        let writes = match self.store.writes(&runner, call_key) {
+            Ok(writes) => writes,
+            Err(error) => {
+                tracing::warn!(%error, "cannot read say message records");
+                return None;
+            }
+        };
+        writes
+            .into_iter()
+            .find(|stored| stored.kind == cortexkit_role_tool_display::DisplayKind::Message)
+            .and_then(|stored| serde_json::from_slice(&stored.body).ok())
+    }
 }
 
 /// Start keeping reported calls in `store`. Each new pin is also wanted from
@@ -99,6 +127,7 @@ pub fn start(
     views: Option<Fetcher>,
 ) -> (CallPins, tokio::task::JoinHandle<()>) {
     let (queue, mut sightings) = mpsc::channel::<Sighting>(QUEUE);
+    let store_for_reads = store.clone();
     let task = tokio::spawn(async move {
         let mut wanted: HashSet<String> = HashSet::new();
         while let Some(first) = sightings.recv().await {
@@ -141,6 +170,7 @@ pub fn start(
     (
         CallPins {
             queue,
+            store: store_for_reads,
             kept: Mutex::new(HashSet::new()),
         },
         task,

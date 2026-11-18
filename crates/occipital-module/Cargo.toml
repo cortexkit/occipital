@@ -39,7 +39,7 @@ cortexkit-project-identity = "=0.1.4"
 # Moving an agent to another computer: the participant's ops and refusals.
 cortexkit-role-agent-data = "=0.3.2"
 cortexkit-role-llm-runner = "=0.8.63"
-cortexkit-role-tool-display = "=0.1.8"
+cortexkit-role-tool-display = "=0.1.10"
 cortexkit-role-tool-provider = "=0.15.12"
 # The person's commands: their declarations, previews, runs and facts.
 cortexkit-role-user-commands = "=0.1.4"
@@ -84,7 +84,7 @@ cortexkit-test-support = "0.1.6"
 # here, so the harness never reaches a production build.
 subc-client-rs = { version = "=0.40.3", features = ["test-support"] }
 # The contract's own wake vectors, for the wake record tests.
-cortexkit-role-tool-display = { version = "=0.1.8", features = ["test-vectors"] }
+cortexkit-role-tool-display = { version = "=0.1.10", features = ["test-vectors"] }
 # The runner contract's own vectors, for the host-written part tests.
 cortexkit-role-llm-runner = { version = "=0.8.63", features = ["test-vectors"] }
 tempfile = "3"
