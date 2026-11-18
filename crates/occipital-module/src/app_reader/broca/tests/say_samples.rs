@@ -259,15 +259,52 @@ fn message(call_key: &str, body: Value) -> DisplayWrite {
     )
 }
 
+/// The chat of `entries_with_keys` read by an app, with `records` stored as
+/// prefrontal writes them. The display store lives in the returned folder,
+/// and the caller keeps it and the call-pin task until it's done reading.
+fn chat_with_records(
+    records: &[&DisplayWrite],
+) -> (
+    Arc<super::super::super::AppReader>,
+    Arc<DisplayStore>,
+    ScratchDir,
+    tokio::task::JoinHandle<()>,
+) {
+    let dir = ScratchDir::new("occipital-say-records");
+    let descriptor = crate::store::tests::descriptor(&dir);
+    let store = Arc::new(DisplayStore::open(&descriptor, dir.path()).unwrap());
+    for write in records {
+        let stored = store.write(&reserved("prefrontal-core"), write, 1).unwrap();
+        assert_eq!(stored, cortexkit_role_tool_display::WriteReply::Stored);
+    }
+    let (call_pins, task) = crate::display::call_pins::start(store.clone(), None);
+    let slot = crate::display::call_pins::CallPinSlot::default();
+    let _ = slot.set(call_pins);
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = entries_with_keys();
+    *route.run_state.lock().unwrap() = Value::Null;
+    *route.describe.lock().unwrap() = Some(describe_with(&[
+        "attachments",
+        "transcript_reads",
+        "plan_view",
+    ]));
+    *route.plan_view.lock().unwrap() = Some(Ok(plan(true)));
+    let app = Arc::new(super::super::super::AppReader::new(Arc::new(
+        BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(OneChat))),
+            Arc::new(OneRoute(route)),
+        )
+        .with_call_pins(slot),
+    )));
+    (app, store, dir, task)
+}
+
 /// `phone-reader-say-v2`: the messages with prefrontal's records joined. The
 /// first answers the person's message with a verified quote, carries a picture
 /// and a link, and alerts; the second answers without a quote, since its quote
 /// didn't match the person's words, so prefrontal left it out.
 #[tokio::test]
 async fn the_say_record_samples_are_what_the_reader_serves() {
-    let dir = ScratchDir::new("occipital-say-records");
-    let descriptor = crate::store::tests::descriptor(&dir);
-    let store = Arc::new(DisplayStore::open(&descriptor, dir.path()).unwrap());
     let first = message(
         "ck_say",
         json!({"v": 1, "reply_to": "m1", "quote": "Did the build pass?",
@@ -283,10 +320,7 @@ async fn the_say_record_samples_are_what_the_reader_serves() {
         "ck_later",
         json!({"v": 1, "reply_to": "m1", "media": [], "level": "chat"}),
     );
-    for write in [&first, &later] {
-        let stored = store.write(&reserved("prefrontal-core"), write, 1).unwrap();
-        assert_eq!(stored, cortexkit_role_tool_display::WriteReply::Stored);
-    }
+    let (app, store, _dir, _task) = chat_with_records(&[&first, &later]);
     // Only prefrontal writes a message record, under either of its names.
     let refused = store.write(&reserved("aft"), &first, 1).unwrap_err();
     assert_eq!(refused.code, "display_writer_unverified");
@@ -294,26 +328,6 @@ async fn the_say_record_samples_are_what_the_reader_serves() {
         store.write(&reserved("prefrontal"), &first, 2).unwrap(),
         cortexkit_role_tool_display::WriteReply::AlreadyStored
     );
-
-    let (call_pins, _task) = crate::display::call_pins::start(store.clone(), None);
-    let slot = crate::display::call_pins::CallPinSlot::default();
-    let _ = slot.set(call_pins);
-    let route = FakeRoute::new();
-    *route.entries.lock().unwrap() = entries_with_keys();
-    *route.run_state.lock().unwrap() = Value::Null;
-    *route.describe.lock().unwrap() = Some(describe_with(&[
-        "attachments",
-        "transcript_reads",
-        "plan_view",
-    ]));
-    *route.plan_view.lock().unwrap() = Some(Ok(plan(true)));
-    let app = Arc::new(super::super::super::AppReader::new(Arc::new(
-        BrocaSources::new(
-            Arc::new(Resolver::new(Arc::new(OneChat))),
-            Arc::new(OneRoute(route.clone())),
-        )
-        .with_call_pins(slot),
-    )));
     let mut served = Served::new("phone-reader-say-v2", app);
     let newest = json!({"method": super::super::super::TRANSCRIPT_PAGE,
         "params": {"session": SESSION}});
@@ -352,6 +366,86 @@ async fn the_say_record_samples_are_what_the_reader_serves() {
     let reply = served.read(2, &exact).await;
     let message = decoded(&reply)["result"]["messages"][0]["parts"][2].clone();
     assert_eq!(message["replyTo"]["verified"], true, "{message}");
+    served.keep("02-exact-read", &exact, reply);
+
+    served.check();
+}
+
+/// A full Git object id for these samples, invented.
+fn sha(digit: char) -> String {
+    digit.to_string().repeat(40)
+}
+
+/// `phone-reader-say-diff-v1`: messages whose records carry `diff` media, as
+/// prefrontal writes them (tool-display contract §9). The first carries a
+/// pull request's changes and a commit's, with a renamed and a binary file in
+/// each list; the second a range in a local checkout, which names no host or
+/// owner, so the apps draw no repository link for it.
+#[tokio::test]
+async fn the_say_diff_samples_are_what_the_reader_serves() {
+    let repo = json!({"host": "github.com", "owner": "cortexkit", "name": "occipital"});
+    let first = message(
+        "ck_say",
+        json!({"v": 1, "reply_to": "m1", "quote": "Did the build pass?",
+            "media": [
+                {"kind": "diff", "artifact": "art_5e1f0a2b", "repo": repo,
+                    "pr": {"number": 512, "head": sha('a')},
+                    "files": [
+                        {"path": "crates/occipital-lang/src/geometry/layout.rs",
+                            "added": 42, "removed": 7},
+                        {"path": "crates/occipital-registry/TEMPLATES.md",
+                            "from": "crates/occipital-registry/ROWS.md",
+                            "added": 3, "removed": 1},
+                        {"path": "ports/swift/OccipitalCore.xcframework/ios-arm64/liboccipital_ffi.a",
+                            "binary": true}
+                    ],
+                    "added": 45, "removed": 8},
+                {"kind": "diff", "artifact": "art_9c3d7e41", "repo": repo,
+                    "commit": sha('b'),
+                    "files": [
+                        {"path": "docs/release.md", "added": 12, "removed": 0},
+                        {"path": "assets/icon.png", "from": "assets/logo.png", "binary": true}
+                    ],
+                    "added": 12, "removed": 0}
+            ],
+            "level": "chat"}),
+    );
+    let later = message(
+        "ck_later",
+        json!({"v": 1, "reply_to": "m1",
+            "media": [
+                {"kind": "diff", "artifact": "art_77aa0b19", "repo": {"name": "notes"},
+                    "range": {"base": sha('c'), "head": sha('d')},
+                    "files": [{"path": "todo.md", "added": 2, "removed": 1}],
+                    "added": 2, "removed": 1}
+            ],
+            "level": "chat"}),
+    );
+    let (app, _store, _dir, _task) = chat_with_records(&[&first, &later]);
+    let mut served = Served::new("phone-reader-say-diff-v1", app);
+
+    let newest = json!({"method": super::super::super::TRANSCRIPT_PAGE,
+        "params": {"session": SESSION}});
+    let reply = served.read(1, &newest).await;
+    let page = decoded(&reply);
+    // The media reach the message part exactly as prefrontal wrote them.
+    assert_eq!(
+        parts(&page, "m2")[2]["media"],
+        first.body["media"],
+        "{page}"
+    );
+    assert_eq!(
+        parts(&page, "m8")[0]["media"],
+        later.body["media"],
+        "{page}"
+    );
+    served.keep("01-newest-page", &newest, reply);
+
+    let exact = json!({"method": super::super::super::TRANSCRIPT_PAGE,
+        "params": {"session": SESSION, "messageOrdinal": 2}});
+    let reply = served.read(2, &exact).await;
+    let message = decoded(&reply)["result"]["messages"][0]["parts"][2].clone();
+    assert_eq!(message["media"], first.body["media"], "{message}");
     served.keep("02-exact-read", &exact, reply);
 
     served.check();
