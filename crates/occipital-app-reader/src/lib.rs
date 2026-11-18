@@ -9,6 +9,7 @@ pub mod display;
 pub mod display_events;
 pub mod display_watch;
 pub mod page;
+pub mod say_text;
 pub mod send;
 pub mod signals;
 pub mod source;
