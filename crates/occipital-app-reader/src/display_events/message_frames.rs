@@ -314,3 +314,77 @@ fn reply_words_held_for_batching_go_out_before_a_message() {
     let reply = with_messages(&session, Some(0), true);
     assert_eq!(frames(&reply), ["display", "message c1 Hi"], "{reply}");
 }
+
+/// Broca's recorded frames for llm-runner 0.8.65's `tool_name`
+/// (`tool_name_1118/`, from broca's run loop and serve path).
+///
+/// The serve path's frames are a run that calls `work`: its one chunk names
+/// the tool and carries the call's message and part. On a chat whose agent
+/// talks through `say`, that chunk shows nothing to any reader: every reply is
+/// what the same frames give without it.
+#[test]
+fn brocas_named_chunks_decode_and_other_tools_show_nothing() {
+    use super::{map, DisplayInput};
+    let lines = |text: &str| -> Vec<Value> {
+        text.lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect()
+    };
+    for (name, text) in [
+        (
+            "live_tool",
+            include_str!("tool_name_1118/session_subscribe.live_tool.jsonl"),
+        ),
+        (
+            "live_steer",
+            include_str!("tool_name_1118/session_subscribe.live_steer.jsonl"),
+        ),
+    ] {
+        let frames = lines(text);
+        let is_chunk = |frame: &Value| frame["event"]["type"] == "tool_input_delta";
+        let chunk = frames.iter().find(|frame| is_chunk(frame)).unwrap();
+        let Some(DisplayInput::ToolInput(input)) = map(chunk) else {
+            panic!("{name}: {chunk}");
+        };
+        assert_eq!(input.tool_name.as_deref(), Some("work"), "{name}");
+        assert_eq!(input.part.as_deref(), Some("0"), "{name}");
+        assert_eq!(input.mid, chunk["event"]["mid"].as_str().unwrap(), "{name}");
+
+        let with = say_chat();
+        run(&with, &frames);
+        let without = say_chat();
+        let rest: Vec<Value> = frames.iter().filter(|f| !is_chunk(f)).cloned().collect();
+        run(&without, &rest);
+        for since in [None, Some(0)] {
+            for tools in [false, true] {
+                assert_eq!(
+                    with_messages(&with, since, tools),
+                    with_messages(&without, since, tools),
+                    "{name} {since:?} {tools}"
+                );
+            }
+            assert_eq!(
+                serde_json::to_value(with.projection.display_read_with_tools(since, NOW)).unwrap(),
+                serde_json::to_value(without.projection.display_read_with_tools(since, NOW))
+                    .unwrap(),
+                "{name} {since:?}"
+            );
+        }
+    }
+
+    // The run loop's own events, before the serve path adds each chunk's
+    // message and part: only the first of the call's joined chunks names it.
+    let named: Vec<Option<String>> = lines(include_str!(
+        "tool_name_1118/tool_input_delta.fragments.jsonl"
+    ))
+    .into_iter()
+    .map(|mut event| {
+        event["mid"] = json!("m1");
+        match map(&json!({"kind": "display", "event": event})) {
+            Some(DisplayInput::ToolInput(input)) => input.tool_name,
+            other => panic!("{other:?}"),
+        }
+    })
+    .collect();
+    assert_eq!(named, [Some("read".to_owned()), None, None]);
+}
