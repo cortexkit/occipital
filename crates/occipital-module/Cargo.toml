@@ -37,7 +37,7 @@ cortexkit-bus-naming = "=0.4.3"
 cortexkit-log = "0.3.6"
 cortexkit-project-identity = "=0.1.4"
 # Moving an agent to another computer: the participant's ops and refusals.
-cortexkit-role-agent-data = "=0.3.1"
+cortexkit-role-agent-data = "=0.3.2"
 cortexkit-role-llm-runner = "=0.8.61"
 cortexkit-role-tool-display = "=0.1.8"
 cortexkit-role-tool-provider = "=0.15.8"

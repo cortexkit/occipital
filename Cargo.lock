@@ -345,9 +345,9 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-role-agent-data"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14375c604e88e22f31c67bc4dc6fd3f055ecd9bb84d8f976d2e221a8dab7f82d"
+checksum = "b89c45a36b2428c44588e0db4cc8153e7cb68978d0de1e1858f8947a3d09bc74"
 dependencies = [
  "serde",
  "serde_json",

@@ -216,11 +216,15 @@ impl Moves {
             "agent_data.describe" => {
                 let _: contract::describe::DescribeRequest =
                     serde_json::from_value(params).map_err(decode)?;
+                // Optional: chat display data never blocks a move. A computer
+                // that doesn't run Occipital takes the agent without it, and
+                // the rows stay on this one for a move back.
                 Ok(json!(contract::describe::DescribeReply::new(
                     vec![REF_KIND.into()],
                     vec![contract::describe::Store::new(FORMAT, "agent")],
                     false,
-                )))
+                )
+                .with_optional(true)))
             }
             "agent_data.busy" => {
                 let request: contract::busy::BusyRequest =

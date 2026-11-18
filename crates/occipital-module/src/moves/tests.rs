@@ -255,6 +255,7 @@ async fn only_entorhinal_is_answered() {
     let described = here.call("agent_data.describe", json!({})).await.unwrap();
     assert_eq!(described["ref_kinds"], json!(["agent"]));
     assert_eq!(described["external"], false);
+    assert_eq!(described["optional"], true);
     // A runner's session kind is never Occipital's to take.
     let refused = here
         .call(
