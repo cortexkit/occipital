@@ -227,7 +227,7 @@ dependencies = [
  "async-trait",
  "base64",
  "bytes",
- "cortexkit-bus-naming",
+ "cortexkit-bus-naming 0.4.3",
  "cortexkit-bus-nats",
  "cortexkit-bus-trait",
  "futures-util",
@@ -247,6 +247,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "58f6552b5782846fd9f592b49434bb17c53a34573d421467009c1d20d1195655"
 
 [[package]]
+name = "cortexkit-bus-naming"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4adb53df9a18359089a51781ea08d83c3ceb32c48ad9845ec48b978602a963a8"
+
+[[package]]
 name = "cortexkit-bus-nats"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -255,7 +261,7 @@ dependencies = [
  "async-nats",
  "async-trait",
  "bytes",
- "cortexkit-bus-naming",
+ "cortexkit-bus-naming 0.4.3",
  "cortexkit-bus-trait",
  "futures-util",
  "tokio",
@@ -355,9 +361,9 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-role-llm-runner"
-version = "0.8.61"
+version = "0.8.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de955aac4f1c28527fbb0ba974caa8551324c95ab2238f8d3e8fb7f70b9eb245"
+checksum = "70e53b3d1abed02355c89974b71b3478bdc17543f99cb2ca21b50e8a6ce17ae0"
 dependencies = [
  "cortexkit-rich-ui-syntax",
  "cortexkit-role-tool-provider",
@@ -382,10 +388,11 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-role-tool-provider"
-version = "0.15.8"
+version = "0.15.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6001f2f9e5643b5d64a2a03059031608b3b5926419089c95c746ed4eae3f1e2"
+checksum = "22919ed36ffc8e253eb3bcc576a02eca9669cf58841f47544de4ee9f2a7c97e8"
 dependencies = [
+ "cortexkit-bus-naming 0.5.1",
  "cortexkit-role-tool-display",
  "serde",
  "serde_jcs",
@@ -1142,7 +1149,7 @@ dependencies = [
  "async-trait",
  "cortexkit-agent-identity",
  "cortexkit-bus-client",
- "cortexkit-bus-naming",
+ "cortexkit-bus-naming 0.4.3",
  "cortexkit-log",
  "cortexkit-occipital-lang",
  "cortexkit-occipital-registry",
@@ -1770,9 +1777,9 @@ dependencies = [
 
 [[package]]
 name = "subc-config"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "701a3c1b6e06ed0fcec46bb155b09ed194c9d4871aefade0447eb67eebd6c324"
+checksum = "b7f5bd0130cdf088277a309ee2786940a04bd37af17f7a95b5b21e62b75c2f67"
 dependencies = [
  "regex",
  "ryu",
@@ -1808,9 +1815,9 @@ dependencies = [
 
 [[package]]
 name = "subc-protocol"
-version = "0.37.1"
+version = "0.37.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "107cd64a47aeedb9d01758f2b8a6ed669e649c124ac0c2d3b912fec29715d8ce"
+checksum = "8223340be699cb9e743edb3cfa3e45889d2cd1bfce5892c627e666f40e923933"
 dependencies = [
  "base64",
  "serde",

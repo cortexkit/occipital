@@ -1118,6 +1118,76 @@ mod tests {
         harness.shutdown().await;
     }
 
+    /// A Callosum bind whose scope stamp carries subc-protocol 0.37.4's
+    /// federated members (the origin module, the peer's box id, the portable
+    /// project, a run id) decodes through the SDK and reaches admission. A
+    /// strict older decoder refused the whole bind instead.
+    ///
+    /// Callosum stamps a route only to a module that declares
+    /// `scope-federated/v1`, which Occipital doesn't, so the phone's routes here
+    /// arrive unstamped and a stamped one is still a carrier's, refused. A
+    /// module that declares it must first admit a `federated` stamp owned by
+    /// Callosum, naming a phone, sim or app and no `remote_claim`.
+    #[tokio::test]
+    async fn a_bind_with_federated_stamp_members_decodes() {
+        use subc_protocol::scope::{
+            FederatedAttributes, FederatedPeerClass, FederatedProject, RemoteClaim, RootKey,
+            RootKeyKind, ScopeAttributes, ScopeKind, ScopeStamp,
+        };
+        let app = Arc::new(AppReader::default());
+        let serving = app.clone();
+        let mut harness = ModuleHarness::start(
+            |_| OccipitalHandler::new(None, Box::new(|_| {})).with_app_reader(serving),
+            [],
+        )
+        .await;
+        let mut facts = FederatedAttributes::new(
+            FederatedPeerClass::Phone,
+            "0123456789abcdef0123456789abcdef".into(),
+            "pair:1".into(),
+            "Phone".into(),
+        )
+        .with_origin_principal(Some(Principal::Reserved {
+            module_id: "prefrontal".into(),
+        }))
+        .with_project(Some(FederatedProject::new(
+            "project",
+            RootKey::new(RootKeyKind::Remote, "owner/repo"),
+        )))
+        .with_remote_claim(Some(RemoteClaim::run("remote-agent").with_run_id("run-1")));
+        facts.peer_box_id = Some("d".repeat(32));
+        facts.validate().unwrap();
+        let stamp = ScopeStamp::new(
+            Principal::Reserved {
+                module_id: "callosum".into(),
+            },
+            "peer",
+            1,
+            ScopeKind::Federated,
+        )
+        .with_attributes(ScopeAttributes::new().with_federated(Some(facts)));
+        for (channel, scope) in [(7, None), (8, Some(stamp))] {
+            let stamped = scope.is_some();
+            let mut request = app_route(channel);
+            request.scope = scope;
+            let route = harness.bind_route(request).await;
+            let corr = harness
+                .send_request(
+                    route,
+                    app_request("session.display_read", json!({"session": "s"})),
+                )
+                .await;
+            let reply = harness.read_reply(route, corr).await;
+            if stamped {
+                assert_eq!(reply.header.ty, FrameType::Error, "{reply:?}");
+                assert_eq!(reply_body(&reply)["code"], "carrier_op_not_permitted");
+            } else {
+                assert_eq!(reply.header.ty, FrameType::Response, "{reply:?}");
+            }
+        }
+        harness.shutdown().await;
+    }
+
     /// Before HELLO_ACK names the store there is no app reader, and an app
     /// request is refused with a code the apps retry.
     #[tokio::test]

@@ -38,9 +38,9 @@ cortexkit-log = "0.3.6"
 cortexkit-project-identity = "=0.1.4"
 # Moving an agent to another computer: the participant's ops and refusals.
 cortexkit-role-agent-data = "=0.3.2"
-cortexkit-role-llm-runner = "=0.8.61"
+cortexkit-role-llm-runner = "=0.8.63"
 cortexkit-role-tool-display = "=0.1.8"
-cortexkit-role-tool-provider = "=0.15.8"
+cortexkit-role-tool-provider = "=0.15.12"
 # The person's commands: their declarations, previews, runs and facts.
 cortexkit-role-user-commands = "=0.1.4"
 cortexkit-store = "=0.4.1"
@@ -64,7 +64,7 @@ serde_jcs = "0.2"
 sha2 = "0.10"
 subc-client-rs = "=0.40.3"
 subc-os = "0.1.25"
-subc-protocol = "=0.37.1"
+subc-protocol = "=0.37.4"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time", "fs", "io-util"] }
 # The SDK hands each request's cancellation as a tokio-util token.
 tokio-util = "0.7"
@@ -86,6 +86,6 @@ subc-client-rs = { version = "=0.40.3", features = ["test-support"] }
 # The contract's own wake vectors, for the wake record tests.
 cortexkit-role-tool-display = { version = "=0.1.8", features = ["test-vectors"] }
 # The runner contract's own vectors, for the host-written part tests.
-cortexkit-role-llm-runner = { version = "=0.8.61", features = ["test-vectors"] }
+cortexkit-role-llm-runner = { version = "=0.8.63", features = ["test-vectors"] }
 tempfile = "3"
 tokio = { version = "1", features = ["test-util"] }

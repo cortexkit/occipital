@@ -2089,6 +2089,7 @@ mod run_awaits_1112;
 mod run_provider_code_1113;
 mod runner_0842_samples;
 mod send_ids_1110;
+mod send_moved_samples;
 mod send_promote_1116;
 mod session_converting_1115;
 mod signed_reasoning_cause_1112;

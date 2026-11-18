@@ -364,6 +364,63 @@ fn call_counts(runner: &FakeRunner) -> (usize, usize, usize) {
     )
 }
 
+/// The runner contract's `session_held_elsewhere` samples (llm-runner 0.8.63,
+/// `session-held-elsewhere.json`): a send the runner refuses because the
+/// chat's agent moved to another computer reaches the app as Occipital's own
+/// `session_held_elsewhere`, naming the new computer when the runner does,
+/// and nothing is written. A `holder` that isn't a box id is left out.
+#[tokio::test]
+async fn a_runner_s_held_elsewhere_refusal_names_the_new_computer() {
+    let (_, file) = cortexkit_role_llm_runner::vectors::FILES
+        .iter()
+        .find(|(name, _)| *name == "session-held-elsewhere.json")
+        .unwrap();
+    let file: Value = serde_json::from_str(file).unwrap();
+    let mut cases: Vec<(Value, Option<Value>)> = file["samples"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|sample| {
+            assert_eq!(sample["retryable_here"], false);
+            let holder = sample["error"]["detail"]["holder"].clone();
+            (
+                sample["error"].clone(),
+                holder.is_string().then(|| json!({"holder": holder})),
+            )
+        })
+        .collect();
+    assert_eq!(cases.len(), 2);
+    cases.push((
+        json!({"code": "session_held_elsewhere", "message": "moved",
+            "detail": {"holder": "not a box id"}}),
+        None,
+    ));
+    let f = granted_fixture(Kind::Head);
+    for (n, (error, expected)) in cases.into_iter().enumerate() {
+        f.runner
+            .scripted
+            .lock()
+            .unwrap()
+            .push_back(Err(RunnerError::Refused {
+                code: error["code"].as_str().unwrap().into(),
+                message: error["message"].as_str().unwrap().into(),
+                detail: error.get("detail").cloned(),
+            }));
+        let refused = f
+            .sender
+            .send(message(&format!("moved-{n}"), "hello"))
+            .await
+            .unwrap_err();
+        assert_eq!(
+            refused.code,
+            crate::moves::SESSION_HELD_ELSEWHERE,
+            "{error}"
+        );
+        assert_eq!(refused.detail, expected, "{error}");
+    }
+    assert!(f.runner.written().is_empty());
+}
+
 /// A send to a chat whose agent is moving to another computer, or has moved,
 /// never reaches the runner here, and one that has moved names its new
 /// computer. A send answered before the move keeps its receipt.
