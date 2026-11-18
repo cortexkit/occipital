@@ -1105,6 +1105,36 @@ async fn the_default_effort_samples_are_what_the_handlers_answer() {
     served.check();
 }
 
+/// Broca's recorded heads (`head_default_variant_1118/`, copied unchanged):
+/// each passes the reader's head check, and its model reaches the app with the
+/// default effort as `defaultVariant`, a named one as `variant`, and neither
+/// for a model with no documented default.
+#[tokio::test]
+async fn broca_s_recorded_default_effort_heads_reach_the_apps() {
+    for (file, expected) in [
+        (
+            include_str!("head_default_variant_1118/session.head-default-effort.json"),
+            json!({"provider":"openai", "model":"test-default-effort", "defaultVariant":"medium"}),
+        ),
+        (
+            include_str!("head_default_variant_1118/session.head-named-variant.json"),
+            json!({"provider":"openai", "model":"test-default-effort", "variant":"high"}),
+        ),
+        (
+            include_str!("head_default_variant_1118/session.head-no-effort.json"),
+            json!({"provider":"openai", "model":"test-no-default-effort"}),
+        ),
+    ] {
+        let head: Value = serde_json::from_str(file).unwrap();
+        let head = &head["result"];
+        super::super::head_meta(head).unwrap();
+        let route = sample_route();
+        set_head(&route, "model", head["model"].clone());
+        let reply = details(&sending(&route)).await;
+        assert_eq!(reply["model"], expected, "{reply}");
+    }
+}
+
 /// llm-runner 0.8.45's wait samples (`tests/data/llm-runner-run-awaits/`,
 /// copied unchanged from the contract crate's `run-awaits.json`).
 fn run_awaits_samples() -> Value {
