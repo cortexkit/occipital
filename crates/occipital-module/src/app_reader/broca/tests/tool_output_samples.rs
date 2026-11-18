@@ -246,6 +246,68 @@ async fn the_tool_output_samples_are_what_the_reader_serves() {
     served.check();
 }
 
+/// Broca's real `session.read {"media":"media_refs","tool_media":"refs"}`
+/// reply (`tests/data/broca-tool-media-refs-1118/`, copied unchanged), served
+/// as the runner's stored chat: the exact read of the tool's answer gives the
+/// text the model read, and lists the picture and the document under `media`
+/// by digest, never their bytes.
+#[tokio::test]
+async fn broca_s_tool_media_refs_read_lists_the_tool_s_files() {
+    let data = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/broca-tool-media-refs-1118");
+    let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
+    for line in sums.lines() {
+        let (expected, name) = line.split_once("  ").unwrap();
+        let bytes = std::fs::read(data.join(name)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+    let read: Value = serde_json::from_slice(
+        &std::fs::read(data.join("tool-image-session-read-tool-media-refs.jsonl")).unwrap(),
+    )
+    .unwrap();
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = read["result"]["messages"].as_array().unwrap().clone();
+    *route.run_state.lock().unwrap() = Value::Null;
+    *route.describe.lock().unwrap() = Some(describe_with(&[
+        "attachments",
+        "transcript_reads",
+        "media_refs",
+        "tool_media_refs",
+    ]));
+    let app = Arc::new(super::super::super::AppReader::new(Arc::new(
+        BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(OneChat))),
+            Arc::new(OneRoute(route.clone())),
+        ),
+    )));
+    // Served only to read the reply; this test keeps no sample set.
+    let mut served = Served::new("broca-tool-media-refs-1118", app);
+    let request = json!({"method": super::super::super::TRANSCRIPT_PAGE,
+        "params": {"session": SESSION, "messageOrdinal": 2}});
+    let reply = served.read(1, &request).await;
+    let call = tool(&reply);
+    assert_eq!(call["content"], "before-media\nafter-media", "{call}");
+    assert_eq!(
+        call["media"],
+        json!([
+            {"type": "file", "mime": "image/png",
+                "sha256": "2bb3f6f7eb60006453f46d1a1f6fb72cb30be54fbe604d29a31a8a41cc0a5fe7",
+                "byteCount": 4749, "width": 640, "height": 160},
+            {"type": "file", "mime": "application/pdf",
+                "sha256": "b7442ba422acb7aa7660b99e95858e049e8fac32dbc1b34a19e285b1adc0ae2f",
+                "byteCount": 584},
+        ]),
+        "{call}"
+    );
+    let asked = route
+        .calls
+        .lock()
+        .unwrap()
+        .iter()
+        .filter(|call| call["method"] == "session.read")
+        .all(|call| call["params"]["tool_media"] == "refs");
+    assert!(asked);
+}
+
 /// A runner that declares `media_refs` but not `tool_media_refs` is never asked
 /// for tool media, so its reads stay valid; one declaring neither is asked for
 /// no media form at all.
