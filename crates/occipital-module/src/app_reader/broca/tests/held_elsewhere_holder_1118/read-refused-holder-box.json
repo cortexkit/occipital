@@ -1,0 +1,7 @@
+{
+  "code": "session_held_elsewhere",
+  "detail": {
+    "holder": "0123456789abcdef0123456789abcdef"
+  },
+  "message": "this session moved to another computer and is held there"
+}

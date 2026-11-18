@@ -153,3 +153,50 @@ fn only_a_moved_session_s_read_is_final() {
     assert_eq!(moved.code, "session_held_elsewhere");
     assert_eq!(moved.detail, None);
 }
+
+/// Broca's refusals once it reads agent-data 0.3.3
+/// (`held_elsewhere_holder_1118/`, from Broca's serve path): a release that
+/// carried the new computer's box id names it as `holder`, and one that didn't
+/// names none and is byte for byte Broca's earlier body. Both reach the app
+/// as `session_held_elsewhere`, from a read and from a send, naming exactly
+/// what Broca named.
+#[test]
+fn broca_s_holder_box_refusals_name_the_new_computer() {
+    const BOX: &str = "0123456789abcdef0123456789abcdef";
+    let cases = [
+        (
+            include_str!("held_elsewhere_holder_1118/read-refused-holder-box.json"),
+            Some(json!({"holder": BOX})),
+        ),
+        (
+            include_str!("held_elsewhere_holder_1118/send-refused-holder-box.json"),
+            Some(json!({"holder": BOX})),
+        ),
+        (
+            include_str!("held_elsewhere_holder_1118/read-refused.json"),
+            None,
+        ),
+        (
+            include_str!("held_elsewhere_holder_1118/send-refused.json"),
+            None,
+        ),
+    ];
+    assert_eq!(cases[2].0, BROCA_READ);
+    for (text, expected) in cases {
+        let body: Value = serde_json::from_str(text).unwrap();
+        let read = super::super::read_call_error(
+            ReadOp::Read,
+            BROCA_RUNNER_MODULE_ID,
+            CallError::Module(refusal(&body)),
+        );
+        assert_eq!(read.code, "session_held_elsewhere", "{text}");
+        assert_eq!(read.detail, expected, "{text}");
+        let sent = crate::app_reader::send::refused(
+            body["code"].as_str().unwrap(),
+            body["message"].as_str().unwrap(),
+            body.get("detail"),
+        );
+        assert_eq!(sent.code, crate::moves::SESSION_HELD_ELSEWHERE, "{text}");
+        assert_eq!(sent.detail, expected, "{text}");
+    }
+}
