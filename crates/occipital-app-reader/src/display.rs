@@ -12,6 +12,9 @@ use tokio::sync::watch;
 pub enum DisplayPartType {
     Text,
     Reasoning,
+    /// The agent's message to the person, from a call of its message tool
+    /// (`crate::say`), on [`MessageText`] frames only.
+    Message,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -53,6 +56,81 @@ pub enum DisplayStreamFrame {
     /// A tool call starting or ending, sent only to readers that opted in with
     /// `acceptToolFrames`.
     Tool(Box<ToolFrame>),
+    /// The newly written text of the agent's message, sent only to readers
+    /// that opted in with `acceptMessageFrames`. It's a `display` frame with
+    /// `partType: "message"`, so its tags draw as a reply's do.
+    #[serde(rename = "display")]
+    MessageText(Box<MessageText>),
+    /// A live message withdrawn or frozen, for the same readers.
+    Message(MessageState),
+}
+
+/// A call of the chat's message tool, while the model writes it: the text
+/// newly decoded from its arguments. The app appends it to the call's live
+/// message, and the stored `message` part with the same `callId` replaces that
+/// once the call is answered, as a stored reply replaces its live words.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct MessageText {
+    #[serde(rename = "sessionID")]
+    pub session_id: String,
+    /// The runner's `mid` for the call's message, or its `live_id` while unstored.
+    #[serde(rename = "messageID")]
+    pub message_id: String,
+    #[serde(rename = "partType")]
+    pub part_type: DisplayPartType,
+    /// The key the stored message gives the call's part, when the runner names it.
+    #[serde(rename = "partKey", skip_serializing_if = "Option::is_none")]
+    pub part_key: Option<String>,
+    #[serde(rename = "callId")]
+    pub call_id: String,
+    /// Known only once the call went to its tool, so usually absent while its
+    /// text streams.
+    #[serde(rename = "callKey", skip_serializing_if = "Option::is_none")]
+    pub call_key: Option<String>,
+    pub chunk: String,
+    /// The running run's rich UI stamp, as reply text frames carry it.
+    #[serde(rename = "richUi", skip_serializing_if = "Option::is_none")]
+    pub rich_ui: Option<Value>,
+}
+
+/// What became of a live message that won't be completed live.
+///
+/// - `withdrawn`: the call ended without an answer or failed, its arguments
+///   started again, or the live view was reset: no message was sent from this
+///   text, so the app drops it, and the stored row shows what happened.
+/// - `frozen`: chunks were lost (`display_gap`), so the text shown is a correct
+///   prefix that won't grow: the app keeps it until the stored part replaces
+///   it.
+///
+/// A gap or reset reaches these readers as a `display_gap` frame, which drops
+/// the live reply words; it doesn't touch message text, which follows only
+/// these frames.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct MessageState {
+    #[serde(rename = "callId")]
+    pub call_id: String,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub withdrawn: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub frozen: bool,
+}
+
+/// A live message on a baseline: its text so far.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct LiveMessageText {
+    #[serde(rename = "messageID")]
+    pub message_id: String,
+    #[serde(rename = "partKey", skip_serializing_if = "Option::is_none")]
+    pub part_key: Option<String>,
+    #[serde(rename = "callId")]
+    pub call_id: String,
+    #[serde(rename = "callKey", skip_serializing_if = "Option::is_none")]
+    pub call_key: Option<String>,
+    pub text: String,
+    #[serde(rename = "richUi", skip_serializing_if = "Option::is_none")]
+    pub rich_ui: Option<Value>,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub frozen: bool,
 }
 
 /// Where a tool call is, on its live frame.
@@ -214,6 +292,10 @@ pub enum DisplayReadReply {
         /// still in flight, in the order they started.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         tools: Vec<ToolFrame>,
+        /// For a reader that accepts message frames: each message still being
+        /// written, in the order they began.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        messages: Vec<LiveMessageText>,
     },
     Incremental {
         seq: u64,
@@ -263,9 +345,14 @@ impl DisplayRing {
         {
             return false;
         }
-        // A baseline's `frame` is the live text; tool frames reach a baseline as its
-        // running calls instead.
-        if !matches!(frame, DisplayStreamFrame::Tool(_)) {
+        // A baseline's `frame` is the live reply text; tool and message frames
+        // reach a baseline as its running calls and live messages instead.
+        if !matches!(
+            frame,
+            DisplayStreamFrame::Tool(_)
+                | DisplayStreamFrame::MessageText(_)
+                | DisplayStreamFrame::Message(_)
+        ) {
             self.update_current(&frame);
         }
         self.next_seq = self
@@ -331,6 +418,7 @@ impl DisplayRing {
                     .clone()
                     .unwrap_or(DisplayStreamFrame::DisplayGap),
                 tools: Vec::new(),
+                messages: Vec::new(),
             };
         };
         let oldest_seq = self
@@ -500,8 +588,16 @@ struct DisplayProjectionState {
     /// ring's sequence, and so every reply to a reader that didn't opt in, exactly as
     /// it was before tool frames existed.
     tool_ring: DisplayRing,
+    /// The tool ring's frames with the agent's live messages among them, for
+    /// readers that accept message frames. A call of the message tool is a
+    /// message there, so its tool frames are left out.
+    message_ring: DisplayRing,
     /// The calls started and not yet ended, in the order they started.
     running: Vec<ToolFrame>,
+    /// The calls of the chat's message tool not yet ended.
+    message_calls: Vec<String>,
+    /// The messages being written, in the order they began.
+    messages: Vec<LiveSay>,
     display_turn_open: bool,
     display_end_emitted: bool,
     /// The running run's rich UI stamp, set when the run starts and cleared when it
@@ -514,6 +610,20 @@ struct DisplayProjectionState {
     /// The message whose words are the live footer: the last one text was shown for
     /// and not yet ended.
     live: Option<LiveMessage>,
+}
+
+/// A call of the message tool whose text is shown as it's written.
+struct LiveSay {
+    call_id: String,
+    /// The `mid` or `live_id` of the call's message, from its first chunk.
+    message_id: String,
+    part_key: Option<String>,
+    call_key: Option<String>,
+    reader: crate::say_text::SayText,
+    /// What the reader decoded so far.
+    text: String,
+    /// Chunks were lost, so `text` won't grow.
+    frozen: bool,
 }
 
 /// The message whose words are the live footer.
@@ -554,7 +664,10 @@ impl DisplayProjection {
             state: Mutex::new(DisplayProjectionState {
                 display_ring: DisplayRing::new(ring_entries.get()),
                 tool_ring: DisplayRing::new(ring_entries.get()),
+                message_ring: DisplayRing::new(ring_entries.get()),
                 running: Vec::new(),
+                message_calls: Vec::new(),
+                messages: Vec::new(),
                 display_turn_open: false,
                 display_end_emitted: false,
                 rich_ui: None,
@@ -624,14 +737,15 @@ impl DisplayProjection {
         if let DisplayStreamFrame::Display { rich_ui, .. } = &mut frame {
             rich_ui.clone_from(&state.rich_ui);
         }
-        state.push_both(frame);
+        state.push_all(frame);
         drop(state);
         self.signal_display_changed();
     }
 
     /// Lost display text. Calls are reported on the runner's control lane, which a
     /// display gap doesn't touch, so each call still in flight is sent again after the
-    /// gap that told readers to drop it.
+    /// gap that told readers to drop it. A message being written may have lost
+    /// chunks, so it's frozen: what it shows is still a correct prefix.
     pub fn observe_display_gap(&self) {
         let mut state = self.state.lock().expect("display projection poisoned");
         if state.display_end_emitted {
@@ -639,14 +753,8 @@ impl DisplayProjection {
         }
         state.display_turn_open = true;
         state.live = None;
-        state.display_ring.push(DisplayStreamFrame::DisplayGap);
-        if state.tool_ring.push(DisplayStreamFrame::DisplayGap) {
-            for call in state.running.clone() {
-                state
-                    .tool_ring
-                    .push(DisplayStreamFrame::Tool(Box::new(call)));
-            }
-        }
+        state.push_gap();
+        state.freeze_messages();
         drop(state);
         self.signal_display_changed();
     }
@@ -654,35 +762,143 @@ impl DisplayProjection {
     /// A call of `session_id` went to its tool. A repeated start of one call
     /// replaces the first.
     pub fn start_tool(&self, session_id: &str, start: crate::display_events::ToolStart) {
+        let message = start.message;
         let frame = ToolFrame::running(session_id, start);
         let mut state = self.state.lock().expect("display projection poisoned");
+        if message && !state.message_calls.contains(&frame.call_id) {
+            state.message_calls.push(frame.call_id.clone());
+        }
+        if let Some(say) = state
+            .messages
+            .iter_mut()
+            .find(|say| say.call_id == frame.call_id)
+        {
+            say.call_key.clone_from(&frame.call_key);
+        }
         state.running.retain(|call| call.call_id != frame.call_id);
         state.running.push(frame.clone());
-        state
-            .tool_ring
-            .push(DisplayStreamFrame::Tool(Box::new(frame)));
+        state.push_tool(frame);
         drop(state);
         self.signal_display_changed();
     }
 
     /// A call ended. A call this projection never saw start, such as one already
     /// running when the session was first followed, has no live row to end: the
-    /// stored page shows it.
+    /// stored page shows it. A message whose call ended without an answer, or
+    /// with an error, sent nothing, so its live text is withdrawn; an answered
+    /// one stays until the stored message replaces it.
     pub fn end_tool(&self, end: crate::display_events::ToolEnd) {
         let mut state = self.state.lock().expect("display projection poisoned");
-        let Some(index) = state
+        let mut changed = false;
+        if let Some(index) = state
+            .messages
+            .iter()
+            .position(|say| say.call_id == end.call_id)
+        {
+            let say = state.messages.remove(index);
+            if end.outcome != "ok" {
+                state.message_state(say.call_id, true, false);
+            }
+            changed = true;
+        }
+        if let Some(index) = state
             .running
             .iter()
             .position(|call| call.call_id == end.call_id)
-        else {
-            return;
-        };
-        let frame = state.running.remove(index).ended(&end);
-        state
-            .tool_ring
-            .push(DisplayStreamFrame::Tool(Box::new(frame)));
+        {
+            let frame = state.running.remove(index).ended(&end);
+            state.push_tool(frame);
+            changed = true;
+        }
+        state.message_calls.retain(|call| *call != end.call_id);
         drop(state);
-        self.signal_display_changed();
+        if changed {
+            self.signal_display_changed();
+        }
+    }
+
+    /// Whether `input` is one this projection shows: a chunk that begins a
+    /// call of the message tool, or one of a call whose text is shown. The
+    /// caller sends the live words it holds first, only then, so every other
+    /// call's chunks change nothing a reader sees.
+    pub fn shows_input(&self, input: &crate::display_events::ToolInput) -> bool {
+        input.message
+            || self
+                .state
+                .lock()
+                .expect("display projection poisoned")
+                .messages
+                .iter()
+                .any(|say| say.call_id == input.call_id)
+    }
+
+    /// A chunk of a call's arguments. A call of the message tool shows the text
+    /// newly decoded from its arguments; a chunk that begins a call's arguments
+    /// again withdraws what was shown of them and starts afresh.
+    pub fn observe_input(&self, session_id: &str, input: crate::display_events::ToolInput) {
+        let mut state = self.state.lock().expect("display projection poisoned");
+        if state.display_end_emitted {
+            return;
+        }
+        let mut changed = false;
+        if input.tool_name.is_some() {
+            if let Some(index) = state
+                .messages
+                .iter()
+                .position(|say| say.call_id == input.call_id)
+            {
+                let say = state.messages.remove(index);
+                state.message_state(say.call_id, true, false);
+                changed = true;
+            }
+            if input.message {
+                if !state.message_calls.contains(&input.call_id) {
+                    state.message_calls.push(input.call_id.clone());
+                }
+                state.messages.push(LiveSay {
+                    call_id: input.call_id.clone(),
+                    message_id: input.mid.clone(),
+                    part_key: input.part.clone(),
+                    call_key: None,
+                    reader: crate::say_text::SayText::new(),
+                    text: String::new(),
+                    frozen: false,
+                });
+            }
+        }
+        let rich_ui = state.rich_ui.clone();
+        let frame = state
+            .messages
+            .iter_mut()
+            .find(|say| say.call_id == input.call_id && !say.frozen)
+            .and_then(|say| {
+                let chunk = say.reader.feed(&input.delta);
+                if chunk.is_empty() {
+                    return None;
+                }
+                say.text.push_str(&chunk);
+                Some(MessageText {
+                    session_id: session_id.to_owned(),
+                    message_id: say.message_id.clone(),
+                    part_type: DisplayPartType::Message,
+                    part_key: say.part_key.clone(),
+                    call_id: say.call_id.clone(),
+                    call_key: say.call_key.clone(),
+                    chunk,
+                    rich_ui,
+                })
+            });
+        if let Some(frame) = frame {
+            state.display_turn_open = true;
+            state
+                .message_ring
+                .push(DisplayStreamFrame::MessageText(Box::new(frame)));
+            changed = true;
+        }
+        drop(state);
+        if changed {
+            self.signal_display_changed();
+        }
     }
 
     /// The runner stored `mid`. When its words are the live footer, an end tells the
@@ -696,7 +912,7 @@ impl DisplayProjection {
             return;
         }
         state.live = None;
-        state.push_both(DisplayStreamFrame::DisplayEnd);
+        state.push_all(DisplayStreamFrame::DisplayEnd);
         drop(state);
         self.signal_display_changed();
     }
@@ -752,12 +968,13 @@ impl DisplayProjection {
             .iter()
             .map(|call| call.ended(&interrupted))
             .collect();
-        let any_closed = !closed.is_empty();
+        // A message still being written when its run ends was never sent.
+        let any_closed = !closed.is_empty() || !state.messages.is_empty();
         for frame in closed {
-            state
-                .tool_ring
-                .push(DisplayStreamFrame::Tool(Box::new(frame)));
+            state.push_tool(frame);
         }
+        state.withdraw_messages();
+        state.message_calls.clear();
         if !state.display_turn_open || state.display_end_emitted {
             drop(state);
             if any_closed {
@@ -768,7 +985,7 @@ impl DisplayProjection {
         state.display_turn_open = false;
         state.display_end_emitted = true;
         state.live = None;
-        state.push_both(DisplayStreamFrame::DisplayEnd);
+        state.push_all(DisplayStreamFrame::DisplayEnd);
         drop(state);
         self.signal_display_changed();
     }
@@ -779,19 +996,15 @@ impl DisplayProjection {
     /// each again after the gap, as after a [`Self::observe_display_gap`]. Before
     /// 0.8.24 a reset cleared them too, which lost the running calls a runner
     /// replays before the snapshot's reset when a reader attaches mid-step.
+    /// The messages being written are withdrawn: a call's arguments stream
+    /// again only from a chunk that begins them.
     pub fn reset_display(&self) {
         let mut state = self.state.lock().expect("display projection poisoned");
         state.display_turn_open = true;
         state.display_end_emitted = false;
         state.live = None;
-        state.display_ring.push(DisplayStreamFrame::DisplayGap);
-        if state.tool_ring.push(DisplayStreamFrame::DisplayGap) {
-            for call in state.running.clone() {
-                state
-                    .tool_ring
-                    .push(DisplayStreamFrame::Tool(Box::new(call)));
-            }
-        }
+        state.push_gap();
+        state.withdraw_messages();
         drop(state);
         self.signal_display_changed();
     }
@@ -805,7 +1018,9 @@ impl DisplayProjection {
         state.display_end_emitted = false;
         state.live = None;
         state.running.clear();
-        state.push_both(DisplayStreamFrame::DisplayGap);
+        state.message_calls.clear();
+        state.push_all(DisplayStreamFrame::DisplayGap);
+        state.withdraw_messages();
         drop(state);
         self.signal_display_changed();
     }
@@ -835,6 +1050,7 @@ impl DisplayProjection {
                         ..call.clone()
                     })
                     .collect(),
+                messages: Vec::new(),
             },
             DisplayReadReply::Incremental { seq, mut frames } => {
                 for sequenced in &mut frames {
@@ -847,13 +1063,157 @@ impl DisplayProjection {
             other => other,
         }
     }
+
+    /// [`Self::display_read`] for a reader that accepts message frames: the
+    /// ring with the agent's live messages, and its calls' starts and ends when
+    /// the reader accepts tool frames too. Without them, the sequence skips the
+    /// numbers of the tool frames left out.
+    pub fn display_read_with_messages(
+        &self,
+        since_seq: Option<u64>,
+        now_ms: u64,
+        tools: bool,
+    ) -> DisplayReadReply {
+        let state = self.state.lock().expect("display projection poisoned");
+        match state.message_ring.read(since_seq) {
+            DisplayReadReply::Baseline { seq, frame, .. } => DisplayReadReply::Baseline {
+                seq,
+                frame,
+                tools: state
+                    .running
+                    .iter()
+                    .filter(|call| tools && !state.message_calls.contains(&call.call_id))
+                    .map(|call| ToolFrame {
+                        as_of_ms: Some(now_ms),
+                        ..call.clone()
+                    })
+                    .collect(),
+                messages: state
+                    .messages
+                    .iter()
+                    .map(|say| LiveMessageText {
+                        message_id: say.message_id.clone(),
+                        part_key: say.part_key.clone(),
+                        call_id: say.call_id.clone(),
+                        call_key: say.call_key.clone(),
+                        text: say.text.clone(),
+                        rich_ui: state.rich_ui.clone(),
+                        frozen: say.frozen,
+                    })
+                    .collect(),
+            },
+            DisplayReadReply::Incremental { seq, mut frames } => {
+                frames.retain_mut(|sequenced| match &mut sequenced.frame {
+                    DisplayStreamFrame::Tool(frame) => {
+                        frame.as_of_ms = Some(now_ms);
+                        tools
+                    }
+                    _ => true,
+                });
+                DisplayReadReply::Incremental { seq, frames }
+            }
+            other => other,
+        }
+    }
+
+    /// The read a reader gets for the frames it accepts.
+    pub fn read_frames(
+        &self,
+        since_seq: Option<u64>,
+        now_ms: u64,
+        accepts: FrameKinds,
+    ) -> DisplayReadReply {
+        match accepts {
+            FrameKinds {
+                messages: true,
+                tools,
+            } => self.display_read_with_messages(since_seq, now_ms, tools),
+            FrameKinds { tools: true, .. } => self.display_read_with_tools(since_seq, now_ms),
+            _ => self.display_read(since_seq),
+        }
+    }
+}
+
+/// The frame kinds beyond text a reader accepts: shipped app builds end a
+/// watch on a frame kind they don't know, so each kind is sent only to a
+/// reader that asks for it.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct FrameKinds {
+    /// `acceptToolFrames`.
+    pub tools: bool,
+    /// `acceptMessageFrames`.
+    pub messages: bool,
 }
 
 impl DisplayProjectionState {
-    /// A text, gap or end frame goes to both rings.
-    fn push_both(&mut self, frame: DisplayStreamFrame) {
+    /// A text, gap or end frame goes to every ring.
+    fn push_all(&mut self, frame: DisplayStreamFrame) {
         self.display_ring.push(frame.clone());
-        self.tool_ring.push(frame);
+        self.tool_ring.push(frame.clone());
+        self.message_ring.push(frame);
+    }
+
+    /// A call's start or end goes to the tool ring, and to the message ring
+    /// unless the call is a message.
+    fn push_tool(&mut self, frame: ToolFrame) {
+        if !self.message_calls.contains(&frame.call_id) {
+            self.message_ring
+                .push(DisplayStreamFrame::Tool(Box::new(frame.clone())));
+        }
+        self.tool_ring
+            .push(DisplayStreamFrame::Tool(Box::new(frame)));
+    }
+
+    /// A gap on every ring, with the calls still in flight sent again after it
+    /// on the rings that show calls.
+    fn push_gap(&mut self) {
+        self.display_ring.push(DisplayStreamFrame::DisplayGap);
+        if self.tool_ring.push(DisplayStreamFrame::DisplayGap) {
+            for call in self.running.clone() {
+                self.tool_ring
+                    .push(DisplayStreamFrame::Tool(Box::new(call)));
+            }
+        }
+        if self.message_ring.push(DisplayStreamFrame::DisplayGap) {
+            for call in self.running.clone() {
+                if !self.message_calls.contains(&call.call_id) {
+                    self.message_ring
+                        .push(DisplayStreamFrame::Tool(Box::new(call)));
+                }
+            }
+        }
+    }
+
+    fn message_state(&mut self, call_id: String, withdrawn: bool, frozen: bool) {
+        self.message_ring
+            .push(DisplayStreamFrame::Message(MessageState {
+                call_id,
+                withdrawn,
+                frozen,
+            }));
+    }
+
+    /// Freeze each message being written: its text keeps showing, and grows
+    /// no more.
+    fn freeze_messages(&mut self) {
+        let open: Vec<String> = self
+            .messages
+            .iter_mut()
+            .filter(|say| !say.frozen)
+            .map(|say| {
+                say.frozen = true;
+                say.call_id.clone()
+            })
+            .collect();
+        for call_id in open {
+            self.message_state(call_id, false, true);
+        }
+    }
+
+    fn withdraw_messages(&mut self) {
+        for say in std::mem::take(&mut self.messages) {
+            self.message_state(say.call_id, true, false);
+        }
     }
 }
 
@@ -889,6 +1249,9 @@ pub struct DisplayReadRequest<'a> {
     /// sees one, since shipped phone builds end a watch on a frame kind they don't
     /// know.
     pub accept_tool_frames: bool,
+    /// `acceptMessageFrames`: the reader draws the agent's messages as they're
+    /// written (`MessageText` and `MessageState` frames).
+    pub accept_message_frames: bool,
 }
 
 impl<'a> DisplayReadRequest<'a> {
@@ -901,6 +1264,7 @@ impl<'a> DisplayReadRequest<'a> {
             if key != "session"
                 && key != "sinceSeq"
                 && key != "acceptToolFrames"
+                && key != "acceptMessageFrames"
                 && !AMBIENT_CALLER_KEYS.contains(&key.as_str())
             {
                 return Err(DisplayReadError::invalid(format!(
@@ -925,18 +1289,19 @@ impl<'a> DisplayReadRequest<'a> {
                 )
             })?),
         };
-        let accept_tool_frames = match object.get("acceptToolFrames") {
-            None => false,
+        let flag = |name: &str| match object.get(name) {
+            None => Ok(false),
             Some(value) => value.as_bool().ok_or_else(|| {
-                DisplayReadError::invalid(
-                    "session.display_read acceptToolFrames must be a boolean when present",
-                )
-            })?,
+                DisplayReadError::invalid(format!(
+                    "session.display_read {name} must be a boolean when present"
+                ))
+            }),
         };
         Ok(Self {
             session,
             since_seq,
-            accept_tool_frames,
+            accept_tool_frames: flag("acceptToolFrames")?,
+            accept_message_frames: flag("acceptMessageFrames")?,
         })
     }
 
@@ -948,13 +1313,18 @@ impl<'a> DisplayReadRequest<'a> {
     /// [`Self::read`], stamping tool frames with `now_ms`.
     pub fn read_at(&self, projection: Option<&DisplayProjection>, now_ms: u64) -> DisplayReadReply {
         match projection {
-            Some(projection) if self.accept_tool_frames => {
-                projection.display_read_with_tools(self.since_seq, now_ms)
-            }
-            Some(projection) => projection.display_read(self.since_seq),
+            Some(projection) => projection.read_frames(self.since_seq, now_ms, self.accepts()),
             None => DisplayReadReply::Absent {
                 absent: DisplayReadAbsent::NoRingAttached,
             },
+        }
+    }
+
+    /// The frame kinds the reader asked for.
+    pub fn accepts(&self) -> FrameKinds {
+        FrameKinds {
+            tools: self.accept_tool_frames,
+            messages: self.accept_message_frames,
         }
     }
 }

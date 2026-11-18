@@ -1,0 +1,1 @@
+{"frames":[{"frame":{"kind":"display_gap"},"seq":5},{"frame":{"callId":"call_gap","frozen":true,"kind":"message"},"seq":6},{"frame":{"kind":"display_gap"},"seq":7},{"frame":{"callId":"call_gap","kind":"message","withdrawn":true},"seq":8},{"frame":{"kind":"display_end"},"seq":9}],"seq":9}

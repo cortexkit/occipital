@@ -48,6 +48,37 @@ pub enum DisplayInput {
     ToolStarted(ToolStart),
     /// A call of the message ended.
     ToolFinished(ToolEnd),
+    /// A chunk of a call's arguments as the model writes them.
+    ToolInput(ToolInput),
+}
+
+impl DisplayInput {
+    /// Mark the calls of `message_tool`, the tool the chat's agent talks to
+    /// the person through, so their text streams as the agent's message
+    /// (`crate::say`). Only the chunk that begins a call's arguments names its
+    /// tool, so later chunks follow the mark their call got there.
+    pub fn mark_message_tool(&mut self, message_tool: Option<&str>) {
+        let Some(message_tool) = message_tool else {
+            return;
+        };
+        match self {
+            Self::ToolStarted(start) => start.message = start.tool == message_tool,
+            Self::ToolInput(input) => {
+                input.message = input.tool_name.as_deref() == Some(message_tool);
+            }
+            _ => {}
+        }
+    }
+
+    /// The tool a call event names, when it names one: a call's start, or the
+    /// chunk that begins its arguments.
+    pub fn tool_name(&self) -> Option<&str> {
+        match self {
+            Self::ToolStarted(start) => Some(&start.tool),
+            Self::ToolInput(input) => input.tool_name.as_deref(),
+            _ => None,
+        }
+    }
 }
 
 /// A runner's `tool_started`, as the display lane's tool frames need it.
@@ -62,6 +93,29 @@ pub struct ToolStart {
     pub started_at: Option<u64>,
     pub call_key: Option<String>,
     pub schema_pin: Option<String>,
+    /// A call of the chat's message tool, set by
+    /// [`DisplayInput::mark_message_tool`]: a reader of message frames sees it
+    /// as the agent's message and never as a tool call.
+    pub message: bool,
+}
+
+/// A runner's `tool_input_delta`: a chunk of a call's arguments text, split
+/// anywhere.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ToolInput {
+    pub call_id: String,
+    pub delta: String,
+    /// The tool's name, only on the chunk that begins the call's arguments:
+    /// its first chunk after a `display_reset`, or an attach snapshot's
+    /// whole text so far (runner contract 0.8.65).
+    pub tool_name: Option<String>,
+    /// The call's message: its `mid`, or its `live_id` while unstored.
+    pub mid: String,
+    /// The key the stored message gives the call's part.
+    pub part: Option<String>,
+    /// A chunk that begins a call of the chat's message tool, set by
+    /// [`DisplayInput::mark_message_tool`].
+    pub message: bool,
 }
 
 /// A runner's `tool_finished`.
@@ -88,14 +142,16 @@ enum Effect {
     End,
     ToolStarted,
     ToolFinished,
+    ToolInput,
 }
 
 // Keep the serialized lane and event.type names together so changes can be checked mechanically.
-// Tool argument deltas have no text/reasoning frame in the app's display protocol.
 const EVENT_NAMES: &[(&str, &str, Effect)] = &[
     ("display", "text_delta", Effect::Text),
     ("display", "reasoning_delta", Effect::Reasoning),
-    ("display", "tool_input_delta", Effect::Ignore),
+    // Only a call of the chat's message tool shows its arguments: its text
+    // streams as the agent's message. Every other call's chunks show nothing.
+    ("display", "tool_input_delta", Effect::ToolInput),
     ("display", "display_gap", Effect::Gap),
     ("display", "display_reset", Effect::Reset),
     // The live run's state changed (llm-runner 0.8.47); the module re-reads
@@ -211,6 +267,20 @@ pub fn map(envelope: &Value) -> Option<DisplayInput> {
                 started_at: event.get("started_at").and_then(Value::as_u64),
                 call_key: text("call_key").filter(|key| !key.is_empty()),
                 schema_pin: text("schema_pin").filter(|pin| !pin.is_empty()),
+                message: false,
+            }))
+        }
+        // A chunk without its call, its text or its message is dropped: what it
+        // would have shown arrives whole once the call is stored.
+        Effect::ToolInput => {
+            let text = |name: &str| event.get(name).and_then(Value::as_str).map(str::to_owned);
+            Some(DisplayInput::ToolInput(ToolInput {
+                call_id: text("tool_call_id").filter(|id| !id.is_empty())?,
+                delta: text("delta")?,
+                tool_name: text("tool_name").filter(|name| !name.is_empty()),
+                mid: text("mid").or_else(|| text("live_id"))?,
+                part: text("part"),
+                message: false,
             }))
         }
         Effect::ToolFinished => Some(DisplayInput::ToolFinished(ToolEnd {
@@ -236,6 +306,8 @@ pub(crate) mod test_support {
         pub session: String,
         pub batcher: DisplayBatcher,
         pub projection: Arc<DisplayProjection>,
+        /// The chat's message tool, which the module learns from its plan.
+        pub message_tool: Option<&'static str>,
     }
 
     impl FakeSession {
@@ -244,11 +316,14 @@ pub(crate) mod test_support {
                 session: session.into(),
                 batcher: DisplayBatcher::default(),
                 projection: Arc::new(DisplayProjection::new(capacity).unwrap()),
+                message_tool: None,
             }
         }
 
         pub fn ingest(&self, envelope: Value) -> Option<DisplayTimer> {
-            match map(&envelope)? {
+            let mut input = map(&envelope)?;
+            input.mark_message_tool(self.message_tool);
+            match input {
                 DisplayInput::Delta {
                     mid,
                     text,
@@ -313,6 +388,13 @@ pub(crate) mod test_support {
                 DisplayInput::ToolFinished(end) => {
                     self.flush();
                     self.projection.end_tool(end);
+                    None
+                }
+                DisplayInput::ToolInput(input) => {
+                    if self.projection.shows_input(&input) {
+                        self.flush();
+                        self.projection.observe_input(&self.session, input);
+                    }
                     None
                 }
             }
@@ -408,6 +490,9 @@ mod live_ids;
 
 #[cfg(test)]
 mod tool_frames;
+
+#[cfg(test)]
+mod message_frames;
 
 #[cfg(test)]
 mod tests {

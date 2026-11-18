@@ -156,6 +156,17 @@ impl DisplayHub {
                 }
                 projection.end_tool(end);
             }
+            // Only a message's chunks show anything, so only they send the words
+            // held for batching first; every other call's chunks leave the frames
+            // readers get as they were.
+            DisplayInput::ToolInput(input) => {
+                if projection.shows_input(&input) {
+                    for chunk in state.batcher.drain_session(session) {
+                        projection.observe_display(chunk);
+                    }
+                    projection.observe_input(session, input);
+                }
+            }
         }
     }
 }

@@ -77,7 +77,7 @@ const AS_OF_MS: &str = "1794208800000";
 /// stamps it from the computer's clock as it serves each notice, so it is the
 /// one member that would change the set's bytes from run to run. Only the
 /// digits are replaced, so the rest of the body is the bytes the app receives.
-fn fixed_clock(body: Vec<u8>) -> Vec<u8> {
+pub(super) fn fixed_clock(body: Vec<u8>) -> Vec<u8> {
     let text = String::from_utf8(body).unwrap();
     let mut fixed = String::with_capacity(text.len());
     let mut rest = text.as_str();

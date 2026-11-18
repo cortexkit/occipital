@@ -53,8 +53,7 @@ fn display_expired(seq: u64) -> DisplayReadReply {
 pub fn next_display_notice(reply: DisplayReadReply) -> Option<(DisplayReadReply, Option<u64>)> {
     match reply {
         DisplayReadReply::Absent { .. } => None,
-        DisplayReadReply::Baseline { seq, frame, tools } => {
-            let baseline = DisplayReadReply::Baseline { seq, frame, tools };
+        baseline @ DisplayReadReply::Baseline { seq, .. } => {
             if display_body(&baseline).len() <= NOTICE_BOUND {
                 Some((baseline, Some(seq)))
             } else {
@@ -96,8 +95,8 @@ pub async fn run<H: DisplayWatchHost>(w: &H, params: Value) -> Result<(), Displa
             code: "invalid_request",
             message: "session.display_watch requires 'session'".into(),
         })?;
-    // The read above refused anything but a boolean here.
-    let tools = params.get("acceptToolFrames") == Some(&Value::Bool(true));
+    // The read above refused anything else.
+    let accepts = crate::display::DisplayReadRequest::parse(&params)?.accepts();
     let mut projections = w.projection_changes(session);
     let mut since: Option<u64> = None;
     let mut last_notice: Option<Instant> = None;
@@ -132,11 +131,7 @@ pub async fn run<H: DisplayWatchHost>(w: &H, params: Value) -> Result<(), Displa
         // Subscribe before reading so a frame pushed after the read wakes us.
         let mut changes = projection.subscribe_display();
         changes.borrow_and_update();
-        let reply = if tools {
-            projection.display_read_with_tools(since, w.now_ms())
-        } else {
-            projection.display_read(since)
-        };
+        let reply = projection.read_frames(since, w.now_ms(), accepts);
         if matches!(reply, DisplayReadReply::Expired { .. }) {
             // The ring dropped unsent frames: the next notice is a fresh Baseline.
             since = None;
