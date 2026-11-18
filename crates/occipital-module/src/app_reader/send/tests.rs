@@ -443,6 +443,7 @@ async fn a_moving_or_moved_chat_holds_its_sends() {
             session: "s".into(),
         }],
         holder: None,
+        holder_box: None,
         pending: false,
         at_ms: 1,
     };
@@ -455,13 +456,23 @@ async fn a_moving_or_moved_chat_holds_its_sends() {
     let again = f.sender.send(message("before", "hello")).await.unwrap();
     assert_eq!(again["duplicate"], true);
 
+    // Released without a box id: the refusal names no computer, never the
+    // `holder` pseudonym.
     cut.step = Step::Released;
     cut.holder = Some("author-b".into());
     cut.at_ms = 2;
     cuts.save(&cut_id, &cut).unwrap();
     let refused = f.sender.send(message("after", "hi")).await.unwrap_err();
     assert_eq!(refused.code, crate::moves::SESSION_HELD_ELSEWHERE);
-    assert_eq!(refused.detail, Some(json!({"holder": "author-b"})));
+    assert_eq!(refused.detail, None);
+
+    // Released with one: the refusal names the new computer by it.
+    let holder_box = "0123456789abcdef0123456789abcdef";
+    cut.holder_box = Some(holder_box.into());
+    cut.at_ms = 3;
+    cuts.save(&cut_id, &cut).unwrap();
+    let refused = f.sender.send(message("later", "hi")).await.unwrap_err();
+    assert_eq!(refused.detail, Some(json!({"holder": holder_box})));
     assert_eq!(call_counts(&f.runner).1, sent, "nothing reached the runner");
 }
 

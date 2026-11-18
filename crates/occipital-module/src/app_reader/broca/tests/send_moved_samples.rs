@@ -142,6 +142,7 @@ async fn the_send_moved_samples_are_what_the_reader_serves() {
             session: "ses_head".into(),
         }],
         holder: None,
+        holder_box: None,
         pending: false,
         at_ms: NOW - 1_000,
     };
@@ -152,8 +153,11 @@ async fn the_send_moved_samples_are_what_the_reader_serves() {
     assert_eq!(answer["code"], "session_moving", "{answer}");
     served.keep("01-send-moving", &request, reply);
 
+    // The release names the new computer by its box id; the `holder`
+    // pseudonym is never shown.
     cut.step = Step::Released;
-    cut.holder = Some(HOLDER.into());
+    cut.holder = Some("author-b".into());
+    cut.holder_box = Some(HOLDER.into());
     cut.at_ms = NOW - 500;
     cuts.save(&cut_id, &cut).unwrap();
     let request = send("c-moved-here");

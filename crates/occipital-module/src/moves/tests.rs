@@ -268,8 +268,8 @@ async fn only_entorhinal_is_answered() {
 }
 
 /// A whole move: the moved session's rows reach the receiver, sends to it are
-/// held while it moves and refused naming the holder once it has moved, and
-/// the session that didn't move keeps its rows and its sends.
+/// held while it moves and refused naming the new computer once it has moved,
+/// and the session that didn't move keeps its rows and its sends.
 #[tokio::test]
 async fn a_move_carries_the_moved_sessions_rows_and_holds_their_sends() {
     let fleet = Arc::new(Fleet::default());
@@ -314,14 +314,26 @@ async fn a_move_carries_the_moved_sessions_rows_and_holds_their_sends() {
         json!({"step": "activated"})
     );
 
-    let released = source
+    // A malformed box id is refused before anything changes.
+    let malformed = source
         .call(
             "agent_data.release",
-            json!({"refs": refs(), "cutId": cut, "holder": "author-b"}),
+            json!({"refs": refs(), "cutId": cut, "holder": "author-b", "holderBox": "B0X"}),
         )
+        .await
+        .unwrap_err();
+    assert_eq!(malformed.0, "invalid_request");
+    let release = json!({"refs": refs(), "cutId": cut, "holder": "author-b",
+        "holderBox": HOLDER_BOX});
+    let released = source
+        .call("agent_data.release", release.clone())
         .await
         .unwrap();
     assert_eq!(released, json!({"enforced": true}));
+    assert_eq!(
+        source.call("agent_data.release", release).await.unwrap(),
+        released
+    );
     // The waiting sends are the receiver's to follow now; the display rows
     // stay here for a move back.
     let left: Vec<String> = exported(&source.files(), "moved")
@@ -339,24 +351,64 @@ async fn a_move_carries_the_moved_sessions_rows_and_holds_their_sends() {
         exported(&source.files(), "stays").len(),
         super::rows::TABLES.len()
     );
+    // A refused send names the new computer by its box id, never by the
+    // `holder` pseudonym.
     assert_eq!(
         source.cuts.hold("moved"),
         Some(Hold::Elsewhere {
-            holder: "author-b".into()
+            holder: HOLDER_BOX.into()
         })
     );
     let refusal = refusal(&source.cuts.hold("moved").unwrap());
     assert_eq!(refusal.code, SESSION_HELD_ELSEWHERE);
-    assert_eq!(refusal.detail, Some(json!({"holder": "author-b"})));
-    // A release naming another holder is another request.
-    let refused = source
+    assert_eq!(refusal.detail, Some(json!({"holder": HOLDER_BOX})));
+    // A release naming another holder, or adding, dropping or changing the
+    // box id, is another request.
+    for other in [
+        json!({"holder": "author-c", "holderBox": HOLDER_BOX}),
+        json!({"holder": "author-b"}),
+        json!({"holder": "author-b", "holderBox": "fedcba9876543210fedcba9876543210"}),
+    ] {
+        let mut request = json!({"refs": refs(), "cutId": cut});
+        request
+            .as_object_mut()
+            .unwrap()
+            .extend(other.as_object().unwrap().clone());
+        let refused = source
+            .call("agent_data.release", request)
+            .await
+            .unwrap_err();
+        assert_eq!(refused.0, "id_reused", "{other}");
+    }
+}
+
+/// The new computer's box id, as the driver names it in a release.
+const HOLDER_BOX: &str = "0123456789abcdef0123456789abcdef";
+
+/// A release without a box id names no computer to a refused send: the
+/// `holder` pseudonym is never shown.
+#[tokio::test]
+async fn a_release_without_a_box_id_names_no_computer() {
+    let fleet = Arc::new(Fleet::default());
+    let source = computer("moves-unnamed-source", &fleet);
+    let receiver = computer("moves-unnamed-receiver", &fleet);
+    seed(&source.files(), "moved", "broca", "moved-call");
+    let cut = cut_id(9);
+    fleet.moves(&cut, &[session("moved")]);
+    source.op("agent_data.prepare", &cut).await.unwrap();
+    source.op("agent_data.export", &cut).await.unwrap();
+    receiver.op("agent_data.import", &cut).await.unwrap();
+    receiver.op("agent_data.activate", &cut).await.unwrap();
+    source
         .call(
             "agent_data.release",
-            json!({"refs": refs(), "cutId": cut, "holder": "author-c"}),
+            json!({"refs": refs(), "cutId": cut, "holder": "author-b"}),
         )
         .await
-        .unwrap_err();
-    assert_eq!(refused.0, "id_reused");
+        .unwrap();
+    let refusal = refusal(&source.cuts.hold("moved").unwrap());
+    assert_eq!(refusal.code, SESSION_HELD_ELSEWHERE);
+    assert_eq!(refusal.detail, None);
 }
 
 /// An agent with no rows here carries no stream: its cut has no item of
