@@ -107,7 +107,11 @@ fn request(harness: &str) -> Value {
 /// `files` of them.
 #[test]
 fn the_recorded_plan_views_keep_their_checksums() {
-    for (folder, files) in [("thalamus-plan-view-v1", 13), ("broca-plan-view-1112", 5)] {
+    for (folder, files) in [
+        ("thalamus-plan-view-v1", 13),
+        ("broca-plan-view-1112", 5),
+        ("thalamus-plan-view-pi-v1", 3),
+    ] {
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("tests/data")
             .join(folder);
@@ -256,4 +260,49 @@ async fn the_request_context_samples_are_what_the_reader_serves() {
         .all(|call| call["method"] != "session.plan_view"));
     served.keep("07-pi-unsupported", &request, reply);
     served.check();
+}
+
+/// A Pi session once its runner declares the read (`thalamus-plan-view-pi-v1`,
+/// recorded from a real Pi host): Pi's own describe passes the reader's check,
+/// so the read is asked, and its view reaches the app with the tools in the
+/// order Pi offers them to the model, which isn't the plan's order.
+#[tokio::test]
+async fn a_pi_plan_view_reaches_the_app_in_pi_s_tool_order() {
+    let folder = "thalamus-plan-view-pi-v1";
+    let route = FakeRoute::new();
+    *route.describe.lock().unwrap() =
+        Some(recorded(folder, "role-describe.json")["result"].clone());
+    let body = recorded(folder, "plan-view.reply.json");
+    *route.plan_view.lock().unwrap() = Some(runner_reply(THALAMUS_RUNNER_MODULE_ID, body.clone()));
+    let app = app(&route, "pi");
+    let reply = app
+        .read(
+            super::super::super::REQUEST_CONTEXT,
+            json!({"session": "ses_head", "harness": "pi"}),
+        )
+        .await
+        .unwrap();
+    let view = &body["result"];
+    assert_eq!(reply["generation"], view["generation"], "{reply}");
+    assert_eq!(reply["system"]["text"], view["system"]["text"], "{reply}");
+    assert_eq!(reply["asPlanned"], true, "{reply}");
+    let tools = |tools: &Value, schema: &str| -> Vec<Value> {
+        tools
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|tool| json!([tool["name"], tool["provider"], tool[schema]]))
+            .collect()
+    };
+    assert_eq!(
+        tools(&reply["tools"], "inputSchema"),
+        tools(&view["tools"], "input_schema"),
+        "{reply}"
+    );
+    assert!(route
+        .calls
+        .lock()
+        .unwrap()
+        .iter()
+        .any(|call| call["method"] == "session.plan_view"));
 }
