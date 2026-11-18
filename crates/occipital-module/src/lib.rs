@@ -32,6 +32,7 @@ pub mod display;
 pub mod key_digest;
 pub mod manifest;
 pub mod media;
+pub mod moves;
 #[cfg(feature = "show-ui")]
 pub mod native;
 pub mod notices;

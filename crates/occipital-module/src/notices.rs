@@ -229,6 +229,12 @@ impl NoticeStore {
         Ok(Self { file })
     }
 
+    /// The file, for a move that copies a session's rows whole
+    /// (`crate::moves::rows`).
+    pub(crate) fn file(&self) -> &SqliteStore {
+        &self.file
+    }
+
     /// Keep each of `notices`, and return the ones not kept before. A notice
     /// kept again keeps its text; a place from a page read fills in one the
     /// live stream left out. One seen in another session than before moved

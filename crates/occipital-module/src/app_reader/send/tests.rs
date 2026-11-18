@@ -364,6 +364,50 @@ fn call_counts(runner: &FakeRunner) -> (usize, usize, usize) {
     )
 }
 
+/// A send to a chat whose agent is moving to another computer, or has moved,
+/// never reaches the runner here, and one that has moved names its new
+/// computer. A send answered before the move keeps its receipt.
+#[tokio::test]
+async fn a_moving_or_moved_chat_holds_its_sends() {
+    use crate::moves::state::{Cut, Cuts, Side, Step};
+    let f = granted_fixture(Kind::Head);
+    f.sender.send(message("before", "hello")).await.unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let cuts = Arc::new(Cuts::open(dir.path()).unwrap());
+    f.sender.set_moves(cuts.clone());
+    let mut cut = Cut {
+        agent: "agent_0000000000000101".into(),
+        side: Some(Side::Source),
+        step: Step::Prepared,
+        item: None,
+        sessions: vec![crate::moves::payload::Session {
+            runner: "broca".into(),
+            harness: "broca".into(),
+            session: "s".into(),
+        }],
+        holder: None,
+        pending: false,
+        at_ms: 1,
+    };
+    let cut_id = "0".repeat(32);
+    cuts.save(&cut_id, &cut).unwrap();
+    let sent = call_counts(&f.runner).1;
+
+    let refused = f.sender.send(message("during", "hi")).await.unwrap_err();
+    assert_eq!(refused.code, crate::moves::SESSION_MOVING);
+    let again = f.sender.send(message("before", "hello")).await.unwrap();
+    assert_eq!(again["duplicate"], true);
+
+    cut.step = Step::Released;
+    cut.holder = Some("author-b".into());
+    cut.at_ms = 2;
+    cuts.save(&cut_id, &cut).unwrap();
+    let refused = f.sender.send(message("after", "hi")).await.unwrap_err();
+    assert_eq!(refused.code, crate::moves::SESSION_HELD_ELSEWHERE);
+    assert_eq!(refused.detail, Some(json!({"holder": "author-b"})));
+    assert_eq!(call_counts(&f.runner).1, sent, "nothing reached the runner");
+}
+
 #[tokio::test]
 async fn a_granted_worker_steers_even_when_model_validation_precedes_the_grant() {
     let f = granted_fixture(Kind::Worker);

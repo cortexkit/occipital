@@ -217,6 +217,12 @@ impl DisplayStore {
         &self.limits
     }
 
+    /// The records file and the details file, for a move that copies a
+    /// session's rows whole (`crate::moves::rows`).
+    pub(crate) fn files(&self) -> (&SqliteStore, &SqliteStore) {
+        (&self.records, &self.details)
+    }
+
     /// Store `write` from `writer`, the route's attested opener, or say why not.
     /// The comparison and the insert run in one fenced transaction, so two
     /// writes racing for one key can't both be `stored`.
@@ -684,7 +690,7 @@ fn user_version(conn: &rusqlite::Connection) -> rusqlite::Result<i64> {
 }
 
 /// A principal in its canonical JSON form, so equal principals compare equal.
-fn principal_json(principal: &Principal) -> Result<String, serde_json::Error> {
+pub(crate) fn principal_json(principal: &Principal) -> Result<String, serde_json::Error> {
     serde_jcs::to_string(principal)
 }
 

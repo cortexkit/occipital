@@ -243,6 +243,9 @@ pub struct Sender {
     /// The model catalog that bounds how many files a message carries. Until
     /// `set_model_names` supplies it, the fallback limits apply.
     model_names: std::sync::OnceLock<Arc<crate::display::model_names::ModelNames>>,
+    /// The agent moves this computer takes part in, which hold sends to the
+    /// sessions they carry. Until `set_moves` supplies them, nothing is held.
+    moves: std::sync::OnceLock<Arc<crate::moves::state::Cuts>>,
     /// Whether runners' state notices reach this module (the message bus
     /// reader is attached), which stretches the followers' timed checks to
     /// [`BACKSTOP_INTERVAL`].
@@ -277,6 +280,7 @@ impl Sender {
             tasks: Mutex::default(),
             stops: Mutex::default(),
             model_names: std::sync::OnceLock::new(),
+            moves: std::sync::OnceLock::new(),
             notices_live: Arc::default(),
         }
     }
@@ -296,6 +300,11 @@ impl Sender {
     /// Hold sends to the attachment limits `names` reads, once.
     pub fn set_model_names(&self, names: Arc<crate::display::model_names::ModelNames>) {
         let _ = self.model_names.set(names);
+    }
+
+    /// Hold sends to the sessions `cuts` say are moving or moved, once.
+    pub fn set_moves(&self, cuts: Arc<crate::moves::state::Cuts>) {
+        let _ = self.moves.set(cuts);
     }
 
     /// Late outcomes for every session; a transcript watch keeps those for its own.
@@ -458,6 +467,16 @@ impl Sender {
                 receipt["duplicate"] = json!(true);
                 return Ok(receipt);
             }
+        }
+        // A send whose chat is moving to another computer, or has moved, never
+        // reaches the runner here: one that landed after the move's cut would be
+        // left behind. A send already answered keeps its receipt (above).
+        if let Some(hold) = self
+            .moves
+            .get()
+            .and_then(|cuts| cuts.hold(&request.session))
+        {
+            return Err(crate::moves::refusal(&hold));
         }
 
         let target = match self

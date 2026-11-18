@@ -255,6 +255,24 @@ read facts. The apps read records by message id with `session.wake_records`,
 and a riding notice carries its send's record as `wake` in `session.notices`.
 The wire is pinned by `phone-reader-wake-records-v1`.
 
+## Agent moves
+
+When Entorhinal moves an agent to another computer, Occipital carries its
+chats' display data with it: call pins, tool records, completions and details,
+riding notices, wake records, the map from message to send, and queued and
+unsent sends, for the sessions the move carries. It serves the agent-data
+contract (`cortexkit-role-agent-data`) on the `agent-data` internal service, to
+`reserved:entorhinal` only (anyone else is refused `caller_forbidden`), with
+the one ref kind `agent`. The rows travel as one stream through Engram's
+session door; an agent with no rows here carries none.
+
+From the source's `prepare` until the move ends, a send to a moved session is
+refused `session_moving`; after the source's `release`, it is refused
+`session_held_elsewhere`, with the new computer as `detail.holder`. The app
+keeps the draft. A send answered before the move keeps its receipt. Each
+move's step is a file in `moves/` in the store's folder, synced before an op
+replies.
+
 ## Store
 
 The daemon names the store in HELLO_ACK's storage descriptor, normally

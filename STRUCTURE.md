@@ -38,6 +38,7 @@ scripts/                 check.sh, build-xcframework.sh, xcframework-source-hash
 - `notices/wakes.rs`: wake records in the same file: the `display.write` wake kind, the sends page reads name, and `session.wake_records`.
 - `media.rs`: image reads and thumbnails.
 - `request_context.rs`: the plan's system text and tools, from the runner's `session.plan_view`.
+- `moves.rs`, `moves/`: Occipital's part in moving an agent to another computer, the agent-data participant: the rows a move carries (`rows.rs`), the stream they travel as (`payload.rs`), the calls to Entorhinal and Engram's session door (`remote.rs`), and each cut's step and the sends it holds (`state.rs`).
 - `commands.rs`: the person's commands: listing the modules that declare `user-commands/v1`, and relaying previews and runs with the caller's verified facts.
 - `bus.rs`: the durable this module reads on the local message bus, and what each event wakes.
 - `catalog_generation.rs`: when to read the daemon's `catalog.list` again: it follows the daemon's `catalog.watch` push, for runner builds, command modules and view providers.

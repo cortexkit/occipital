@@ -231,6 +231,12 @@ pub struct OccipitalHandler {
     notices: crate::notices::NoticeSlot,
     /// The apps' tool display reads over the display store, once it is open.
     tool_display: OnceLock<Arc<crate::display::app::ToolDisplay>>,
+    /// The app reader's sender, which agent moves hold sends on.
+    sends: OnceLock<Arc<app_reader::send::Sender>>,
+    /// `notices.db`, which agent moves copy rows from and into.
+    notice_store: OnceLock<Arc<crate::notices::NoticeStore>>,
+    /// The agent-data participant, once the stores it copies are open.
+    moves: OnceLock<Arc<crate::moves::Moves>>,
     consumer: Option<Consumer>,
     /// The connection to other modules, made from `consumer` when first needed.
     daemon_calls: OnceLock<Arc<crate::display::daemon::DaemonCalls>>,
@@ -261,6 +267,9 @@ impl OccipitalHandler {
             call_pins: Default::default(),
             notices: Default::default(),
             tool_display: OnceLock::new(),
+            sends: OnceLock::new(),
+            notice_store: OnceLock::new(),
+            moves: OnceLock::new(),
             consumer,
             daemon_calls: OnceLock::new(),
             bus_parts: Mutex::new(None),
@@ -284,6 +293,13 @@ impl OccipitalHandler {
     /// for tests whose daemon names no store.
     pub fn with_display(self, display: crate::display::State) -> Self {
         let _ = self.display.set(display);
+        self
+    }
+
+    /// Serve the agent-data participant from `moves` instead of the one
+    /// HELLO_ACK builds, for tests whose daemon names no store.
+    pub fn with_moves(self, moves: Arc<crate::moves::Moves>) -> Self {
+        let _ = self.moves.set(moves);
         self
     }
 
@@ -391,6 +407,7 @@ impl OccipitalHandler {
         );
         let mut background = sends.start();
         background.push(("upload cleanup", uploads.start()));
+        let _ = self.sends.set(sends.clone());
         let app = AppReader::with_sender(resolver, sends.clone()).with_uploads(Some(uploads));
         if let Some(calls) = self.daemon_calls() {
             let names = Arc::new(crate::display::model_names::ModelNames::new(Arc::new(
@@ -428,6 +445,22 @@ impl ModuleHandler for OccipitalHandler {
     async fn handle(&self, ctx: RequestCtx, body: Vec<u8>) -> HandlerOutcome {
         let handle = ctx.route_handle();
         let binding = self.binding(handle);
+        let to_moves = binding.as_ref().is_some_and(|(_, target, ..)| {
+            matches!(target, RouteTarget::InternalService { module_id, service_id }
+                if module_id == crate::MODULE_ID && service_id == crate::moves::SERVICE_ID)
+        });
+        if to_moves {
+            let caller = binding
+                .as_ref()
+                .and_then(|(principal, ..)| principal.as_ref());
+            return match self.moves.get() {
+                Some(moves) => moves.serve(caller, &body).await,
+                None => HandlerOutcome::Error {
+                    code: "unavailable".into(),
+                    message: "agent moves start once the stores are open; retry".into(),
+                },
+            };
+        }
         let to_app_reader = binding.as_ref().is_some_and(|(_, target, ..)| {
             matches!(target, RouteTarget::ManagementSurface { module_id } if module_id == crate::MODULE_ID)
         });
@@ -525,6 +558,7 @@ impl ModuleHandler for OccipitalHandler {
         }
         self.open_display(ack, &opened);
         self.open_notices(ack, &opened);
+        self.open_moves(&opened);
         self.start_bus();
         // Without the catalog, Engram skips the store; serving goes on.
         if let Err(error) = crate::backup::write_catalog(opened.data_root(), opened.file_name()) {
@@ -576,7 +610,9 @@ impl OccipitalHandler {
         });
         match opened {
             Ok(file) => {
-                let (notices, task) = crate::notices::Notices::start(Arc::new(file));
+                let file = Arc::new(file);
+                let _ = self.notice_store.set(file.clone());
+                let (notices, task) = crate::notices::Notices::start(file);
                 let _ = self.notices.set(notices.clone());
                 if let Some(app) = self.app.get() {
                     app.set_notices(notices);
@@ -647,6 +683,42 @@ impl OccipitalHandler {
             }
         };
         let _ = self.display.set(state);
+    }
+
+    /// Open the record of agent moves in the module's data folder, so sends to
+    /// a moving or moved chat are held, and serve the agent-data participant
+    /// once the files it copies are open. Without them, or without a daemon
+    /// connection to reach Entorhinal and Engram, Entorhinal's calls are
+    /// refused, retryably.
+    fn open_moves(&self, store: &Store) {
+        let cuts = match crate::moves::state::Cuts::open(store.data_root()) {
+            Ok(cuts) => Arc::new(cuts),
+            Err(error) => {
+                tracing::error!(%error, "cannot open the agent move records; agent moves are refused");
+                return;
+            }
+        };
+        if let Some(sends) = self.sends.get() {
+            sends.set_moves(cuts.clone());
+        }
+        let (Some(crate::display::State::Open(display)), Some(notices), Some(calls)) = (
+            self.display.get(),
+            self.notice_store.get(),
+            self.daemon_calls(),
+        ) else {
+            return;
+        };
+        let moves = crate::moves::Moves::new(
+            cuts,
+            Arc::new(crate::moves::remote::DaemonRemote(calls)),
+            Arc::new(crate::moves::Stores {
+                display: display.clone(),
+                notices: notices.clone(),
+                store: store.shared(),
+            }),
+            crate::display::store::now_ms,
+        );
+        let _ = self.moves.set(Arc::new(moves));
     }
 
     /// Start the message bus reader once the app reader and the display store
@@ -857,6 +929,45 @@ mod tests {
             json!({"max_record_bytes": 16384, "max_detail_bytes": 3145728,
                    "max_completion_bytes": 16384, "loading_window_ms": 5000})
         );
+        harness.shutdown().await;
+    }
+
+    /// The agent-data service is reached only on its own internal-service
+    /// route, and answers only Entorhinal there.
+    #[tokio::test]
+    async fn the_agent_data_route_reaches_the_move_participant() {
+        let dir = cortexkit_test_support::ScratchDir::new("occipital-serve-moves");
+        let moves = crate::moves::tests::participant(&dir);
+        let mut harness = ModuleHarness::start(
+            |_| OccipitalHandler::new(None, Box::new(|_| {})).with_moves(moves),
+            [],
+        )
+        .await;
+        let route = |channel, principal| {
+            let mut request = RouteBindRequest::new(
+                RouteHandle::detached(channel, 1),
+                RouteTarget::InternalService {
+                    module_id: crate::MODULE_ID.into(),
+                    service_id: crate::moves::SERVICE_ID.into(),
+                },
+                subc_protocol::BindIdentity::new("entorhinal", "move"),
+            );
+            request.principal = Some(principal);
+            request
+        };
+        let describe =
+            serde_json::to_vec(&json!({"method": "agent_data.describe", "params": {}})).unwrap();
+        let entorhinal = harness.bind_route(route(12, reserved("entorhinal"))).await;
+        let corr = harness.send_request(entorhinal, describe.clone()).await;
+        let reply = harness.read_reply(entorhinal, corr).await;
+        assert_eq!(reply.header.ty, FrameType::Response, "{reply:?}");
+        assert_eq!(reply_body(&reply)["result"]["ref_kinds"], json!(["agent"]));
+
+        let other = harness.bind_route(route(13, reserved("broca"))).await;
+        let corr = harness.send_request(other, describe).await;
+        let refused = harness.read_reply(other, corr).await;
+        assert_eq!(refused.header.ty, FrameType::Error);
+        assert_eq!(reply_body(&refused)["code"], "caller_forbidden");
         harness.shutdown().await;
     }
 

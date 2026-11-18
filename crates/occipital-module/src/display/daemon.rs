@@ -150,17 +150,55 @@ impl DaemonCalls {
         role_versions: Option<BTreeMap<String, String>>,
         open_within: Duration,
     ) -> Result<Value, CallFailure> {
+        self.call_with(
+            target,
+            purpose,
+            body,
+            CallOptions {
+                role_versions,
+                route_retry_deadline: open_within,
+                ..Default::default()
+            },
+        )
+        .await
+    }
+
+    /// [`Self::call`], allowing the whole call `timeout` rather than the
+    /// client's default, for a callee whose answer can take minutes (the
+    /// session door's upload of a move's stream).
+    pub async fn call_timed(
+        &self,
+        target: RouteTarget,
+        purpose: &str,
+        body: &Value,
+        timeout: Duration,
+    ) -> Result<Value, CallFailure> {
+        self.call_with(
+            target,
+            purpose,
+            body,
+            CallOptions {
+                timeout,
+                ..Default::default()
+            },
+        )
+        .await
+    }
+
+    async fn call_with(
+        &self,
+        target: RouteTarget,
+        purpose: &str,
+        body: &Value,
+        options: CallOptions,
+    ) -> Result<Value, CallFailure> {
         let consumer = self.consumer().await?;
         let called = consumer
             .call(
                 target,
                 BindIdentity::new(crate::MODULE_ID, purpose),
                 body.to_string().into_bytes(),
-                CallOptions {
-                    role_versions,
-                    route_retry_deadline: open_within,
-                    ..Default::default()
-                },
+                options,
             )
             .await;
         let bytes = match called {

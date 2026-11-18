@@ -93,6 +93,17 @@ A module that has commands provides `user-commands/v1` and serves `commands.desc
 - **Runs are never sent twice.** One sent but unanswered is reported `command_outcome_unknown`, and the app asks again under the same `request_id`, which the module answers from its stored reply.
 - **Nothing enters a chat.** A run is the person's action, never part of a transcript or of what a model reads.
 
+## Moving an agent
+
+When Entorhinal moves an agent to another computer, its chats keep their display data there: Occipital is a participant in the move (`moves.rs`), on the `agent-data` internal service, answering only `reserved:entorhinal`. It takes the whole agent as its one ref (kind `agent`), never a runner's session kind, since covering one is what makes a move admissible and Occipital can't carry a conversation.
+
+- **What travels:** for the sessions the cut moves (Entorhinal's `agent.move_refs`, each ref mapped with `agent.session_for_ref`), their call pins, the tool records, completions and details of those calls, riding notices, wake records, the map from message to send, and queued and unsent sends (`moves/rows.rs`). Every row is keyed the same on any computer, so a row is copied whole.
+- **The stream:** the rows go as one JSON-lines stream (`moves/payload.rs`, format `occipital-chat-display/v1`) through Engram's session door, under a handle fresh for each cut. An agent with no rows here carries no stream.
+- **Source:** `prepare` holds new sends to the moved sessions before it reads their rows, writes the stream and admits it; `export` checks the door holds it; `release` deletes the rows and keeps holding the sessions as living on the new computer. `abort` lifts the hold.
+- **Receiver:** `import` reads the stream back with the cut's id and checks its digest; `activate` inserts the rows without replacing any row already held, and lifts any hold an earlier move away left on the agent.
+- **Held sends:** a send to a held session never reaches the runner. It is refused `session_moving` while the agent moves, and `session_held_elsewhere` (with the new computer as `holder`) once it has moved. A send answered before the move keeps its receipt.
+- **State:** each cut's step is a file in `moves/` (`moves/state.rs`), synced before an op replies, so a restart never lets a send land past a cut; the holds are worked out from those files.
+
 ## Reply teaching and the interface language
 
 The language library parses, checks, evaluates and lays out the closed interface language: the tags a head's reply may hold, `show_ui` programs and tool templates. It has no panic paths, because apps embed it. Its catalogs are pinned by publication digest. Until the apps' first release a catalog changes in place, with no aliases: a reply stamped with an earlier digest doesn't draw as rich content (the apps show its plain text instead), and a tool template naming one is refused, so its calls draw as plain chips.
@@ -115,6 +126,7 @@ All stores sit in Occipital's data folder, normally `<data home>/cortexkit/occip
 | `display-details.db` | tool details (large, may hold file contents) | no |
 | `notices.db` | riding notices, wake records, the send each read message came from | yes |
 | `upload-blobs/` | partial upload contents | no |
+| `moves/` | each agent move's step, and its stream while the move needs it | no |
 
 - **One writer:** `store.db` is opened with cortexkit-store, which holds a single-writer lease; every write is fenced.
 - **Migrations only move forward.** Each file, and each table group in `store.db`, has its own version, and a binary refuses to start on one ahead of what it knows. So a build that adds a migration makes rollback a store step, not a plain binary swap: copy the changed files aside before placing it.
