@@ -1055,6 +1055,56 @@ async fn the_service_tier_samples_are_what_the_handlers_answer() {
     served.check();
 }
 
+/// `phone-session-default-effort-v1`: a head whose selection names no reasoning
+/// effort says which one the runner sends by default (llm-runner 0.8.64's
+/// `default_variant`), and the app gets it as `model.defaultVariant`, apart from
+/// `variant`, on details and the newest page. A head with a chosen effort names
+/// no default, and the model reads as before.
+#[tokio::test]
+async fn the_default_effort_samples_are_what_the_handlers_answer() {
+    let route = sample_route();
+    let unchosen = json!({"provider":"anthropic", "model":"claude-opus-5-5",
+        "default_variant":"xhigh"});
+    for (key, value) in [("model", unchosen), ("sender", grant())] {
+        set_head(&route, key, value);
+    }
+    *route.incarnation.lock().unwrap() = "6a6ce2eb-b065-4df0-806e-44bcf531e128".into();
+    let app = sending(&route);
+    let mut served =
+        super::served_samples::Served::new("phone-session-default-effort-v1", app.clone());
+    let details_request =
+        json!({"method": DETAILS, "params": {"session":"alfonso:s1", "harness":"broca"}});
+    let page_request = json!({"method": TRANSCRIPT_PAGE, "params": params()});
+    let unchosen_model =
+        json!({"provider":"anthropic", "model":"claude-opus-5-5", "defaultVariant":"xhigh"});
+
+    let reply = served.read(1, &details_request).await;
+    assert_eq!(
+        super::served_samples::decoded(&reply)["result"]["model"],
+        unchosen_model
+    );
+    served.keep("01-details-default-effort", &details_request, reply);
+    let reply = served.read(2, &page_request).await;
+    assert_eq!(
+        super::served_samples::decoded(&reply)["result"]["model"],
+        unchosen_model
+    );
+    served.keep("02-newest-page-default-effort", &page_request, reply);
+
+    set_head(
+        &route,
+        "model",
+        json!({"provider":"anthropic", "model":"claude-opus-5-5", "variant":"high"}),
+    );
+    let reply = served.read(3, &details_request).await;
+    assert_eq!(
+        super::served_samples::decoded(&reply)["result"]["model"],
+        json!({"provider":"anthropic", "model":"claude-opus-5-5", "variant":"high"})
+    );
+    served.keep("03-details-chosen-effort", &details_request, reply);
+    served.check();
+}
+
 /// llm-runner 0.8.45's wait samples (`tests/data/llm-runner-run-awaits/`,
 /// copied unchanged from the contract crate's `run-awaits.json`).
 fn run_awaits_samples() -> Value {

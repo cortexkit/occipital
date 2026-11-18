@@ -1629,7 +1629,7 @@ impl BrocaSource {
                 max_image_bytes: value["input"]["max_image_bytes"].as_u64(),
                 max_image_dimension: value["input"]["max_image_dimension"].as_u64(),
             },
-            model: meta.model.as_ref().map(json_of).transpose()?,
+            model: meta.model.as_ref().map(app_model).transpose()?,
             // Passed on as the head states it. A runner declaring `head_selection`
             // leaves it out when it is standard; an app that offers the choice
             // knows the runner selects heads, so it reads a missing tier as
@@ -2666,6 +2666,20 @@ fn json_of(value: &impl Serialize) -> Result<Value, ReadError> {
     serde_json::to_value(value).map_err(|error| {
         ReadError::new("internal", format!("cannot encode a runner value: {error}"))
     })
+}
+/// The head's next-send model in the apps' spelling: `{provider, model,
+/// variant?, defaultVariant?}`. `defaultVariant` is the reasoning effort the
+/// runner sends when no variant is chosen, for the apps to label ("xhigh
+/// (default)"); it's kept apart from `variant` so an app that sends the
+/// selection back never pins the vendor's default as a choice.
+fn app_model(model: &cortexkit_role_llm_runner::read::HeadModel) -> Result<Value, ReadError> {
+    let mut value = json_of(model)?;
+    if let Some(fields) = value.as_object_mut() {
+        if let Some(default) = fields.remove("default_variant") {
+            fields.insert("defaultVariant".into(), default);
+        }
+    }
+    Ok(value)
 }
 fn unstable() -> ReadError {
     ReadError::new(
