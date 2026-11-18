@@ -368,6 +368,13 @@ pub trait SourceResolver: Send + Sync {
         ))
     }
 
+    /// The tool the session's agent talks to the person through, when its plan
+    /// gives it one (`message_tool`). A plan the runner can't serve gives none.
+    async fn message_tool(&self, session: &str, harness: Option<&str>) -> Option<&'static str> {
+        let view = self.plan_view(session, harness).await.ok()?;
+        message_tool::from_plan(&view)
+    }
+
     /// Whether a file of type `mime` can go into the session's prompt, and what
     /// the prompt takes: `Some` when its runner takes uploads (the runner
     /// contract's `attachments` group) and its model isn't known to refuse the
@@ -462,8 +469,6 @@ pub struct AppReader {
     /// The notices that rode sessions' calls, once their file is open;
     /// refused until then.
     notices: std::sync::OnceLock<Arc<crate::notices::Notices>>,
-    /// Which chats' agents talk through prefrontal's `say`, for the details.
-    message_tools: message_tool::MessageTools,
 }
 
 /// What a message to the session `head` describes may carry, as its details
@@ -508,7 +513,6 @@ impl AppReader {
             model_names: std::sync::OnceLock::new(),
             commands: std::sync::OnceLock::new(),
             notices: std::sync::OnceLock::new(),
-            message_tools: message_tool::MessageTools::default(),
         }
     }
 
@@ -825,11 +829,8 @@ impl AppReader {
             if found && params["messageTool"] == true {
                 if let Some(tool) = observe::step(
                     "message_tool",
-                    self.message_tools.of(
-                        self.resolver.as_ref(),
-                        &request.session,
-                        request.harness.as_deref(),
-                    ),
+                    self.resolver
+                        .message_tool(&request.session, request.harness.as_deref()),
                 )
                 .await
                 {

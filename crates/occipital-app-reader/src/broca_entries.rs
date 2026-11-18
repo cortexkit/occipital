@@ -1183,6 +1183,8 @@ fn project(
                     }
                 }
                 crate::tool_input::attach(&mut value, Some(input), full);
+                // Before the page cuts it, while the whole text is at hand.
+                crate::say::mark(&mut value, name, input);
                 calls.push(call);
                 summaries.push(name.to_string());
                 value

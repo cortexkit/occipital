@@ -237,6 +237,14 @@ impl SourceResolver for LazyBrocaSources {
         self.connected().await?.plan_view(session, harness).await
     }
 
+    async fn message_tool(&self, session: &str, harness: Option<&str>) -> Option<&'static str> {
+        self.connected()
+            .await
+            .ok()?
+            .message_tool(session, harness)
+            .await
+    }
+
     async fn watch(
         &self,
         session: &str,
@@ -722,6 +730,7 @@ pub struct BrocaSources {
     routes: Arc<dyn BrocaRoutes>,
     sources: tokio::sync::Mutex<HashMap<SessionRef, SourceSlot>>,
     describes: Mutex<HashMap<SessionRef, DescribeSlot>>,
+    message_tools: Mutex<HashMap<SessionRef, super::message_tool::MessageToolSlot>>,
     call_pins: CallPinSlot,
     notices: NoticeSlot,
     /// The image sizes every session's pages share.
@@ -752,6 +761,7 @@ impl BrocaSources {
             routes,
             sources: tokio::sync::Mutex::new(HashMap::new()),
             describes: Mutex::new(HashMap::new()),
+            message_tools: Mutex::new(HashMap::new()),
             call_pins: CallPinSlot::default(),
             notices: NoticeSlot::default(),
             sizes: Arc::default(),
@@ -867,7 +877,14 @@ impl BrocaSources {
             .entry(reference.clone())
             .or_default()
             .clone();
+        let message_tool = self
+            .message_tools
+            .guard()
+            .entry(reference.clone())
+            .or_default()
+            .clone();
         let source = BrocaSource::with_send_path(resolved, route, sendable, describe);
+        *source.message_tool.guard() = message_tool;
         source.recorded.store(recorded, Ordering::Release);
         *source.resolver.guard() = Some(self.resolver.clone());
         *source.call_pins.guard() = self.call_pins.clone();
@@ -1006,6 +1023,11 @@ impl SourceResolver for BrocaSources {
         self.source(&reference).await?.plan_view().await
     }
 
+    async fn message_tool(&self, session: &str, harness: Option<&str>) -> Option<&'static str> {
+        let reference = self.reference(session, harness).await.ok()?;
+        self.source(&reference).await.ok()?.message_tool().await
+    }
+
     async fn watch(
         &self,
         session: &str,
@@ -1071,6 +1093,9 @@ pub struct BrocaSource {
     notices: Mutex<NoticeSlot>,
     /// The sizes of images this source's pages show.
     sizes: Mutex<Arc<crate::media::Sizes>>,
+    /// Whether the plan gives the agent prefrontal's `say`, kept for the
+    /// session: rows draw its calls as messages only then.
+    message_tool: Mutex<super::message_tool::MessageToolSlot>,
 }
 
 impl BrocaSource {
@@ -1149,6 +1174,35 @@ impl BrocaSource {
             cortexkit_role_llm_runner::attachments::MediaReadRequest::new(sha256, offset, length);
         self.remote_read(ReadOp::MediaRead, json_of(&request)?)
             .await
+    }
+
+    /// Draw the rows' `say` calls as the agent's messages where the plan gives
+    /// the agent prefrontal's `say`, and as tool calls elsewhere
+    /// (`occipital_app_reader::say`). The plan is read only for rows that have
+    /// a `say` call, and its answer is kept for a minute.
+    async fn settle_say(&self, rows: &mut [Row]) {
+        if !occipital_app_reader::say::any_marked(rows.iter().map(|row| &row.display)) {
+            return;
+        }
+        let tool = self.message_tool().await;
+        for row in rows {
+            occipital_app_reader::say::resolve(&mut row.display, tool.is_some());
+        }
+    }
+
+    /// The tool the agent talks to the person through, from the session's
+    /// kept answer or its plan (`super::message_tool`). A plan the runner
+    /// can't serve now gives none, and isn't kept, so the next read asks again.
+    pub async fn message_tool(&self) -> Option<&'static str> {
+        let slot = self.message_tool.guard().clone();
+        let kept = *slot.guard();
+        if let Some((_, tool)) = kept.filter(|(at, _)| at.elapsed() < super::message_tool::FRESH) {
+            return tool;
+        }
+        let view = self.plan_view().await.ok()?;
+        let tool = super::message_tool::from_plan(&view);
+        *slot.guard() = Some((std::time::Instant::now(), tool));
+        tool
     }
 
     /// The system text and tools of the plan in force, from the runner's
@@ -1248,6 +1302,7 @@ impl BrocaSource {
             call_pins: Mutex::new(CallPinSlot::default()),
             notices: Mutex::new(NoticeSlot::default()),
             sizes: Mutex::default(),
+            message_tool: Mutex::default(),
         })
     }
 
@@ -1673,6 +1728,7 @@ impl BrocaSource {
             self.rows(&entries, false, &pruned_reasoning)
         })?;
         self.size_images(&mut rows).await;
+        self.settle_say(&mut rows).await;
         // The apps draw every system row as a prompt card that opens on tap, so
         // one with nothing in it, such as the entry Pi writes when a session
         // starts, is left out of pages. So is the user entry a runner wrote for a
@@ -2332,6 +2388,7 @@ impl TranscriptSource for BrocaSource {
         // Start result pairing at the selected message, as the full-message read
         // does, so an older unanswered call cannot consume an id-less result.
         let mut rows = self.rows(&snapshot.entries, true, &snapshot.pruned_reasoning)?;
+        self.settle_say(&mut rows).await;
         let mut row = rows.remove(0);
         if let Some(reason) = row
             .display
