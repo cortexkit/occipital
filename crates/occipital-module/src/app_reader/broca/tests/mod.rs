@@ -2152,6 +2152,7 @@ mod reply_tags_1112;
 mod run_endings_samples;
 #[path = "../../../../../occipital-app-reader/tests/fixtures/broca_0_7.rs"]
 pub(crate) mod samples_0_7;
+mod say_live_samples;
 mod say_samples;
 pub(crate) mod served_samples;
 mod session_facts;

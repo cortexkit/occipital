@@ -12,12 +12,12 @@ use crate::display::store::DisplayStore;
 use cortexkit_role_tool_display::{DisplayKind, DisplayWrite};
 use cortexkit_test_support::ScratchDir;
 
-const SESSION: &str = "alfonso:head";
+pub(super) const SESSION: &str = "alfonso:head";
 const TEXT: &str = "Build passed. <Badge tone=\"success\">1,651 tests</Badge>";
 
 /// The reply catalog the runner stamped the agent's turns with, so the apps
 /// draw a message's tags as they draw a reply's.
-const CATALOG: &str = "4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5";
+pub(super) const CATALOG: &str = "4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5";
 
 /// Entorhinal's record of the one chat.
 struct OneChat;
@@ -114,7 +114,7 @@ fn plan(with_say: bool) -> Value {
 }
 
 /// An app reading the chat, on a runner whose plan is `plan(with_say)`.
-fn chat(with_say: bool) -> (Arc<super::super::super::AppReader>, Arc<FakeRoute>) {
+pub(super) fn chat(with_say: bool) -> (Arc<super::super::super::AppReader>, Arc<FakeRoute>) {
     let route = FakeRoute::new();
     *route.entries.lock().unwrap() = entries();
     *route.run_state.lock().unwrap() = Value::Null;

@@ -2021,10 +2021,25 @@ impl BrocaSource {
             }
             self.bump();
         }
-        if let Some(input) = display_events::map(&normalized) {
+        if let Some(mut input) = display_events::map(&normalized) {
+            if input.tool_name() == Some(super::message_tool::SAY) {
+                input.mark_message_tool(self.kept_message_tool());
+            }
             self.display_input(input);
         }
         true
+    }
+
+    /// The tool the agent talks to the person through, as last read from its
+    /// plan however long ago: a live event can't wait for a plan read. Page
+    /// reads keep the answer fresh while the chat holds such calls, and the
+    /// page read that opens the live feed is one of them. With nothing read
+    /// yet, a call's text isn't shown live, and its message shows whole once
+    /// stored.
+    fn kept_message_tool(&self) -> Option<&'static str> {
+        let slot = self.message_tool.guard().clone();
+        let kept = *slot.guard();
+        kept.and_then(|(_, tool)| tool)
     }
 }
 
