@@ -437,3 +437,68 @@ fn hosts_call_times_reach_the_tool_frames() {
         );
     }
 }
+
+/// Pi's and Claude Code's live argument chunks (`tool_input_delta_v1/`, real
+/// frames, copied unchanged). The reader ignores them: a live call, chunks
+/// then its stored controls, draws exactly the frames its controls make; and a
+/// watch that attaches mid-call keeps nothing of the partial arguments.
+#[test]
+fn hosts_argument_chunks_change_nothing_a_reader_sees() {
+    for (host, recorded) in [
+        ("pi", include_str!("tool_input_delta_v1/pi.json")),
+        (
+            "claude-code",
+            include_str!("tool_input_delta_v1/claude-code.json"),
+        ),
+    ] {
+        let recorded: Value = serde_json::from_str(recorded).unwrap();
+        let live = recorded["live"].as_array().unwrap();
+        let chunks = |frames: &[Value]| {
+            frames
+                .iter()
+                .filter(|frame| frame["event"]["type"] == "tool_input_delta")
+                .count()
+        };
+        assert_eq!(chunks(live), 3, "{host}");
+        let without: Vec<Value> = live
+            .iter()
+            .filter(|frame| frame["event"]["type"] != "tool_input_delta")
+            .cloned()
+            .collect();
+        let with_chunks = FakeSession::new("ses", 64);
+        run(&with_chunks, live);
+        let controls_only = FakeSession::new("ses", 64);
+        run(&controls_only, &without);
+        for since in [None, Some(0)] {
+            assert_eq!(
+                with_tools(&with_chunks, since),
+                with_tools(&controls_only, since),
+                "{host}"
+            );
+            assert_eq!(
+                plain(&with_chunks, since),
+                plain(&controls_only, since),
+                "{host}"
+            );
+        }
+        let reply = with_tools(&with_chunks, Some(0));
+        assert!(
+            kinds(&reply).iter().any(|kind| kind.ends_with(" running")),
+            "{host}: {reply}"
+        );
+
+        let attach = recorded["attach"].as_array().unwrap();
+        assert_eq!(chunks(attach), 1, "{host}");
+        let attached = FakeSession::new("ses", 64);
+        run(&attached, attach);
+        let reply = with_tools(&attached, None);
+        assert!(
+            reply["frames"].as_array().is_none_or(|frames| frames
+                .iter()
+                .all(
+                    |frame| frame["frame"]["kind"] != "display" && frame["frame"]["kind"] != "tool"
+                )),
+            "{host}: {reply}"
+        );
+    }
+}

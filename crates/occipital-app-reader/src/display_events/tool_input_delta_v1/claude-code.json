@@ -1,0 +1,128 @@
+{
+  "attach": [
+    {
+      "event": {
+        "type": "display_reset"
+      },
+      "kind": "display",
+      "seq": 1
+    },
+    {
+      "event": {
+        "delta": "{\"text\":\"synthetic tool ",
+        "mid": "msg_stream_input",
+        "part": "0",
+        "tool_call_id": "toolu_stream_input",
+        "tool_name": "echo",
+        "type": "tool_input_delta"
+      },
+      "kind": "display",
+      "seq": 2
+    }
+  ],
+  "live": [
+    {
+      "event": {
+        "delta": "{\"text\":\"synthetic ",
+        "mid": "msg_stream_input",
+        "part": "0",
+        "tool_call_id": "toolu_stream_input",
+        "tool_name": "echo",
+        "type": "tool_input_delta"
+      },
+      "kind": "display",
+      "seq": 6
+    },
+    {
+      "event": {
+        "delta": "tool ",
+        "mid": "msg_stream_input",
+        "part": "0",
+        "tool_call_id": "toolu_stream_input",
+        "type": "tool_input_delta"
+      },
+      "kind": "display",
+      "seq": 7
+    },
+    {
+      "event": {
+        "delta": "input\"}",
+        "mid": "msg_stream_input",
+        "part": "0",
+        "tool_call_id": "toolu_stream_input",
+        "type": "tool_input_delta"
+      },
+      "kind": "display",
+      "seq": 8
+    },
+    {
+      "cursor": {
+        "session": "bbe8ce28ef649c40",
+        "sub_index": 0,
+        "wal_seq": 9
+      },
+      "event": {
+        "mid": "msg_stream_input",
+        "type": "message_started"
+      },
+      "kind": "control",
+      "seq": 9
+    },
+    {
+      "cursor": {
+        "session": "bbe8ce28ef649c40",
+        "sub_index": 1,
+        "wal_seq": 9
+      },
+      "event": {
+        "arguments": "{\"text\":\"synthetic tool input\"}",
+        "arguments_truncated": false,
+        "call_key": "msg_stream_input/toolu_stream_input",
+        "mid": "msg_stream_input",
+        "name": "echo",
+        "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+        "started_at": 1795032436262,
+        "tool_call_id": "toolu_stream_input",
+        "type": "tool_started"
+      },
+      "kind": "control",
+      "seq": 10
+    },
+    {
+      "cursor": {
+        "session": "bbe8ce28ef649c40",
+        "sub_index": 2,
+        "wal_seq": 9
+      },
+      "event": {
+        "mid": "msg_stream_input",
+        "type": "message_finished"
+      },
+      "kind": "control",
+      "mid": "msg_stream_input",
+      "ordinal": 5,
+      "role": "assistant",
+      "runner_event": "message",
+      "seq": 11
+    },
+    {
+      "cursor": {
+        "session": "bbe8ce28ef649c40",
+        "sub_index": 3,
+        "wal_seq": 9
+      },
+      "event": {
+        "call_key": "msg_stream_input/toolu_stream_input",
+        "finished_at": 1795032436263,
+        "mid": "msg_stream_input",
+        "outcome": "ok",
+        "output_bytes": 80,
+        "schema_pin": "tp1:echo:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+        "tool_call_id": "toolu_stream_input",
+        "type": "tool_finished"
+      },
+      "kind": "control",
+      "seq": 12
+    }
+  ]
+}
