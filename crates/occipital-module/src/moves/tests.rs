@@ -321,7 +321,19 @@ async fn a_move_carries_the_moved_sessions_rows_and_holds_their_sends() {
         .await
         .unwrap();
     assert_eq!(released, json!({"enforced": true}));
-    assert!(exported(&source.files(), "moved").is_empty());
+    // The waiting sends are the receiver's to follow now; the display rows
+    // stay here for a move back.
+    let left: Vec<String> = exported(&source.files(), "moved")
+        .into_iter()
+        .map(|(table, _)| table)
+        .collect();
+    assert!(
+        !left
+            .iter()
+            .any(|t| t == "queued_sends" || t == "send_waits"),
+        "{left:?}"
+    );
+    assert_eq!(left.len(), super::rows::TABLES.len() - 2);
     assert_eq!(
         exported(&source.files(), "stays").len(),
         super::rows::TABLES.len()

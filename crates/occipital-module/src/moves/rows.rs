@@ -260,12 +260,15 @@ impl Files<'_> {
         Ok(counts)
     }
 
-    /// Delete every row of every table that belongs to `sessions`, tool records
-    /// and details before the pins that choose them.
-    pub(crate) fn delete(&self, sessions: &BTreeSet<String>) -> Result<u64, String> {
-        let calls = self.calls(sessions)?;
+    /// Delete the queued and unsent sends of `sessions`, once a move has
+    /// carried them to the computer that follows them now: a send has one
+    /// follower, or it would be asked after on two computers. Display rows are
+    /// kept: they are immutable, so a copy here costs nothing, and a record a
+    /// provider writes here after the cut is kept for a move back.
+    pub(crate) fn delete_waiting_sends(&self, sessions: &BTreeSet<String>) -> Result<u64, String> {
+        let calls = HashSet::new();
         let mut deleted = 0;
-        for table in TABLES.iter().rev() {
+        for table in TABLES.iter().filter(|table| table.file == File::Store) {
             let rows = self.matching(table, sessions, &calls)?;
             if rows.is_empty() {
                 continue;

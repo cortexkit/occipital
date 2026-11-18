@@ -155,9 +155,10 @@ fn every_table_lists_all_its_columns_and_its_key() {
 
 /// A move carries exactly the moved session's rows, its tool records and
 /// details chosen through its call pins; the receiver keeps what it already
-/// holds; release on the source leaves the sessions that didn't move.
+/// holds; release on the source drops only the moved session's waiting
+/// sends, which the receiver follows now.
 #[test]
-fn a_session_s_rows_export_import_and_delete_whole() {
+fn a_session_s_rows_export_and_import_whole() {
     let source_dir = ScratchDir::new("moves-source");
     let source = opened(&source_dir);
     let files = source.files();
@@ -191,11 +192,26 @@ fn a_session_s_rows_export_import_and_delete_whole() {
         exported(&files, "moved")
     );
 
+    // Only the moved session's waiting sends leave; its display rows stay.
     assert_eq!(
-        files.delete(&sessions(&["moved"])).unwrap(),
-        TABLES.len() as u64
+        files.delete_waiting_sends(&sessions(&["moved"])).unwrap(),
+        2
     );
-    assert!(exported(&files, "moved").is_empty());
+    let left: Vec<String> = exported(&files, "moved")
+        .into_iter()
+        .map(|(table, _)| table)
+        .collect();
+    assert_eq!(
+        left,
+        [
+            "call_pins",
+            "records",
+            "details",
+            "notices",
+            "wake_records",
+            "sends"
+        ]
+    );
     assert_eq!(exported(&files, "stays").len(), TABLES.len());
 }
 

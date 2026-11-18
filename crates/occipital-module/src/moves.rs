@@ -14,8 +14,10 @@
 //!   cut's id, checks its digest, and keeps it, unapplied.
 //! - **activate** (receiver): inserts the rows, keeping every row already held,
 //!   and lifts any hold an earlier move away left on those sessions.
-//! - **release** (source, after activation): deletes the rows here, and keeps
-//!   holding sends to the sessions as living on the new computer.
+//! - **release** (source, after activation): drops the sessions' waiting
+//!   sends, which the new computer follows now, and keeps holding sends to
+//!   the sessions as living there. The display rows stay: a record a provider
+//!   writes after the cut is kept for a move back.
 //! - **abort**: lifts the source's hold, or drops the receiver's stream.
 //!
 //! The rows are display data only, so Occipital is never busy, and an agent
@@ -391,7 +393,7 @@ impl Moves {
         match (cut.side, cut.step) {
             (Some(Side::Source), Step::Exported) => {
                 let (stores, sessions) = (self.stores.clone(), session_names(&cut.sessions));
-                tokio::task::spawn_blocking(move || stores.files().delete(&sessions))
+                tokio::task::spawn_blocking(move || stores.files().delete_waiting_sends(&sessions))
                     .await
                     .map_err(unavailable)?
                     .map_err(unavailable)?;
@@ -799,8 +801,8 @@ fn prepare_reply(agent: &str, cut: &Cut) -> Value {
                 "digest": item.digest,
                 "format": FORMAT,
                 // Sends are held, but a provider may still write a record for
-                // a moved call after the cut. That row stays here, and goes
-                // when `release` deletes the sessions' rows.
+                // a moved call after the cut. That row stays here, kept for a
+                // move back.
                 "frozen": false,
             })
         })
