@@ -548,3 +548,177 @@ fn another_format_is_an_upgrade() {
         Some(json!({"found": "occipital-chat-display/v9", "required": payload::FORMAT}))
     );
 }
+
+/// One request and its answer, as Entorhinal sends and reads it.
+fn exchange(principal: &Principal, method: &str, params: Value, outcome: HandlerOutcome) -> Value {
+    let reply = match outcome {
+        HandlerOutcome::Response(bytes) => serde_json::from_slice(&bytes).unwrap(),
+        HandlerOutcome::Error { code, message } => {
+            json!({"code": code, "message": message, "detail": null})
+        }
+        HandlerOutcome::ErrorWithDetail {
+            code,
+            message,
+            detail,
+        } => json!({"code": code, "message": message, "detail": detail}),
+        HandlerOutcome::Streamed => panic!("an agent-data op never streams"),
+    };
+    json!({
+        "op": method,
+        "principal": principal,
+        "request": {"method": method, "params": params},
+        "reply": reply,
+    })
+}
+
+impl Computer {
+    async fn record(&self, principal: &Principal, method: &str, params: Value) -> Value {
+        let body = serde_json::to_vec(&json!({"method": method, "params": params})).unwrap();
+        let outcome = self.moves.serve(Some(principal), &body).await;
+        exchange(principal, method, params, outcome)
+    }
+}
+
+/// The participant's samples, `test-vectors/agent-data-v1/`: one move of an
+/// agent with display rows, as Entorhinal's driver sees it on each computer,
+/// plus the refusals a driver must place. Run with
+/// `OCCIPITAL_BLESS_VECTORS=1` to rewrite them; without it this fails when a
+/// reply's bytes would change.
+#[tokio::test]
+async fn the_participant_samples_are_what_it_serves() {
+    let fleet = Arc::new(Fleet::default());
+    let source = computer("moves-samples-source", &fleet);
+    let receiver = computer("moves-samples-receiver", &fleet);
+    seed(&source.files(), "ses_moved", "broca", "moved-call");
+    seed(&source.files(), "ses_stays", "broca", "stays-call");
+    let cut = cut_id(9);
+    fleet.moves(&cut, &[session("ses_moved")]);
+    let ento = entorhinal();
+    let at_cut = || json!({"refs": refs(), "cutId": cut});
+
+    let mut files: Vec<(&str, Vec<Value>)> = Vec::new();
+    files.push((
+        "source.json",
+        vec![
+            source.record(&ento, "agent_data.describe", json!({})).await,
+            source
+                .record(&ento, "agent_data.busy", json!({"refs": refs()}))
+                .await,
+            source.record(&ento, "agent_data.prepare", at_cut()).await,
+            source.record(&ento, "agent_data.export", at_cut()).await,
+            source.record(&ento, "agent_data.status", at_cut()).await,
+        ],
+    ));
+    files.push((
+        "receiver.json",
+        vec![
+            receiver
+                .record(&ento, "agent_data.diverged", at_cut())
+                .await,
+            receiver.record(&ento, "agent_data.import", at_cut()).await,
+            receiver
+                .record(&ento, "agent_data.activate", at_cut())
+                .await,
+            receiver.record(&ento, "agent_data.status", at_cut()).await,
+        ],
+    ));
+    files.push((
+        "release.json",
+        vec![
+            source
+                .record(
+                    &ento,
+                    "agent_data.release",
+                    json!({"refs": refs(), "cutId": cut, "holder": "author-b"}),
+                )
+                .await,
+        ],
+    ));
+    let empty = cut_id(10);
+    fleet.moves(&empty, &[session("ses_quiet")]);
+    files.push((
+        "empty-agent.json",
+        vec![
+            source
+                .record(
+                    &ento,
+                    "agent_data.prepare",
+                    json!({"refs": refs(), "cutId": empty}),
+                )
+                .await,
+            receiver
+                .record(
+                    &ento,
+                    "agent_data.import",
+                    json!({"refs": refs(), "cutId": empty}),
+                )
+                .await,
+        ],
+    ));
+    let broca = Principal::Reserved {
+        module_id: "broca".into(),
+    };
+    let unseen = cut_id(11);
+    files.push((
+        "refusals.json",
+        vec![
+            source
+                .record(&broca, "agent_data.describe", json!({}))
+                .await,
+            source
+                .record(
+                    &ento,
+                    "agent_data.busy",
+                    json!({"refs": [{"ref_kind": "broca-session", "ref": "ses_moved"}]}),
+                )
+                .await,
+            source
+                .record(
+                    &ento,
+                    "agent_data.export",
+                    json!({"refs": refs(), "cutId": unseen}),
+                )
+                .await,
+            source
+                .record(
+                    &ento,
+                    "agent_data.release",
+                    json!({"refs": refs(), "cutId": cut, "holder": "author-c"}),
+                )
+                .await,
+        ],
+    ));
+
+    let folder =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test-vectors/agent-data-v1");
+    let bless = std::env::var_os("OCCIPITAL_BLESS_VECTORS").is_some();
+    let mut sums = String::new();
+    for (name, cases) in &files {
+        let mut bytes = serde_json::to_vec_pretty(cases).unwrap();
+        bytes.push(b'\n');
+        sums.push_str(&format!(
+            "{}  {name}\n",
+            payload::hex(&Sha256::digest(&bytes))
+        ));
+        let path = folder.join(name);
+        if bless {
+            std::fs::create_dir_all(&folder).unwrap();
+            std::fs::write(&path, &bytes).unwrap();
+        } else {
+            assert_eq!(
+                std::fs::read(&path).unwrap_or_default(),
+                bytes,
+                "{name} changed; rerun with OCCIPITAL_BLESS_VECTORS=1"
+            );
+        }
+    }
+    let sums_path = folder.join("SHA256SUMS");
+    if bless {
+        std::fs::write(&sums_path, &sums).unwrap();
+    } else {
+        assert_eq!(
+            std::fs::read_to_string(&sums_path).unwrap_or_default(),
+            sums
+        );
+    }
+}

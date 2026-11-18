@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use subc_protocol::manifest::ExecutionMode;
 use subc_protocol::manifest::{
     build_provenance_from_source, BuildGitShaSource, CapabilityDeclarations, Concurrency,
-    GitTreeState, ManifestProvenance, ModuleManifest, ProviderRole, Tool,
+    GitTreeState, InternalTransport, ManifestProvenance, ModuleManifest, ProviderRole, Tool,
 };
 use subc_protocol::PROTOCOL_VERSION;
 
@@ -125,6 +125,20 @@ pub fn manifest() -> Result<ModuleManifest, String> {
                     emits_push: false,
                     sub_supervises: false,
                 },
+                // The route Entorhinal opens to move an agent's chat display
+                // data (`crate::moves`). The daemon refuses a route to a
+                // service the manifest doesn't declare, so this role is what
+                // makes it openable; `agent-data/v1` below is how Entorhinal
+                // finds it.
+                ProviderRole::InternalService {
+                    service_id: cortexkit_role_agent_data::SERVICE_ID.into(),
+                    transport: InternalTransport::Bulk,
+                    agent_facing: false,
+                    operations: cortexkit_role_agent_data::REQUIRED_OPS
+                        .iter()
+                        .map(|op| op.to_string())
+                        .collect(),
+                },
             ])
             .operation_delivery(crate::app_reader::operation_delivery())
             // Only `upload.chunk` takes a raw payload.
@@ -156,6 +170,11 @@ pub fn manifest() -> Result<ModuleManifest, String> {
                 // such as prefrontal, that it may write each wake's record here
                 // (`display.write` with `kind: "wake"`, see
                 // `crate::notices::wakes`).
+                //
+                // `agent-data/v1` makes this a participant in agent moves, so a
+                // moved agent's chats keep their display data on the new
+                // computer. It describes itself optional: a computer without
+                // Occipital still takes the agent.
                 provides: vec![
                     cortexkit_role_tool_provider::PROVIDES.into(),
                     cortexkit_role_tool_provider::SYSTEM_TEXT_DEFAULT.into(),
@@ -164,6 +183,7 @@ pub fn manifest() -> Result<ModuleManifest, String> {
                     subc_protocol::peer::OPERATOR_APP_CAPABILITY.into(),
                     cortexkit_role_tool_display::TOOL_DISPLAY_CAPABILITY.into(),
                     cortexkit_role_tool_display::WAKE_RECORD_DISPLAY_CAPABILITY.into(),
+                    cortexkit_role_agent_data::PROVIDES.into(),
                 ],
                 requires: vec![],
                 must_never_reach: vec![],
@@ -217,7 +237,7 @@ mod tests {
 
     fn role<'a>(value: &'a Value, name: &str) -> &'a Value {
         let provides = value["provides"].as_array().unwrap();
-        assert_eq!(provides.len(), 2, "{provides:?}");
+        assert_eq!(provides.len(), 3, "{provides:?}");
         provides
             .iter()
             .find(|role| role["role"] == name)
@@ -326,10 +346,40 @@ mod tests {
                 "app-server/v1",
                 "operator-app/v1",
                 "tool-display/v1",
-                "wake-record-display/v1"
+                "wake-record-display/v1",
+                "agent-data/v1"
             ])
         );
         assert!(value.get("rich_ui").is_none());
+    }
+
+    /// Entorhinal opens the move route as an internal service, which the
+    /// daemon allows only when the role names its service and every op.
+    #[test]
+    fn the_agent_data_service_serves_every_move_op() {
+        let value = manifest_value();
+        let service = role(&value, "internal_service");
+        assert_eq!(
+            service,
+            &json!({
+                "role": "internal_service",
+                "service_id": "agent-data",
+                "transport": "bulk",
+                "agent_facing": false,
+                "operations": [
+                    "agent_data.describe",
+                    "agent_data.busy",
+                    "agent_data.status",
+                    "agent_data.prepare",
+                    "agent_data.export",
+                    "agent_data.diverged",
+                    "agent_data.import",
+                    "agent_data.activate",
+                    "agent_data.abort",
+                    "agent_data.release"
+                ]
+            })
+        );
     }
 
     #[test]
