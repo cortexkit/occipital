@@ -266,8 +266,13 @@ impl Moves {
                 let request: contract::release::ReleaseRequest =
                     serde_json::from_value(params).map_err(decode)?;
                 let agent = one_agent(request.refs.as_slice())?;
-                self.release(request.cut_id.as_str(), agent, &request.holder)
-                    .await
+                self.release(
+                    request.cut_id.as_str(),
+                    agent,
+                    &request.holder,
+                    request.holder_box.as_deref(),
+                )
+                .await
             }
             _ => {
                 let request: contract::request::CutRequest =
@@ -349,6 +354,7 @@ impl Moves {
                     item: None,
                     sessions,
                     holder: None,
+                    holder_box: None,
                     pending: true,
                     at_ms: (self.clock)(),
                 };
@@ -412,7 +418,17 @@ impl Moves {
         Ok(json!({ "items": items }))
     }
 
-    async fn release(&self, cut_id: &str, agent: &str, holder: &str) -> Result<Value, Refusal> {
+    /// The source lets the sessions go to the new computer. `holder_box`, the
+    /// new computer's box id when the driver names it, is what a refused send
+    /// names; `holder` is a pseudonym, kept only to tell repeats apart. A
+    /// repeat naming either differently is another request.
+    async fn release(
+        &self,
+        cut_id: &str,
+        agent: &str,
+        holder: &str,
+        holder_box: Option<&str>,
+    ) -> Result<Value, Refusal> {
         let mut cut = self
             .existing(cut_id, agent)?
             .ok_or_else(|| refuse("cut_unknown", "prepare this cut first"))?;
@@ -425,11 +441,14 @@ impl Moves {
                     .map_err(unavailable)?;
                 cut.step = Step::Released;
                 cut.holder = Some(holder.into());
+                cut.holder_box = holder_box.map(str::to_owned);
                 cut.at_ms = (self.clock)();
                 self.save(cut_id, &cut)?;
                 let _ = std::fs::remove_file(self.cuts.stream_path(cut_id));
             }
-            (Some(Side::Source), Step::Released) if cut.holder.as_deref() == Some(holder) => {}
+            (Some(Side::Source), Step::Released)
+                if cut.holder.as_deref() == Some(holder)
+                    && cut.holder_box.as_deref() == holder_box => {}
             (Some(Side::Source), Step::Released) => {
                 return Err(refuse(
                     "id_reused",
@@ -460,6 +479,7 @@ impl Moves {
                     item: None,
                     sessions: Vec::new(),
                     holder: None,
+                    holder_box: None,
                     pending: false,
                     at_ms: (self.clock)(),
                 };
@@ -492,6 +512,7 @@ impl Moves {
             item: Some(item),
             sessions: read.sessions,
             holder: None,
+            holder_box: None,
             pending: false,
             at_ms: (self.clock)(),
         };
@@ -551,6 +572,7 @@ impl Moves {
                 item: None,
                 sessions: Vec::new(),
                 holder: None,
+                holder_box: None,
                 pending: false,
                 at_ms: (self.clock)(),
             },

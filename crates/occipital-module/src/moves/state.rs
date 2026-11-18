@@ -76,8 +76,13 @@ pub(crate) struct Cut {
     /// The sessions the cut moves: held on the source, brought back on the
     /// receiver.
     pub sessions: Vec<Session>,
-    /// The computer that holds the sessions after a release.
+    /// The release's `holder`: a pseudonym for the new holder, kept only so a
+    /// repeat that names another is refused. It's never shown.
     pub holder: Option<String>,
+    /// The new computer's box id, when the release named it (`holderBox`).
+    /// A refused send names the computer only from this.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub holder_box: Option<String>,
     /// The source's `prepare` holds the sessions before it writes and admits
     /// the stream; until both are done, a repeated `prepare` finishes them.
     #[serde(default)]
@@ -92,7 +97,8 @@ pub(crate) struct Cut {
 pub enum Hold {
     /// The session's agent is moving to another computer now.
     Moving,
-    /// The session's agent lives on another computer, named by its holder.
+    /// The session's agent lives on another computer: `holder` is its box id,
+    /// or empty when the release named none.
     Elsewhere { holder: String },
 }
 
@@ -182,7 +188,7 @@ impl Cuts {
             let hold = match (cut.side, cut.step) {
                 (Some(Side::Source), Step::Prepared | Step::Exported) => Hold::Moving,
                 (Some(Side::Source), Step::Released) => Hold::Elsewhere {
-                    holder: cut.holder.clone().unwrap_or_default(),
+                    holder: cut.holder_box.clone().unwrap_or_default(),
                 },
                 (Some(Side::Receiver), Step::Activated) => {
                     holds.retain(|_, (agent, _)| *agent != cut.agent);
