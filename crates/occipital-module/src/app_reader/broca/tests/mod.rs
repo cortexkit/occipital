@@ -2133,6 +2133,7 @@ mod outside_window;
 mod part_keys;
 mod pi_display;
 mod pi_pages;
+mod pi_photo_1118;
 mod pi_samples;
 mod relayed_samples;
 mod reply_tags_1112;

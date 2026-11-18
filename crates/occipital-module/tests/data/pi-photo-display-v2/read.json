@@ -1,0 +1,50 @@
+{
+  "head": {
+    "session": "6180c7c34f692799",
+    "sub_index": 0,
+    "wal_seq": 8
+  },
+  "history_version": 0,
+  "incarnation": "inc_6b3f0d4975504a96a2044c170af195ce",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "id": "6962b759",
+        "message": {
+          "content": [
+            {
+              "text": "Look at this photo.",
+              "type": "text"
+            },
+            {
+              "text": "[media not shown: kind=image mime=image/png bytes=70 sha256=497790947d46 reason=not_requested]",
+              "type": "text"
+            }
+          ],
+          "role": "user",
+          "timestamp": 1795016596856
+        },
+        "parentId": "28345f91",
+        "timestamp": "2026-11-18T15:43:16.861Z",
+        "type": "message"
+      },
+      "mid": "6962b759",
+      "ordinal": 2,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_22314c363af70b041f50faa7"
+      },
+      "time": {
+        "created": 1795016596861
+      },
+      "tool_calls": [],
+      "written_at": 1795016596861
+    }
+  ],
+  "next_from_ordinal": 3
+}

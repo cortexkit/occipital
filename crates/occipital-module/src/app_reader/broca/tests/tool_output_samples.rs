@@ -246,44 +246,68 @@ async fn the_tool_output_samples_are_what_the_reader_serves() {
     served.check();
 }
 
-/// Broca's real `session.read {"media":"media_refs","tool_media":"refs"}`
-/// reply (`tests/data/broca-tool-media-refs-1118/`, copied unchanged), served
-/// as the runner's stored chat: the exact read of the tool's answer gives the
-/// text the model read, and lists the picture and the document under `media`
-/// by digest, never their bytes.
-#[tokio::test]
-async fn broca_s_tool_media_refs_read_lists_the_tool_s_files() {
-    let data = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/broca-tool-media-refs-1118");
+/// The folder holding Broca's real tool-media reads (broca 0.4.67, copied
+/// unchanged), after checking every file against its `SHA256SUMS`.
+fn tool_media_samples() -> std::path::PathBuf {
+    let data = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/broca-tool-media-refs-1118b");
     let sums = std::fs::read_to_string(data.join("SHA256SUMS")).unwrap();
     for line in sums.lines() {
         let (expected, name) = line.split_once("  ").unwrap();
         let bytes = std::fs::read(data.join(name)).unwrap();
         assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
     }
-    let read: Value = serde_json::from_slice(
-        &std::fs::read(data.join("tool-image-session-read-tool-media-refs.jsonl")).unwrap(),
-    )
-    .unwrap();
+    data
+}
+
+/// One of those reads served as the runner's stored chat, by a runner that
+/// declares `capabilities`, and the reply the apps get for a read with `params`.
+async fn tool_media_page(
+    file: &str,
+    capabilities: &[&str],
+    params: Value,
+) -> (Vec<u8>, Arc<FakeRoute>) {
+    let read: Value =
+        serde_json::from_slice(&std::fs::read(tool_media_samples().join(file)).unwrap()).unwrap();
     let route = FakeRoute::new();
     *route.entries.lock().unwrap() = read["result"]["messages"].as_array().unwrap().clone();
     *route.run_state.lock().unwrap() = Value::Null;
-    *route.describe.lock().unwrap() = Some(describe_with(&[
-        "attachments",
-        "transcript_reads",
-        "media_refs",
-        "tool_media_refs",
-    ]));
+    *route.describe.lock().unwrap() = Some(describe_with(capabilities));
     let app = Arc::new(super::super::super::AppReader::new(Arc::new(
         BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(OneChat))),
             Arc::new(OneRoute(route.clone())),
         ),
     )));
-    // Served only to read the reply; this test keeps no sample set.
-    let mut served = Served::new("broca-tool-media-refs-1118", app);
-    let request = json!({"method": super::super::super::TRANSCRIPT_PAGE,
-        "params": {"session": SESSION, "messageOrdinal": 2}});
-    let reply = served.read(1, &request).await;
+    // Served only to read the reply; these tests keep no sample set.
+    let mut served = Served::new("broca-tool-media-refs-1118b", app);
+    let request = json!({"method": super::super::super::TRANSCRIPT_PAGE, "params": params});
+    (served.read(1, &request).await, route)
+}
+
+/// The exact read of the message whose call the tool answered.
+fn the_call() -> Value {
+    json!({"session": SESSION, "messageOrdinal": 2})
+}
+
+const TOOL_MEDIA: [&str; 4] = [
+    "attachments",
+    "transcript_reads",
+    "media_refs",
+    "tool_media_refs",
+];
+
+/// Broca's real `session.read {"media":"media_refs","tool_media":"refs"}`
+/// reply, served as the runner's stored chat: the exact read of the tool's
+/// answer gives the text the model read, and lists the picture and the
+/// document under `media` by digest, never their bytes.
+#[tokio::test]
+async fn broca_s_tool_media_refs_read_lists_the_tool_s_files() {
+    let (reply, route) = tool_media_page(
+        "tool-image-session-read-tool-media-refs.jsonl",
+        &TOOL_MEDIA,
+        the_call(),
+    )
+    .await;
     let call = tool(&reply);
     assert_eq!(call["content"], "before-media\nafter-media", "{call}");
     assert_eq!(
@@ -306,6 +330,47 @@ async fn broca_s_tool_media_refs_read_lists_the_tool_s_files() {
         .filter(|call| call["method"] == "session.read")
         .all(|call| call["params"]["tool_media"] == "refs");
     assert!(asked);
+}
+
+/// Asking for tool media changes only what a call lists: Broca's tool-media
+/// read and its plain `media_refs` read of the same chat give the apps the same
+/// page once each call's answer (`content`, `media`, and its length
+/// `outputBytes`, on the part and in the row's `toolCalls`) is set aside.
+/// Before broca 0.4.67 the tool-media read also carried content digests the
+/// plain read leaves out.
+#[tokio::test]
+async fn tool_media_changes_only_the_calls_answers() {
+    fn without_answers(reply: &[u8]) -> Value {
+        let mut page = decoded(reply)["result"].clone();
+        let rows = page["messages"].as_array_mut().unwrap();
+        assert_eq!(rows.len(), 4, "{rows:?}");
+        for row in rows {
+            for part in row["parts"].as_array_mut().into_iter().flatten() {
+                if part["type"] == "tool" {
+                    let part = part.as_object_mut().unwrap();
+                    for answer in ["content", "media", "outputBytes"] {
+                        part.remove(answer);
+                    }
+                }
+            }
+            // The row's call summary carries the answer's length too.
+            for call in row["toolCalls"].as_array_mut().into_iter().flatten() {
+                call.as_object_mut().unwrap().remove("outputBytes");
+            }
+        }
+        page
+    }
+    let read = |file, capabilities| async move {
+        let (call, _) = tool_media_page(file, capabilities, the_call()).await;
+        let (newest, _) = tool_media_page(file, capabilities, json!({"session": SESSION})).await;
+        (tool(&call), without_answers(&newest))
+    };
+    let (call, newest) = read("tool-image-session-read-tool-media-refs.jsonl", &TOOL_MEDIA).await;
+    let (plain_call, plain_newest) =
+        read("tool-image-session-read-media-refs.jsonl", &TOOL_MEDIA[..3]).await;
+    assert_eq!(call["media"].as_array().map(Vec::len), Some(2), "{call}");
+    assert_eq!(plain_call["media"], Value::Null, "{plain_call}");
+    assert_eq!(newest, plain_newest);
 }
 
 /// A runner that declares `media_refs` but not `tool_media_refs` is never asked
