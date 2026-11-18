@@ -113,6 +113,12 @@ bound; the catalog's edge is the smallest of `limit.image_long_edge_px` and its
 `above_images.<n>` conditions, since a request counts the chat's whole history. A send naming more images or more other files is refused
 `too_many_files` before anything is copied, with those limits in its `detail`.
 
+With `messageTool: true`, `session.details` names the tool the chat's agent
+talks to the person through, `messageTool: "say"`, when the session's plan
+gives it prefrontal's `say`, and leaves the member out otherwise. The apps
+offer their Simple view only where it's present. Occipital reads it from the
+session's plan view and keeps each chat's answer for a minute.
+
 An image a chat references is read with `session.media`: a thumbnail Occipital
 makes from the runner's bytes (at most 1024 pixels on its longest side, upright),
 or the original in pieces. Image file parts on a page carry the image's digest and,

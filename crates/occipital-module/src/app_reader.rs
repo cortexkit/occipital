@@ -2,6 +2,7 @@
 
 pub mod broca;
 pub mod display_hub;
+mod message_tool;
 mod observe;
 pub mod resolve;
 mod route;
@@ -461,6 +462,8 @@ pub struct AppReader {
     /// The notices that rode sessions' calls, once their file is open;
     /// refused until then.
     notices: std::sync::OnceLock<Arc<crate::notices::Notices>>,
+    /// Which chats' agents talk through prefrontal's `say`, for the details.
+    message_tools: message_tool::MessageTools,
 }
 
 /// What a message to the session `head` describes may carry, as its details
@@ -505,6 +508,7 @@ impl AppReader {
             model_names: std::sync::OnceLock::new(),
             commands: std::sync::OnceLock::new(),
             notices: std::sync::OnceLock::new(),
+            message_tools: message_tool::MessageTools::default(),
         }
     }
 
@@ -814,6 +818,23 @@ impl AppReader {
                 )
                 .await;
                 reply["attachments"] = limits.to_json();
+            }
+            // The tool the agent talks to the person through, when it has
+            // one: the apps offer their Simple view only then. Only for an
+            // app that asks, since it costs a plan read once a minute per chat.
+            if found && params["messageTool"] == true {
+                if let Some(tool) = observe::step(
+                    "message_tool",
+                    self.message_tools.of(
+                        self.resolver.as_ref(),
+                        &request.session,
+                        request.harness.as_deref(),
+                    ),
+                )
+                .await
+                {
+                    reply["messageTool"] = serde_json::json!(tool);
+                }
             }
             self.sends.attach_queued(&mut reply, &request.session).await;
             return Ok(reply);
