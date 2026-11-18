@@ -15,6 +15,8 @@ impl Metrics for Fixed {
             TextStyle::Headline => 22,
             TextStyle::Title2 => 30,
             TextStyle::Title3 => 26,
+            TextStyle::Serif => 21,
+            TextStyle::SerifTitle3 => 28,
         })
     }
     fn t(&self, text: &str, style: TextStyle, width: Decimal, max_lines: Option<u32>) -> Decimal {
@@ -1511,4 +1513,163 @@ fn invalid_metric_values_and_arithmetic_overflow_are_not_silently_rounded() {
         measure(&revision(&tree), &cx, &Fixed),
         Err(MeasureError::Number(NumberError::Overflow))
     );
+}
+
+/// A code-box Slot is `lines` monospace footnote lines on a padded background,
+/// and its content is laid out inside the padding.
+#[test]
+fn a_code_box_slot_holds_its_lines_of_monospace_inside_its_padding() {
+    let line = node(
+        "ToolText",
+        vec![("text", s("ok")), ("font", s("mono")), ("size", s("small"))],
+        vec![],
+    );
+    let slot = node(
+        "Slot",
+        vec![("width", s("fill")), ("lines", n(3)), ("box", s("code"))],
+        vec![line.clone(), line],
+    );
+    // 2 * codePad (10) + 3 * L(monoFootnote) (14).
+    height(slot.clone(), 62);
+    let measured = run(slot, Placement::Row);
+    let child = measured.boxes.iter().find(|b| b.path == "/0/0").unwrap();
+    assert_eq!(child.width, d(180), "laid out inside the padding");
+}
+
+/// A tool header is one headline line, or its trailing Slot when that is
+/// taller, and the Slot keeps its own width class.
+#[test]
+fn a_tool_header_is_one_line_with_its_trailing_slot() {
+    let header = |children| {
+        node(
+            "ToolHeader",
+            vec![
+                ("icon", s("edit")),
+                ("title", s(&"SendProblem.swift".repeat(20))),
+                ("subtitle", s("Alfonso/Chat")),
+                ("truncate", s("middle")),
+            ],
+            children,
+        )
+    };
+    height(header(vec![]), 22);
+    let slot = node("Slot", vec![("width", s("short"))], vec![]);
+    height(header(vec![slot.clone()]), 22);
+    let tall = node("Slot", vec![("width", s("short")), ("lines", n(2))], vec![]);
+    height(header(vec![tall]), 40);
+    let measured = run(header(vec![slot]), Placement::Row);
+    let trailing = measured.boxes.iter().find(|b| b.path == "/0/0").unwrap();
+    assert_eq!(trailing.width, d(72), "12 zeros wide");
+}
+
+/// `ToolText` picks its style from font and size, and inline Markdown is prose
+/// the app measures.
+#[test]
+fn tool_text_measures_in_its_font_and_leaves_markdown_to_the_app() {
+    let text = |font: &str, size: &str| {
+        node(
+            "ToolText",
+            vec![("text", s("abc")), ("font", s(font)), ("size", s(size))],
+            vec![],
+        )
+    };
+    for (font, size, expected) in [
+        ("body", "default", 20),
+        ("body", "small", 14),
+        ("body", "large", 26),
+        ("mono", "default", 20),
+        ("mono", "small", 14),
+        ("serif", "default", 21),
+        ("serif", "large", 28),
+    ] {
+        height(text(font, size), expected);
+    }
+    // A long command wraps to its maxLines.
+    height(
+        node(
+            "ToolText",
+            vec![
+                ("text", s(&"x".repeat(100))),
+                ("font", s("mono")),
+                ("maxLines", n(2)),
+            ],
+            vec![],
+        ),
+        40,
+    );
+    let markdown = node(
+        "ToolText",
+        vec![
+            ("text", s("`a` *b*")),
+            ("markdown", TreeValue::Boolean(true)),
+        ],
+        vec![],
+    );
+    assert_eq!(run(markdown, Placement::Row).height, Height::ProseDeferred);
+}
+
+fn diff_line(kind: &str) -> TreeValue {
+    TreeValue::Record(vec![
+        (DisplayText::new("kind"), s(kind)),
+        (DisplayText::new("text"), s("line")),
+    ])
+}
+
+fn hunk(title: Option<&str>, lines: Vec<TreeValue>) -> TreeValue {
+    let mut fields = vec![(DisplayText::new("lines"), values(lines))];
+    if let Some(title) = title {
+        fields.push((DisplayText::new("title"), s(title)));
+    }
+    TreeValue::Record(fields)
+}
+
+/// A diff is each hunk's padded lines, plus its title line, with a gap between
+/// hunks. Entries that aren't records are skipped, and past 2,000 lines the
+/// last hunk drawn ends with one "more lines" line.
+#[test]
+fn a_diff_is_its_hunks_lines_and_stops_at_its_cap() {
+    let diff = node(
+        "Diff",
+        vec![(
+            "hunks",
+            values(vec![
+                hunk(
+                    Some("Change 1 · lines 245–251"),
+                    vec![diff_line("delete"), diff_line("add"), diff_line("context")],
+                ),
+                s("not a hunk"),
+                hunk(
+                    None,
+                    vec![diff_line("plain"), s("not a line"), diff_line("add")],
+                ),
+            ]),
+        )],
+        vec![],
+    );
+    // (20 + 12 + 2 + 3 * 20) + (20 + 2 * 20), and 8 between them. The gap counts
+    // every entry of hunks, as the catalog formula does.
+    assert_eq!(run(diff, Placement::Page).height, Height::Known(d(170)));
+    let capped = node(
+        "Diff",
+        vec![(
+            "hunks",
+            values(vec![
+                hunk(None, vec![diff_line("add"); 2_100]),
+                hunk(None, vec![diff_line("add")]),
+            ]),
+        )],
+        vec![],
+    );
+    // 20 + 2,001 * 20 for the first hunk, the second draws nothing, + one gap.
+    assert_eq!(
+        run(capped, Placement::Page).height,
+        Height::Known(d(20 + 2_001 * 20 + 8))
+    );
+}
+
+/// An app page is the app's own screen, so the library leaves it to the app.
+#[test]
+fn an_app_page_is_left_to_the_app() {
+    let page = node("AppPage", vec![("id", s("ask_0123456789abcdef"))], vec![]);
+    assert_eq!(run(page, Placement::Page).height, Height::ProseDeferred);
 }

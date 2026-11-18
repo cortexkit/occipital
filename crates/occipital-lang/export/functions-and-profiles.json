@@ -217,6 +217,18 @@
       "signature": "Truncate(s: string, max: number) -> string"
     },
     {
+      "maxArgs": 1,
+      "minArgs": 1,
+      "name": "FileName",
+      "signature": "FileName(path: string) -> string"
+    },
+    {
+      "maxArgs": 2,
+      "minArgs": 1,
+      "name": "Folder",
+      "signature": "Folder(path: string, depth?: number) -> string"
+    },
+    {
       "maxArgs": 3,
       "minArgs": 1,
       "name": "FormatNumber",

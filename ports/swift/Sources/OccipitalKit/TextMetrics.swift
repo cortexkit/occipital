@@ -12,6 +12,10 @@ public enum TextStyle: Int32, Sendable, CaseIterable {
     case title3 = 6
     case mono = 7
     case monoFootnote = 8
+    /// The app's serif at body size, for a tool row's question text.
+    case serif = 9
+    /// The app's serif at title3 size.
+    case serifTitle3 = 10
 }
 
 /// The platform text measurements layout needs, in points.

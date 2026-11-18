@@ -50,6 +50,15 @@ with it (`filled`). Each `measure-tree-bash-row-*` case measures that tree as
 a 200-wide transcript row: the Slot keeps its width, the command is cut to
 what the Slot leaves, and both trees have the same height.
 
+The `template-edit-row-header-*` and `template-bash-row-preview-*` cases do
+the same for rows in the rich-row shape. The edit row is one `ToolHeader`
+line: `FileName` and `Folder` of the path, and the change counts in its
+short trailing Slot. The bash row is a `ToolHeader` with the exit status in
+a narrow Slot, the command as monospace `ToolText` on at most 2 lines, and a
+3-line code box (`Slot box="code"`) holding the record's last output lines,
+each a monospace `ToolText` with its own tone. Each row measures the same
+waiting and filled.
+
 The `version` case is `occ_version` with no arguments; its request is `{}`.
 
 The `text-references` case is `occ_text_references` on a reply naming an

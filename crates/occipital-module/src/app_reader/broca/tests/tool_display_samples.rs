@@ -1,5 +1,5 @@
-//! The tool display samples the apps pin, `phone-reader-tool-display-v4`. Its
-//! README says what each file shows and what changed from v3. A test OpenCode 2 session on Thalamus's
+//! The tool display samples the apps pin, `phone-reader-tool-display-v6`. Its
+//! README says what each file shows and what changed from v5. A test OpenCode 2 session on Thalamus's
 //! runner serves four calls with their keys and pins; the display store holds
 //! the views and writes a provider would have sent. `served_samples` says how
 //! the set is checked and rewritten. v2 was recorded the same way on the
@@ -40,7 +40,7 @@ pub(super) fn reserved(module: &str) -> Principal {
 /// catalog has no aliases until the apps' first release, so a template naming
 /// any other digest is refused.
 const SAMPLE_TOOL_CATALOG: &str =
-    "sha256:a95693cfabc0bf2d7e7276fd1c634128d96c11605c1cdfe480da9ac2418683a4";
+    "sha256:af4559652b832b8908f4dc39364874eea6950ab708567e70f17d304e8c0f9a32";
 
 fn template(profile: &str, source: &str) -> Value {
     assert_eq!(
@@ -242,7 +242,7 @@ async fn the_tool_display_samples_are_what_the_reader_serves() {
         .with_call_pins(slot),
     )));
     app.set_tool_display(tool);
-    let mut served = Served::new("phone-reader-tool-display-v5", app);
+    let mut served = Served::new("phone-reader-tool-display-v6", app);
     let session = json!({"session": "ses_head", "harness": "opencode2"});
     let request = |method: &str, extra: Value| {
         let mut params = session.clone();

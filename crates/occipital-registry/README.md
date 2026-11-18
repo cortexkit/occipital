@@ -25,7 +25,7 @@ use occipital_registry::Template;
 
 let template = Template::parse(br#"{"schema": "occipital.template/1",
     "profile": "tool_row", "executionDialect": "1.0",
-    "catalog": {"version": "1.1", "digest": "sha256:a95693cfabc0bf2d7e7276fd1c634128d96c11605c1cdfe480da9ac2418683a4"},
+    "catalog": {"version": "1.1", "digest": "sha256:af4559652b832b8908f4dc39364874eea6950ab708567e70f17d304e8c0f9a32"},
     "reads": [], "source": "export const row = Text(\"done\")\n"}"#)
 .expect("a valid template");
 assert!(template.digest().expect("canonical").starts_with("sha256:"));

@@ -33,6 +33,10 @@ pub enum TextStyle {
     Mono,
     /// Monospaced footnote text.
     MonoFootnote,
+    /// The app's serif at body size, for a tool row's question text.
+    Serif,
+    /// The app's serif at the third title's size.
+    SerifTitle3,
 }
 
 /// The only platform callbacks used by formula geometry. `None` means `inf`

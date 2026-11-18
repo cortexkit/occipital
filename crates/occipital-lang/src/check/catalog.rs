@@ -65,6 +65,9 @@ impl Checker<'_> {
             }
         }
         self.forms(node, component, props, has_children, &signature);
+        if name == "ToolText" {
+            self.tool_text(node, props, &signature);
+        }
         for p in props {
             if p.name == "children" {
                 if component.kids.kind == "none" {
@@ -528,6 +531,42 @@ impl Checker<'_> {
                 Some(1)
             }
             _ => None,
+        }
+    }
+}
+
+impl Checker<'_> {
+    /// An `AppPage` replaces the whole page with the app's own screen, so it
+    /// must be the page's only node: anything beside it would never draw.
+    /// Placing it below the root is refused by its catalog `parent` rule.
+    pub(super) fn app_page(&mut self, nodes: &[Node]) {
+        let roots: Vec<&Node> = nodes.iter().filter(|node| meaningful(node)).collect();
+        if roots.len() < 2 {
+            return;
+        }
+        for node in roots {
+            if matches!(&node.kind, Kind::Tag { name, .. } if name == "AppPage") {
+                self.report(Code::Placement, node, "AppPage", None);
+            }
+        }
+    }
+
+    /// A `ToolText` font that has no style at the size asked for: monospace
+    /// has no large size, and serif no small one.
+    pub(super) fn tool_text(&mut self, node: &Node, props: &[Prop], signature: &str) {
+        let literal = |key: &str| {
+            prop(props, key)
+                .and_then(|value| self.known(value))
+                .and_then(|value| value.as_str().map(str::to_owned))
+        };
+        let font = literal("font").unwrap_or_else(|| "body".into());
+        let size = literal("size").unwrap_or_else(|| "default".into());
+        if matches!(
+            (font.as_str(), size.as_str()),
+            ("mono", "large") | ("serif", "small")
+        ) {
+            let at = prop(props, "size").unwrap_or(node);
+            self.report(Code::PropType, at, "size", Some(signature));
         }
     }
 }

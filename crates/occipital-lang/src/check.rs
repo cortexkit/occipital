@@ -64,6 +64,7 @@ pub(crate) fn check_parsed(mut parsed: crate::prepare::Parsed, context: &CheckCo
     for node in &resolved.parsed.document.nodes {
         checker.visit(node, Place::default());
     }
+    checker.app_page(&resolved.parsed.document.nodes);
     checker.unused();
     let diagnostics = checker.diagnostics;
     resolved.diagnostics.extend(diagnostics);

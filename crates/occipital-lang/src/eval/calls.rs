@@ -562,6 +562,8 @@ fn builtin(name: &str) -> Option<Builtin> {
         "Split" => Split,
         "Lines" => Lines,
         "Truncate" => Truncate,
+        "FileName" => FileName,
+        "Folder" => Folder,
         "FormatNumber" => FormatNumber,
         "FormatBytes" => FormatBytes,
         "FormatDuration" => FormatDuration,

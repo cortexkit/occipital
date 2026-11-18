@@ -70,6 +70,9 @@ and `now`, is read only inside a `Slot`, a box of fixed size:
   of the body text), or `fill` for what the row leaves. `narrow` fits a short
   status or duration, such as "Exit 127" or "12.3 s".
 - `lines`: 1 to 3 lines of body text, 1 by default.
+- `box`: `"code"` draws the box as a code box, the light code background,
+  padded, holding exactly `lines` lines of small monospace text, such as a
+  command's last output lines.
 - `needs`: the value the content waits for, such as `view.record`. While it is
   null the content isn't evaluated, and the app draws the box as loading, or as
   not kept once the call is long done.
@@ -92,11 +95,36 @@ each time they open, so they have no such rule.
 
   Each has a fixed box and cuts what doesn't fit, and an id the app doesn't
   know shows as the raw id.
+- **Also in rows and pages:**
+  - `ToolHeader {icon, title, subtitle?, truncate?}`: the row's first line, with
+    at most one `Slot` child for the trailing status. `icon` is one of `edit`,
+    `terminal`, `file`, `search`, `message`, `room`, `question`, `globe`,
+    `window`, `agent`, `task` and `tool`, which each app draws as its own
+    symbol. The Slot takes its width first, then the icon, then the subtitle
+    (at most 40% of what's left), and the title gets the rest, cut at its end,
+    or in the middle with `truncate="middle"` for paths.
+  - `ToolText {text, size?, maxLines?, font?, tone?, markdown?}`:
+    `TextContent` with a font (`body`, `mono` at small or default size, or
+    `serif` at default or large), a `tone` for the whole block, and
+    `markdown={true}` for inline Markdown: code spans, emphasis, strong,
+    strikethrough, and links drawn as their label. Everything else stays
+    literal. The app measures Markdown text, so `occipital-check` says "measured
+    by the app" for a row that has it.
 - **Pages:** the row components, plus `Callout`, `Table`, `CodeBlock`,
-  `CardHeader`, `List`, `ListItem` and the other `tool_page` components, and
-  `OpenItem {id, label}`: a link to an ask (`ask_`), an artifact (`art_`) or a
-  work item (`wi_`) that opens the app's own card for it. Where the app can't
-  open the item, the label shows as plain text.
+  `CardHeader`, `List`, `ListItem` and the other `tool_page` components, and:
+  - `OpenItem {id, label}`: a link to an ask (`ask_`), an artifact (`art_`), a
+    work item (`wi_`) or the thread with another agent (`peer:` and its
+    `agent_` id) that opens the app's own card or screen for it. Where the app
+    can't open the item, the label shows as plain text.
+  - `Diff {hunks}`: changes to a file. Each hunk is
+    `{title?, oldStart?, newStart?, lines}`, and each line
+    `{kind, text, marks?}` with `kind` one of `context`, `add`, `delete` and
+    `plain`, and `marks` the highlighted ranges as `{start, end}` in Unicode
+    scalar values. With both starts, each line shows its line numbers. Lines
+    never wrap and scroll sideways, and at most 2,000 lines show.
+  - `AppPage {id}`: the page is the app's own screen for the id, which
+    `OpenItem` takes too. It must be the page's only node. When the app can't
+    open the id, it draws the default page with the call's input and output.
 
 Numbers read better formatted, with the language's built-ins, which work in
 rows and pages alike:
@@ -105,6 +133,9 @@ rows and pages alike:
 - `FormatDuration(ms, "compact")`: "920 ms", "2.4 s", "1m 5s" or "2h 3m";
   `"clock"` gives "m:ss" or "h:mm:ss".
 - `FormatNumber(n, digits?, grouping?)`: thousands grouped with ",".
+- `FileName(path)` and `Folder(path, depth?)`: a path's last component, and
+  its last `depth` folder names (2 by default) joined with `/`. A template has
+  no project root, so these name a file the way a person reads it.
 
 The tool catalog lists each component's props, types and defaults, in the
 `cortexkit-occipital-lang` crate's `catalog/catalog-v1.json` and

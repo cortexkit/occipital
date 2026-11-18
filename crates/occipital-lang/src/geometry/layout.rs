@@ -119,12 +119,61 @@ impl<M: Metrics> Engine<'_, M> {
                 // so the row never changes height when its data arrives.
                 // Prose content is laid out by the app, inside the same box.
                 let inner = self.slot_width(p, w)?.unwrap_or(w);
-                match self.stack(children, inner, path, Decimal::ZERO) {
+                let code = text(p, "box") == Some("code");
+                let pad = if code { k("codePad")? } else { Decimal::ZERO };
+                let content = inner
+                    .checked_sub(pad.checked_mul(d(2))?)?
+                    .max(Decimal::ZERO);
+                match self.stack(children, content, path, Decimal::ZERO) {
                     Ok(_) | Err(LayoutError::Prose) => {}
                     Err(error) => return Err(error),
                 }
-                number(p, "lines", 1).checked_mul(self.l(Body)?)?
+                // A code box holds exactly `lines` monospace lines on its padded
+                // background; a plain Slot holds `lines` body lines.
+                let line = self.l(if code { MonoFootnote } else { Body })?;
+                pad.checked_mul(d(2))?
+                    .checked_add(number(p, "lines", 1).checked_mul(line)?)?
             }
+            "ToolHeader" => {
+                // One line: the headline title, or the trailing Slot if it's
+                // taller. The Slot is measured at its own width so the app has
+                // its box.
+                let mut h = self.l(Headline)?;
+                for (i, child) in children.iter().enumerate() {
+                    let width = self.fixed_width(child, w)?.unwrap_or(w);
+                    h = h.max(self.node(child, width, &format!("{path}/{i}"))?);
+                }
+                h
+            }
+            "ToolText" => {
+                // Inline Markdown is prose the app measures, as Styled is.
+                if matches!(prop(p, "markdown"), Some(TreeValue::Boolean(true))) {
+                    return Err(LayoutError::Prose);
+                }
+                self.t(
+                    text(p, "text"),
+                    tool_text_style(p),
+                    w,
+                    Some(number(p, "maxLines", 24).integer().unwrap_or(24) as u32),
+                )?
+            }
+            "Diff" => {
+                let hunks = list(p, "hunks");
+                let pad = k("codePad")?.checked_mul(d(2))?;
+                let mut h = k("gap.m")?.checked_mul(d(hunks.len().saturating_sub(1) as i128))?;
+                for (hunk, lines) in diff_hunks(hunks) {
+                    h = h.checked_add(pad)?;
+                    if hunk_title(hunk).is_some() {
+                        h = h
+                            .checked_add(self.l(Caption1)?)?
+                            .checked_add(k("gap.xs")?)?;
+                    }
+                    h = h.checked_add(d(lines as i128).checked_mul(self.l(Mono)?)?)?;
+                }
+                h
+            }
+            // The app's own screen replaces the page.
+            "AppPage" => return Err(LayoutError::Prose),
             // Drawn by the app at one body line: the clock, the creature and
             // name, and the model's name are each cut to their fixed width.
             "Elapsed" | "Agent" | "Model" => self.l(Body)?,
@@ -634,6 +683,76 @@ impl<M: Metrics> Engine<'_, M> {
             }
         }
         Ok(height)
+    }
+}
+
+/// A `ToolText`'s text style, from its `font` and `size`. The checker refuses
+/// a pair the table doesn't name (mono at large, serif at small); a tree built
+/// another way falls back to the nearest size of its font.
+fn tool_text_style(p: &Props) -> TextStyle {
+    let size = text(p, "size").unwrap_or("default");
+    match (text(p, "font").unwrap_or("body"), size) {
+        ("mono", "small") => MonoFootnote,
+        ("mono", _) => Mono,
+        ("serif", "large") => SerifTitle3,
+        ("serif", _) => Serif,
+        (_, "small") => Footnote,
+        (_, "large") => Title3,
+        _ => Body,
+    }
+}
+
+/// The most lines a `Diff` shows in all; past it, the last hunk drawn ends
+/// with one line saying how many more there are.
+pub(crate) const DIFF_LINES: usize = 2_000;
+
+/// Each record hunk of a `Diff` with the number of lines it draws: its line
+/// entries that are records, counted against [`DIFF_LINES`], plus the closing
+/// "more lines" line on the hunk where the cap falls. Hunks after the cap draw
+/// nothing. A hunk that isn't a record is skipped, as the app skips it.
+pub(crate) fn diff_hunks(hunks: &[TreeValue]) -> Vec<(&TreeValue, usize)> {
+    let mut left = DIFF_LINES;
+    let mut drawn = Vec::new();
+    let mut capped = false;
+    for hunk in hunks {
+        let TreeValue::Record(fields) = hunk else {
+            continue;
+        };
+        if capped {
+            break;
+        }
+        let lines = fields
+            .iter()
+            .find(|(key, _)| key.as_str() == "lines")
+            .map(|(_, value)| match value {
+                TreeValue::List(items) => items
+                    .iter()
+                    .filter(|item| matches!(item, TreeValue::Record(_)))
+                    .count(),
+                _ => 0,
+            })
+            .unwrap_or(0);
+        if lines > left {
+            drawn.push((hunk, left + 1));
+            capped = true;
+        } else {
+            left -= lines;
+            drawn.push((hunk, lines));
+        }
+    }
+    drawn
+}
+
+/// A `Diff` hunk's title, when it has a non-empty one.
+pub(crate) fn hunk_title(hunk: &TreeValue) -> Option<&str> {
+    match hunk {
+        TreeValue::Record(fields) => fields.iter().find_map(|(key, value)| match value {
+            TreeValue::String(title) if key.as_str() == "title" && !title.as_str().is_empty() => {
+                Some(title.as_str())
+            }
+            _ => None,
+        }),
+        _ => None,
     }
 }
 

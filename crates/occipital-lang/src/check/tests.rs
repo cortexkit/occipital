@@ -128,6 +128,70 @@ fn slot_is_a_tool_template_component() {
     assert!(no_width.contains(&Code::MissingProp), "{no_width:?}");
 }
 
+/// The tool parts for the approved rich rows: a header with one trailing Slot,
+/// text in a font that has the size asked for, a code-box Slot, a diff on a
+/// page, and an app page as a page's only node.
+#[test]
+fn the_rich_row_parts_check_their_rules() {
+    let row = tool(Profile::ToolRow);
+    let page = tool(Profile::ToolPage);
+    clean_in(
+        "<ToolHeader icon=\"edit\" title={FileName(input.path)} subtitle={Folder(input.path)} truncate=\"middle\">\n<Slot width=\"short\" needs={view.record}>\n<Badge text=\"+19\" />\n</Slot>\n</ToolHeader>",
+        &row,
+    );
+    let other_child = codes(
+        "<ToolHeader icon=\"edit\" title=\"x\">\n<Divider />\n</ToolHeader>",
+        &row,
+    );
+    assert!(!other_child.is_empty(), "only a Slot trails the header");
+    let unknown_icon = codes("<ToolHeader icon=\"rocket\" title=\"x\" />", &row);
+    assert!(unknown_icon.contains(&Code::Enum), "{unknown_icon:?}");
+
+    clean_in(
+        "<ToolText font=\"mono\" maxLines={2} text={input.command} />",
+        &row,
+    );
+    clean_in(
+        "<ToolText font=\"serif\" size=\"large\" text={input.question} />",
+        &row,
+    );
+    clean_in(
+        "<ToolText markdown={true} maxLines={3} text={input.message} />",
+        &row,
+    );
+    for (font, size) in [("mono", "large"), ("serif", "small")] {
+        let refused = codes(
+            &format!("<ToolText font=\"{font}\" size=\"{size}\" text=\"x\" />"),
+            &row,
+        );
+        assert!(
+            refused.contains(&Code::PropType),
+            "{font} {size}: {refused:?}"
+        );
+    }
+    // Markdown text still reads only the input outside a Slot.
+    assert!(codes(
+        "<ToolText markdown={true} text={view.record.summary} />",
+        &row
+    )
+    .contains(&Code::UnslottedRead));
+
+    clean_in(
+        "<Slot width=\"fill\" lines={3} box=\"code\">\n<ToolText font=\"mono\" size=\"small\" maxLines={1} text={view.record.last} />\n</Slot>",
+        &row,
+    );
+
+    assert!(codes("<Diff hunks={[]} />", &row).contains(&Code::Placement));
+    clean_in("<Diff hunks={view.detail.hunks} />", &page);
+
+    clean_in("<AppPage id={view.record.askId} />", &page);
+    let beside = codes("<AppPage id=\"ask_1\" />\n\n<Divider />", &page);
+    assert!(beside.contains(&Code::Placement), "{beside:?}");
+    let nested = codes("<Card>\n<AppPage id=\"ask_1\" />\n</Card>", &page);
+    assert!(nested.contains(&Code::Placement), "{nested:?}");
+    assert!(codes("<AppPage id=\"ask_1\" />", &row).contains(&Code::Placement));
+}
+
 #[test]
 fn unknown_components_props_and_required_props() {
     assert_code("<Gauge />", Code::UnknownComponent);

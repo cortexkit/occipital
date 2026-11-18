@@ -137,7 +137,7 @@ impl Metrics for Adapter {
     }
 }
 
-/// The header's style ordinal: Body = 0 through MonoFootnote = 8, in the
+/// The header's style ordinal: Body = 0 through SerifTitle3 = 10, in the
 /// order `TextStyle` declares them.
 pub(crate) fn ordinal(style: TextStyle) -> i32 {
     match style {
@@ -150,6 +150,8 @@ pub(crate) fn ordinal(style: TextStyle) -> i32 {
         TextStyle::Title3 => 6,
         TextStyle::Mono => 7,
         TextStyle::MonoFootnote => 8,
+        TextStyle::Serif => 9,
+        TextStyle::SerifTitle3 => 10,
     }
 }
 
@@ -301,6 +303,8 @@ pub(crate) mod tests {
             TextStyle::Title3,
             TextStyle::Mono,
             TextStyle::MonoFootnote,
+            TextStyle::Serif,
+            TextStyle::SerifTitle3,
         ];
         let mut script = Script::default();
         let metrics = table(&mut script);
@@ -308,7 +312,7 @@ pub(crate) mod tests {
         for style in styles {
             adapter.l(style);
         }
-        assert_eq!(script.styles, (0..=8).collect::<Vec<_>>());
+        assert_eq!(script.styles, (0..=10).collect::<Vec<_>>());
     }
 
     #[test]

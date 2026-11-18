@@ -965,3 +965,34 @@ fn each_templates_can_dispatch_builtins_and_stop_before_oversized_list_creation(
     assert!(matches!(result, Err(Failure::Limit("E_LIMIT_VALUE"))));
     assert_eq!(calls, 16);
 }
+
+/// `FileName` and `Folder` read a path's last component and its last folders,
+/// splitting on either separator and skipping empty parts.
+#[test]
+fn path_built_ins_name_the_file_and_its_last_folders() {
+    let path = "/home/me/app/Alfonso/Chat/SendProblem.swift";
+    same(
+        &run(Builtin::FileName, &[s(path)]).0,
+        &s("SendProblem.swift"),
+    );
+    same(&run(Builtin::Folder, &[s(path)]).0, &s("Alfonso/Chat"));
+    same(&run(Builtin::Folder, &[s(path), n("1")]).0, &s("Chat"));
+    same(
+        &run(Builtin::Folder, &[s(path), n("9")]).0,
+        &s("home/me/app/Alfonso/Chat"),
+    );
+    same(
+        &run(Builtin::FileName, &[s("C:\\src\\lib.rs")]).0,
+        &s("lib.rs"),
+    );
+    same(
+        &run(Builtin::Folder, &[s("C:\\src\\lib.rs")]).0,
+        &s("C:/src"),
+    );
+    same(&run(Builtin::FileName, &[s("a//b/")]).0, &s("b"));
+    same(&run(Builtin::Folder, &[s("README.md")]).0, &s(""));
+    same(&run(Builtin::FileName, &[s("")]).0, &s(""));
+    for depth in ["0", "-1", "1.5"] {
+        fails(Builtin::Folder, &[s(path), n(depth)], "E_ARG");
+    }
+}

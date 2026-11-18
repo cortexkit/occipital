@@ -3,7 +3,7 @@
     "id": "occipital.tool.catalog",
     "version": "1.1",
     "status": "accepted by the apps; not yet shipped",
-    "date": "2026-11-01",
+    "date": "2026-11-18",
     "owner": "occipital",
     "companion": "2026-10-31-tool-templates.md"
   },
@@ -16,14 +16,15 @@
       "props": {
         "width": {"t": "enum", "enum": ["narrow", "short", "medium", "long", "fill"], "req": true, "lit": true},
         "lines": {"t": "number", "int": true, "range": [1, 3], "def": 1, "lit": true},
-        "needs": {"t": "string|number|boolean|record"}
+        "needs": {"t": "string|number|boolean|record"},
+        "box": {"t": "enum", "enum": ["code"], "lit": true, "d": "code: the light code background, padded, holding exactly lines monospace lines, such as a command's last output lines"}
       },
       "tree": "While needs is given and absent, the content is not evaluated: the evaluated node carries waiting: true and no children, and the app draws the box in the loading look, or in the not-kept look once the loading window since the call's answer has passed. needs itself is never in the tree. Without needs, the content always shows.",
       "geo": {
         "kind": "fixed",
-        "h": "lines * L(body)",
+        "h": "has(box) ? 2*k.codePad + lines * L(monoFootnote) : lines * L(body)",
         "w": "narrow: min(TW(8 zeros, body), W); short: min(TW(12 zeros, body), W); medium: min(TW(24 zeros, body), W); long: min(TW(40 zeros, body), W); fill: W",
-        "hIn": ["metrics", "props:lines"],
+        "hIn": ["metrics", "props:lines", "props:box"],
         "note": "The width counts the digit zero in the row's body style, the way a CSS ch unit does. In a Card row without wrap, Slots take their widths before the row's other fixed children, so a long code or label beside a Slot is cut to what the Slots leave, wherever the Slot sits in the row. The content is laid out in a column at the box's width and clipped to the box; text that doesn't fit ends its last visible line with an ellipsis. Content shorter than the box sits in it the way the row places a child: in a Card row, centred for align center and at the bottom for end, and at the top for start, stretch and anywhere outside a Card row. The box never grows, so a row's height never depends on what arrives later."
       },
       "states": {
@@ -89,7 +90,7 @@
       "work": {"visits": "1"}
     },
     "OpenItem": {
-      "sum": "A link in a tool page to an ask, an artifact or a work item, which opens the app's own card for it.",
+      "sum": "A link in a tool page to an ask, an artifact, a work item or the thread with another agent, which opens the app's own card or screen for it.",
       "in": ["tool_page"],
       "flow": "inline",
       "kids": {"kind": "none"},
@@ -101,14 +102,96 @@
         "kind": "text",
         "h": "T(label, body, W)",
         "hIn": ["metrics", "W"],
-        "note": "The label is body text in the page's prose, measured by the app. It is a link when the id starts with ask_, art_ or wi_ and the app can read the item on the computer that ran the call, and plain text otherwise, never a disabled control."
+        "note": "The label is body text in the page's prose, measured by the app. It is a link when the id starts with ask_, art_ or wi_, or is peer: and an agent_ id, and the app can read the item on the computer that ran the call, and plain text otherwise, never a disabled control."
       },
       "states": {"text": "{label}"},
       "work": {"visits": "1"}
+    },
+    "ToolHeader": {
+      "sum": "A tool row's first line: an icon, a title, a muted secondary text and the trailing status, its one Slot child. Each app draws it in its own type.",
+      "in": ["tool_row", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "block", "only": ["Slot"], "items": [0, 1]},
+      "props": {
+        "icon": {"t": "enum", "enum": ["edit", "terminal", "file", "search", "message", "room", "question", "globe", "window", "agent", "task", "tool"], "req": true, "lit": true, "d": "each app maps the name to its own symbol"},
+        "title": {"t": "string", "req": true, "clip": "title"},
+        "subtitle": {"t": "string", "clip": "title"},
+        "truncate": {"t": "enum", "enum": ["end", "middle"], "def": "end", "lit": true, "d": "how the title is cut; middle for paths"}
+      },
+      "geo": {
+        "kind": "fixed",
+        "h": "max(L(headline), H(slot))",
+        "hIn": ["metrics", "children"],
+        "note": "One line. Its width is laid out in this order: the Slot takes its own width, the icon an L(body) square and k.gap.s, the subtitle min(TW(subtitle, footnote), 0.4 * rest) in footnote, and the title the rest in headline, cut as truncate says. The subtitle is cut at its end within its share."
+      },
+      "states": {"text": "{title} {subtitle}"},
+      "work": {"visits": "1"}
+    },
+    "ToolText": {
+      "sum": "A block of text in a tool row or page: TextContent's text, size and maxLines, plus a monospace or serif font, a tone, and inline Markdown.",
+      "in": ["tool_row", "tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "text": {"t": "string", "req": true},
+        "size": {"t": "enum", "enum": ["small", "default", "large"], "def": "default", "lit": true},
+        "maxLines": {"t": "number", "int": true, "range": [1, 100], "def": 24},
+        "font": {"t": "enum", "enum": ["body", "mono", "serif"], "def": "body", "lit": true, "d": "mono takes size small or default; serif takes default or large"},
+        "tone": {"t": "toneText", "d": "colours the whole block; absent or neutral draws the default text colour"},
+        "markdown": {"t": "boolean", "def": false, "lit": true, "d": "inline Markdown only: code spans, emphasis, strong, strikethrough, and links drawn as their label; everything else stays literal"}
+      },
+      "geo": {
+        "kind": "text",
+        "h": "markdown ? prose : T(text, style, W, maxLines)",
+        "style": "body: small footnote, default body, large title3; mono: small monoFootnote, default mono; serif: default serif, large serifTitle3",
+        "hIn": ["W", "metrics", "tree:text", "props:size", "props:font", "props:maxLines", "props:markdown"],
+        "note": "With markdown the text is prose the app measures with the text system it draws with, as Styled is. A ToolText read outside a Slot may read only input, so even then its height can't change when a record lands."
+      },
+      "states": {"text": "{text}"},
+      "work": {"visits": "1 + ceil(scalars(text) / 256)"}
+    },
+    "Diff": {
+      "sum": "Changes to a file on a tool page: hunks of context, added, deleted and plain lines, with old and new line numbers when the hunk has starts.",
+      "in": ["tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "hunks": {"t": "list<record>", "req": true, "items": [1, 200], "record": "{title?: string, oldStart?: number, newStart?: number, lines: list<{kind: context|add|delete|plain, text: string, marks?: list<{start: number, end: number}>}>}", "d": "marks are highlighted ranges in Unicode scalar values"}
+      },
+      "geo": {
+        "kind": "text",
+        "h": "sum over hunks of (2*k.codePad + has(title)*(L(caption1) + k.gap.xs) + count(lines)*L(mono)) + (hunks - 1) * k.gap.m",
+        "hIn": ["metrics", "tree:hunks"],
+        "note": "Lines never wrap; a long line scrolls sideways inside its hunk. With oldStart and newStart a line shows its numbers: context counts both, delete the old, add the new. At most 2,000 lines show in all; past that the last hunk ends with a line saying how many more. A line whose kind isn't known draws as plain, and an entry that isn't a line is skipped."
+      },
+      "states": {"text": "each line with its marker: two spaces, + or -"},
+      "work": {"visits": "1 + ceil(lines / 64)"}
+    },
+    "AppPage": {
+      "sum": "A tool page that is the app's own screen for an item: an ask, an artifact, a work item, or the thread with another agent (peer:<agent id>).",
+      "in": ["tool_page"],
+      "flow": "block",
+      "kids": {"kind": "none"},
+      "props": {
+        "id": {"t": "string", "req": true, "d": "ask_, art_ or wi_ id, or peer: and an agent_ id for the thread between the chat's agent and that one"}
+      },
+      "parent": [null],
+      "geo": {
+        "kind": "text",
+        "h": "prose",
+        "hIn": [],
+        "note": "It must be the page's only node. The app opens its own screen for the id; when the id is empty or the app can't open it on the computer that ran the call, it draws the default page with the call's input and output."
+      },
+      "states": {"text": "{id}"},
+      "work": {"visits": "1"}
     }
   },
+  "textStyles": {
+    "serif": "the app's serif, body size",
+    "serifTitle3": "the app's serif, title3 size"
+  },
   "profilesAllow": {
-    "tool_row": ["Slot", "Elapsed", "Agent", "Model"],
-    "tool_page": ["Slot", "Elapsed", "Agent", "Model", "OpenItem"]
+    "tool_row": ["Slot", "Elapsed", "Agent", "Model", "ToolHeader", "ToolText"],
+    "tool_page": ["Slot", "Elapsed", "Agent", "Model", "OpenItem", "ToolHeader", "ToolText", "Diff", "AppPage"]
   }
 }

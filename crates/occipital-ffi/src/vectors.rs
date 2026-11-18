@@ -126,6 +126,15 @@ with it (`filled`). Each `measure-tree-bash-row-*` case measures that tree as
 a 200-wide transcript row: the Slot keeps its width, the command is cut to
 what the Slot leaves, and both trees have the same height.
 
+The `template-edit-row-header-*` and `template-bash-row-preview-*` cases do
+the same for rows in the rich-row shape. The edit row is one `ToolHeader`
+line: `FileName` and `Folder` of the path, and the change counts in its
+short trailing Slot. The bash row is a `ToolHeader` with the exit status in
+a narrow Slot, the command as monospace `ToolText` on at most 2 lines, and a
+3-line code box (`Slot box="code"`) holding the record's last output lines,
+each a monospace `ToolText` with its own tone. Each row measures the same
+waiting and filled.
+
 The `version` case is `occ_version` with no arguments; its request is `{}`.
 
 The `text-references` case is `occ_text_references` on a reply naming an
@@ -794,6 +803,15 @@ const BASH_ROW: &str = "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\
 /// one for the duration, each 8 zeros wide.
 const BASH_ROW_NARROW: &str = "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\n<InlineCode code={input.command} />\n<Slot width=\"narrow\" needs={view.record}>\n<TextContent text={view.record.exitCode == 0 ? \"Done\" : \"Exit \" + Text(view.record.exitCode)} />\n</Slot>\n<Slot width=\"narrow\" needs={view.record}>\n<TextContent text={FormatDuration(view.record.durationMs, \"compact\")} />\n</Slot>\n</Card>\n";
 
+/// An edit row in the approved rich-row shape: one `ToolHeader` line with the
+/// file's name and folders, and the change counts in its trailing Slot.
+const EDIT_ROW: &str = "<ToolHeader icon=\"edit\" title={FileName(input.path)} subtitle={Folder(input.path)} truncate=\"middle\">\n<Slot width=\"short\" needs={view.record}>\n<Badge tone=\"success\" text={\"+\" + Text(view.record.added) + \" \u{2212}\" + Text(view.record.removed)} />\n</Slot>\n</ToolHeader>\n";
+
+/// A bash row in the approved rich-row shape: the header with the exit status,
+/// the command in monospace on at most 2 lines, and a 3-line code box for the
+/// last output lines from the record.
+const BASH_ROW_PREVIEW: &str = "<ToolHeader icon=\"terminal\" title={input.description ?? input.command}>\n<Slot width=\"narrow\" needs={view.record}>\n<ToolText tone={view.record.exitCode == 0 ? \"muted\" : \"danger\"} text={\"Exit \" + Text(view.record.exitCode)} />\n</Slot>\n</ToolHeader>\n\n<ToolText font=\"mono\" maxLines={2} text={input.command} />\n\n<Slot width=\"fill\" lines={3} box=\"code\" needs={view.record}>\n{Each(view.record.tail, \"line\", <ToolText font=\"mono\" size=\"small\" maxLines={1} tone={line.tone ?? \"neutral\"} text={line.text} />)}\n</Slot>\n";
+
 /// A transcript row 200 wide: narrow enough that the fixed metrics' longest
 /// code (256 characters plus padding) is wider than the row.
 const ROW_LAYOUT: &str =
@@ -807,6 +825,7 @@ const ROW_LAYOUT: &str =
 fn tool_rows(files: &mut Vec<(String, Vector)>) {
     let short: &[(&str, &str)] = &[("/0/1", "12"), ("/0/0", "184")];
     let narrow: &[(&str, &str)] = &[("/0/1", "8"), ("/0/2", "8"), ("/0/0", "176")];
+    let command = json!({"command": format!("ls {}", "-l ".repeat(700))});
     for (name, source, record, widths) in [
         ("bash-row", BASH_ROW, json!({"exitCode": 0}), short),
         (
@@ -816,18 +835,39 @@ fn tool_rows(files: &mut Vec<(String, Vector)>) {
             narrow,
         ),
     ] {
-        tool_row(files, name, source, record, widths);
+        tool_row(files, name, source, command.clone(), record, widths);
     }
+    // The header's trailing Slot keeps its width class: short is 12 zeros,
+    // narrow 8, and the code box fills the row.
+    tool_row(
+        files,
+        "edit-row-header",
+        EDIT_ROW,
+        json!({"path": "/home/me/app/Alfonso/Chat/SendProblem.swift"}),
+        json!({"added": 19, "removed": 2}),
+        &[("/0/0", "12")],
+    );
+    tool_row(
+        files,
+        "bash-row-preview",
+        BASH_ROW_PREVIEW,
+        json!({"description": "Run the moved-send tests", "command": "xcodebuild test -scheme Alfonso"}),
+        json!({"exitCode": 65, "tail": [
+            {"text": "✘ Suite SendMovedTests failed", "stream": "stdout"},
+            {"text": "** TEST FAILED **", "stream": "stdout", "tone": "danger"}
+        ]}),
+        &[("/0/0", "8"), ("/2", "200")],
+    );
 }
 
 fn tool_row(
     files: &mut Vec<(String, Vector)>,
     name: &str,
     source: &str,
+    input: serde_json::Value,
     record: serde_json::Value,
     widths: &[(&str, &str)],
 ) {
-    let command = format!("ls {}", "-l ".repeat(700));
     let mut heights = vec![];
     for (case, view) in [
         ("waiting", json!({ "record": null })),
@@ -837,7 +877,7 @@ fn tool_row(
             "tool_row",
             json!({}),
             json!({
-                "input": {"value": {"command": command}, "schema": {}},
+                "input": {"value": input, "schema": {}},
                 "view": {"value": view, "schema": {}},
                 "truncated": false,
                 "truncated_fields": [],

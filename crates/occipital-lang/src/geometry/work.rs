@@ -137,7 +137,8 @@ pub(crate) fn known_work(tree: &Tree, placement: Placement) -> Result<u64, Measu
                     "Badge" | "Input" | "Slider" | "Toggle" | "Button" | "Progress" | "Callout"
                     | "Image" => 2,
                     "Styled" | "Citation" | "Card" | "InlineCode" | "Buttons" | "TabItem"
-                    | "Divider" | "Slot" | "Elapsed" | "Agent" | "Model" | "OpenItem" => 1,
+                    | "Divider" | "Slot" | "Elapsed" | "Agent" | "Model" | "OpenItem"
+                    | "ToolHeader" | "AppPage" => 1,
                     "CardHeader" | "FormControl" | "ListItem" | "Stat" => 3,
                     "Table" => 2 + columns(props).len() as u64 * (rows + 1),
                     "LinkCard" => 4,
@@ -147,8 +148,15 @@ pub(crate) fn known_work(tree: &Tree, placement: Placement) -> Result<u64, Measu
                         let (points, series) = chart_size(props);
                         16 + points as u64 + series as u64
                     }
-                    "TextContent" => {
+                    "TextContent" | "ToolText" => {
                         1 + (text(props, "text").unwrap_or("").chars().count() as u64).div_ceil(256)
+                    }
+                    "Diff" => {
+                        let lines: usize = super::layout::diff_hunks(list(props, "hunks"))
+                            .iter()
+                            .map(|(_, lines)| lines)
+                            .sum();
+                        1 + (lines as u64).div_ceil(64)
                     }
                     "CodeBlock" => {
                         2 + line_count(text(props, "codeString").unwrap_or(""))

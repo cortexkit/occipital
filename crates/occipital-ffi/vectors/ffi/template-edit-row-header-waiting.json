@@ -1,0 +1,9 @@
+{
+  "entry": "occ_template_evaluate",
+  "request": {
+    "ctx_json": "{\"context\":{\"catalog\":\"1.1\",\"execution_dialect\":\"1.0\",\"handles\":[],\"profile\":\"tool_row\",\"references\":{},\"registry\":{},\"show_ui\":{\"data_columns\":{},\"data_format\":null,\"summary\":\"\",\"title\":\"\"},\"tool\":{\"input\":{\"schema\":{},\"value\":{\"path\":\"/home/me/app/Alfonso/Chat/SendProblem.swift\"}},\"truncated\":false,\"truncated_fields\":[],\"view\":{\"schema\":{},\"value\":{\"record\":null}}}}}",
+    "src": "PFRvb2xIZWFkZXIgaWNvbj0iZWRpdCIgdGl0bGU9e0ZpbGVOYW1lKGlucHV0LnBhdGgpfSBzdWJ0aXRsZT17Rm9sZGVyKGlucHV0LnBhdGgpfSB0cnVuY2F0ZT0ibWlkZGxlIj4KPFNsb3Qgd2lkdGg9InNob3J0IiBuZWVkcz17dmlldy5yZWNvcmR9Pgo8QmFkZ2UgdG9uZT0ic3VjY2VzcyIgdGV4dD17IisiICsgVGV4dCh2aWV3LnJlY29yZC5hZGRlZCkgKyAiIOKIkiIgKyBUZXh0KHZpZXcucmVjb3JkLnJlbW92ZWQpfSAvPgo8L1Nsb3Q+CjwvVG9vbEhlYWRlcj4K"
+  },
+  "status": 0,
+  "response": "{\"tree\":{\"m\":\"root\",\"k\":[{\"c\":\"ToolHeader\",\"p\":{\"icon\":\"edit\",\"title\":\"SendProblem.swift\",\"subtitle\":\"Alfonso/Chat\",\"truncate\":\"middle\"},\"k\":[{\"c\":\"Slot\",\"p\":{\"width\":\"short\",\"waiting\":true},\"k\":[]}]}]},\"diagnostics\":[],\"outcome\":\"ok\"}"
+}

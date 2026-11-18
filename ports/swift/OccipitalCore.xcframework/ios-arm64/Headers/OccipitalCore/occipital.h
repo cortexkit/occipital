@@ -214,7 +214,8 @@ typedef struct OccReply OccReply;
  *
  * `style` is the text style ordinal:
  *   0 Body, 1 Subheadline, 2 Footnote, 3 Caption1, 4 Headline,
- *   5 Title2, 6 Title3, 7 Mono, 8 MonoFootnote.
+ *   5 Title2, 6 Title3, 7 Mono, 8 MonoFootnote, 9 Serif (the app's serif
+ *   at body size), 10 SerifTitle3 (the app's serif at Title3 size).
  *
  * `text` is UTF-8 of `len` bytes and is not NUL-terminated.
  *

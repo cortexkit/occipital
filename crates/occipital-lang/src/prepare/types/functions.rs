@@ -3,7 +3,7 @@ use super::*;
 /// Every function name the checker accepts, in §6 order. A call to any other
 /// name is `E_UNKNOWN_FUNCTION`, and the public function-table export lists
 /// exactly these names, so the export cannot drift from the checker.
-pub(crate) const FUNCTIONS: [&str; 53] = [
+pub(crate) const FUNCTIONS: [&str; 55] = [
     "Count",
     "Sum",
     "Avg",
@@ -40,6 +40,8 @@ pub(crate) const FUNCTIONS: [&str; 53] = [
     "Split",
     "Replace",
     "Truncate",
+    "FileName",
+    "Folder",
     "FormatNumber",
     "FormatBytes",
     "FormatDuration",
@@ -216,6 +218,13 @@ fn signature(name: &str) -> Option<Signature> {
             2,
             &[STRING, NUMBER],
             "Truncate(s: string, max: number) -> string",
+        ),
+        "FileName" => (1, 1, &[STRING], "FileName(path: string) -> string"),
+        "Folder" => (
+            1,
+            2,
+            &[STRING, NUMBER],
+            "Folder(path: string, depth?: number) -> string",
         ),
         "FormatNumber" => (
             1,

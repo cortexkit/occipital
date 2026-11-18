@@ -60,9 +60,10 @@ def digest(document):
 
 def overlaid(base, overlay):
     """The base catalog with an overlay applied, as catalog-tool-v1.1.json needs:
-    overlay catalog members replace the base's, components are added and never
-    replace one, and profilesAllow lists are extended. Anything else is an error."""
-    unknown = set(overlay) - {"catalog", "components", "profilesAllow"}
+    overlay catalog members replace the base's, components and text styles are
+    added and never replace one, and profilesAllow lists are extended. Anything
+    else is an error."""
+    unknown = set(overlay) - {"catalog", "components", "textStyles", "profilesAllow"}
     if unknown:
         raise ValueError(f"unknown overlay members: {sorted(unknown)}")
     for key, value in overlay.get("catalog", {}).items():
@@ -71,6 +72,10 @@ def overlaid(base, overlay):
         if name in base["components"]:
             raise ValueError(f"the overlay replaces component {name}")
         base["components"][name] = component
+    for name, style in overlay.get("textStyles", {}).items():
+        if name in base["textStyles"]:
+            raise ValueError(f"the overlay replaces text style {name}")
+        base["textStyles"][name] = style
     for profile, names in overlay.get("profilesAllow", {}).items():
         listed = base["profilesAllow"][profile]
         for name in names:
@@ -95,14 +100,15 @@ class CanonicalTests(unittest.TestCase):
                 canonical(load(source))
 
     def test_overlay_adds_and_never_replaces(self):
-        base = load('{"catalog":{"version":"1.0"},"components":{"A":0},"profilesAllow":{"p":["A"]}}')
-        merged = overlaid(base, load('{"catalog":{"version":"1.1"},"components":{"B":1},"profilesAllow":{"p":["B"]}}'))
+        base = load('{"catalog":{"version":"1.0"},"components":{"A":0},"textStyles":{"s":"x"},"profilesAllow":{"p":["A"]}}')
+        merged = overlaid(base, load('{"catalog":{"version":"1.1"},"components":{"B":1},"textStyles":{"t":"y"},"profilesAllow":{"p":["B"]}}'))
         self.assertEqual(merged["catalog"]["version"], "1.1")
         self.assertEqual(sorted(merged["components"]), ["A", "B"])
+        self.assertEqual(sorted(merged["textStyles"]), ["s", "t"])
         self.assertEqual(merged["profilesAllow"]["p"], ["A", "B"])
-        for overlay in ['{"components":{"A":2}}', '{"profilesAllow":{"p":["A"]}}', '{"types":{}}']:
+        for overlay in ['{"components":{"A":2}}', '{"textStyles":{"s":"z"}}', '{"profilesAllow":{"p":["A"]}}', '{"types":{}}']:
             with self.subTest(overlay=overlay), self.assertRaises(ValueError):
-                overlaid(load('{"catalog":{},"components":{"A":0},"profilesAllow":{"p":["A"]}}'), load(overlay))
+                overlaid(load('{"catalog":{},"components":{"A":0},"textStyles":{"s":"x"},"profilesAllow":{"p":["A"]}}'), load(overlay))
 
     def test_digest_ignores_published_digest(self):
         unpublished = load('{"catalog":{"digest":null},"value":0.5625}')

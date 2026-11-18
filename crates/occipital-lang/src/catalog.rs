@@ -198,9 +198,9 @@ impl Catalog {
 }
 
 /// Apply a catalog overlay: its `catalog` members replace the document's, its
-/// `components` are added and never replace one, and its `profilesAllow` lists
-/// extend the document's. Anything else is refused, so an overlay can't
-/// change what catalog 1.0 defines. `tools/catalog_digest.py --overlay`
+/// `components` and `textStyles` are added and never replace one, and its
+/// `profilesAllow` lists extend the document's. Anything else is refused, so
+/// an overlay can't change what catalog 1.0 defines. `tools/catalog_digest.py --overlay`
 /// implements the same rules independently, for the pinned digest.
 fn overlaid(document: &mut Value, overlay: Value) -> Result<(), String> {
     let Value::Object(overlay) = overlay else {
@@ -219,6 +219,14 @@ fn overlaid(document: &mut Value, overlay: Value) -> Result<(), String> {
                         return Err(format!("the overlay replaces component {name}"));
                     }
                     document["components"][name] = component;
+                }
+            }
+            ("textStyles", Value::Object(styles)) => {
+                for (name, style) in styles {
+                    if document["textStyles"].get(&name).is_some() {
+                        return Err(format!("the overlay replaces text style {name}"));
+                    }
+                    document["textStyles"][name] = style;
                 }
             }
             ("profilesAllow", Value::Object(lists)) => {
@@ -417,8 +425,9 @@ mod tests {
         assert_ne!(expected, Catalog::embedded_digest());
     }
 
-    /// The tool catalog only adds: every 1.0 component, layout and rule is in
-    /// it unchanged, so a reply or show_ui tree means the same under either.
+    /// The tool catalog only adds: every 1.0 component, text style, layout and
+    /// rule is in it unchanged, so a reply or show_ui tree means the same
+    /// under either.
     #[test]
     fn tool_catalog_is_catalog_1_0_plus_its_own_components() {
         let base = serde_json::to_value(Catalog::v1()).unwrap();
@@ -430,7 +439,7 @@ mod tests {
                     assert_eq!(tool[key]["layoutVersion"], value["layoutVersion"]);
                     assert_eq!(tool[key]["dialect"], value["dialect"]);
                 }
-                "components" => {
+                "components" | "textStyles" => {
                     for (name, component) in value.as_object().unwrap() {
                         assert_eq!(&tool[key][name], component, "{name}");
                     }

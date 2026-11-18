@@ -16,6 +16,8 @@ pub(super) enum Op {
     Split,
     Lines,
     Truncate,
+    FileName,
+    Folder,
 }
 
 pub(super) fn text_len<E, F: FnMut(u64) -> std::result::Result<(), E>>(
@@ -121,7 +123,42 @@ pub(super) fn call<E, F: FnMut(u64) -> std::result::Result<(), E>>(
         }
         Replace => replace(args, cx),
         Split | Lines => split(args, builtin == Lines, cx),
+        FileName | Folder => {
+            let text = cx.string(&args[0])?;
+            cx.pay(text.len().div_ceil(8))?;
+            let depth = match args.get(1) {
+                Some(depth) => cx
+                    .number(depth)?
+                    .integer()
+                    .filter(|n| *n >= 1)
+                    .ok_or_else(|| cx.error("E_ARG"))?,
+                None => 2,
+            };
+            let (folders, name) = path_parts(text.as_str());
+            let result = if builtin == FileName {
+                name.to_owned()
+            } else {
+                let skip = folders
+                    .len()
+                    .saturating_sub(depth.min(u64::MAX as i128) as usize);
+                folders[skip..].join("/")
+            };
+            cx.string_limit(result.chars().count() as u64)?;
+            cx.build_string(result)
+        }
     }
+}
+
+/// A path's folder names and its last component, split on `/` and `\` and
+/// skipping empty parts, so `/a//b/c.txt` and `a\b\c.txt` read alike. A path
+/// that ends in a separator names a folder: its last folder is the name.
+fn path_parts(path: &str) -> (Vec<&str>, &str) {
+    let mut parts: Vec<&str> = path
+        .split(['/', '\\'])
+        .filter(|part| !part.is_empty())
+        .collect();
+    let name = parts.pop().unwrap_or("");
+    (parts, name)
 }
 
 /// Knuth–Morris–Pratt search over UTF-8 bytes takes O(source + pattern) even for repetitive
