@@ -733,8 +733,8 @@ async fn reads_retry_a_failed_consumer_connect_and_health_never_connects() {
     connection.shutdown().await;
 }
 
-/// Through Callosum, only the person's own app is admitted: the phone and the
-/// phone simulator. A paired computer, or a class Callosum couldn't name, is
+/// Through Callosum, only the person's own app is admitted: the phone, the phone
+/// simulator and a paired app. A paired computer, or a class Callosum couldn't name, is
 /// refused before the request is read, even where Callosum's profile would
 /// expose these operations to it, so nothing on another computer can send in
 /// the person's name.
@@ -743,6 +743,7 @@ async fn only_the_persons_own_app_is_admitted_through_callosum() {
     for (harness, admitted) in [
         ("fed-phone:0123abcd", true),
         ("fed-sim:0123abcd", true),
+        ("fed-app:0123abcd", true),
         ("fed-computer:0123abcd", false),
         ("fed-unknown:0123abcd", false),
     ] {
@@ -1032,7 +1033,7 @@ async fn rebind_without_operator_app_does_not_retain_desktop_admission() {
 #[tokio::test]
 async fn app_reads_admit_unscoped_callosum_routes_and_development_direct_callers() {
     let mut cases = vec![];
-    for label in ["operator", "fed-phone:fp", "fed-sim:fp"] {
+    for label in ["operator", "fed-phone:fp", "fed-sim:fp", "fed-app:fp"] {
         cases.push((label, binding(label), true));
     }
     // Callosum's other device classes aren't the person's app: a paired

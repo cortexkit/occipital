@@ -567,6 +567,10 @@ fn caller_facts_come_from_the_route() {
         command_caller(Some(&route(callosum(), "fed-phone:0123456789abcdef"))),
         Some(caller("phone", "phone", Some("0123456789abcdef")))
     );
+    assert_eq!(
+        command_caller(Some(&route(callosum(), "fed-app:0123456789abcdef"))),
+        Some(caller("app", "paired_app", Some("0123456789abcdef")))
+    );
     let mut elsewhere = route(Principal::Direct, "desktop");
     elsewhere.1 = RouteTarget::ManagementSurface {
         module_id: "another".into(),

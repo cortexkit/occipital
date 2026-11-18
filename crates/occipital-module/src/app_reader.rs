@@ -228,7 +228,14 @@ pub(crate) fn command_caller(
             {
                 return None;
             }
-            let mut facts = Facts::new(class, "phone");
+            // A paired app (the desktop on another computer) is admitted as
+            // the phone is, but through its own pairing.
+            let admission = if class == "app" {
+                "paired_app"
+            } else {
+                "phone"
+            };
+            let mut facts = Facts::new(class, admission);
             facts.device = Some(fingerprint.to_owned());
             Some(facts)
         }
@@ -236,9 +243,11 @@ pub(crate) fn command_caller(
     }
 }
 
-/// The device classes Callosum stamps for a person's own app: the phone, and the
-/// phone simulator, whose grants Callosum keeps to reads.
-const APP_DEVICE_CLASSES: [&str; 2] = ["phone", "sim"];
+/// The device classes Callosum stamps for a person's own app: the phone, the
+/// phone simulator (whose grants Callosum keeps to reads), and `app`, a client
+/// that only calls, such as the desktop reaching this computer from another
+/// one.
+const APP_DEVICE_CLASSES: [&str; 3] = ["phone", "sim", "app"];
 
 /// The admission a route's principal earns on its own, whichever method it calls.
 fn admit_principal(binding: Option<&RouteBinding>) -> Option<Caller> {

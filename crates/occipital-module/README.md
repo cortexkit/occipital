@@ -140,9 +140,10 @@ and `too_large` keep their codes.
 
 Admission reads only what the daemon attests on the route: a Callosum route
 (`reserved:callosum`, with the device label `fed-<class>:<fingerprint>` it
-stamps) for the phone (`phone`) or its simulator (`sim`), never a paired
-computer or another class, or, while the desktop app is in development, a
-plain local caller.
+stamps) for the phone (`phone`), its simulator (`sim`) or a paired app
+(`app`, such as the desktop on another computer), never a paired computer or
+another class, or, while the desktop app is in development, a plain local
+caller.
 Everything else is refused `carrier_op_not_permitted` before the request is
 read further.
 
