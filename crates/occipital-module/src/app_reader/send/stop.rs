@@ -131,13 +131,24 @@ impl Sender {
             Ok(reply) if reply == "ack" => "stopped",
             // Not running: stopped only if it already ended cancelled, as after a first
             // stop whose answer this module no longer remembers.
-            Ok(_) => match target
+            Ok(reply) if reply == "not_active" => match target
                 .call(ops::RUN_STATUS, json!({"run_id": request.run_id}))
                 .await
             {
                 Ok(status) if status["state"] == "cancelled" => "stopped",
-                _ => "not_active",
+                Ok(status) if status["state"].as_str().is_some() => "not_active",
+                Err(RunnerError::Refused { code, .. }) if code == "unknown_run" => "not_active",
+                _ => {
+                    return Err(unreachable(
+                        "the runner could not confirm the stopped run's state".into(),
+                    ))
+                }
             },
+            Ok(_) => {
+                return Err(unreachable(
+                    "the runner returned an unreadable cancel outcome".into(),
+                ))
+            }
             Err(RunnerError::Unreachable(message)) => return Err(unreachable(message)),
             Err(RunnerError::Refused {
                 code,

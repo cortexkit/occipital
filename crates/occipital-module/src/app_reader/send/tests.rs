@@ -3106,3 +3106,51 @@ async fn a_moved_worker_without_a_receipt_resumes_from_its_queue_row() {
     .await;
     assert!(f.runner.written().is_empty());
 }
+
+#[tokio::test]
+async fn a_queued_message_can_be_promoted_after_receipt_expiry() {
+    let f = granted_fixture(Kind::Head);
+    let first = f.sender.send(message("one", "later")).await.unwrap();
+    f.now
+        .fetch_add(super::super::send_store::RETENTION_MS + 1, Ordering::SeqCst);
+    f.runner.captured.guard().extend([
+        (
+            "role.describe",
+            json!({"result":{"capabilities":["send_promote"]}}),
+        ),
+        ("session.promote", json!({"result":{"outcome":"promoted"}})),
+    ]);
+    let reply = f
+        .sender
+        .promote(json!({"session":"s","clientMessageId":"one","clientRequestId":"press"}))
+        .await
+        .unwrap();
+    assert_eq!(reply["outcome"], "promoted");
+    assert_eq!(
+        f.runner.calls().last().unwrap().1["send_id"],
+        first["effectId"]
+    );
+}
+
+#[tokio::test]
+async fn an_unreadable_stop_status_is_not_remembered() {
+    let f = fixture(Kind::Head);
+    f.runner.captured.guard().extend([
+        (
+            "role.describe",
+            json!({"result":{"capabilities":["run_cancel_by_interrupt"]}}),
+        ),
+        ("run.cancel", json!({"result":"not_active"})),
+        ("run.status", json!({"code":"transient","message":"retry"})),
+    ]);
+    let press = json!({"session":"s","runId":"r1","clientRequestId":"stop"});
+    assert_eq!(
+        f.sender.stop(press.clone()).await.unwrap_err().code,
+        "provider_unavailable"
+    );
+    f.runner
+        .captured
+        .guard()
+        .insert("run.status", json!({"result":{"state":"cancelled"}}));
+    assert_eq!(f.sender.stop(press).await.unwrap()["state"], "stopped");
+}

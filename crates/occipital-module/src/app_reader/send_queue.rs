@@ -242,6 +242,15 @@ impl SendQueue {
         })?)
     }
 
+    pub(super) fn pending_id(
+        &self,
+        session: &str,
+        id: &str,
+    ) -> Result<Option<String>, crate::Error> {
+        use rusqlite::OptionalExtension;
+        Ok(self.0.with_read(|conn| conn.query_row("SELECT send_id FROM harness_app_send_queue WHERE session=?1 AND client_message_id=?2 AND state='queued'", params![session,id], |r| r.get(0)).optional())?)
+    }
+
     /// The session's list as the apps read it: queued sends and those that ended
     /// unsent or unknown within [`UNSENT_RETENTION_MS`], oldest first, at most
     /// [`LIST_CAP`].
