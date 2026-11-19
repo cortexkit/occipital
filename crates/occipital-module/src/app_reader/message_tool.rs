@@ -21,8 +21,9 @@ use cortexkit_role_llm_runner::plan_view::PlanView;
 /// The tool's name, which `session.details` names as the chat's message tool.
 pub const SAY: &str = occipital_app_reader::say::TOOL;
 
-/// The module that provides `say`, under both its names while the rename from
-/// `prefrontal-core` runs.
+/// The module that provides `say`, under both its names: the module was
+/// renamed from `prefrontal-core` to `prefrontal`, and a plan composed before
+/// the rename names the old one until the session's plan is composed again.
 const PROVIDERS: [&str; 2] = ["prefrontal", "prefrontal-core"];
 
 /// How long a session's answer is kept before its plan is read again.
