@@ -118,7 +118,10 @@ fn shorten(
     cut: &mut Option<&mut Vec<String>>,
 ) -> Value {
     match value {
-        Value::String(text) if text.len() > cap => {
+        Value::String(text)
+            if text.len() > cap
+                && (text.len() > ELLIPSIS.len() || size(value) > ELLIPSIS.len() + 2) =>
+        {
             if let Some(cut) = cut {
                 cut.push(pointer.clone());
             }
@@ -231,4 +234,14 @@ mod tests {
         attach(&mut no_arguments, Some(&Value::Null), false);
         assert!(no_arguments.get("input").is_none());
     }
+}
+
+#[cfg(test)]
+#[test]
+fn shortening_a_long_string_never_requires_expanding_short_labels() {
+    let arguments = json!({"labels":vec!["x";400],"body":"b".repeat(3000)});
+    let projected = project(&arguments).unwrap();
+    assert_eq!(projected.input["labels"], arguments["labels"]);
+    assert!(size(&projected.input) <= INPUT_BYTES);
+    assert_eq!(projected.truncated_fields, ["/body"]);
 }
