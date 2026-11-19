@@ -525,6 +525,18 @@ fn missing_parse_key_has_no_source_span() {
 }
 
 #[test]
+fn table_with_too_large_source_measures_as_unavailable() {
+    let rec = ReferenceRecord {
+        state: ReferenceState::TooLarge,
+        ..record()
+    };
+    let r = session()
+        .finish(b"<Table data={$$tc(1)} />", [(1, rec)].into(), vec![])
+        .unwrap();
+    assert_eq!(measure(&r).boxes[0].state, RenderState::Unavailable);
+}
+
+#[test]
 fn parse_span_skips_malformed_calls_before_a_valid_key() {
     let program = crate::prepare::prepare(
         b"{Parse()}\n\n<Table data={Parse($$tc(1), \"json\")} />",

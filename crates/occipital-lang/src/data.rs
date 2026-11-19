@@ -437,7 +437,10 @@ pub(crate) fn prepare_accounted(
     let retention = unit.finish()?;
     prepared.text.attach_retention(&retention);
     prepared.value.attach_retention(&retention);
-    if prepared.value.value_type() == crate::ValueType::List {
+    if matches!(
+        prepared.value.value_type(),
+        crate::ValueType::List | crate::ValueType::Error
+    ) {
         prepared.rows = prepared.value.clone();
     }
     Ok(prepared)
