@@ -27,6 +27,8 @@ occipital-lang = { package = "cortexkit-occipital-lang", path = "../occipital-la
 # Checks providers' tool templates before the apps are told to draw them.
 occipital-registry = { package = "cortexkit-occipital-registry", path = "../occipital-registry" }
 async-trait = "0.1"
+# The bus connection's state, for the health report; the bus client brings it.
+async-nats = { version = "0.50", default-features = false }
 cortexkit-agent-identity = "=0.1.2"
 # The local message bus: the credential, the connection and the durable reader
 # (`crate::bus`).
