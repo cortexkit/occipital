@@ -649,6 +649,10 @@ impl Sender {
             // A runner answers this first only to a repeat of a send that already
             // ended undelivered; the same id stays refused, so the app sends the
             // words again as a new message.
+            states::FINISHED if !settled(&reply) && !unconfirmed(&reply) => json!({
+                "ok": false, "effectId": send_id, "code": states::NOT_DELIVERED,
+                "reason": not_delivered_reason(&reply), "terminal": true,
+            }),
             states::NOT_DELIVERED => json!({
                 "ok": false, "effectId": send_id, "code": reply.state,
                 "reason": reply.reason, "terminal": true,
@@ -668,9 +672,6 @@ impl Sender {
             },
             reply.state
         ));
-        if receipt["ok"] == true {
-            self.mark_sent(request.attachments()).await;
-        }
         // A steer the runner holds for its next boundary answers `pending`; one it
         // already rendered answers the run's state with `delivered`.
         let held = follow_until
@@ -714,7 +715,7 @@ impl Sender {
                 },
             });
             tokio::task::spawn_blocking(move || {
-                receipts.record(
+                receipts.record_send(
                     &session,
                     &id,
                     &digest,
@@ -723,18 +724,8 @@ impl Sender {
                     &row,
                     held.zip(run_id.as_deref()),
                     now,
-                )?;
-                if let Some(queued) = queued {
-                    receipts.queue().queue(&queued)?;
-                    if unconfirmed_now {
-                        receipts.queue().unconfirmed(
-                            &queued.session,
-                            &queued.client_message_id,
-                            now,
-                        )?;
-                    }
-                }
-                Ok::<_, crate::Error>(())
+                    queued.as_ref().map(|entry| (entry, unconfirmed_now)),
+                )
             })
             .await
             .map_err(|error| store_error(error.to_string()))?
@@ -749,6 +740,9 @@ impl Sender {
                     "queued send listed");
                 let _ = self.queue_changed.send(request.session.clone());
             }
+        }
+        if receipt["ok"] == true {
+            self.mark_sent(request.attachments()).await;
         }
         if let Some(follow) = follow {
             self.follow(
@@ -1187,33 +1181,13 @@ impl Sender {
                         fate => fate,
                     },
                 };
+                let expired = (fate == Fate::Expired)
+                    .then(|| steer_expired_for(&send_id, client_message_id.as_deref()));
                 let ended = match fate {
-                    Fate::Expired => {
-                        let mut receipt = steer_expired_for(&send_id, client_message_id.as_deref());
-                        settle(
-                            &receipts,
-                            &session,
-                            client_message_id.as_deref(),
-                            Some(&receipt),
-                        )
-                        .await;
-                        receipt["session"] = json!(session);
-                        let _ = late.send(LateOutcome {
-                            session: session.clone(),
-                            notice: json!({"sendOutcome": receipt}),
-                        });
-                        Some(End::Unsent(codes::STEER_EXPIRED.to_owned()))
-                    }
-                    Fate::Delivered | Fate::Unsent(_) | Fate::Unconfirmed => {
-                        if matches!(follow, Follow::Steer { .. }) {
-                            settle(&receipts, &session, client_message_id.as_deref(), None).await;
-                        }
-                        Some(match fate {
-                            Fate::Unsent(reason) => End::Unsent(reason),
-                            Fate::Unconfirmed => End::Unconfirmed,
-                            _ => End::Delivered,
-                        })
-                    }
+                    Fate::Expired => Some(End::Unsent(codes::STEER_EXPIRED.into())),
+                    Fate::Delivered => Some(End::Delivered),
+                    Fate::Unsent(reason) => Some(End::Unsent(reason)),
+                    Fate::Unconfirmed => Some(End::Unconfirmed),
                     Fate::Unanswered if past => break,
                     Fate::Waiting | Fate::Unanswered => None,
                 };
@@ -1225,17 +1199,27 @@ impl Sender {
                         }
                         End::Delivered | End::Unconfirmed => None,
                     };
-                    if dequeue(
+                    if let Some(updated) = dequeue(
                         &receipts,
                         &session,
                         client_message_id.as_deref(),
                         end,
+                        expired.clone(),
                         run_end,
                         now,
                     )
                     .await
                     {
-                        let _ = changed.send(session.clone());
+                        if updated {
+                            let _ = changed.send(session.clone());
+                        }
+                        if let Some(mut receipt) = expired {
+                            receipt["session"] = json!(session);
+                            let _ = late.send(LateOutcome {
+                                session: session.clone(),
+                                notice: json!({"sendOutcome":receipt}),
+                            });
+                        }
                     }
                     break;
                 }
@@ -1389,17 +1373,7 @@ enum Fate {
     Unanswered,
 }
 
-/// How a followed send ended, for its entry on the apps' list.
-enum End {
-    /// Its message is in a step or a turn: the entry leaves the list.
-    Delivered,
-    /// The runner ended it undelivered: listed `unsent` with this reason.
-    Unsent(String),
-    /// It may or may not have run: listed `unknown`, so the apps can say it may
-    /// not have arrived. Sending the words again could run them twice, so only
-    /// the person decides that.
-    Unconfirmed,
-}
+use super::send_queue::End;
 
 /// A held worker steer's fate from one `session.send_status` answer. Past its deadline, an
 /// answer of `pending` or an unknown send settles it as expired.
@@ -1599,11 +1573,12 @@ async fn dequeue(
     session: &str,
     id: Option<&str>,
     end: End,
+    receipt: Option<Value>,
     run_end: Option<super::send_queue::EndedRun>,
     now: i64,
-) -> bool {
+) -> Option<bool> {
     let (Some(receipts), Some(id)) = (receipts.clone(), id) else {
-        return false;
+        return Some(false);
     };
     let outcome = match &end {
         End::Delivered => "delivered".to_owned(),
@@ -1612,14 +1587,8 @@ async fn dequeue(
     };
     let (session, id) = (session.to_owned(), id.to_owned());
     let (logged_session, logged_id) = (session.clone(), id.clone());
-    let result = tokio::task::spawn_blocking(move || match end {
-        End::Delivered => receipts.queue().delivered(&session, &id),
-        End::Unsent(reason) => {
-            receipts
-                .queue()
-                .unsent(&session, &id, &reason, run_end.as_ref(), now)
-        }
-        End::Unconfirmed => receipts.queue().unconfirmed(&session, &id, now),
+    let result = tokio::task::spawn_blocking(move || {
+        receipts.settle(&session, &id, receipt.as_ref(), &end, run_end.as_ref(), now)
     })
     .await;
     match result {
@@ -1629,31 +1598,12 @@ async fn dequeue(
                     client_message_id = %logged_id, outcome = %outcome,
                     "queued send settled");
             }
-            changed
+            Some(changed)
         }
         _ => {
             tracing::warn!(target: "app_send", reason = "queue_settle_failed", "an app send's queued entry was not updated");
-            false
+            None
         }
-    }
-}
-
-/// Record a followed send's end: `receipt` replaces the first one when the outcome
-/// changed it, and the row is no longer followed either way.
-async fn settle(
-    receipts: &Option<Arc<Receipts>>,
-    session: &str,
-    id: Option<&str>,
-    receipt: Option<&Value>,
-) {
-    let (Some(receipts), Some(id)) = (receipts.clone(), id) else {
-        return;
-    };
-    let (session, id, receipt) = (session.to_owned(), id.to_owned(), receipt.cloned());
-    let result =
-        tokio::task::spawn_blocking(move || receipts.settle(&session, &id, receipt.as_ref())).await;
-    if !matches!(result, Ok(Ok(()))) {
-        tracing::warn!(target: "app_send", reason = "receipt_settle_failed", "an app send's final outcome was not recorded");
     }
 }
 

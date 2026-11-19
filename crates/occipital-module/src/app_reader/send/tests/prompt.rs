@@ -742,3 +742,24 @@ async fn only_the_uploading_device_can_send_its_file() {
     }
     assert!(!p.runner.methods().iter().any(|m| m == "session.send"));
 }
+
+#[tokio::test]
+async fn a_failed_receipt_write_leaves_the_prompt_upload_replayable() {
+    let p = Prompt::new();
+    let id = p.upload("image/png", b"tiny").await;
+    let msg = with_files("one", "look", &[&id]);
+    let db = rusqlite::Connection::open(p._dir.path().join("store.db")).unwrap();
+    db.execute_batch("CREATE TRIGGER fail_receipt BEFORE INSERT ON harness_app_send BEGIN SELECT RAISE(ABORT,'receipt unavailable'); END").unwrap();
+    assert!(p.sender.send_from(Some(PHONE), msg.clone()).await.is_err());
+    let first = p.runner.last_send();
+    db.execute_batch("DROP TRIGGER fail_receipt").unwrap();
+    assert_eq!(
+        p.sender.send_from(Some(PHONE), msg.clone()).await.unwrap()["effectId"],
+        first["send_id"]
+    );
+    assert_eq!(p.runner.last_send(), first);
+    assert_eq!(
+        p.sender.send_from(Some(PHONE), msg).await.unwrap()["duplicate"],
+        true
+    );
+}

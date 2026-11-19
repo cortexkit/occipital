@@ -2985,3 +2985,58 @@ fn the_published_runner_refused_samples_match_the_mapping() {
         assert_eq!(wire, published(name), "{name}");
     }
 }
+
+#[tokio::test]
+async fn receipt_and_queue_insert_roll_back_together() {
+    let f = granted_fixture(Kind::Head);
+    let db = rusqlite::Connection::open(f._dir.path().join("store.db")).unwrap();
+    db.execute_batch("CREATE TRIGGER fail_queue BEFORE INSERT ON harness_app_send_queue BEGIN SELECT RAISE(ABORT,'queue unavailable'); END").unwrap();
+    let msg = message("one", "later");
+    assert!(f.sender.send(msg.clone()).await.is_err());
+    assert!(f.receipts.get("s", "one", START).unwrap().is_none());
+    db.execute_batch("DROP TRIGGER fail_queue").unwrap();
+    assert_eq!(f.sender.send(msg).await.unwrap()["ok"], true);
+    assert!(f.receipts.queue().list("s", START).unwrap().is_some());
+    assert_eq!(f.runner.written().len(), 1);
+}
+
+#[tokio::test]
+async fn worker_settlement_rolls_back_when_dequeue_fails() {
+    let f = granted_fixture(Kind::Worker);
+    let db = rusqlite::Connection::open(f._dir.path().join("store.db")).unwrap();
+    let reply = f.sender.send(message("one", "later")).await.unwrap();
+    let id = reply["effectId"].as_str().unwrap();
+    db.execute_batch("CREATE TRIGGER fail_dequeue BEFORE DELETE ON harness_app_send_queue BEGIN SELECT RAISE(ABORT,'queue unavailable'); END").unwrap();
+    f.runner.set_state(&reply["effectId"], "delivered");
+    assert!(f.sender.nudge(id));
+    eventually(|| {
+        !f.sender
+            .following
+            .guard()
+            .contains_key(&("s".into(), id.into()))
+    })
+    .await;
+    assert!(f
+        .receipts
+        .get("s", "one", START)
+        .unwrap()
+        .unwrap()
+        .follow_until
+        .is_some());
+    db.execute_batch("DROP TRIGGER fail_dequeue").unwrap();
+    f.sender.recover().await;
+    assert!(f.sender.nudge(id));
+    eventually(|| f.receipts.queue().list("s", START).unwrap().is_none()).await;
+}
+
+#[tokio::test]
+async fn a_finished_head_without_delivery_returns_terminal_failure() {
+    let f = granted_fixture(Kind::Head);
+    f.runner.scripted.guard().push_back(Ok(
+        json!({"state":"finished","reason":"error","run_id":"r1"}),
+    ));
+    let reply = f.sender.send(message("one", "later")).await.unwrap();
+    assert_eq!(reply["ok"], false);
+    assert_eq!(reply["terminal"], true);
+    assert_eq!(reply["reason"], "error");
+}
