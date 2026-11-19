@@ -250,6 +250,27 @@ pub(crate) fn command_caller(
 /// one.
 const APP_DEVICE_CLASSES: [&str; 3] = ["phone", "sim", "app"];
 
+/// Who a route's watch serves, as its log lines name it: `desktop` for the
+/// signed desktop, the device class and the first 8 digits of its pairing
+/// fingerprint for an app Callosum relays (`phone:baa6a4f7`, `sim:…`,
+/// `app:…`), `operator` for a local caller, and `unknown` for anything else.
+/// The app owners read a watch's end line to tell which device it served.
+pub(crate) fn watch_caller(binding: Option<&RouteBinding>) -> String {
+    if binding.is_some_and(|(_, _, _, _, app)| {
+        app.as_ref().is_some_and(|app| app.app == "alfonso-desktop")
+    }) {
+        return "desktop".into();
+    }
+    match admit_principal(binding) {
+        Some(Caller::Device { class, fingerprint }) => {
+            let short: String = fingerprint.chars().take(8).collect();
+            format!("{class}:{short}")
+        }
+        Some(Caller::Operator) => "operator".into(),
+        None => "unknown".into(),
+    }
+}
+
 /// The admission a route's principal earns on its own, whichever method it calls.
 fn admit_principal(binding: Option<&RouteBinding>) -> Option<Caller> {
     if let Some((Some(Principal::Direct), target, None, _, _)) = binding {

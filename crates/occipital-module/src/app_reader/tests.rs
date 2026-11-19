@@ -1385,6 +1385,7 @@ async fn a_display_watch_logs_what_it_asked_for_and_a_refused_opening() {
         "level=WARN",
         "method=session.display_watch",
         "session=s",
+        "caller=phone:fp",
         "code=invalid_request",
         "acceptFutureFrames",
     ] {
@@ -1407,6 +1408,7 @@ async fn a_display_watch_logs_what_it_asked_for_and_a_refused_opening() {
         .find("app watch ended", "method=session.display_watch")
         .expect("the watch's end is logged");
     for field in [
+        "caller=phone:fp",
         "accept_tool_frames=true",
         "accept_message_frames=true",
         "tool_frames=0",
@@ -1415,6 +1417,25 @@ async fn a_display_watch_logs_what_it_asked_for_and_a_refused_opening() {
         assert!(end.contains(field), "missing {field}: {end}");
     }
     h.finish().await;
+}
+
+/// A watch's log lines name the device it served by class and the start of its
+/// pairing fingerprint, and the signed desktop as `desktop`.
+#[test]
+fn a_watch_names_its_caller() {
+    assert_eq!(
+        super::watch_caller(Some(&binding("fed-phone:baa6a4f7c0ffee11"))),
+        "phone:baa6a4f7"
+    );
+    assert_eq!(
+        super::watch_caller(Some(&binding("fed-sim:ac2a"))),
+        "sim:ac2a"
+    );
+    assert_eq!(
+        super::watch_caller(Some(&binding("fed-computer:ab"))),
+        "unknown"
+    );
+    assert_eq!(super::watch_caller(None), "unknown");
 }
 
 /// The frames a display watch notice carries are counted by kind: tool frames

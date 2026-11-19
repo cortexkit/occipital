@@ -170,10 +170,10 @@ pub(super) fn frames_in(body: &[u8]) -> (u32, u32) {
 /// A watch refused before it opened, for a request the module can't read,
 /// such as a member this build doesn't know. Its opening is never logged
 /// otherwise, since the session is never resolved.
-fn refused_opening(method: &str, params: &Value, code: &str, message: &str) {
+fn refused_opening(method: &str, params: &Value, caller: &str, code: &str, message: &str) {
     let session = params["session"].as_str().unwrap_or_default();
-    tracing::warn!(method = %method, session = %session, code = %code, message = %message,
-        "app watch refused before it opened");
+    tracing::warn!(method = %method, session = %session, caller = %caller, code = %code,
+        message = %message, "app watch refused before it opened");
 }
 
 async fn signalled(mut receiver: watch::Receiver<bool>) {
@@ -533,7 +533,13 @@ pub(super) async fn serve(
     let work = async {
         let selection = if method == DISPLAY_WATCH {
             let unreadable = |code: &str, message: String| {
-                refused_opening(&method, &host.params, code, &message);
+                refused_opening(
+                    &method,
+                    &host.params,
+                    &super::watch_caller(host.binding.as_ref()),
+                    code,
+                    &message,
+                );
                 (code.to_owned(), message, None)
             };
             let request = DisplayReadRequest::parse(&host.params)
@@ -609,7 +615,9 @@ pub(super) async fn serve(
         let load = |counter: &std::sync::atomic::AtomicU32| {
             counter.load(std::sync::atomic::Ordering::Relaxed)
         };
+        let caller = super::watch_caller(host.binding.as_ref());
         tracing::info!(method = %method, session = %session, correlation = %logged_correlation,
+            caller = %caller,
             duration_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
             notices = load(&host.notices),
             queue_lists = load(&host.queue_lists),
