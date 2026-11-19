@@ -122,6 +122,7 @@ impl TranscriptSource for FakeSource {
         }
         Ok(Head {
             first_ordinal: state.rows.iter().find_map(|row| row.ordinal),
+            last_ordinal: state.rows.last().and_then(|row| row.ordinal),
             activity_token: None,
             history_version: state.history_version,
             incarnation: state.incarnation.clone(),
@@ -1418,4 +1419,54 @@ async fn an_exact_read_preserves_refusals_and_the_move_holder() {
             .await;
         assert_eq!(reply.unwrap_err(), refused);
     }
+}
+
+#[test]
+fn matched_watch_notices_report_changed_session_facts_without_new_turns() {
+    let quiet = json!({"claim":"matched","version":"history:1","historyVersion":1,"newTurns":[]});
+    for (field, value) in [
+        ("host", json!("unknown")),
+        ("sender", json!({"modes":["queue"]})),
+        ("senderUnknown", json!(true)),
+        ("historyIntake", json!("running")),
+        ("model", json!({"model":"other"})),
+        ("serviceTier", json!("fast")),
+    ] {
+        let mut changed = quiet.clone();
+        changed[field] = value;
+        let mut emitted = TranscriptEmitted::default();
+        emitted.record(&quiet);
+        assert!(emitted.should_emit(&changed), "added {field}");
+        emitted.record(&changed);
+        assert!(!emitted.should_emit(&changed), "repeated {field}");
+        assert!(emitted.should_emit(&quiet), "removed {field}");
+    }
+}
+
+#[test]
+fn an_empty_resync_replaces_held_anchors_with_an_empty_claim() {
+    for verdict in ["cursor_expired", "outside_window"] {
+        let mut claim =
+            json!({"heldFloorMessageId":"first","sinceMessageId":"last","heldVersion":"v1"});
+        advance_claim(
+            claim.as_object_mut().unwrap(),
+            &json!({"claim":verdict,"version":"v2","resync":{"messages":[]}}),
+        );
+        assert_eq!(claim, json!({"heldVersion":"v2"}));
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn an_oversize_simple_notice_names_its_view_even_without_a_resync() {
+    let source = FakeSource::new("broca", 2, 0, true);
+    source.state.lock().unwrap().rows[1].display = json!({"role":"user","text":"", "blockSummaries":[], "parts":[{"type":"text","text":"x".repeat(NOTICE_BOUND)}]});
+    let mut watch = Running::with_params(
+        source,
+        Arc::new(TranscriptReader::default()),
+        json!({"session":"s","view":"simple","claim":{"heldVersion":"old"}}),
+    );
+    let notice = watch.next().await;
+    assert_eq!(notice["claim"], "cursor_expired");
+    assert!(notice.get("resync").is_none());
+    assert_eq!(notice["view"], "simple");
 }

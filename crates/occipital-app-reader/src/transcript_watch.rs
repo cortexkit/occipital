@@ -64,6 +64,7 @@ const RESYNC_DECORATIONS: &[&str] = &[
     "timing",
     "version",
     "historyVersion",
+    "view",
 ];
 
 /// What the transport supplies to [`run`].
@@ -262,6 +263,7 @@ async fn oversize_transcript<H: TranscriptWatchHost>(
             reply["resync"] = resync;
         }
         let page_facts = [
+            "view",
             "attachmentCapability",
             "acceptsAttachments",
             "acceptedMimeTypes",
@@ -375,6 +377,9 @@ pub fn advance_claim(claim: &mut Map<String, Value>, reply: &Value) {
                 if let (Some(oldest), Some(newest)) = (ids.first(), ids.last()) {
                     claim.insert("heldFloorMessageId".into(), json!(oldest));
                     claim.insert("sinceMessageId".into(), json!(newest));
+                } else if page["messages"].as_array().is_some_and(Vec::is_empty) {
+                    claim.remove("heldFloorMessageId");
+                    claim.remove("sinceMessageId");
                 }
             }
         }
@@ -404,7 +409,7 @@ pub struct TranscriptEmitted {
     turns_since_page: bool,
     activity: Option<Value>,
     history_version: Option<Value>,
-    last_run: Option<Value>,
+    facts: Map<String, Value>,
 }
 
 impl TranscriptEmitted {
@@ -423,7 +428,10 @@ impl TranscriptEmitted {
             return true;
         }
         // A failed run can leave both the transcript and idle activity unchanged.
-        if reply.get("lastRun") != self.last_run.as_ref() {
+        if crate::source::SESSION_FACTS
+            .iter()
+            .any(|&key| reply.get(key) != self.facts.get(key))
+        {
             return true;
         }
         match reply.get("claim").and_then(Value::as_str) {
@@ -451,7 +459,10 @@ impl TranscriptEmitted {
         self.any = true;
         self.activity = reply.get("activity").cloned();
         self.history_version = reply.get("historyVersion").cloned();
-        self.last_run = reply.get("lastRun").cloned();
+        self.facts = crate::source::SESSION_FACTS
+            .iter()
+            .filter_map(|&key| reply.get(key).map(|value| (key.to_owned(), value.clone())))
+            .collect();
         match reply.get("claim").and_then(Value::as_str) {
             Some("matched") => {
                 if reply
