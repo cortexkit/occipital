@@ -150,11 +150,22 @@ impl Schema {
     }
 }
 
+/// Host integers retain all their digits. Other numbers follow the shortest
+/// binary64 spelling even when an embedding crate preserves raw JSON tokens.
+pub(crate) fn host_number(number: &serde_json::Number) -> Option<crate::Decimal> {
+    if let Some(n) = number.as_i64() {
+        return Some(crate::Decimal::from_i64(n));
+    }
+    if let Some(n) = number.as_u64() {
+        return Some(crate::Decimal::from_u64(n));
+    }
+    crate::Decimal::parse_text(&number.as_f64()?.to_string()).ok()
+}
+
 fn enum_equal(a: &Json, b: &Json) -> bool {
     match (a, b) {
-        (Json::Number(a), Json::Number(b)) => crate::Decimal::from_literal(&a.to_string())
-            .ok()
-            .zip(crate::Decimal::from_literal(&b.to_string()).ok())
+        (Json::Number(a), Json::Number(b)) => host_number(a)
+            .zip(host_number(b))
             .is_some_and(|(a, b)| a == b),
         (Json::Array(a), Json::Array(b)) => {
             a.len() == b.len() && a.iter().zip(b).all(|(a, b)| enum_equal(a, b))
