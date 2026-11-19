@@ -1,4 +1,4 @@
-//! The sample set `phone-reader-simple-v1`: the Simple view of a busy chat as
+//! The sample set `phone-reader-simple-v2`: the Simple view of a busy chat as
 //! the apps read it with `view: "simple"` (`occipital_app_reader::simple`).
 //! Its README says what each file shows. The chat is a Broca head whose plan
 //! gives the agent prefrontal's `say` and `ask`: the person's messages and
@@ -14,7 +14,7 @@ use cortexkit_test_support::ScratchDir;
 use subc_client_rs::HandlerOutcome;
 use subc_protocol::Principal;
 
-const SET: &str = "phone-reader-simple-v1";
+const SET: &str = "phone-reader-simple-v2";
 const SESSION: &str = "alfonso:head";
 /// The agent's own prose between the messages the view shows.
 const FILLER: u64 = 1_300;
@@ -346,7 +346,7 @@ async fn the_simple_view_samples_are_what_the_reader_serves() {
     let first = &newest["result"];
     assert_eq!(first["view"], "simple");
     assert!(
-        first["version"].as_str().unwrap().ends_with(":simple:1"),
+        first["version"].as_str().unwrap().ends_with(":simple:2"),
         "{first}"
     );
     let rows = first["messages"].as_array().unwrap();
@@ -488,7 +488,7 @@ async fn the_simple_view_samples_are_what_the_reader_serves() {
     assert_eq!(outside["result"]["claim"], "outside_window", "{outside}");
 
     // 08: a full claim sent with the view names the full version: expired.
-    let full = version.as_str().unwrap().trim_end_matches(":simple:1");
+    let full = version.as_str().unwrap().trim_end_matches(":simple:2");
     let expired = served
         .read(
             "08-full-claim-on-the-view",

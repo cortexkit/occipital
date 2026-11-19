@@ -121,7 +121,27 @@ fn a_wake_shows_only_when_it_answers_an_ask() {
 #[test]
 fn a_simple_version_names_its_rule() {
     let version = version("history:7:incarnation:abc");
-    assert_eq!(version, "history:7:incarnation:abc:simple:1");
+    assert_eq!(version, "history:7:incarnation:abc:simple:2");
     assert!(is_version(&version));
     assert!(!is_version("history:7:incarnation:abc"));
+}
+
+#[test]
+fn an_unpinned_ask_uses_its_actual_action_even_when_arguments_are_cut() {
+    for (action, visible) in [("dismiss", false), ("create", true)] {
+        let e = json!({"mid":"m","ordinal":1,"message":{"role":"assistant","content":[{"type":"tool_call","tool_call_id":"c","name":"ask","input":{"a":"x".repeat(3000),"action":action}}]}});
+        let mut row = crate::broca_entries::rows(&[e], false).unwrap().remove(0);
+        assert_eq!(row.display["parts"][0]["argumentsTruncated"], true);
+        assert_eq!(admit(&mut row.display, false), visible);
+    }
+}
+
+#[test]
+fn simple_tool_summaries_describe_only_the_retained_calls() {
+    let mut row = json!({"role":"assistant","parts":[{"type":"tool","tool":"bash","callId":"x"},{"type":"tool","tool":"ask","input":{"action":"create"}},{"type":"tool","tool":"ask","input":{"action":"dismiss"}}],"toolCalls":[{"name":"bash","callId":"x"},{"name":"ask","arguments":"create"},{"name":"ask","arguments":"dismiss"}]});
+    assert!(admit(&mut row, false));
+    assert_eq!(
+        row["toolCalls"],
+        json!([{"name":"ask","arguments":"create"}])
+    );
 }

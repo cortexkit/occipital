@@ -139,7 +139,7 @@ fn ordinals(found: &Found) -> Vec<u64> {
     found.rows.iter().map(|row| row.ordinal.unwrap()).collect()
 }
 
-const VERSION: &str = "history:1:incarnation:inc:simple:1";
+const VERSION: &str = "history:1:incarnation:inc:simple:2";
 
 /// A cold newest page reads back until it holds its rows, and goes on from
 /// where it stopped; the page before it is read on from the kept range and
@@ -242,7 +242,7 @@ async fn kept_rows_go_with_a_late_record_or_a_new_version() {
     *chat.version.lock().unwrap() = 2;
     let head = chat.head();
     tails
-        .newest(&chat, "s", &head, "history:2:incarnation:inc:simple:1", 2)
+        .newest(&chat, "s", &head, "history:2:incarnation:inc:simple:2", 2)
         .await
         .unwrap();
     assert_eq!(chat.served(), 300, "a new version is read afresh");

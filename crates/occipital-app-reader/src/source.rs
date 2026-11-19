@@ -340,6 +340,7 @@ impl Row {
             ));
         }
         let mut value = self.display.clone();
+        crate::simple::clear_ask_marks(&mut value);
         let Some(object) = value.as_object_mut() else {
             return Err(ReadError::new(
                 "identity_unsupported",

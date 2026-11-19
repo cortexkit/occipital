@@ -20,7 +20,32 @@ use serde_json::Value;
 pub const VIEW: &str = "simple";
 /// The rule's version. Raise it whenever [`admit`] changes what it admits or
 /// keeps, so the apps drop the Simple copies an earlier rule built.
-pub const RULE: u32 = 1;
+pub const RULE: u32 = 2;
+
+/// Internal override when projecting a call's arguments loses its actual action.
+/// The full and Simple wire rows never carry this member.
+const FILES_ASK: &str = "_filesAsk";
+
+fn files_ask(input: &Value) -> bool {
+    match input.get("action") {
+        None | Some(Value::Null) => true,
+        Some(action) => action == "create",
+    }
+}
+
+pub(crate) fn note_ask(part: &mut Value, name: &str, arguments: &Value) {
+    if name == "ask" && files_ask(arguments) != files_ask(&part["input"]) {
+        part[FILES_ASK] = Value::Bool(files_ask(arguments));
+    }
+}
+
+pub(crate) fn clear_ask_marks(display: &mut Value) {
+    if let Some(parts) = display.get_mut("parts").and_then(Value::as_array_mut) {
+        for part in parts.iter_mut().filter_map(Value::as_object_mut) {
+            part.remove(FILES_ASK);
+        }
+    }
+}
 
 /// The Simple version of a page whose full version is `full`.
 pub fn version(full: &str) -> String {
@@ -94,8 +119,26 @@ pub fn admit(display: &mut Value, answers_ask: bool) -> bool {
 /// parts it no longer holds: its text, its block summaries and its files.
 /// They stay present, since every app row carries them.
 fn keep_parts(display: &mut Value, keep: impl Fn(&Value) -> bool) {
+    // The call summaries and named tool parts are built in the same order.
+    // Match by position so older calls without a callId remain distinct.
+    let mut keep_calls = Vec::new();
     if let Some(parts) = display["parts"].as_array_mut() {
-        parts.retain(|part| keep(part));
+        parts.retain(|part| {
+            let retained = keep(part);
+            if part["type"] == "tool" && part["tool"].is_string() {
+                keep_calls.push(retained);
+            }
+            retained
+        });
+    }
+    if let Some(calls) = display.get_mut("toolCalls").and_then(Value::as_array_mut) {
+        let mut keep = keep_calls.into_iter();
+        calls.retain(|_| keep.next().unwrap_or(false));
+        if calls.is_empty() {
+            if let Some(row) = display.as_object_mut() {
+                row.remove("toolCalls");
+            }
+        }
     }
     if let Some(row) = display.as_object_mut() {
         row.insert("text".into(), Value::String(String::new()));
@@ -132,10 +175,9 @@ fn drawn_for_agent(part: &Value) -> bool {
         Some("message") => true,
         Some("tool") => {
             part["tool"] == "ask"
-                && match part["input"].get("action") {
-                    None | Some(Value::Null) => true,
-                    Some(action) => action == "create",
-                }
+                && part[FILES_ASK]
+                    .as_bool()
+                    .unwrap_or_else(|| files_ask(&part["input"]))
         }
         _ => false,
     }
