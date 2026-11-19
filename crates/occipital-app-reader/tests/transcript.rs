@@ -22,6 +22,7 @@ struct State {
     history_version: Option<u64>,
     incarnation: Option<String>,
     activity: (&'static str, i64),
+    durable_token: Option<String>,
     error: Option<&'static str>,
     unstable: usize,
     rewrite_at: Option<usize>,
@@ -52,6 +53,7 @@ impl FakeSource {
                 history_version: native.then_some(1),
                 incarnation: None,
                 activity: ("idle", 1),
+                durable_token: None,
                 error: None,
                 unstable: 0,
                 rewrite_at: None,
@@ -123,7 +125,7 @@ impl TranscriptSource for FakeSource {
         Ok(Head {
             first_ordinal: state.rows.iter().find_map(|row| row.ordinal),
             last_ordinal: state.rows.last().and_then(|row| row.ordinal),
-            activity_token: None,
+            activity_token: state.durable_token.clone(),
             history_version: state.history_version,
             incarnation: state.incarnation.clone(),
             last_run: state.last_run.clone(),
@@ -1469,4 +1471,35 @@ async fn an_oversize_simple_notice_names_its_view_even_without_a_resync() {
     assert_eq!(notice["claim"], "cursor_expired");
     assert!(notice.get("resync").is_none());
     assert_eq!(notice["view"], "simple");
+}
+
+#[tokio::test]
+async fn a_record_sensitive_token_rechecks_joined_message_parts_even_after_restart() {
+    let source = FakeSource::new("broca", 2, 3, true);
+    let r = TranscriptReader::default();
+    source.state.lock().unwrap().durable_token = Some("head".into());
+    let request = json!({"session":"s"});
+    let plain = read(&r, &source, request.clone()).await;
+    let poll = |token: &Value| json!({"session":"s","activityToken":token});
+    let reads = source.newest_reads.load(Ordering::SeqCst);
+    assert_eq!(plain["activityToken"], "head");
+    assert_eq!(
+        read(&r, &source, poll(&plain["activityToken"])).await["unchanged"],
+        true
+    );
+    assert_eq!(reads, source.newest_reads.load(Ordering::SeqCst));
+    source.state.lock().unwrap().rows[1].display["parts"] =
+        json!([{"type":"message","callKey":"k","text":"ok"}]);
+    let held = read(&r, &source, request).await;
+    let token = &held["activityToken"];
+    let quiet = read(&r, &source, poll(token)).await;
+    assert_eq!(quiet["unchanged"], true);
+    source.state.lock().unwrap().rows[1].display["parts"][0]["replyTo"] = json!({"messageId":"m0"});
+    let restarted = TranscriptReader::default();
+    let fresh = read(&restarted, &source, poll(token)).await;
+    assert_eq!(
+        fresh["messages"][1]["parts"][0]["replyTo"]["messageId"], "m0",
+        "{fresh}"
+    );
+    assert_ne!(&fresh["activityToken"], token);
 }

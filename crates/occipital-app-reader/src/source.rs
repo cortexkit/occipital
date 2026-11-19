@@ -746,6 +746,21 @@ impl TranscriptReader {
                 "empty"
             });
         }
+        let captured_token = stable
+            .activity_token
+            .as_deref()
+            .map(|captured| {
+                message_activity_token(head.activity_token.as_deref().unwrap_or(captured), &mapped)
+            })
+            .transpose()?;
+        if newest_request
+            && request.activity_token.is_some()
+            && request.activity_token == captured_token
+        {
+            let mut reply = json!({"unchanged":true,"activityToken":captured_token});
+            decorate(&mut reply, &head, source);
+            return Ok(reply);
+        }
         let version = head
             .claim_version()
             .unwrap_or_else(|| self.activity.ensure_transcript_version(&request.session_id));
@@ -902,16 +917,8 @@ impl TranscriptReader {
             }
             mapped
         };
-        if stable.activity_token.is_some() {
-            if let Some(token) = head.activity_token.as_deref() {
-                reply["activityToken"] = json!(token);
-            } else {
-                self.activity.attach_captured_transcript_activity_token(
-                    &request.session_id,
-                    stable.activity_token.as_deref(),
-                    &mut reply,
-                );
-            }
+        if let Some(token) = captured_token {
+            reply["activityToken"] = json!(token);
         } else {
             self.activity
                 .attach_unstable_transcript_activity_discard(&request.session_id, &mut reply);
@@ -1073,6 +1080,37 @@ impl TranscriptReader {
             .remove(session);
         self.activity.invalidate_transcript_activity_token(session);
     }
+}
+
+/// Locally joined message records can change without moving the runner's head.
+/// Qualify only pages that draw them, so ordinary pages retain their cheap
+/// head-only probe. Recomputing this digest also works after a daemon restart.
+fn message_activity_token(base: &str, page: &Value) -> Result<String, ReadError> {
+    use sha2::{Digest, Sha256};
+    let mut digest = None;
+    for row in page["messages"].as_array().into_iter().flatten() {
+        for part in row["parts"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|part| part["type"] == "message")
+        {
+            serde_json::to_writer(
+                digest.get_or_insert_with(Sha256::new),
+                &(&row["messageId"], part),
+            )
+            .map_err(|_| {
+                ReadError::new(
+                    "provider_unavailable",
+                    "message part could not be fingerprinted",
+                )
+            })?;
+        }
+    }
+    Ok(match digest {
+        Some(digest) => format!("message:{}:{:x}", base, digest.finalize()),
+        None => base.to_owned(),
+    })
 }
 
 fn map_page(
