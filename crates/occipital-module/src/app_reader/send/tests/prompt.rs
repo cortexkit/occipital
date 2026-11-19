@@ -25,6 +25,7 @@ struct Held {
 /// A head on a runner declaring `attachments`, keeping what each upload received.
 struct UploadRunner {
     attachments: AtomicBool,
+    describe_offline: AtomicBool,
     /// Whether it also declares `media_only_send`, storing a message of files alone.
     media_only: AtomicBool,
     input: Mutex<Option<Value>>,
@@ -41,6 +42,7 @@ impl UploadRunner {
     fn new() -> Arc<Self> {
         Arc::new(Self {
             attachments: AtomicBool::new(true),
+            describe_offline: AtomicBool::default(),
             media_only: AtomicBool::new(false),
             input: Mutex::default(),
             model: Mutex::default(),
@@ -112,6 +114,9 @@ impl SendTarget for UploadTarget {
                     head["model"] = model;
                 }
                 Ok(head)
+            }
+            "role.describe" if runner.describe_offline.load(Ordering::SeqCst) => {
+                Err(RunnerError::Unreachable("offline".into()))
             }
             "role.describe" => {
                 let mut groups = vec!["head_sender".to_owned()];
@@ -760,6 +765,27 @@ async fn a_failed_receipt_write_leaves_the_prompt_upload_replayable() {
     assert_eq!(p.runner.last_send(), first);
     assert_eq!(
         p.sender.send_from(Some(PHONE), msg).await.unwrap()["duplicate"],
+        true
+    );
+}
+
+#[tokio::test]
+async fn a_description_outage_does_not_make_a_prompt_file_unsupported() {
+    let p = Prompt::new();
+    let id = p.upload("image/png", b"tiny").await;
+    let msg = with_files("one", "look", &[&id]);
+    p.runner.describe_offline.store(true, Ordering::SeqCst);
+    assert_eq!(
+        p.sender
+            .send_from(Some(PHONE), msg.clone())
+            .await
+            .unwrap_err()
+            .code,
+        "provider_unavailable"
+    );
+    p.runner.describe_offline.store(false, Ordering::SeqCst);
+    assert_eq!(
+        p.sender.send_from(Some(PHONE), msg).await.unwrap()["ok"],
         true
     );
 }

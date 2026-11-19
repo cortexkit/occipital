@@ -557,6 +557,12 @@ impl Sender {
             } else {
                 None
             };
+        if !request.attachments().is_empty() && describe.is_none() {
+            return Err(SendRefusal::new(
+                "provider_unavailable",
+                "this session's runner can't describe itself now",
+            ));
+        }
         let grant = super::broca::send_grant(&meta, describe.as_ref(), false);
         let trial = matches!(&grant, SendGrant::Unknown);
         // A worker's grant lacks idle_start. Choose its steer before sending:

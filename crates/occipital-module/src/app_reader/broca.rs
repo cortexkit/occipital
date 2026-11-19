@@ -576,11 +576,8 @@ fn not_ready(op: ReadOp, code: Option<&str>, detail: Option<&Value>) -> Option<&
         .then_some("context_not_ready")
 }
 
-/// The plan view refusals that say for good whether the session has a plan to
-/// read: the runner serves no plan view, holds no plan for the session, or
-/// holds one too large to serve. A session refused any of these has no `say`
-/// to draw its calls by; any other refusal may pass.
-const PLAN_VIEW_FINAL: [&str; 3] = ["unsupported", "no_plan", "too_large"];
+/// A `too_large` plan-view refusal does not say which tools the plan contains.
+const NO_MESSAGE_TOOL: [&str; 2] = ["unsupported", "no_plan"];
 
 /// The app code a runner's refusal of `op` keeps, if any: [`final_refusal`], or
 /// [`not_ready`].
@@ -1211,11 +1208,13 @@ impl BrocaSource {
         offset: u64,
         length: u64,
     ) -> Result<Value, ReadError> {
-        if !self
-            .describe()
-            .await
-            .is_some_and(|describe| describe.declares("attachments"))
-        {
+        let describe = self.describe().await.ok_or_else(|| {
+            ReadError::new(
+                "provider_unavailable",
+                "this session's runner can't describe itself now",
+            )
+        })?;
+        if !describe.declares("attachments") {
             return Err(ReadError::new(
                 "unsupported",
                 "this session's runner serves no media",
@@ -1288,7 +1287,7 @@ impl BrocaSource {
         }
         let tool = match self.plan_view().await {
             Ok(view) => super::message_tool::from_plan(&view),
-            Err(error) if PLAN_VIEW_FINAL.contains(&error.code) => None,
+            Err(error) if NO_MESSAGE_TOOL.contains(&error.code) => None,
             Err(error) => {
                 if let Some((_, tool)) = kept {
                     return Ok(tool);
