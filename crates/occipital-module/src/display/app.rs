@@ -163,6 +163,12 @@ impl ToolDisplay {
                 if let Some(page) = verdict.page {
                     answer["page"] = json!(page);
                 }
+                // The wake record this row is the other half of, so the apps
+                // show and hide the two together. An unknown kind is passed
+                // on as written: the apps then treat the row as an ordinary one.
+                if let Some(half_of) = &view.half_of {
+                    answer["halfOf"] = json!(half_of);
+                }
                 Some(answer)
             }
             // A module whose catalog holds the pin said it has no view.
