@@ -200,6 +200,11 @@ pub fn format_fact(fact: &Json) -> Result<FormattedFact, FactError> {
             if wire.noun.is_some() && unit != Unit::Count {
                 return Err(FactError::Conflict("noun is only for a count"));
             }
+            if wire.noun.as_ref().is_some_and(|noun| {
+                !(1..=MAX_NOUN).contains(&noun.chars().take(MAX_NOUN + 1).count())
+            }) {
+                return Err(FactError::Range("noun must be 1 to 24 characters"));
+            }
             let x = decimal(value)?;
             let approx = wire.approx.unwrap_or(false);
             let mut text = String::new();
@@ -283,10 +288,6 @@ fn number_words(x: Decimal, unit: Unit, noun: Option<&str>) -> Result<String, Fa
         Unit::Count => {
             let mut text = number_text(x, None, true);
             if let Some(noun) = noun {
-                let noun_len = noun.chars().count();
-                if noun_len == 0 || noun_len > MAX_NOUN {
-                    return Err(FactError::Range("noun must be 1 to 24 characters"));
-                }
                 text.push(' ');
                 text.push_str(noun);
             }

@@ -1140,3 +1140,19 @@ fn unsupported_markdown_content_is_literal_in_reply_and_refused_in_program() {
         assert!(evaluator.demands.is_empty());
     }
 }
+
+#[test]
+fn waiting_slot_defers_the_children_prop() {
+    let row = Inputs::new(Profile::ToolRow);
+    for (needs, count) in [("view.record", 0), ("7", 1)] {
+        let source = format!(
+            r#"<Slot width="short" children={{[<Badge text="Ready" />]}} needs={{{needs}}} />"#
+        );
+        let evaluation = run_with(&source, &row);
+        let TreeNode::Component { children, .. } = &blocks(&evaluation)[0] else {
+            panic!("expected Slot")
+        };
+        assert_eq!(children.len(), count);
+        assert!(codes(&evaluation).is_empty());
+    }
+}

@@ -8,6 +8,9 @@ use std::collections::BTreeMap;
 
 use serde_json::Value as Json;
 
+#[cfg(test)]
+mod tests;
+
 use crate::accounts::{Accounts, Refused, UnitKind};
 use crate::data::{self, Format, Options};
 use crate::eval::snapshot::{self, ParseKey, SnapshotSource};
@@ -88,17 +91,15 @@ impl From<Refused> for HostError {
     }
 }
 
-/// A host JSON value as a language value. Object keys arrive sorted (the
-/// JSON map is ordered by key), so the record order is the same on every
-/// run.
+/// Convert a host projection in key order, independent of the embedding
+/// app's choice of JSON map representation.
 pub(crate) fn json_value(json: &Json) -> Result<Value, HostError> {
     let invalid = |_| HostError::InvalidHostValue("input or view");
     Ok(match json {
         Json::Null => Value::null(),
         Json::Bool(value) => Value::boolean(*value),
         Json::Number(number) => Value::number(
-            Decimal::from_literal(&number.to_string())
-                .map_err(|_| HostError::InvalidHostValue("input or view"))?,
+            crate::host::host_number(number).ok_or(HostError::InvalidHostValue("input or view"))?,
         ),
         Json::String(text) => Value::string(text.as_str()).map_err(invalid)?,
         Json::Array(items) => Value::list(
@@ -108,13 +109,14 @@ pub(crate) fn json_value(json: &Json) -> Result<Value, HostError> {
                 .collect::<Result<Vec<_>, _>>()?,
         )
         .map_err(invalid)?,
-        Json::Object(fields) => Value::record(
-            fields
+        Json::Object(fields) => {
+            let mut fields = fields
                 .iter()
                 .map(|(key, value)| Ok((ScalarString::new(key.as_str()), json_value(value)?)))
-                .collect::<Result<Vec<_>, HostError>>()?,
-        )
-        .map_err(invalid)?,
+                .collect::<Result<Vec<_>, HostError>>()?;
+            fields.sort_unstable_by(|(a, _), (b, _)| a.as_str().cmp(b.as_str()));
+            Value::record(fields).map_err(invalid)?
+        }
     })
 }
 

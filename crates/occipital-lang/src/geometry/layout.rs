@@ -822,7 +822,7 @@ pub(crate) fn render_state(name: &str, props: &Props) -> RenderState {
         Some(TreeValue::Snapshot { state, value, .. }) => match state.as_str() {
             "held" => RenderState::Held,
             "loading" | "pending" => RenderState::Loading,
-            "unavailable" | "unresolved" => RenderState::Unavailable,
+            "unavailable" | "unresolved" | "too_large" => RenderState::Unavailable,
             _ if name == "Map" && (state.as_str() != "resolved" || value.is_none()) => {
                 RenderState::Unavailable
             }

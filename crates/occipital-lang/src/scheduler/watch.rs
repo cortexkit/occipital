@@ -6,6 +6,12 @@ use crate::{Decimal, Operation, Value, ValueKind};
 
 const CREDIT_BYTES: u64 = 512 * 1024;
 
+/// Inclusive end of a nonempty sequence window. Add the distance to the
+/// last item, not the length: a window may end at the last `u64`.
+fn last_sequence(first: u64, count: usize) -> Option<u64> {
+    first.checked_add(u64::try_from(count.checked_sub(1)?).ok()?)
+}
+
 #[derive(Clone, Debug, Default)]
 pub(super) struct Watch {
     pub dropped: u64,
@@ -238,9 +244,7 @@ impl Queries {
             if items.iter().any(|v| !protocol::accepts(item, v)) {
                 return Err("protocol error".into());
             }
-            if !items.is_empty()
-                && (first == 0 || first.checked_add(items.len() as u64 - 1).is_none())
-            {
+            if !items.is_empty() && (first == 0 || last_sequence(first, items.len()).is_none()) {
                 return Err("protocol error".into());
             }
             Ok((
@@ -337,10 +341,9 @@ impl Queries {
                 continue;
             };
             query.stale = false;
-            if items.is_empty() {
+            let Some(last) = last_sequence(first, items.len()) else {
                 continue;
-            }
-            let last = first + items.len() as u64 - 1;
+            };
             if last <= watch.last {
                 continue;
             }
@@ -390,5 +393,17 @@ impl Queries {
             }
         }
         true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inclusive_sequence_window_can_end_at_the_last_counter() {
+        assert_eq!(last_sequence(u64::MAX - 1, 2), Some(u64::MAX));
+        assert_eq!(last_sequence(u64::MAX - 1, 3), None);
+        assert_eq!(last_sequence(1, 0), None);
     }
 }

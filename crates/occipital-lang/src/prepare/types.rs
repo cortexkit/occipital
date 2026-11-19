@@ -1,4 +1,6 @@
+mod budget;
 mod functions;
+use budget::{Budget, TYPE_BUDGET};
 
 pub(crate) use functions::{function_table, RESERVED_WRITES, SITE_CONSTRUCTORS};
 
@@ -191,14 +193,35 @@ pub(super) fn check(
     names: &BTreeMap<String, usize>,
     order: &[usize],
 ) {
+    check_with_budget(result, context, names, order, Budget(TYPE_BUDGET));
+}
+
+fn check_with_budget(
+    result: &mut Resolved,
+    context: &TypeContext,
+    names: &BTreeMap<String, usize>,
+    order: &[usize],
+    budget: Budget,
+) {
     let mut checker = Checker {
         parsed: &result.parsed,
         positions: &result.parsed.positions,
-        values: context.hosts.clone(),
+        values: BTreeMap::new(),
         states: BTreeMap::new(),
         diagnostics: vec![],
         node_types: BTreeMap::new(),
+        budget,
+        exhausted: false,
     };
+    for (key, ty) in &context.hosts {
+        if !checker.budget.admits(ty) {
+            result
+                .diagnostics
+                .push(Diagnostic::new(Code::LimitAlloc, DiagnosticPhase::Check));
+            return;
+        }
+        checker.values.insert(key.clone(), ty.clone());
+    }
     // State has a fixed outer kind, not the shape of its initial data (language
     // spec §4.10), since later control input can change the data's shape.
     for declaration in &mut result.declarations {
@@ -221,14 +244,18 @@ pub(super) fn check(
         let inferred = checker.infer(&declaration.expression, &mut vec![]);
         declaration.ty = if matches!(&declaration.expression.kind, Kind::Expression(E::Call(name)) if matches!(name.as_str(), "Query" | "Watch" | "PagedList"))
         {
-            context
-                .sites
-                .get(&declaration.name)
-                .cloned()
-                .unwrap_or(inferred)
+            match context.sites.get(&declaration.name) {
+                Some(ty) if checker.budget.admits(ty) => ty.clone(),
+                Some(_) => checker.exhaust(&declaration.expression),
+                None => inferred,
+            }
         } else {
             inferred
         };
+        if checker.exhausted || !checker.budget.admits(&declaration.ty) {
+            checker.exhaust(&declaration.expression);
+            break;
+        }
         checker
             .values
             .insert(declaration.name.clone(), declaration.ty.clone());
@@ -250,9 +277,18 @@ struct Checker<'a> {
     states: BTreeMap<String, Type>,
     diagnostics: Vec<Diagnostic>,
     node_types: BTreeMap<(usize, usize), Type>,
+    budget: Budget,
+    exhausted: bool,
 }
 
 impl Checker<'_> {
+    fn exhaust(&mut self, node: &Node) -> Type {
+        if !self.exhausted {
+            self.report(Code::LimitAlloc, node, "inferred types", None);
+            self.exhausted = true;
+        }
+        Type::Unknown
+    }
     fn unsupported(&mut self, node: &Node) -> Type {
         match self.parsed.unsupported(node) {
             Ok(_) => Type::String,
@@ -285,7 +321,15 @@ impl Checker<'_> {
     }
 
     fn infer(&mut self, node: &Node, binders: &mut Vec<(String, Type)>) -> Type {
+        if self.exhausted {
+            return Type::Unknown;
+        }
         let ty = self.infer_inner(node, binders);
+        // Each child's structure has already been charged before it can be
+        // used to build a parent. Reserve the retained copy separately.
+        if self.exhausted || !self.budget.admits(&ty) {
+            return self.exhaust(node);
+        }
         self.node_types
             .insert((node.span.start, node.span.end), ty.clone());
         ty
@@ -317,14 +361,17 @@ impl Checker<'_> {
                 E::String(_) => Type::String,
                 E::Boolean(_) => Type::Boolean,
                 E::Null => Type::Null,
-                E::Name(name) => binders
+                E::Name(name) => match binders
                     .iter()
                     .rev()
                     .find(|(key, _)| key == name)
                     .map(|(_, ty)| ty)
                     .or_else(|| self.values.get(name))
-                    .cloned()
-                    .unwrap_or(Type::Unknown),
+                {
+                    Some(ty) if self.budget.admits(ty) => ty.clone(),
+                    Some(_) => self.exhaust(node),
+                    None => Type::Unknown,
+                },
                 E::State(name) => self.states.get(name).cloned().unwrap_or(Type::Unknown),
                 E::Group => args[0].clone(),
                 E::List => Type::List(Box::new(Type::union(args))),
@@ -448,6 +495,52 @@ mod compatibility_tests {
     use cortexkit_rich_ui_syntax::Mode;
 
     #[test]
+    fn structural_copies_spend_the_check_budget() {
+        let cx = TypeContext::default();
+        let mut p = crate::prepare::prepare(
+            b"export const a = {x: 1}\nexport const b = {l: a, r: a}\n\n{b.l.x}",
+            Mode::Program,
+            &cx,
+        )
+        .unwrap();
+        assert!(p.diagnostics.is_empty());
+        let names = p
+            .declarations
+            .iter()
+            .enumerate()
+            .map(|(i, d)| (d.name.clone(), i))
+            .collect();
+        check_with_budget(&mut p, &cx, &names, &[0, 1], Budget(1_024));
+        assert!(p
+            .diagnostics
+            .iter()
+            .any(|d| d.code() == Code::LimitAlloc && d.phase() == DiagnosticPhase::Check));
+    }
+
+    #[test]
+    fn repeated_wide_types_stop_at_the_default_budget() {
+        let mut cx = TypeContext::default();
+        cx.hosts.insert(
+            "input".into(),
+            Type::Record(
+                (0..2_500)
+                    .map(|i| (format!("f{i}"), Type::Number))
+                    .collect(),
+            ),
+        );
+        let source = (0..40)
+            .map(|i| format!("export const row{i} = input\n"))
+            .collect::<String>();
+        let start = std::time::Instant::now();
+        let p = crate::prepare::prepare(source.as_bytes(), Mode::Program, &cx).unwrap();
+        assert!(p
+            .diagnostics
+            .iter()
+            .any(|d| d.code() == Code::LimitAlloc && d.phase() == DiagnosticPhase::Check));
+        assert!(start.elapsed() < std::time::Duration::from_secs(1));
+    }
+
+    #[test]
     fn unsupported_syntax_type_is_literal_in_reply_and_refused_in_program() {
         for mode in [Mode::Reply, Mode::Program] {
             let mut parsed = crate::prepare::parse(b"{1 + 2}", Mode::Program).unwrap();
@@ -459,6 +552,8 @@ mod compatibility_tests {
                 states: BTreeMap::new(),
                 diagnostics: vec![],
                 node_types: BTreeMap::new(),
+                budget: Budget(TYPE_BUDGET),
+                exhausted: false,
             };
             let ty = checker.unsupported(&parsed.document.nodes[0]);
             if mode == Mode::Reply {

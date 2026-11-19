@@ -358,6 +358,20 @@ pub(super) fn plain_text(
                 T::Markdown {
                     kind: M::Code(s), ..
                 } => out.push_str(s.as_str()),
+                T::Component {
+                    name,
+                    props,
+                    children,
+                } if name.as_str() == "Badge" => {
+                    if let Some(label) = props.iter().find_map(|(key, value)| match value {
+                        V::String(label) if key.as_str() == "text" => Some(label),
+                        _ => None,
+                    }) {
+                        out.push_str(label.as_str());
+                    } else {
+                        out.push_str(&text(children));
+                    }
+                }
                 T::Component { children, .. } | T::Markdown { children, .. } => {
                     out.push_str(&text(children))
                 }
@@ -435,10 +449,12 @@ pub(super) fn plain_text(
             },
             _ => &[],
         };
-        let fields = |record: &V| match record {
-            V::Record(members) => members.clone(),
-            _ => vec![],
-        };
+        fn fields(record: &V) -> &[(DisplayText, V)] {
+            match record {
+                V::Record(members) => members,
+                _ => &[],
+            }
+        }
         if columns.is_empty() {
             columns = records
                 .first()
@@ -456,15 +472,19 @@ pub(super) fn plain_text(
             .collect::<Vec<_>>()
             .join("\t")];
         for record in records.iter().take(READABLE_ROWS) {
-            let members = fields(record);
+            // Index borrowed fields once. Unselected columns can hold entire
+            // lists or records that the export need not copy or traverse.
+            let mut members = std::collections::HashMap::new();
+            for (key, value) in fields(record) {
+                members.entry(key.as_str()).or_insert(value);
+            }
             lines.push(
                 columns
                     .iter()
                     .map(|(key, _)| {
                         members
-                            .iter()
-                            .find(|(k, _)| k.as_str() == key)
-                            .map(|(_, v)| cell(v))
+                            .get(key.as_str())
+                            .map(|v| cell(v))
                             .unwrap_or_default()
                     })
                     .collect::<Vec<_>>()
@@ -519,7 +539,10 @@ pub(super) fn plain_text(
                         .find(|(k, _)| k.as_str() == key)
                         .map(|(_, v)| v)
                 };
-                let body = text(children);
+                let body = match (name.as_str(), get("description")) {
+                    ("Callout", Some(V::String(description))) => description.to_string(),
+                    _ => text(children),
+                };
                 fields.extend([
                     ("children".into(), body.clone()),
                     ("body".into(), body.clone()),

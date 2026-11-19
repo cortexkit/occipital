@@ -1018,7 +1018,7 @@ fn alternatives(expected: &str) -> Vec<&str> {
 /// `{title?: string, lines: list<…>}` requires only `lines`, since a `?`
 /// marks a member that may be left out. Members are split at the top level
 /// only, so a nested record's members aren't taken for the rule's own.
-fn required_members(rule: &str) -> Vec<(&str, &str)> {
+pub(crate) fn required_members(rule: &str) -> Vec<(&str, &str)> {
     let inner = rule
         .trim()
         .strip_prefix('{')

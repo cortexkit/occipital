@@ -61,6 +61,22 @@ fn json_with(text: &str, options: &Options) -> Prepared {
 fn json(text: &str) -> Prepared {
     json_with(text, &Options::default())
 }
+
+#[test]
+fn accounted_failure_keeps_the_parse_error_in_rows() {
+    let accounts = crate::accounts::Accounts::interface();
+    let parsed = prepare_accounted(
+        &accounts,
+        crate::accounts::UnitKind::DataPreparation,
+        b"[",
+        Format::Json,
+        &Options::default(),
+        SPAN,
+    )
+    .unwrap();
+    same(&parsed.value, &error("E_JSON_SYNTAX"));
+    same(&parsed.rows, &error("E_JSON_SYNTAX"));
+}
 fn csv_with(text: &str, options: &Options) -> Prepared {
     run(text.as_bytes(), Format::Csv, options).0
 }
