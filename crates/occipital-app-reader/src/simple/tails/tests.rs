@@ -12,6 +12,7 @@ struct Chat {
     served: AtomicU64,
     version: std::sync::Mutex<u64>,
     changes: watch::Sender<u64>,
+    during_refresh: Mutex<Option<Box<dyn FnOnce() + Send>>>,
 }
 
 fn row(ordinal: u64, visible: bool) -> Row {
@@ -39,6 +40,7 @@ impl Chat {
             served: AtomicU64::new(0),
             version: std::sync::Mutex::new(1),
             changes: watch::channel(0).0,
+            during_refresh: Mutex::new(None),
         }
     }
 
@@ -106,6 +108,9 @@ impl TranscriptSource for Chat {
         panic!("a Simple read never reads newer by message id")
     }
     async fn after(&self, ordinal: u64, limit: u32) -> Result<Positioned, ReadError> {
+        if let Some(hook) = self.during_refresh.lock().unwrap().take() {
+            hook();
+        }
         let rows = self.rows.lock().unwrap().clone();
         let newest = rows.last().and_then(|row| row.ordinal);
         let page: Vec<Row> = rows
@@ -255,4 +260,54 @@ async fn a_page_of_another_version_is_refused() {
         .await
         .unwrap_err();
     assert_eq!(refused.code, "provider_unavailable");
+}
+
+#[tokio::test]
+async fn a_record_invalidation_during_refresh_is_not_undone() {
+    let chat = std::sync::Arc::new(Chat::new(200, &[]));
+    chat.rows.lock().unwrap()[0].display =
+        json!({"role":"assistant","parts":[{"type":"message","callKey":"k","text":"done"}]});
+    let tails = std::sync::Arc::new(Tails::default());
+    let first = tails
+        .newest(&*chat, "s", &chat.head(), VERSION, 1)
+        .await
+        .unwrap();
+    assert_eq!(ordinals(&first), [1]);
+    let target = chat.clone();
+    let cache = tails.clone();
+    *chat.during_refresh.lock().unwrap() = Some(Box::new(move || {
+        target.rows.lock().unwrap()[0].display["parts"][0]["level"] = json!("urgent");
+        cache.forget_call("k");
+    }));
+    tails
+        .newest(&*chat, "s", &chat.head(), VERSION, 1)
+        .await
+        .unwrap();
+    let fresh = tails
+        .newest(&*chat, "s", &chat.head(), VERSION, 1)
+        .await
+        .unwrap();
+    assert_eq!(fresh.rows[0].display["parts"][0]["level"], "urgent");
+}
+
+#[tokio::test]
+async fn a_warm_page_after_a_large_gap_reads_a_bounded_newest_window() {
+    let chat = Chat::new(100, &[100]);
+    let tails = Tails::default();
+    tails
+        .newest(&chat, "s", &chat.head(), VERSION, 1)
+        .await
+        .unwrap();
+    chat.served();
+    chat.rows
+        .lock()
+        .unwrap()
+        .extend((101..=3100).map(|at| row(at, at == 3100)));
+    let found = tails
+        .newest(&chat, "s", &chat.head(), VERSION, 1)
+        .await
+        .unwrap();
+    assert_eq!(ordinals(&found), [3100]);
+    let read = chat.served();
+    assert!(read <= NEWEST_BOUND, "served {read}");
 }
