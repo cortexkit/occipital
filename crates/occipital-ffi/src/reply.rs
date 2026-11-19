@@ -211,8 +211,13 @@ pub unsafe extern "C" fn occ_reply_measure(
         let layout = layout.into_context()?;
         let candidate = session
             .candidate
-            .clone()
+            .as_ref()
             .ok_or_else(|| Failure::bare(OCC_SESSION_STATE))?;
+        #[cfg(test)]
+        tests::MEASURED_EXPORTS.set((
+            candidate.plain_text.as_str().as_ptr(),
+            candidate.readable_text.as_str().as_ptr(),
+        ));
         let measured = measure(&candidate.measure_revision(), &layout, &metrics);
         // `measure` is pure, so discarding a measurement made with an
         // unusable callback value leaves nothing behind.

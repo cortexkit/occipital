@@ -47,6 +47,26 @@ fn measure_stub(reply: *mut OccReply) -> (i32, Option<String>) {
     measure_with(reply, &mut Script::default())
 }
 
+thread_local! {
+    pub(super) static MEASURED_EXPORTS: std::cell::Cell<(*const u8, *const u8)> = const { std::cell::Cell::new((ptr::null(), ptr::null())) };
+}
+
+#[test]
+fn measuring_borrows_the_candidates_text_exports() {
+    let reply = new_reply();
+    ok(finish(reply, b"Some prose to measure.", NO_RECORDS));
+    let candidate = session_of(reply).candidate.as_ref().unwrap();
+    let exports = (
+        candidate.plain_text.as_str(),
+        candidate.readable_text.as_str(),
+    );
+    assert!(!exports.0.is_empty() && !exports.1.is_empty());
+    let expected = (exports.0.as_ptr(), exports.1.as_ptr());
+    ok(measure_stub(reply));
+    free(reply);
+    assert_eq!(MEASURED_EXPORTS.get(), expected);
+}
+
 fn free(reply: *mut OccReply) {
     // SAFETY: `reply` is live and freed exactly once.
     unsafe { occ_reply_free(reply) };
