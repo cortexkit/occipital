@@ -3,7 +3,7 @@
 //! Adapters supply canonical display rows and durable cursors, not transport or
 //! authorization. The caller resolves the session and admits the request first.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::Mutex;
 
 use async_trait::async_trait;
@@ -460,7 +460,7 @@ struct HistoryCursor {
 pub struct TranscriptReader {
     pub activity: ActivityTokens,
     claims: Mutex<TranscriptClaimState>,
-    revisions: Mutex<HashMap<String, u64>>,
+    revisions: Mutex<crate::activity::SessionMap<u64>>,
     /// Each chat's Simple rows, kept between reads.
     simple: std::sync::Arc<crate::simple::tails::Tails>,
 }
@@ -1209,4 +1209,24 @@ fn bounded(reply: Value) -> Result<Value, ReadError> {
             .len(),
     )?;
     Ok(reply)
+}
+
+#[cfg(test)]
+#[test]
+fn inactive_revision_and_activity_entries_are_evicted_together_or_revalidated() {
+    let reader = TranscriptReader::default();
+    reader.sync_revision("old", 0);
+    let token = reader
+        .activity
+        .current_transcript_activity_token("old")
+        .unwrap();
+    for at in 0..1024 {
+        reader.sync_revision(&at.to_string(), 0);
+    }
+    assert!(reader.revisions.lock().unwrap().len() < 1024);
+    assert!(!reader
+        .activity
+        .transcript_activity_token_matches("old", &token));
+    reader.sync_revision("old", 0);
+    assert_ne!(reader.activity.ensure_transcript_version("old"), token);
 }
