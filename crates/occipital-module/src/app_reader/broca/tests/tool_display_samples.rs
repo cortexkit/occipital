@@ -501,3 +501,129 @@ async fn the_view_halves_samples_are_what_the_reader_serves() {
     served.keep("01-views", &request, reply);
     served.check();
 }
+
+/// `phone-reader-tool-tail-v1`: a command whose view declares its last output
+/// lines as a completion-only field (`completion_fields`, `text_lines`,
+/// tool-display 0.1.12). `display.views` serves the field in the view's
+/// `recordSchema`, and `session.tool_records` serves the completion with the
+/// lines as the provider wrote them, each with its text and optional tone.
+#[tokio::test]
+async fn the_tool_tail_samples_are_what_the_reader_serves() {
+    let dir = ScratchDir::new("occipital-tool-tail-samples");
+    let descriptor = crate::store::tests::descriptor(&dir);
+    let store = Arc::new(DisplayStore::open(&descriptor, dir.path()).unwrap());
+    let schema: RecordSchema = serde_json::from_value(json!({
+        "name": "aft.bash", "revision": 2, "fields": {"exitCode": "integer"},
+        "completion_fields": {"tail": "text_lines"}
+    }))
+    .unwrap();
+    let manifest = ViewManifest::new(
+        schema,
+        vec![],
+        json!({"row": template("tool_row", BASH_ROW), "page": template("tool_page", BASH_PAGE)}),
+    )
+    .with_template_revision(1);
+    let bash_pin = pin("bash", 't');
+    store
+        .keep_view(
+            "aft",
+            &bash_pin,
+            &ViewState::View {
+                manifest: serde_jcs::to_vec(&manifest).unwrap(),
+                input_schema: input_schema("command", json!({"command": {"type": "string"}})),
+            },
+            "1.0",
+            1,
+        )
+        .unwrap();
+    let tail = json!([
+        {"text": "running 12 tests"},
+        {"text": "test result: ok. 12 passed; 0 failed", "tone": "muted"},
+        {"text": "warning: 1 test took over 60 s", "tone": "danger"}
+    ]);
+    let completion = DisplayWrite::new(
+        reserved(THALAMUS_RUNNER_MODULE_ID),
+        "ck_test",
+        DisplayKind::Completion,
+        bash_pin.clone(),
+        json!({"durationMs": 61_200, "outcome": "success", "exitCode": 0, "tail": tail})
+            .as_object()
+            .unwrap()
+            .clone(),
+    );
+    store.write(&reserved("aft"), &completion, 1).unwrap();
+    let slot = crate::display::call_pins::CallPinSlot::default();
+    let (call_pins, _task) = crate::display::call_pins::start(store.clone(), None);
+    let _ = slot.set(call_pins);
+    let hints = tokio::sync::broadcast::channel(crate::display::app::HINTS).0;
+    let tool = Arc::new(ToolDisplay::new(store.clone(), None, hints));
+
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = vec![json!({"mid": "msg_a", "ordinal": 1,
+        "tool_times": [{"tool_call_id": "call_test", "started_at": 1_793_500_001_000_u64,
+            "finished_at": 1_793_500_062_200_u64, "call_key": "ck_test", "schema_pin": bash_pin}],
+        "message": {"id": "msg_a", "type": "assistant",
+            "time": {"created": 1_793_500_000_400_u64, "completed": 1_793_500_063_000_u64},
+            "model": {"id": "claude-opus-5-5", "providerID": "anthropic"},
+            "content": [{"type": "tool", "id": "call_test", "name": "bash",
+                "state": {"status": "completed", "input": {"command": "cargo test"},
+                    "content": [{"type": "text", "text": "test result: ok\n"}]}}]}})];
+    *route.run_state.lock().unwrap() = Value::Null;
+    let app = Arc::new(super::super::super::AppReader::new(Arc::new(
+        BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
+                THALAMUS_RUNNER_MODULE_ID,
+            ))))),
+            Arc::new(AnyHarness(route)),
+        )
+        .with_call_pins(slot),
+    )));
+    app.set_tool_display(tool);
+    let mut served = Served::new("phone-reader-tool-tail-v1", app);
+    let session = |method: &str, extra: Value| {
+        let mut params = json!({"session": "ses_head", "harness": "opencode2"});
+        for (name, value) in extra.as_object().unwrap() {
+            params[name] = value.clone();
+        }
+        json!({"method": method, "params": params})
+    };
+
+    // 01: the page names the call and its tool version, which joins its
+    // completion to it.
+    let page_request = session(super::super::super::TRANSCRIPT_PAGE, json!({"limit": 50}));
+    let page = served.read(1, &page_request).await;
+    assert_eq!(
+        decoded(&page)["result"]["messages"][0]["parts"][0]["callKey"],
+        "ck_test"
+    );
+    served.keep("01-page", &page_request, page);
+    for _ in 0..1_000 {
+        if store
+            .call_pin(THALAMUS_RUNNER_MODULE_ID, "ck_test")
+            .unwrap()
+            .is_some()
+        {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(1)).await;
+    }
+
+    // 02: the view's record schema names the completion-only field.
+    let views_request = json!({"method": VIEWS, "params": {"pins": [bash_pin]}});
+    let views = served.read(2, &views_request).await;
+    assert_eq!(
+        decoded(&views)["result"]["views"][&bash_pin]["recordSchema"]["completion_fields"],
+        json!({"tail": "text_lines"})
+    );
+    served.keep("02-views", &views_request, views);
+
+    // 03: the completion carries the lines as written.
+    let records_request = session(RECORDS, json!({"callKeys": ["ck_test"]}));
+    let records = served.read(3, &records_request).await;
+    assert_eq!(
+        decoded(&records)["result"]["calls"]["ck_test"]["completion"]["tail"],
+        tail
+    );
+    served.keep("03-records", &records_request, records);
+    served.check();
+}
