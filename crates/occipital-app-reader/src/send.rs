@@ -1,4 +1,4 @@
-//! The apps' send request: `session.enqueue_user_message`, ported from prefrontal-core.
+//! The apps' send request: `session.enqueue_user_message`, ported from prefrontal.
 //!
 //! Ported from prefrontal commit `6b36afc1456483b0f94ea87769526ac92276fdc6`:
 //! `crates/prefrontal-core-module/src/enqueue_gate.rs` (`validate_client_message_id`,

@@ -1,6 +1,6 @@
 //! Durable receipts for the apps' sends, so a repeat is answered and never sent twice.
 //!
-//! Ported from prefrontal-core's phone-message table (prefrontal `6b36afc14`,
+//! Ported from prefrontal's phone-message table (prefrontal `6b36afc14`,
 //! `crates/prefrontal-core-store/src/phone_message.rs` and
 //! `migrations/280_phone_message.sql`): one row per session and `clientMessageId`,
 //! with the digest of the content it was accepted for, the receipt it was answered
