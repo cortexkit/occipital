@@ -226,7 +226,7 @@ fn completion_only_lines_are_read_from_the_completion() {
         template(
             "tool_row",
             &format!(
-                "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\n<InlineCode code={{input.command}} />\n<Slot width=\"fill\" lines={{3}} box=\"code\" needs={{view.{member}}}>\n<ToolText text={{Join(Each(view.{member}.tail ?? [], \"line\", line.text), \" \")}} font=\"mono\" />\n</Slot>\n</Card>\n"
+                "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\n<InlineCode code={{input.command}} />\n<Slot width=\"fill\" lines={{3}} needs={{view.{member}}}>\n<TextContent text={{Join(Each(view.{member}.tail ?? [], \"line\", line.text), \" \")}} />\n</Slot>\n</Card>\n"
             ),
         )
     };
