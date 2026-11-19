@@ -320,7 +320,11 @@ async fn back(
             .filter(|row| row.ordinal.is_some_and(|at| at < tail.from))
             .collect();
         *read = read.saturating_add(numbered.len() as u64);
-        let oldest = numbered.first().map(ordinal);
+        let oldest = numbered.first().map(ordinal).or_else(|| {
+            let before = page.empty_before.filter(|at| *at < tail.from)?;
+            *read = read.saturating_add(tail.from.saturating_sub(before));
+            Some(before)
+        });
         let mut found = admitted(source, numbered).await;
         found.append(&mut tail.rows);
         tail.rows = found;

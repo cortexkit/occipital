@@ -364,6 +364,8 @@ impl Row {
 pub struct HistoryPage {
     pub rows: Vec<Row>,
     pub older: Option<String>,
+    /// The raw range's exclusive backward cursor when every row was hidden.
+    pub empty_before: Option<u64>,
     pub newer: Option<String>,
     pub history_version: Option<u64>,
     pub incarnation: Option<String>,
@@ -646,6 +648,7 @@ impl TranscriptReader {
                     HistoryPage {
                         rows: found.rows,
                         older: None,
+                        empty_before: None,
                         newer: None,
                         history_version: head.history_version,
                         incarnation: head.incarnation.clone(),
@@ -1142,6 +1145,8 @@ fn map_page(
             })
             .expect("a history cursor serializes"));
         }
+    } else if let Some(before) = page.empty_before {
+        reply["nextBeforeOrdinal"] = json!(before);
     } else {
         reply["reachedStart"] = json!(true);
     }

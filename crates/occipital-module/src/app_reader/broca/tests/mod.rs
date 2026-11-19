@@ -2160,3 +2160,28 @@ mod simple_samples;
 mod tag_rows;
 mod tool_display_samples;
 mod tool_times_samples;
+
+#[tokio::test]
+async fn an_entirely_hidden_numbered_page_continues_at_its_raw_boundary() {
+    use crate::app_reader::{tests::serve, TRANSCRIPT_PAGE};
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = vec![
+        json!({"mid":"m1","ordinal":1,"message":{"role":"user","content":["visible"]}}),
+        json!({"mid":"m2","ordinal":2,"delivered_as":{"mode":"tool_result"},"message":{"role":"user","content":["ride"]}}),
+    ];
+    let (_, app) = serving(route);
+    let mut params = json!({"session":"alfonso:s1","limit":1});
+    let first: Value =
+        serde_json::from_slice(&serve(&app, TRANSCRIPT_PAGE, &params).await).unwrap();
+    let first = &first["result"];
+    assert_eq!(first["messages"], json!([]));
+    assert!(first.get("reachedStart").is_none(), "{first}");
+    if let Some(cursor) = first.get("nextBeforeCursor") {
+        params["beforeCursor"] = cursor.clone();
+    } else {
+        params["beforeOrdinal"] = first["nextBeforeOrdinal"].clone();
+    }
+    let next: Value = serde_json::from_slice(&serve(&app, TRANSCRIPT_PAGE, &params).await).unwrap();
+    assert_eq!(next["result"]["messages"][0]["messageId"], "m1", "{next}");
+    assert_eq!(next["result"]["reachedStart"], true);
+}

@@ -2197,6 +2197,11 @@ impl Snapshot {
         }
         HistoryPage {
             rows: self.rows[start..end].to_vec(),
+            empty_before: self
+                .entries
+                .first()
+                .filter(|_| self.rows.is_empty() && self.older)
+                .and_then(|entry| entry["ordinal"].as_u64()),
             older: ((start > 0 || self.older) && start < end).then(|| self.cursor(start, false)),
             newer: ((end < self.rows.len() || self.newer) && end > start)
                 .then(|| self.cursor(end - 1, true)),
@@ -2347,6 +2352,7 @@ impl TranscriptSource for BrocaSource {
                 page: HistoryPage {
                     rows: Vec::new(),
                     older: None,
+                    empty_before: None,
                     newer: None,
                     history_version: head.history_version,
                     incarnation: head.incarnation.clone(),

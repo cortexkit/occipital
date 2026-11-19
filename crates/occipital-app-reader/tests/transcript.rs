@@ -84,6 +84,7 @@ impl FakeSource {
             return Err(ReadError::new(code, "injected source failure"));
         }
         Ok(HistoryPage {
+            empty_before: None,
             rows: state.rows[start..end].to_vec(),
             older: (start > 0 && start < state.rows.len())
                 .then(|| format!("older:{}", state.rows[start].mid)),

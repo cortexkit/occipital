@@ -45,6 +45,7 @@ impl Chat {
     fn page(&self, rows: Vec<Row>, older: bool) -> HistoryPage {
         self.served.fetch_add(rows.len() as u64, Ordering::SeqCst);
         HistoryPage {
+            empty_before: None,
             rows,
             older: older.then(|| "older".to_owned()),
             newer: None,
