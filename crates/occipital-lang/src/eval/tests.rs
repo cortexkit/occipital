@@ -1149,7 +1149,7 @@ fn waiting_slot_defers_the_children_prop() {
             r#"<Slot width="short" children={{[<Badge text="Ready" />]}} needs={{{needs}}} />"#
         );
         let evaluation = run_with(&source, &row);
-        let TreeNode::Component { children, .. } = &paragraph(&blocks(&evaluation)[0])[0] else {
+        let TreeNode::Component { children, .. } = &blocks(&evaluation)[0] else {
             panic!("expected Slot")
         };
         assert_eq!(children.len(), count);
