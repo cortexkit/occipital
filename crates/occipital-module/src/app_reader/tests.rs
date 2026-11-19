@@ -182,7 +182,7 @@ pub(crate) async fn serve_frame(
             module_id: crate::MODULE_ID.into(),
         },
         None,
-        Some(BindIdentity::new("phone:test", "caller")),
+        Some(BindIdentity::new("fed-phone:test", "caller")),
         None,
     );
     let (tx, mut rx) = mpsc::channel(16);

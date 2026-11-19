@@ -265,17 +265,17 @@ async fn only_the_opening_device_may_touch_an_upload() {
     let file = content(2_000);
     let id = wire.begin("a.bin", &file).await;
     wire.chunk(&id, 0, &file[..1000]).await.ok();
-    for channel in [OTHER_ROUTE, OPERATOR_ROUTE] {
+    // Callosum does not open routes for local operators; refuse the route before checking upload ownership.
+    for (channel, code) in [
+        (OTHER_ROUTE, codes::UPLOAD_NOT_YOURS),
+        (OPERATOR_ROUTE, "carrier_op_not_permitted"),
+    ] {
         for method in [STATUS, FINISH, ABORT] {
             let reply = wire.call(channel, method, json!({"upload_id": id})).await;
-            assert_eq!(
-                reply.code(),
-                codes::UPLOAD_NOT_YOURS,
-                "{method} on {channel}"
-            );
+            assert_eq!(reply.code(), code, "{method} on {channel}");
         }
         let (_, reply) = wire.chunk_on(channel, &id, 1000, &file[1000..]).await;
-        assert_eq!(reply.code(), codes::UPLOAD_NOT_YOURS);
+        assert_eq!(reply.code(), code);
     }
     // Nothing the other callers sent reached the upload.
     assert_eq!(
