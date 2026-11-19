@@ -525,6 +525,17 @@ fn missing_parse_key_has_no_source_span() {
 }
 
 #[test]
+fn reply_declarations_are_inert_text_not_inferred_types() {
+    let source = "export const row = {a: 1}\nexport const pair = {left: row, right: row}";
+    let reply = finish(source.as_bytes());
+    assert!(reply.readable_text.as_str().contains("export const pair"));
+    assert!(!reply
+        .diagnostics
+        .iter()
+        .any(|d| d.code() == Code::LimitAlloc));
+}
+
+#[test]
 fn table_with_too_large_source_measures_as_unavailable() {
     let rec = ReferenceRecord {
         state: ReferenceState::TooLarge,

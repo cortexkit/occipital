@@ -35,7 +35,12 @@ pub(crate) fn check_parsed(mut parsed: crate::prepare::Parsed, context: &CheckCo
     }
     let types = schema::context(&parsed.document.nodes, context);
     let mut resolved = resolve::resolve(parsed, &types);
-    if resolved.parsed.document.fallback {
+    if resolved.parsed.document.fallback
+        || resolved
+            .diagnostics
+            .iter()
+            .any(|d| d.code() == Code::LimitAlloc)
+    {
         return resolved;
     }
     // A tool template may name the tool catalog, whose extra components no
