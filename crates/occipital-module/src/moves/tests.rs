@@ -23,6 +23,8 @@ fn tick() -> i64 {
 struct Fleet {
     /// The session refs each cut moves, and the session each ref is bound to.
     plans: Mutex<HashMap<String, Vec<(String, String)>>>,
+    paused_cut: Mutex<Option<String>>,
+    resume: tokio::sync::Notify,
     bindings: Mutex<HashMap<(String, String), Session>>,
     streams: Mutex<HashMap<String, Vec<u8>>>,
     /// Bytes the door serves in place of a stream's own, to break a read.
@@ -60,6 +62,10 @@ impl Remote for Fleet {
         cut_id: &str,
         _agent: &str,
     ) -> Result<Vec<(String, String)>, CallFailure> {
+        let paused = self.paused_cut.lock().unwrap().as_deref() == Some(cut_id);
+        if paused {
+            self.resume.notified().await;
+        }
         self.plans
             .lock()
             .unwrap()
@@ -839,4 +845,37 @@ async fn partial_activation_refuses_abort_and_can_finish_after_restart() {
         .unwrap();
     dst.op("agent_data.activate", &cut).await.unwrap();
     assert_eq!(exported(&src.files(), "s"), exported(&dst.files(), "s"));
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_slow_prepare_does_not_block_status_or_other_agents() {
+    let fleet = Arc::new(Fleet::default());
+    let source = computer("moves-independent", &fleet);
+    let cut = cut_id(1);
+    let other = cut_id(2);
+    fleet.moves(&cut, &[]);
+    fleet.moves(&other, &[]);
+    *fleet.paused_cut.lock().unwrap() = Some(cut.clone());
+    let pending = source.op("agent_data.prepare", &cut);
+    tokio::pin!(pending);
+    assert!(futures_util::poll!(&mut pending).is_pending());
+    let quick = std::time::Duration::from_secs(1);
+    tokio::time::timeout(quick, source.op("agent_data.status", &cut))
+        .await
+        .unwrap()
+        .unwrap();
+    let same = source.op("agent_data.prepare", &other);
+    tokio::pin!(same);
+    assert!(futures_util::poll!(&mut same).is_pending());
+    let unrelated = cut_id(3);
+    fleet.moves(&unrelated, &[]);
+    let params =
+        json!({"refs":[{"ref_kind":"agent","ref":"agent_0000000000000102"}],"cutId":unrelated});
+    tokio::time::timeout(quick, source.call("agent_data.prepare", params))
+        .await
+        .unwrap()
+        .unwrap();
+    fleet.resume.notify_one();
+    pending.await.unwrap();
+    same.await.unwrap();
 }

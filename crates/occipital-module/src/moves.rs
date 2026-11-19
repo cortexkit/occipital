@@ -132,8 +132,8 @@ pub struct Moves {
     remote: Arc<dyn Remote>,
     stores: Arc<Stores>,
     clock: fn() -> i64,
-    /// One op at a time: each reads a cut's state, acts, and records it.
-    lock: tokio::sync::Mutex<()>,
+    cut_locks: crate::key_locks::KeyLocks,
+    agent_locks: crate::key_locks::KeyLocks,
 }
 
 /// A refusal, as the daemon's error frame carries it.
@@ -168,7 +168,8 @@ impl Moves {
             remote,
             stores,
             clock,
-            lock: tokio::sync::Mutex::new(()),
+            cut_locks: Default::default(),
+            agent_locks: Default::default(),
         }
     }
 
@@ -213,7 +214,6 @@ impl Moves {
             .into_iter()
             .find(|op| op.method() == envelope.method)
             .ok_or_else(|| refuse("invalid_request", "unknown agent-data operation"))?;
-        let _one = self.lock.lock().await;
         let answered = self.op(&envelope.method, envelope.params).await;
         tracing::info!(
             method = %envelope.method,
@@ -266,6 +266,8 @@ impl Moves {
                 let request: contract::release::ReleaseRequest =
                     serde_json::from_value(params).map_err(decode)?;
                 let agent = one_agent(request.refs.as_slice())?;
+                let _cut = self.cut_locks.lock(request.cut_id.as_str()).await;
+                let _agent = self.agent_locks.lock(agent).await;
                 self.release(
                     request.cut_id.as_str(),
                     agent,
@@ -279,6 +281,19 @@ impl Moves {
                     serde_json::from_value(params).map_err(decode)?;
                 let cut_id = request.cut_id.as_str();
                 let refs = request.refs.as_slice();
+                // Status reads one atomically replaced file. Mutations take
+                // the cut first, then the agent so competing cuts are ordered.
+                let (_cut, _agent) = match method {
+                    "agent_data.status" | "agent_data.diverged" => (None, None),
+                    _ => {
+                        let cut = self.cut_locks.lock(cut_id).await;
+                        let agent = match refs.first() {
+                            Some(r) => Some(self.agent_locks.lock(r.r#ref.as_str()).await),
+                            None => None,
+                        };
+                        (Some(cut), agent)
+                    }
+                };
                 match method {
                     "agent_data.status" => {
                         // A status read never refuses for its refs: it can reach a
