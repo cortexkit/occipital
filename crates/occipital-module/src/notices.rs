@@ -261,6 +261,15 @@ impl NoticeStore {
                  WHERE runner = ?1 AND call_key = ?2 AND sender = ?3 AND send_id = ?4
                    AND position IS NULL",
             )?;
+            // A live notice becoming placed only changes the visible order
+            // if it passes a sibling: an earlier live notice, or a placed
+            // notice whose page position sorts after the new one.
+            let mut passes_sibling = tx.prepare(
+                "SELECT EXISTS (SELECT 1 FROM notices n JOIN notices s USING (runner,session,call_key)
+                 WHERE n.runner=?1 AND n.call_key=?2 AND n.sender=?3 AND n.send_id=?4
+                   AND ((s.position IS NULL AND (s.seen_at_ms,s.send_id,s.sender) < (n.seen_at_ms,n.send_id,n.sender))
+                     OR (s.position,s.seen_at_ms,s.send_id,s.sender) > (?5,n.seen_at_ms,n.send_id,n.sender)))",
+            )?;
             let mut moved = tx.prepare(
                 "UPDATE notices SET session = ?5
                  WHERE runner = ?1 AND call_key = ?2 AND sender = ?3 AND send_id = ?4
@@ -306,18 +315,15 @@ impl NoticeStore {
                         notice.send_id,
                         notice.delivered_as
                     ])? == 1;
-                let placed = if let Some(position) = notice.position {
-                    place.execute(rusqlite::params![
-                        notice.runner,
-                        notice.call_key,
-                        notice.sender,
-                        notice.send_id,
-                        position
-                    ])? == 1
+                let reordered = if let Some(position) = notice.position {
+                    let key = rusqlite::params![
+                        notice.runner, notice.call_key, notice.sender, notice.send_id, position
+                    ];
+                    place.execute(key)? == 1 && passes_sibling.query_row(key, |row| row.get::<_,bool>(0))?
                 } else {
                     false
                 };
-                if followed == 1 || corrected || placed {
+                if followed == 1 || corrected || reordered {
                     fresh.push(notice.clone());
                 }
             }
@@ -340,7 +346,7 @@ impl NoticeStore {
             let mut statement = conn.prepare(
                 "SELECT runner, sender, text, delivered_as, speaks_for, send_id FROM notices
                  WHERE session = ?1 AND call_key = ?2
-                 ORDER BY position IS NULL, position, seen_at_ms, send_id",
+                 ORDER BY position IS NULL, position, seen_at_ms, send_id, sender",
             )?;
             let kept = statement
                 .query_map(rusqlite::params![session, call_key], |row| {
