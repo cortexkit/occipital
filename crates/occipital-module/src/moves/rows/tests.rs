@@ -193,10 +193,7 @@ fn a_session_s_rows_export_and_import_whole() {
     );
 
     // Only the moved session's waiting sends leave; its display rows stay.
-    assert_eq!(
-        files.delete_waiting_sends(&sessions(&["moved"])).unwrap(),
-        2
-    );
+    assert_eq!(files.delete_waiting_sends(&carried).unwrap(), 2);
     let left: Vec<String> = exported(&files, "moved")
         .into_iter()
         .map(|(table, _)| table)
@@ -231,4 +228,71 @@ fn a_moved_in_call_s_records_follow_its_pin() {
         .collect();
     assert_eq!(records.len(), 1);
     assert_eq!(records[0].1[2], Sql::Text(runner_json("thalamus-harness")));
+}
+
+#[test]
+fn import_follows_latest_session_but_keeps_payloads() {
+    let dir = ScratchDir::new("moves-import-owner");
+    let opened = opened(&dir);
+    let files = opened.files();
+    seed(&files, "s1", "broca", "call");
+    let mut carried = Vec::new();
+    files
+        .export(&sessions(&["s1"]), |(table, mut row)| {
+            if matches!(table.name, "call_pins" | "notices") {
+                row[table.position("session")] = Sql::Text("s2".into());
+                if table.name == "notices" {
+                    row[table.position("text")] = Sql::Text("replacement".into());
+                }
+                carried.push((table, row));
+            }
+            Ok(())
+        })
+        .unwrap();
+    files.import(&carried).unwrap();
+    assert_eq!(
+        opened.display.call_pin("broca", "call").unwrap().unwrap().0,
+        "s2"
+    );
+    assert_eq!(
+        opened.notices.for_call("broca", "s2", "call").unwrap()[0].text,
+        "note"
+    );
+}
+
+#[test]
+fn unique_wakes_referenced_by_messages_and_notices_follow_the_session() {
+    let dir = ScratchDir::new("moves-carried-wakes");
+    let opened = opened(&dir);
+    let files = opened.files();
+    seed(&files, "s2", "broca", "call");
+    files.notices.with_conn_fenced(|tx| tx.execute_batch("UPDATE wake_records SET session='old'; INSERT INTO wake_records SELECT session,sender,'s2-ride',runner,body,written_at_ms FROM wake_records")).unwrap();
+    let wakes = || {
+        exported(&files, "s2")
+            .into_iter()
+            .filter(|(table, _)| table == "wake_records")
+            .count()
+    };
+    assert_eq!(wakes(), 2);
+    files.notices.with_conn_fenced(|tx| tx.execute_batch("INSERT INTO wake_records SELECT 'older',sender,send_id,runner,body,written_at_ms FROM wake_records WHERE send_id='s2-ride'")).unwrap();
+    assert_eq!(wakes(), 1);
+}
+
+#[test]
+fn export_delivers_the_first_row_before_reading_the_next() {
+    let dir = ScratchDir::new("moves-export-cursor");
+    let opened = opened(&dir);
+    let files = opened.files();
+    seed(&files, "moved", "broca", "call");
+    // The final table can supply its first row, but raises a SQLite integer
+    // overflow if the exporter reads ahead to the second row.
+    files.store.with_conn_fenced(|tx| tx.execute_batch("ALTER TABLE harness_app_send_wait RENAME TO real_wait; CREATE VIEW harness_app_send_wait AS SELECT * FROM real_wait UNION ALL SELECT session,client_message_id,runner_code,abs(-9223372036854775808),cause FROM real_wait")).unwrap();
+    let result = files.export(&sessions(&["moved"]), |(table, _)| {
+        if table.name == "send_waits" {
+            Err("consumer stopped".into())
+        } else {
+            Ok(())
+        }
+    });
+    assert!(result.unwrap_err().contains("consumer stopped"));
 }

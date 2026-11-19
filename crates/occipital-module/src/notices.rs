@@ -261,6 +261,15 @@ impl NoticeStore {
                  WHERE runner = ?1 AND call_key = ?2 AND sender = ?3 AND send_id = ?4
                    AND position IS NULL",
             )?;
+            // A live notice becoming placed only changes the visible order
+            // if it passes a sibling: an earlier live notice, or a placed
+            // notice whose page position sorts after the new one.
+            let mut passes_sibling = tx.prepare(
+                "SELECT EXISTS (SELECT 1 FROM notices n JOIN notices s USING (runner,session,call_key)
+                 WHERE n.runner=?1 AND n.call_key=?2 AND n.sender=?3 AND n.send_id=?4
+                   AND ((s.position IS NULL AND (s.seen_at_ms,s.send_id,s.sender) < (n.seen_at_ms,n.send_id,n.sender))
+                     OR (s.position,s.seen_at_ms,s.send_id,s.sender) > (?5,n.seen_at_ms,n.send_id,n.sender)))",
+            )?;
             let mut moved = tx.prepare(
                 "UPDATE notices SET session = ?5
                  WHERE runner = ?1 AND call_key = ?2 AND sender = ?3 AND send_id = ?4
@@ -306,17 +315,16 @@ impl NoticeStore {
                         notice.send_id,
                         notice.delivered_as
                     ])? == 1;
-                if followed == 1 || corrected {
+                let reordered = if let Some(position) = notice.position {
+                    let key = rusqlite::params![
+                        notice.runner, notice.call_key, notice.sender, notice.send_id, position
+                    ];
+                    place.execute(key)? == 1 && passes_sibling.query_row(key, |row| row.get::<_,bool>(0))?
+                } else {
+                    false
+                };
+                if followed == 1 || corrected || reordered {
                     fresh.push(notice.clone());
-                }
-                if let Some(position) = notice.position {
-                    place.execute(rusqlite::params![
-                        notice.runner,
-                        notice.call_key,
-                        notice.sender,
-                        notice.send_id,
-                        position
-                    ])?;
                 }
             }
             Ok(fresh)
@@ -338,7 +346,7 @@ impl NoticeStore {
             let mut statement = conn.prepare(
                 "SELECT runner, sender, text, delivered_as, speaks_for, send_id FROM notices
                  WHERE session = ?1 AND call_key = ?2
-                 ORDER BY position IS NULL, position, seen_at_ms, send_id",
+                 ORDER BY position IS NULL, position, seen_at_ms, send_id, sender",
             )?;
             let kept = statement
                 .query_map(rusqlite::params![session, call_key], |row| {
@@ -383,8 +391,16 @@ impl NoticeStore {
     }
 }
 
-/// The digest of a queued notice's runner, call key, sender, send id and session.
 type QueuedKey = crate::key_digest::KeyDigest;
+
+fn notice_key(notice: &Notice) -> QueuedKey {
+    crate::key_digest::key_digest(&[
+        &notice.runner,
+        &notice.call_key,
+        &notice.sender,
+        &notice.send_id,
+    ])
+}
 
 /// A notice newly kept for a call of `runner`'s `session`, announced to the
 /// notices watches.
@@ -408,10 +424,8 @@ pub type NoticeSlot = Arc<OnceLock<Arc<Notices>>>;
 pub struct Notices {
     store: Arc<NoticeStore>,
     queue: mpsc::Sender<Batch>,
-    /// Each notice already queued, by runner, call key, sender, send and session, with
-    /// whether it had its place: a page read's place still has to reach a
-    /// notice first seen on the live stream.
-    queued: Mutex<HashMap<QueuedKey, bool>>,
+    /// The latest session and whether a page has placed the notice there.
+    queued: Mutex<HashMap<QueuedKey, (String, bool)>>,
     /// The send each message a page read named came from, by runner, session
     /// and message id, with whether it has been queued for the file. A wake
     /// records read looks here first, so it finds a send the file doesn't
@@ -433,6 +447,7 @@ impl Notices {
             sends: Mutex::new(HashMap::new()),
             arrivals: arrivals.clone(),
         });
+        let reporter = Arc::downgrade(&notices);
         let task = tokio::spawn(async move {
             let mut prune = tokio::time::interval(PRUNE_EVERY);
             loop {
@@ -464,9 +479,20 @@ impl Notices {
                 }
                 if !sends.is_empty() {
                     let store = store.clone();
+                    let keys: Vec<_> = sends.iter().map(wakes::Sent::key).collect();
                     let kept =
                         tokio::task::spawn_blocking(move || store.keep_sends(&sends, now_ms()));
-                    match kept.await {
+                    let result = kept.await;
+                    if !matches!(result, Ok(Ok(()))) {
+                        if let Some(reporter) = reporter.upgrade() {
+                            if let Ok(mut remembered) = reporter.sends.lock() {
+                                for key in keys {
+                                    remembered.remove(&key);
+                                }
+                            }
+                        }
+                    }
+                    match result {
                         Ok(Ok(())) => {}
                         Ok(Err(error)) => tracing::warn!(%error, "cannot keep messages' sends"),
                         Err(error) => {
@@ -475,6 +501,7 @@ impl Notices {
                     }
                 }
                 let store = store.clone();
+                let keys: Vec<_> = notices.iter().map(notice_key).collect();
                 let kept = tokio::task::spawn_blocking(move || store.keep(&notices, now_ms()));
                 match kept.await {
                     Ok(Ok(fresh)) => {
@@ -486,9 +513,17 @@ impl Notices {
                                 call_key: notice.call_key,
                             });
                         }
+                        continue;
                     }
                     Ok(Err(error)) => tracing::warn!(%error, "cannot keep notices"),
                     Err(error) => tracing::warn!(%error, "keeping notices stopped early"),
+                }
+                if let Some(reporter) = reporter.upgrade() {
+                    if let Ok(mut queued) = reporter.queued.lock() {
+                        for key in keys {
+                            queued.remove(&key);
+                        }
+                    }
                 }
             }
         });
@@ -505,21 +540,12 @@ impl Notices {
         let Ok(mut queued) = self.queued.lock() else {
             return;
         };
-        // The session too: a notice seen in another session than before has
-        // moved with its call's history, and must reach the store to follow it.
-        let key = |notice: &Notice| -> QueuedKey {
-            crate::key_digest::key_digest(&[
-                &notice.runner,
-                &notice.call_key,
-                &notice.sender,
-                &notice.send_id,
-                &notice.session,
-            ])
-        };
         let fresh: Vec<Notice> = notices
             .into_iter()
-            .filter(|notice| match queued.get(&key(notice)) {
-                Some(placed) => notice.position.is_some() && !placed,
+            .filter(|notice| match queued.get(&notice_key(notice)) {
+                Some((session, placed)) => {
+                    *session != notice.session || (notice.position.is_some() && !placed)
+                }
                 None => true,
             })
             .collect();
@@ -531,7 +557,12 @@ impl Notices {
         }
         let keys: Vec<_> = fresh
             .iter()
-            .map(|notice| (key(notice), notice.position.is_some()))
+            .map(|notice| {
+                (
+                    notice_key(notice),
+                    (notice.session.clone(), notice.position.is_some()),
+                )
+            })
             .collect();
         // Remembered only once queued, so a dropped batch is reported again.
         if self.queue.try_send(Batch::Notices(fresh)).is_ok() {
@@ -668,6 +699,50 @@ mod tests {
         }
     }
 
+    #[tokio::test]
+    async fn page_repairs_failed_notice_writes_and_follows_a_returning_call() {
+        let dir = ScratchDir::new("notices-repair");
+        let (_main, store) = opened(&dir);
+        let store = Arc::new(store);
+        let (reporter, worker) = Notices::start(store.clone());
+        let mut arrivals = reporter.arrivals();
+        let placed = notice("send-1", "kept", Some(0));
+        store.file.with_conn_fenced(|tx| tx.execute_batch("CREATE TRIGGER stop_notice BEFORE INSERT ON notices WHEN NEW.send_id='send-1' BEGIN SELECT RAISE(ABORT,'busy'); END")).unwrap();
+        reporter.seen(vec![placed.clone()]);
+        // A later batch committing proves the worker handled the failed batch.
+        tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            let mut i = 0;
+            loop {
+                reporter.seen(vec![notice(&format!("marker-{i}"), "marker", None)]);
+                if arrivals.try_recv().is_ok() {
+                    break;
+                }
+                i += 1;
+                tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+            }
+        })
+        .await
+        .unwrap();
+        store
+            .file
+            .with_conn_fenced(|tx| tx.execute_batch("DROP TRIGGER stop_notice"))
+            .unwrap();
+        reporter.seen(vec![placed.clone()]);
+        drop(reporter);
+        worker.await.unwrap();
+        assert!(texts(&store).contains(&String::from("kept")));
+        let (reporter, worker) = Notices::start(store.clone());
+        for session in ["s", "other", "s"] {
+            reporter.seen(vec![Notice {
+                session: session.into(),
+                ..placed.clone()
+            }]);
+        }
+        drop(reporter);
+        worker.await.unwrap();
+        assert!(texts(&store).contains(&String::from("kept")));
+    }
+
     fn texts(store: &NoticeStore) -> Vec<String> {
         store
             .for_call("broca", "s", "ck")
@@ -697,12 +772,13 @@ mod tests {
             [later]
         );
         assert_eq!(texts(&store), ["second", "first"]);
-        // A page listing both puts the live one in its place, and nothing is new.
+        // A watch must reread the call when the live notice takes its place.
         let page = [
             notice("send-1", "changed", Some(0)),
             notice("send-2", "second", Some(1)),
         ];
-        assert!(store.keep(&page, 300).unwrap().is_empty());
+        assert_eq!(store.keep(&page, 300).unwrap(), page[..1]);
+        assert!(store.keep(&page, 301).unwrap().is_empty());
         assert_eq!(texts(&store), ["first", "second"]);
         assert!(store.for_call("broca", "other", "ck").unwrap().is_empty());
         assert_eq!(store.prune(150).unwrap(), 1);

@@ -205,12 +205,46 @@ pub fn start(
             crate::catalog_generation::Checked,
             HashMap<String, ModuleFacts>,
         )> = None;
-        while let Some(first) = wanted.recv().await {
+        // The bus delivers each published view once. Keep the latest failed offer per
+        // pin until its writer can be tried again, even if no page asks.
+        let mut retries = BTreeMap::<(String, String), (Instant, ViewsReply)>::new();
+        loop {
             // Take everything already queued, so one catalog read and one
             // `tool.views` call serve every pin a writer is waiting on.
-            let mut queued = vec![first];
+            let mut queued = Vec::new();
+            let deadline = retries.values().map(|(when, _)| *when).min();
+            tokio::select! {
+                first = wanted.recv() => match first { Some(want) => queued.push(want), None => break },
+                _ = async { if let Some(when) = deadline { tokio::time::sleep_until(when).await } }, if deadline.is_some() => {}
+            }
+            let now = Instant::now();
+            let due: Vec<_> = retries
+                .iter()
+                .filter(|(_, (when, _))| *when <= now)
+                .map(|(key, _)| key.clone())
+                .collect();
+            let mut ready = Vec::new();
+            for key in due {
+                if let Some((_, reply)) = retries.remove(&key) {
+                    ready.push(Want::Served(key.0, key.1, reply));
+                }
+            }
+            ready.append(&mut queued);
+            let mut queued = ready;
             while let Ok(next) = wanted.try_recv() {
                 queued.push(next);
+            }
+            queued.retain_mut(|want| {
+                if let Want::Served(writer, pin, reply) = want {
+                    if let Some((_, kept)) = retries.get_mut(&(writer.clone(), pin.clone())) {
+                        std::mem::swap(kept, reply);
+                        return false;
+                    }
+                }
+                true
+            });
+            if queued.is_empty() {
+                continue;
             }
             if !generation.fresh(modules.as_ref().map(|(read, _)| read)) {
                 let checked = generation.check();
@@ -220,6 +254,11 @@ pub fn start(
                         // Nothing can be compared without them; the pins are
                         // asked for again by the next write or page.
                         tracing::warn!(%error, "cannot read the writers' versions");
+                        for want in queued {
+                            if let Want::Served(w, p, r) = want {
+                                retries.insert((w, p), (Instant::now() + REST_AFTER_FAILURE, r));
+                            }
+                        }
                         continue;
                     }
                 }
@@ -283,18 +322,28 @@ pub fn start(
                 if due.is_empty() && served.is_empty() {
                     continue;
                 }
-                match fetch(&store, providers.as_ref(), &writer, version, &due, &served).await {
-                    Ok(replaced) => {
+                match fetch(
+                    &store,
+                    providers.as_ref(),
+                    &writer,
+                    version,
+                    &due,
+                    &served,
+                    hints.as_ref(),
+                )
+                .await
+                {
+                    Ok(()) => {
                         resting.remove(&writer);
-                        if let Some(hints) = &hints {
-                            for pin in replaced {
-                                // No watch open is no one to tell.
-                                let _ = hints.send(Hint::Pin(pin));
-                            }
-                        }
                     }
                     Err(error) => {
                         tracing::warn!(%writer, %error, "cannot fetch display views");
+                        for (pin, reply) in served {
+                            retries.insert(
+                                (writer.clone(), pin),
+                                (Instant::now() + REST_AFTER_FAILURE, reply),
+                            );
+                        }
                         resting.insert(writer, Instant::now());
                     }
                 }
@@ -326,7 +375,8 @@ fn is_due(kept: &KeptView, version: &str, now_ms: i64) -> bool {
 /// Fetch `writer`'s answers for `due`, each pin with what is kept for it, take
 /// the answers it `served` without asking, and keep, replace or stamp each as
 /// [`decide`] says. A served answer that isn't one entry for its own pin is
-/// left out. Returns the pins whose kept answer was replaced.
+/// left out. Announce each usable view once stored: a later entry in the
+/// batch can fail after this entry is already visible.
 async fn fetch(
     store: &DisplayStore,
     providers: &dyn Providers,
@@ -334,7 +384,8 @@ async fn fetch(
     version: &str,
     due: &[(String, Option<ViewState>)],
     served: &[(String, ViewsReply)],
-) -> Result<Vec<String>, String> {
+    hints: Option<&broadcast::Sender<Hint>>,
+) -> Result<(), String> {
     let catalog = providers.catalog(writer).await?;
     let schemas: HashMap<String, &Value> = catalog
         .iter()
@@ -346,17 +397,23 @@ async fn fetch(
         })
         .collect();
     let now = now_ms();
-    let mut replaced = Vec::new();
-    let mut take = |pin: &String, kept: Option<&ViewState>, answer: &ViewEntry| {
+    let take = |pin: &String, kept: Option<&ViewState>, answer: &ViewEntry| -> Result<(), String> {
         let (view, input_schema) = resolve(pin, answer, schemas.get(pin).copied());
         let decision = decide(kept, view, input_schema)?;
         if let Decision::Stamp(Some(reason)) = &decision {
             tracing::warn!(%writer, %pin, %reason, "kept the display view");
         }
-        if matches!(decision, Decision::Replace(_)) {
-            replaced.push(pin.clone());
+        let changed = matches!(
+            decision,
+            Decision::Replace(_) | Decision::Keep(ViewState::View { .. })
+        );
+        put(store, writer, pin, decision, version, now)?;
+        if changed {
+            if let Some(hints) = hints {
+                let _ = hints.send(Hint::Pin(pin.clone()));
+            }
         }
-        put(store, writer, pin, decision, version, now)
+        Ok(())
     };
     for (pin, reply) in served {
         if let Err(refusal) = reply.validate_for(&ViewsRequest::new(vec![pin.clone()])) {
@@ -379,7 +436,7 @@ async fn fetch(
             take(pin, kept.as_ref(), &reply.views[pin])?;
         }
     }
-    Ok(replaced)
+    Ok(())
 }
 
 /// The writer's answer for `pin` as [`decide`] reads it: the view, and the input
@@ -788,6 +845,24 @@ mod tests {
         assert_eq!(aft.calls.lock().unwrap().len(), 2);
     }
 
+    #[tokio::test(start_paused = true)]
+    async fn a_failed_bucket_offer_is_retried_without_another_put() {
+        let dir = ScratchDir::new("views-retry");
+        let store = opened(&dir);
+        let aft = Aft::new(true);
+        let (fetcher, _task) = start(store.clone(), aft.clone(), None);
+        fetcher.bucket_watched("aft");
+        let served = ViewsReply::new(BTreeMap::from([(
+            pin("bash"),
+            ViewEntry::Manifest(manifest()),
+        )]));
+        fetcher.offer("aft", &pin("bash"), served).await;
+        until(|| !aft.calls.lock().unwrap().is_empty()).await;
+        *aft.down.lock().unwrap() = false;
+        tokio::time::advance(REST_AFTER_FAILURE).await;
+        until(|| matches!(store.view("aft", &pin("bash")), Ok(Some(_)))).await;
+    }
+
     /// A view a writer puts in its views bucket is kept through the same
     /// checks as a fetched one, with no `tool.views` call: the writer's catalog
     /// still says which tool the pin is. A higher revision served later
@@ -816,6 +891,7 @@ mod tests {
             })
         };
         assert_eq!(store.view("aft", &pin("bash")).unwrap(), kept(&manifest()));
+        assert_eq!(announced.try_recv().unwrap(), Hint::Pin(pin("bash")));
         // A want for it under the same version asks nothing.
         fetcher.want("aft", &pin("bash"));
         tokio::time::sleep(Duration::from_millis(50)).await;

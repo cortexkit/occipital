@@ -23,6 +23,8 @@ fn tick() -> i64 {
 struct Fleet {
     /// The session refs each cut moves, and the session each ref is bound to.
     plans: Mutex<HashMap<String, Vec<(String, String)>>>,
+    paused_cut: Mutex<Option<String>>,
+    resume: tokio::sync::Notify,
     bindings: Mutex<HashMap<(String, String), Session>>,
     streams: Mutex<HashMap<String, Vec<u8>>>,
     /// Bytes the door serves in place of a stream's own, to break a read.
@@ -60,6 +62,10 @@ impl Remote for Fleet {
         cut_id: &str,
         _agent: &str,
     ) -> Result<Vec<(String, String)>, CallFailure> {
+        let paused = self.paused_cut.lock().unwrap().as_deref() == Some(cut_id);
+        if paused {
+            self.resume.notified().await;
+        }
         self.plans
             .lock()
             .unwrap()
@@ -476,7 +482,7 @@ async fn abort_lifts_the_hold_and_closes_the_cut() {
 #[tokio::test]
 async fn a_move_back_lifts_the_hold() {
     let fleet = Arc::new(Fleet::default());
-    let home = computer("moves-home", &fleet);
+    let mut home = computer("moves-home", &fleet);
     let away = computer("moves-away", &fleet);
     seed(&home.files(), "moved", "broca", "moved-call");
     let out = cut_id(5);
@@ -502,6 +508,7 @@ async fn a_move_back_lifts_the_hold() {
     for op in ["agent_data.prepare", "agent_data.export"] {
         away.op(op, &back).await.unwrap();
     }
+    home.moves.clock = || 0;
     home.op("agent_data.import", &back).await.unwrap();
     home.op("agent_data.activate", &back).await.unwrap();
     assert_eq!(home.cuts.hold("moved"), None);
@@ -774,3 +781,103 @@ async fn the_participant_samples_are_what_it_serves() {
         );
     }
 }
+
+#[tokio::test]
+async fn release_preserves_waiting_sends_written_after_export() {
+    let fleet = Arc::new(Fleet::default());
+    let source = computer("moves-late-send", &fleet);
+    seed(&source.files(), "moved", "broca", "call");
+    let cut = cut_id(1);
+    fleet.moves(&cut, &[session("moved")]);
+    source.op("agent_data.prepare", &cut).await.unwrap();
+    source.op("agent_data.export", &cut).await.unwrap();
+    source.files().store.with_conn_fenced(|tx| tx.execute("INSERT INTO harness_app_send_queue (session,client_message_id,harness,send_id,accepted_at,state) VALUES ('moved','late','broca','late',8,'queued')", [])).unwrap();
+    source
+        .call(
+            "agent_data.release",
+            json!({"refs": refs(), "cutId": cut, "holder":"author-b"}),
+        )
+        .await
+        .unwrap();
+    let left = exported(&source.files(), "moved");
+    assert_eq!(
+        left.iter()
+            .filter(|(t, _)| t == "queued_sends")
+            .map(|(_, row)| &row[1])
+            .collect::<Vec<_>>(),
+        [&rusqlite::types::Value::Text("late".into())]
+    );
+}
+
+#[tokio::test]
+async fn partial_activation_refuses_abort_and_can_finish_after_restart() {
+    let fleet = Arc::new(Fleet::default());
+    let src = computer("moves-partial-src", &fleet);
+    let mut dst = computer("moves-partial-dst", &fleet);
+    let cut = cut_id(1);
+    seed(&src.files(), "s", "broca", "c");
+    fleet.moves(&cut, &[session("s")]);
+    src.op("agent_data.prepare", &cut).await.unwrap();
+    dst.op("agent_data.import", &cut).await.unwrap();
+    dst.files().details.with_conn_fenced(|tx| tx.execute_batch("CREATE TRIGGER stop BEFORE INSERT ON display_writes BEGIN SELECT RAISE(ABORT,'busy'); END")).unwrap();
+    dst.op("agent_data.activate", &cut).await.unwrap_err();
+    assert_eq!(
+        dst.opened
+            .display
+            .call_pin("broca", "c")
+            .unwrap()
+            .unwrap()
+            .0,
+        "s"
+    );
+    dst.moves.cuts = Arc::new(Cuts::open(dst.opened.main.data_root()).unwrap());
+    assert_eq!(
+        dst.op("agent_data.status", &cut).await.unwrap()["step"],
+        "imported"
+    );
+    assert_eq!(
+        dst.op("agent_data.abort", &cut).await.unwrap_err().0,
+        "invalid_state"
+    );
+    dst.files()
+        .details
+        .with_conn_fenced(|tx| tx.execute_batch("DROP TRIGGER stop"))
+        .unwrap();
+    dst.op("agent_data.activate", &cut).await.unwrap();
+    assert_eq!(exported(&src.files(), "s"), exported(&dst.files(), "s"));
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_slow_prepare_does_not_block_status_or_other_agents() {
+    let fleet = Arc::new(Fleet::default());
+    let source = computer("moves-independent", &fleet);
+    let cut = cut_id(1);
+    let other = cut_id(2);
+    fleet.moves(&cut, &[]);
+    fleet.moves(&other, &[]);
+    *fleet.paused_cut.lock().unwrap() = Some(cut.clone());
+    let pending = source.op("agent_data.prepare", &cut);
+    tokio::pin!(pending);
+    assert!(futures_util::poll!(&mut pending).is_pending());
+    let quick = std::time::Duration::from_secs(1);
+    tokio::time::timeout(quick, source.op("agent_data.status", &cut))
+        .await
+        .unwrap()
+        .unwrap();
+    let same = source.op("agent_data.prepare", &other);
+    tokio::pin!(same);
+    assert!(futures_util::poll!(&mut same).is_pending());
+    let unrelated = cut_id(3);
+    fleet.moves(&unrelated, &[]);
+    let params =
+        json!({"refs":[{"ref_kind":"agent","ref":"agent_0000000000000102"}],"cutId":unrelated});
+    tokio::time::timeout(quick, source.call("agent_data.prepare", params))
+        .await
+        .unwrap()
+        .unwrap();
+    fleet.resume.notify_one();
+    pending.await.unwrap();
+    same.await.unwrap();
+}
+
+mod admitted;

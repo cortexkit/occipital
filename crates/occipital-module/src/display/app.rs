@@ -76,6 +76,7 @@ struct Verdict {
 struct Joined {
     record: Option<Value>,
     completion: Option<Value>,
+    has_detail: bool,
     detail: Option<Value>,
 }
 
@@ -293,10 +294,10 @@ impl ToolDisplay {
         blocking(move || {
             let mut calls = Map::new();
             for call_key in call_keys {
-                let Some(joined) = this.join(&runner, &session, &call_key)? else {
+                let Some(joined) = this.join(&runner, &session, &call_key, false)? else {
                     continue;
                 };
-                let mut call = json!({ "detail": joined.detail.is_some() });
+                let mut call = json!({ "detail": joined.has_detail });
                 if let Some(record) = joined.record {
                     call["record"] = record;
                 }
@@ -324,7 +325,7 @@ impl ToolDisplay {
         let (this, runner, session) = (self.clone(), runner.to_owned(), session.to_owned());
         blocking(move || {
             let detail = this
-                .join(&runner, &session, &call_key)?
+                .join(&runner, &session, &call_key, true)?
                 .and_then(|joined| joined.detail);
             Ok(match detail {
                 Some(detail) => json!({ "detail": detail }),
@@ -344,6 +345,7 @@ impl ToolDisplay {
         runner: &str,
         session: &str,
         call_key: &str,
+        with_detail: bool,
     ) -> Result<Option<Joined>, ReadError> {
         let Some((minted_by, pin)) = self
             .store
@@ -356,9 +358,19 @@ impl ToolDisplay {
             module_id: minted_by.clone(),
         };
         let mut by_writer: BTreeMap<String, Vec<Stored>> = BTreeMap::new();
+        let detail_writers = if with_detail {
+            Vec::new()
+        } else {
+            self.store
+                .detail_writers(&runner_principal, call_key)
+                .map_err(unavailable)?
+        };
+        for writer in &detail_writers {
+            by_writer.entry(writer.clone()).or_default();
+        }
         for stored in self
             .store
-            .writes(&runner_principal, call_key)
+            .call_writes(&runner_principal, call_key, with_detail)
             .map_err(unavailable)?
         {
             if let Principal::Reserved { module_id } = &stored.writer {
@@ -378,8 +390,8 @@ impl ToolDisplay {
                 Some(_) => {}
             }
         }
-        let writes = match authorized.as_slice() {
-            [(_, writes)] => writes,
+        let (writer, writes) = match authorized.as_slice() {
+            [entry] => entry,
             [] => return Ok(None),
             _ => {
                 let writers: Vec<&str> = authorized
@@ -390,7 +402,10 @@ impl ToolDisplay {
                 return Ok(None);
             }
         };
-        let mut joined = Joined::default();
+        let mut joined = Joined {
+            has_detail: detail_writers.contains(writer),
+            ..Default::default()
+        };
         for stored in writes {
             let body = serde_json::from_slice::<Value>(&stored.body).ok();
             match stored.kind {
@@ -402,10 +417,11 @@ impl ToolDisplay {
                 _ => {}
             }
         }
-        Ok(
-            (joined.record.is_some() || joined.completion.is_some() || joined.detail.is_some())
-                .then_some(joined),
-        )
+        Ok((joined.record.is_some()
+            || joined.completion.is_some()
+            || joined.has_detail
+            || joined.detail.is_some())
+        .then_some(joined))
     }
 
     /// Whether a write stored for a call of `runner` (the runner that minted

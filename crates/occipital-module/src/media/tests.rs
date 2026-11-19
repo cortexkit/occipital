@@ -364,3 +364,36 @@ async fn refusals_name_why_no_thumbnail_comes() {
         );
     }
 }
+
+#[tokio::test]
+async fn concurrent_thumbnails_share_the_original_after_separate_probes() {
+    let held = Held::default();
+    let request = media(&held.hold("image/png", &png(opaque(32, 32))), "thumb");
+    let thumbs = Thumbs::default();
+    let (a, b) = tokio::join!(
+        answer(&request, &held, &thumbs),
+        answer(&request, &held, &thumbs)
+    );
+    assert_eq!(a.unwrap(), b.unwrap());
+    let reads = held.reads.guard();
+    assert_eq!(reads.iter().filter(|(_, n)| *n == 0).count(), 2);
+    assert_eq!(reads.iter().filter(|(_, n)| *n > 0).count(), 1);
+}
+
+#[test]
+fn detailed_transparent_thumbnail_fits_the_reply_budget() {
+    let mut seed = 7_u32;
+    let image = RgbaImage::from_fn(1024, 1024, |_, _| {
+        seed ^= seed << 13;
+        seed ^= seed >> 17;
+        seed ^= seed << 5;
+        Rgba(seed.to_le_bytes())
+    });
+    let thumb = thumbnail(&png(DynamicImage::ImageRgba8(image))).unwrap();
+    let body = serde_json::to_vec(&json!({"result":thumb_reply(&thumb)})).unwrap();
+    assert!(
+        body.len() <= occipital_app_reader::page::MAX_REPLY_BODY_BYTES,
+        "{} bytes",
+        body.len()
+    );
+}

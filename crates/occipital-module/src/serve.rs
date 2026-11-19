@@ -236,6 +236,7 @@ pub struct OccipitalHandler {
     /// `notices.db`, which agent moves copy rows from and into.
     notice_store: OnceLock<Arc<crate::notices::NoticeStore>>,
     /// The agent-data participant, once the stores it copies are open.
+    cuts: OnceLock<Arc<crate::moves::state::Cuts>>,
     moves: OnceLock<Arc<crate::moves::Moves>>,
     consumer: Option<Consumer>,
     /// The connection to other modules, made from `consumer` when first needed.
@@ -269,6 +270,7 @@ impl OccipitalHandler {
             tool_display: OnceLock::new(),
             sends: OnceLock::new(),
             notice_store: OnceLock::new(),
+            cuts: OnceLock::new(),
             moves: OnceLock::new(),
             consumer,
             daemon_calls: OnceLock::new(),
@@ -384,7 +386,11 @@ impl OccipitalHandler {
     /// Build the app reader over the store HELLO_ACK opened, and start its
     /// background work. A table that cannot be opened stops the process, as the
     /// store itself does.
-    fn start_app_reader(&self, store: &Store) -> Result<(), Fatal> {
+    fn start_app_reader(
+        &self,
+        store: &Store,
+        cuts: Arc<crate::moves::state::Cuts>,
+    ) -> Result<(), Fatal> {
         if self.app.get().is_some() {
             return Ok(());
         }
@@ -405,6 +411,7 @@ impl OccipitalHandler {
             app_reader::send::Sender::new(resolver.clone(), Some(receipts))
                 .with_uploads(Some(uploads.clone())),
         );
+        sends.set_moves(cuts);
         let mut background = sends.start();
         background.push(("upload cleanup", uploads.start()));
         let _ = self.sends.set(sends.clone());
@@ -553,12 +560,19 @@ impl ModuleHandler for OccipitalHandler {
             Ok(opened) => Arc::new(opened),
             Err(fatal) => return (self.on_fatal)(fatal),
         };
-        if let Err(fatal) = self.start_app_reader(&opened) {
+        let cuts = self
+            .cuts
+            .get_or_init(|| Arc::new(crate::moves::state::Cuts::unopened(opened.data_root())))
+            .clone();
+        if let Err(error) = cuts.recover() {
+            tracing::error!(%error,"cannot read agent move records; sends are refused");
+        }
+        if let Err(fatal) = self.start_app_reader(&opened, cuts.clone()) {
             return (self.on_fatal)(fatal);
         }
         self.open_display(ack, &opened);
         self.open_notices(ack, &opened);
-        self.open_moves(&opened);
+        self.open_moves(&opened, cuts);
         self.start_bus();
         // Without the catalog, Engram skips the store; serving goes on.
         if let Err(error) = crate::backup::write_catalog(opened.data_root(), opened.file_name()) {
@@ -570,6 +584,13 @@ impl ModuleHandler for OccipitalHandler {
     async fn health(&self) -> HealthReport {
         // Read from memory only: a health check must answer even while a
         // write holds the store. Dispatch saturation is folded in by the SDK.
+        if self.cuts.get().is_some_and(|cuts| !cuts.readable()) {
+            return HealthReport {
+                status: HealthStatus::Failing,
+                detail: Some("agent move records are unreadable".into()),
+                metrics: None,
+            };
+        }
         match (self.store.get(), self.app.get()) {
             (Some(store), Some(_)) => match self.stopped_background().as_slice() {
                 [] => HealthReport {
@@ -690,16 +711,23 @@ impl OccipitalHandler {
     /// once the files it copies are open. Without them, or without a daemon
     /// connection to reach Entorhinal and Engram, Entorhinal's calls are
     /// refused, retryably.
-    fn open_moves(&self, store: &Store) {
-        let cuts = match crate::moves::state::Cuts::open(store.data_root()) {
-            Ok(cuts) => Arc::new(cuts),
-            Err(error) => {
-                tracing::error!(%error, "cannot open the agent move records; agent moves are refused");
-                return;
+    fn open_moves(&self, store: &Store, cuts: Arc<crate::moves::state::Cuts>) {
+        let retry = cuts.clone();
+        let task = tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                if !retry.readable() {
+                    let retry = retry.clone();
+                    if let Ok(Err(error)) =
+                        tokio::task::spawn_blocking(move || retry.recover()).await
+                    {
+                        tracing::debug!(%error,"move records remain unreadable");
+                    }
+                }
             }
-        };
-        if let Some(sends) = self.sends.get() {
-            sends.set_moves(cuts.clone());
+        });
+        if let Ok(mut tasks) = self.background.lock() {
+            tasks.push(("move records recovery", task));
         }
         let (Some(crate::display::State::Open(display)), Some(notices), Some(calls)) = (
             self.display.get(),
@@ -1724,6 +1752,42 @@ mod tests {
             storage,
             machine_id: None,
         }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn unreadable_move_records_block_sends_but_not_the_app_reader_until_repaired() {
+        let dir = cortexkit_test_support::ScratchDir::new("occipital-serve-moves");
+        let descriptor = crate::store::tests::descriptor(&dir);
+        let folder = dir.path().join("cortexkit/occipital/moves");
+        std::fs::create_dir_all(&folder).unwrap();
+        let path = folder.join("cut.json");
+        std::fs::write(&path, b"{").unwrap();
+        let (handler, _) = recording();
+        handler
+            .on_hello_ack(&ack(Some(serde_json::to_value(&descriptor).unwrap())))
+            .await;
+        assert!(handler.app.get().is_some());
+        let report = handler.health().await;
+        assert_eq!(report.status, HealthStatus::Failing);
+        assert!(report.detail.unwrap().contains("move records"));
+        let refusal = handler
+            .sends
+            .get()
+            .unwrap()
+            .send(serde_json::json!({"session":"s","text":"hello","clientMessageId":"x"}))
+            .await
+            .unwrap_err();
+        assert_eq!(refusal.code, "provider_unavailable");
+        assert!(refusal.message.contains("move state is unreadable"));
+        assert_eq!(refusal.detail.unwrap()["retryable"], true);
+        std::fs::remove_file(path).unwrap();
+        tokio::time::timeout(std::time::Duration::from_secs(30), async {
+            while handler.health().await.status != HealthStatus::Ok {
+                tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            }
+        })
+        .await
+        .unwrap();
     }
 
     #[tokio::test]

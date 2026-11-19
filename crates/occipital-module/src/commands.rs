@@ -106,7 +106,7 @@ impl Commands {
     pub async fn list(&self, params: Value) -> Result<Value, ReadError> {
         let request: contract::ListRequest = decode(params)?;
         request.check().map_err(invalid)?;
-        let declaring = self.declaring().await;
+        let declaring = self.declaring().await?;
         let described =
             futures_util::future::join_all(declaring.iter().map(|(module, build)| async move {
                 (module, self.described(module, build).await)
@@ -188,7 +188,7 @@ impl Commands {
                 format!("{module} declares no command {id:?}"),
             )
         };
-        let declaring = self.declaring().await;
+        let declaring = self.declaring().await?;
         let Some(build) = declaring.get(module) else {
             return Err(unknown());
         };
@@ -208,18 +208,17 @@ impl Commands {
     /// The declaring modules, read again when the daemon's catalog has changed
     /// since the last read (see [`crate::catalog_generation`]). A failed read
     /// keeps the modules read before.
-    async fn declaring(&self) -> BTreeMap<String, String> {
+    async fn declaring(&self) -> Result<BTreeMap<String, String>, ReadError> {
         let generation = self.modules.catalog_generation();
         {
             let state = self.lock();
             if generation.fresh(state.checked.as_ref()) {
-                return state.declaring.clone();
+                return Ok(state.declaring.clone());
             }
         }
         let checked = generation.check();
         let read = self.modules.declaring().await;
         let mut state = self.lock();
-        state.checked = Some(checked);
         match read {
             Ok(declaring) => {
                 state
@@ -227,9 +226,16 @@ impl Commands {
                     .retain(|module, _| declaring.contains_key(module));
                 state.declaring = declaring;
             }
+            Err(error) if state.checked.is_none() => {
+                return Err(ReadError::new(
+                    "command_unavailable",
+                    format!("cannot read command catalog: {error}"),
+                ))
+            }
             Err(error) => tracing::debug!(%error, "catalog.list for command modules failed"),
         }
-        state.declaring.clone()
+        state.checked = Some(checked);
+        Ok(state.declaring.clone())
     }
 
     /// `module`'s commands under `build`, asked for when none are kept under

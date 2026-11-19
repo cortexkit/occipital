@@ -275,16 +275,49 @@ impl DisplayStore {
     /// Every stored write for one call of `runner`, from both files, oldest
     /// first.
     pub fn writes(&self, runner: &Principal, call_key: &str) -> Result<Vec<Stored>, StoreError> {
+        self.call_writes(runner, call_key, true)
+    }
+
+    pub(super) fn call_writes(
+        &self,
+        runner: &Principal,
+        call_key: &str,
+        with_details: bool,
+    ) -> Result<Vec<Stored>, StoreError> {
         let runner =
             principal_json(runner).map_err(|error| StoreError::Backend(error.to_string()))?;
-        let mut keyed = Vec::new();
-        for file in [&self.records, &self.details] {
-            keyed.extend(file.with_conn(|conn| writes_in(conn, &runner, call_key))?);
+        let mut keyed = self
+            .records
+            .with_conn(|conn| writes_in(conn, &runner, call_key))?;
+        if with_details {
+            keyed.extend(
+                self.details
+                    .with_conn(|conn| writes_in(conn, &runner, call_key))?,
+            );
         }
         keyed.sort_by(|(a_key, a), (b_key, b)| {
             (a.stored_at_ms, a_key).cmp(&(b.stored_at_ms, b_key))
         });
         Ok(keyed.into_iter().map(|(_, stored)| stored).collect())
+    }
+
+    /// A summary needs to authorize detail-only writers too, but never needs
+    /// their detail bodies.
+    pub(super) fn detail_writers(
+        &self,
+        runner: &Principal,
+        call_key: &str,
+    ) -> Result<Vec<String>, StoreError> {
+        let runner =
+            principal_json(runner).map_err(|error| StoreError::Backend(error.to_string()))?;
+        self.details.with_conn(|conn| {
+            let mut q = conn.prepare("SELECT DISTINCT writer FROM display_writes WHERE runner=?1 AND call_key=?2 AND kind='detail'")?;
+            let mut writers = Vec::new();
+            for value in q.query_map([&runner,call_key], |row| row.get::<_,String>(0))? {
+                if let Ok(Principal::Reserved { module_id }) = serde_json::from_str(&value?) { writers.push(module_id); }
+            }
+            Ok(writers)
+        })
     }
 
     /// Keep each call's pin as its runner stored it: `(runner, call key,
@@ -895,6 +928,57 @@ mod tests {
                 DisplayKind::Completion
             ]
         );
+    }
+
+    #[tokio::test]
+    async fn record_summary_reads_detail_presence_without_its_body() {
+        use crate::display::app::ToolDisplay;
+        use std::sync::Arc;
+        let dir = ScratchDir::new("display-summary");
+        let (_main, store) = opened(&dir);
+        let store = Arc::new(store);
+        let pin = "tp1:bash:0123:1";
+        let write = DisplayWrite::new(
+            reserved("broca"),
+            "call",
+            DisplayKind::Detail,
+            pin,
+            body(json!({"text":"line"})),
+        );
+        store.write(&reserved("aft"), &write, 1).unwrap();
+        store
+            .keep_call_pins(
+                &[("broca".into(), "call".into(), "chat".into(), pin.into())],
+                1,
+            )
+            .unwrap();
+        store
+            .keep_view(
+                "aft",
+                pin,
+                &ViewState::View {
+                    manifest: vec![],
+                    input_schema: vec![],
+                },
+                "v",
+                1,
+            )
+            .unwrap();
+        // SQLite cannot return this value as a BLOB. A summary must not ask for it.
+        store
+            .details
+            .with_conn_fenced(|tx| tx.execute("UPDATE display_writes SET body = 42", []))
+            .unwrap();
+        let display = Arc::new(ToolDisplay::new(
+            store,
+            None,
+            tokio::sync::broadcast::channel(4).0,
+        ));
+        let result = display
+            .records("broca", "chat", &json!({"callKeys":["call"]}))
+            .await
+            .unwrap();
+        assert_eq!(result["calls"]["call"], json!({"detail":true}));
     }
 
     #[test]

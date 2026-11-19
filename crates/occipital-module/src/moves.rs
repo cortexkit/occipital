@@ -12,9 +12,9 @@
 //! - **export** (source): checks the door holds the whole stream.
 //! - **import** (receiver): reads the stream back through the door with the
 //!   cut's id, checks its digest, and keeps it, unapplied.
-//! - **activate** (receiver): inserts the rows, keeping every row already held,
+//! - **activate** (receiver): inserts missing rows and updates moved call associations,
 //!   and lifts any hold an earlier move away left on those sessions.
-//! - **release** (source, after activation): drops the sessions' waiting
+//! - **release** (source, after activation): drops the stream's waiting
 //!   sends, which the new computer follows now, and keeps holding sends to
 //!   the sessions as living there. The display rows stay: a record a provider
 //!   writes after the cut is kept for a move back.
@@ -132,8 +132,8 @@ pub struct Moves {
     remote: Arc<dyn Remote>,
     stores: Arc<Stores>,
     clock: fn() -> i64,
-    /// One op at a time: each reads a cut's state, acts, and records it.
-    lock: tokio::sync::Mutex<()>,
+    cut_locks: crate::key_locks::KeyLocks,
+    agent_locks: crate::key_locks::KeyLocks,
 }
 
 /// A refusal, as the daemon's error frame carries it.
@@ -168,7 +168,8 @@ impl Moves {
             remote,
             stores,
             clock,
-            lock: tokio::sync::Mutex::new(()),
+            cut_locks: Default::default(),
+            agent_locks: Default::default(),
         }
     }
 
@@ -213,7 +214,6 @@ impl Moves {
             .into_iter()
             .find(|op| op.method() == envelope.method)
             .ok_or_else(|| refuse("invalid_request", "unknown agent-data operation"))?;
-        let _one = self.lock.lock().await;
         let answered = self.op(&envelope.method, envelope.params).await;
         tracing::info!(
             method = %envelope.method,
@@ -266,6 +266,8 @@ impl Moves {
                 let request: contract::release::ReleaseRequest =
                     serde_json::from_value(params).map_err(decode)?;
                 let agent = one_agent(request.refs.as_slice())?;
+                let _cut = self.cut_locks.lock(request.cut_id.as_str()).await;
+                let _agent = self.agent_locks.lock(agent).await;
                 self.release(
                     request.cut_id.as_str(),
                     agent,
@@ -279,6 +281,19 @@ impl Moves {
                     serde_json::from_value(params).map_err(decode)?;
                 let cut_id = request.cut_id.as_str();
                 let refs = request.refs.as_slice();
+                // Status reads one atomically replaced file. Mutations take
+                // the cut first, then the agent so competing cuts are ordered.
+                let (_cut, _agent) = match method {
+                    "agent_data.status" | "agent_data.diverged" => (None, None),
+                    _ => {
+                        let cut = self.cut_locks.lock(cut_id).await;
+                        let agent = match refs.first() {
+                            Some(r) => Some(self.agent_locks.lock(r.r#ref.as_str()).await),
+                            None => None,
+                        };
+                        (Some(cut), agent)
+                    }
+                };
                 match method {
                     "agent_data.status" => {
                         // A status read never refuses for its refs: it can reach a
@@ -290,8 +305,8 @@ impl Moves {
                         for r in refs {
                             agent_of(r)?;
                         }
-                        // Import inserts without replacing, and every row is
-                        // immutable, so importing a cut here never loses one.
+                        // Import keeps existing payloads; only call-to-session
+                        // associations follow the incoming history.
                         let at_cut: Vec<Value> =
                             refs.iter().map(|_| json!({"state": "at_cut"})).collect();
                         Ok(json!({ "refs": at_cut }))
@@ -365,6 +380,13 @@ impl Moves {
         // The stream is written once; a repeat after a failed admission
         // carries on admitting the same bytes.
         if cut.item.is_none() {
+            if !self.cuts.drain(&cut.sessions).await {
+                return Err(Refusal {
+                    code: "unavailable",
+                    message: "waiting for admitted sends to finish".into(),
+                    detail: Some(json!({"retryable":true})),
+                });
+            }
             let path = self.cuts.stream_path(cut_id);
             let (stores, agent_id, moved) =
                 (self.stores.clone(), agent.to_owned(), cut.sessions.clone());
@@ -434,11 +456,16 @@ impl Moves {
             .ok_or_else(|| refuse("cut_unknown", "prepare this cut first"))?;
         match (cut.side, cut.step) {
             (Some(Side::Source), Step::Exported) => {
-                let (stores, sessions) = (self.stores.clone(), session_names(&cut.sessions));
-                tokio::task::spawn_blocking(move || stores.files().delete_waiting_sends(&sessions))
+                if let Some(item) = cut.item.clone() {
+                    let (stores, path) = (self.stores.clone(), self.cuts.stream_path(cut_id));
+                    tokio::task::spawn_blocking(move || {
+                        apply_stream(&path, &item, |batch| {
+                            stores.files().delete_waiting_sends(batch)
+                        })
+                    })
                     .await
-                    .map_err(unavailable)?
-                    .map_err(unavailable)?;
+                    .map_err(unavailable)??;
+                }
                 cut.step = Step::Released;
                 cut.holder = Some(holder.into());
                 cut.holder_box = holder_box.map(str::to_owned);
@@ -463,7 +490,9 @@ impl Moves {
     async fn import(&self, cut_id: &str, agent: &str) -> Result<Value, Refusal> {
         if let Some(cut) = self.existing(cut_id, agent)? {
             return match (cut.side, cut.step) {
-                (Some(Side::Receiver), Step::Imported | Step::Activated) => Ok(import_reply(&cut)),
+                (Some(Side::Receiver), Step::Imported | Step::Activating | Step::Activated) => {
+                    Ok(import_reply(&cut))
+                }
                 (_, step) => Err(invalid_state(step)),
             };
         }
@@ -525,12 +554,15 @@ impl Moves {
             .existing(cut_id, agent)?
             .ok_or_else(|| refuse("cut_unknown", "import this cut first"))?;
         match (cut.side, cut.step) {
-            (Some(Side::Receiver), Step::Imported) => {
-                if cut.item.is_some() {
+            (Some(Side::Receiver), Step::Imported | Step::Activating) => {
+                if cut.step == Step::Imported {
+                    cut.step = Step::Activating;
+                    self.save(cut_id, &cut)?;
+                }
+                if let Some(item) = cut.item.clone() {
                     let (stores, path) = (self.stores.clone(), self.cuts.stream_path(cut_id));
-                    tokio::task::spawn_blocking(move || -> Result<u64, Refusal> {
-                        let read = read_stream(&path)?;
-                        stores.files().import(&read.rows).map_err(unavailable)
+                    tokio::task::spawn_blocking(move || {
+                        apply_stream(&path, &item, |batch| stores.files().import(batch))
                     })
                     .await
                     .map_err(unavailable)??;
@@ -578,7 +610,9 @@ impl Moves {
             },
         };
         match cut.step {
-            Step::Activated | Step::Released => return Err(invalid_state(cut.step)),
+            Step::Activating | Step::Activated | Step::Released => {
+                return Err(invalid_state(cut.step))
+            }
             Step::Aborted if cut.side.is_none() => {}
             _ => {
                 cut.step = Step::Aborted;
@@ -887,7 +921,7 @@ fn write_stream(
         payload::Writer::start(std::io::BufWriter::new(file), agent).map_err(|e| e.to_string())?;
     let mut held = BTreeSet::new();
     let counts = stores.files().export(&names, |row| {
-        if let Some(session) = row_session(&row) {
+        if let Some(session) = row_session(&row).filter(|name| names.contains(name)) {
             held.insert(session);
         }
         writer.row(&row).map_err(|e| e.to_string())
@@ -923,7 +957,57 @@ fn row_session((table, values): &rows::Row) -> Option<String> {
 
 fn read_stream(path: &std::path::Path) -> Result<payload::Read, Refusal> {
     let file = std::fs::File::open(path).map_err(unavailable)?;
-    payload::read(std::io::BufReader::new(file)).map_err(|unreadable| match unreadable {
+    visit_stream(file, |_| Ok(()))
+}
+
+fn apply_stream(
+    path: &std::path::Path,
+    item: &Item,
+    mut apply: impl FnMut(&[rows::Row]) -> Result<u64, String>,
+) -> Result<(), Refusal> {
+    use std::io::Seek;
+    // Check the staged bytes before deleting any queued send or inserting a row.
+    let mut file = std::fs::File::open(path).map_err(unavailable)?;
+    let mut hash = Sha256::new();
+    let length = std::io::copy(&mut file, &mut hash).map_err(unavailable)?;
+    if length != item.end_offset || payload::hex(&hash.finalize()) != item.digest {
+        return Err(digest_mismatch("the staged stream changed"));
+    }
+    file.rewind().map_err(unavailable)?;
+    let mut batch = Vec::new();
+    let mut bytes = 0;
+    visit_stream(file, |row| {
+        use rusqlite::types::Value as Sql;
+        let size = row
+            .1
+            .iter()
+            .map(|v| match v {
+                Sql::Blob(b) => b.len(),
+                Sql::Text(t) => t.len(),
+                _ => 8,
+            })
+            .sum::<usize>();
+        if !batch.is_empty() && (batch.len() == 128 || bytes + size > 1 << 20) {
+            apply(&batch)?;
+            batch.clear();
+            bytes = 0;
+        }
+        batch.push(row);
+        bytes += size;
+        Ok(())
+    })?;
+    if !batch.is_empty() {
+        apply(&batch).map_err(unavailable)?;
+    }
+    Ok(())
+}
+
+fn visit_stream(
+    file: std::fs::File,
+    each: impl FnMut(rows::Row) -> Result<(), String>,
+) -> Result<payload::Read, Refusal> {
+    payload::read(std::io::BufReader::new(file), each).map_err(|unreadable| match unreadable {
+        payload::Unreadable::Apply(why) => unavailable(why),
         payload::Unreadable::Format(found) => Refusal {
             code: "incompatible_version",
             message: format!("this build reads {FORMAT}, not {found}"),

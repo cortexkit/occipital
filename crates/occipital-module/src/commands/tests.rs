@@ -46,6 +46,7 @@ struct Fake {
     declaring: Mutex<BTreeMap<String, String>>,
     /// How many times the catalog was read for the declaring modules.
     catalog_reads: std::sync::atomic::AtomicUsize,
+    catalog_down: Mutex<bool>,
     generation: crate::catalog_generation::CatalogGeneration,
     answers: Mutex<HashMap<(String, String), Answer>>,
     calls: Mutex<Vec<(String, String, Value)>>,
@@ -75,6 +76,9 @@ impl Modules for Fake {
     async fn declaring(&self) -> Result<BTreeMap<String, String>, String> {
         self.catalog_reads
             .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        if *self.catalog_down.lock().unwrap() {
+            return Err("offline".into());
+        }
         Ok(self.declaring.lock().unwrap().clone())
     }
 
@@ -871,4 +875,26 @@ async fn magic_contexts_owner_commands_relay_whole() {
     }
     assert_eq!(read("preview-stale.json")["outcome"], "preview_stale");
     assert_eq!(replies, 32);
+}
+
+#[tokio::test]
+async fn a_failed_cold_catalog_read_is_unavailable_and_retried() {
+    let fake = Arc::new(Fake::default());
+    let commands = Commands::new(fake.clone());
+    *fake.catalog_down.lock().unwrap() = true;
+    assert_eq!(
+        commands.command("module", "id").await.unwrap_err().code,
+        "command_unavailable"
+    );
+    let list = sample("requests.json")["list"].clone();
+    assert_eq!(
+        commands.list(list.clone()).await.unwrap_err().code,
+        "command_unavailable"
+    );
+    *fake.catalog_down.lock().unwrap() = false;
+    commands.list(list).await.unwrap();
+    assert_eq!(
+        fake.catalog_reads.load(std::sync::atomic::Ordering::SeqCst),
+        3
+    );
 }
