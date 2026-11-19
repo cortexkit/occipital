@@ -1,0 +1,1 @@
+{"method":"session.enqueue_user_message","params":{"clientMessageId":"two","parts":[{"attachment_id":"00000000000000000000000000000001","mime":"image/png","type":"file"}],"session":"s","text":"look"}}

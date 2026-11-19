@@ -2190,3 +2190,19 @@ async fn losing_one_runner_does_not_remove_another_runners_local_session() {
     assert!(hub.runner("broca").projection("same").is_none());
     assert!(hub.runner(PI_RUNNER_MODULE_ID).projection("same").is_some());
 }
+
+/// Serve capability refusals against the same chat and rows as the message-tool samples.
+pub(crate) fn recovery_chat(
+    oversized_plan: bool,
+) -> (Arc<crate::app_reader::AppReader>, &'static str) {
+    let (app, route) = say_samples::chat(true);
+    if oversized_plan {
+        *route.plan_view.guard() = Some(Err(ReadError::new(
+            "too_large",
+            "plan exceeds the runner's reply limit",
+        )));
+    } else {
+        route.describe.guard().take();
+    }
+    (app, say_samples::SESSION)
+}

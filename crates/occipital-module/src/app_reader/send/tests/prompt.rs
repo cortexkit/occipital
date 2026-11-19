@@ -7,6 +7,7 @@ use crate::app_reader::{uploads, Caller, SourceResolver};
 use std::{path::PathBuf, sync::atomic::AtomicU64};
 
 mod attachments_samples;
+mod recovery_samples;
 mod samples;
 mod video_samples;
 
