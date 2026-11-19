@@ -356,6 +356,16 @@ int32_t occ_measure_block(const char *tree_json, const char *path_json,
                           const char *layout_json, const OccMetrics *metrics,
                           char **out);
 
+/* Measures several components after decoding the tree once. `paths_json`
+ * is an array of non-empty child-index arrays, as for occ_measure_block.
+ * *out is an array in request order (duplicates included, [] gives []):
+ * each entry is {"measurement": <single-block measurement>} or
+ * {"status": <single-block error code>}. A malformed tree, paths list,
+ * layout or metrics table fails the whole call and leaves *out NULL. */
+int32_t occ_measure_blocks(const char *tree_json, const char *paths_json,
+                           const char *layout_json, const OccMetrics *metrics,
+                           char **out);
+
 /* Measures a whole tree (tree JSON), as occ_measure_block measures one
  * block. *out is the measurement JSON. */
 int32_t occ_measure_tree(const char *tree_json, const char *layout_json,

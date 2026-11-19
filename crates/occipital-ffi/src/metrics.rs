@@ -48,6 +48,7 @@ pub struct OccMetrics {
 }
 
 /// A [`Metrics`] implementation that calls an [`OccMetrics`] table.
+#[derive(Clone)]
 pub(crate) struct Adapter {
     ctx: *mut c_void,
     l: LineHeight,

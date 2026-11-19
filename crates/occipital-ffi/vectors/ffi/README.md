@@ -43,6 +43,10 @@ source with invalid UTF-8; both return `OCC_OK` with the diagnostics in the
 result. The scheduler traces drive a program session, which this library
 does not expose, so they have no vectors.
 
+The `measure-blocks-mixed` case measures a component twice, a paragraph and
+an absent block. Each path gets the measurement or status it would get from
+`occ_measure_block`, in request order.
+
 The `template-bash-row-*` cases evaluate a tool row with
 `occ_template_evaluate`: a command far wider than the row, then a short Slot
 for its outcome, once while the outcome is still to come (`waiting`) and once
@@ -70,7 +74,7 @@ The `version` case is `occ_version` with no arguments; its request is `{}`.
 The `text-references` case is `occ_text_references` on a reply naming an
 issue, a pull request in another repository, a pull request inside a code
 span and an agent, under a project record as core serves it. The rules
-themselves are pinned by the `text-references-v2` vectors of
+themselves are pinned by the `text-references-v3` vectors of
 cortexkit-occipital-refs;
 this case pins the entry point's JSON.
 

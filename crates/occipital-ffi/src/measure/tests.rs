@@ -181,6 +181,59 @@ fn a_block_measures_as_a_one_block_tree() {
 }
 
 #[test]
+fn a_batch_matches_each_single_call_with_only_one_tree_decode() {
+    let (tree_json, tree) = finished(TAGGED);
+    let badge = path_of(&tree, "Badge");
+    let paths = [badge.clone(), vec![999], vec![badge[0]], badge];
+    let singles = || {
+        paths
+            .iter()
+            .map(|path| {
+                let (status, out) = measure_block(
+                    &tree_json,
+                    &serde_json::to_string(path).unwrap(),
+                    &mut Script::default(),
+                );
+                match out {
+                    Some(text) => format!("{{\"measurement\":{text}}}"),
+                    None => format!("{{\"status\":{status}}}"),
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    };
+    let expected = format!("[{}]", singles());
+    assert!(expected.contains("\"measurement\":"));
+    assert!(expected.contains(&format!("{{\"status\":{OCC_INVALID_ARGUMENT}}}")));
+    crate::tree::ROOT_DECODES.set(0);
+    let (tree, layout) = (c(&tree_json), c(LAYOUT));
+    let mut script = Script::default();
+    let metrics = table(&mut script);
+    let batch = |paths: &str| {
+        let paths = c(paths);
+        // SAFETY: all arguments are valid for this call.
+        call(|out| unsafe {
+            occ_measure_blocks(
+                tree.as_ptr(),
+                paths.as_ptr(),
+                layout.as_ptr(),
+                &metrics,
+                out,
+            )
+        })
+    };
+    assert_eq!(
+        batch(&serde_json::to_string(&paths).unwrap()),
+        (OCC_OK, Some(expected))
+    );
+    assert_eq!(crate::tree::ROOT_DECODES.get(), 1);
+    assert_eq!(batch("[]"), (OCC_OK, Some("[]".into())));
+    for malformed in ["{}", "[[0],[]]", "[[0],false]", "[[-1]]"] {
+        assert_eq!(batch(malformed), (OCC_INVALID_ARGUMENT, None));
+    }
+}
+
+#[test]
 fn a_block_path_must_name_a_component() {
     let (tree_json, tree) = finished(TAGGED);
     let badge = path_of(&tree, "Badge");

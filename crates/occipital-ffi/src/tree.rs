@@ -304,6 +304,8 @@ struct RawRoot {
 
 impl<'de> Deserialize<'de> for TreeDe {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[cfg(test)]
+        ROOT_DECODES.update(|n| n + 1);
         let root = RawRoot::deserialize(deserializer)?;
         if root.m != "root" {
             return Err(de::Error::custom(
@@ -315,6 +317,9 @@ impl<'de> Deserialize<'de> for TreeDe {
         }))
     }
 }
+
+#[cfg(test)]
+thread_local! { pub(crate) static ROOT_DECODES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
 
 /// Deserializes a member that is present. With `#[serde(default)]` an
 /// absent member is `None`, while an explicit `null` is decoded as `T`
