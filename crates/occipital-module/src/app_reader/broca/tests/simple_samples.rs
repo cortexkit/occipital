@@ -674,3 +674,30 @@ async fn late_record_after_full_reads(refreshed: bool) {
         "{claimed}"
     );
 }
+
+#[tokio::test]
+async fn answered_say_crossing_a_page_boundary_is_kept_in_either_view() {
+    let mut entries: Vec<_> = (1..=201).map(prose).collect();
+    entries[100] = entry(
+        101,
+        json!({"role":"assistant","content":[call("c","say",json!({"text":"Done."}))]}),
+    );
+    entries[101] = result(102, "c", "sent");
+    let c = chat(true, entries).await;
+    let mut sample = Sample {
+        served: Served::new(SET, c.app.clone()),
+        corr: 0,
+    };
+    let simple = sample.quiet(page(json!({"limit":1}))).await;
+    let mut request = page(json!({"beforeOrdinal":102,"limit":1}));
+    request["params"].as_object_mut().unwrap().remove("view");
+    let full = sample.quiet(request).await;
+    for reply in [&full, &simple] {
+        assert_eq!(ids(reply), ["m101"], "{reply}");
+        assert_eq!(
+            reply["result"]["messages"][0]["parts"][0]["type"], "message",
+            "{reply}"
+        );
+        assert_eq!(reply["result"]["messages"][0]["parts"][0]["text"], "Done.");
+    }
+}
