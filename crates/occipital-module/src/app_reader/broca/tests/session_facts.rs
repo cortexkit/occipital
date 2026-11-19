@@ -1301,3 +1301,22 @@ async fn recent_and_live_chat_metadata_survive_closed_cache_pressure() {
         &sources.source(&reference(0)).await.unwrap()
     ));
 }
+
+#[tokio::test]
+async fn an_unrecorded_live_chat_can_read_its_display_baseline() {
+    use crate::app_reader::{SourceResolver, DISPLAY_READ};
+    let sources = Arc::new(BrocaSources::new(
+        Arc::new(Resolver::new(Arc::new(Unrecorded::default()))),
+        Arc::new(SendingRoutes(sample_route())),
+    ));
+    let app = AppReader::new(sources.clone());
+    let _watch = sources
+        .watch("dream", None, app.display.clone())
+        .await
+        .unwrap();
+    let baseline = app
+        .read(DISPLAY_READ, json!({"session":"dream"}))
+        .await
+        .unwrap();
+    assert!(baseline.get("absent").is_none(), "{baseline}");
+}

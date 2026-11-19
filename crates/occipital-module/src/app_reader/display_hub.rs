@@ -22,11 +22,21 @@ struct State {
 }
 
 #[derive(Default)]
-pub struct DisplayHub {
+pub struct DisplayHub(Mutex<HashMap<String, Arc<RunnerDisplay>>>);
+
+impl DisplayHub {
+    /// Local session ids are unique only within the runner that produced them.
+    pub fn runner(&self, runner: &str) -> Arc<RunnerDisplay> {
+        self.0.guard().entry(runner.into()).or_default().clone()
+    }
+}
+
+#[derive(Default)]
+pub struct RunnerDisplay {
     state: Mutex<State>,
 }
 
-impl DisplayHub {
+impl RunnerDisplay {
     pub fn projection(&self, session: &str) -> Option<Arc<DisplayProjection>> {
         self.state.guard().projections.get(session).cloned()
     }
@@ -45,20 +55,25 @@ impl DisplayHub {
 
     pub fn attach(&self, session: &str) -> Arc<DisplayProjection> {
         let mut state = self.state.guard();
-        let projection = state
-            .projections
-            .entry(session.into())
-            .or_insert_with(|| Arc::new(DisplayProjection::with_ring(RING_ENTRIES)))
-            .clone();
-        Self::signal(&state, session);
+        Self::ensure(&mut state, session)
+    }
+
+    fn ensure(state: &mut State, session: &str) -> Arc<DisplayProjection> {
+        if let Some(existing) = state.projections.get(session) {
+            return existing.clone();
+        }
+        let projection = Arc::new(DisplayProjection::with_ring(RING_ENTRIES));
+        state.projections.insert(session.into(), projection.clone());
+        Self::signal(state, session);
         projection
     }
 
     pub fn remove(&self, session: &str) {
         let mut state = self.state.guard();
         state.batcher.discard_session(session);
-        state.projections.remove(session);
-        Self::signal(&state, session);
+        if state.projections.remove(session).is_some() {
+            Self::signal(&state, session);
+        }
     }
 
     fn signal(state: &State, session: &str) {
@@ -70,12 +85,7 @@ impl DisplayHub {
     /// Called by the source subscription, never by a polling read or projection lookup.
     pub fn ingest(self: &Arc<Self>, session: &str, input: DisplayInput) {
         let mut state = self.state.guard();
-        let projection = state
-            .projections
-            .entry(session.into())
-            .or_insert_with(|| Arc::new(DisplayProjection::with_ring(RING_ENTRIES)))
-            .clone();
-        Self::signal(&state, session);
+        let projection = Self::ensure(&mut state, session);
         match input {
             DisplayInput::Delta {
                 mid,

@@ -1599,7 +1599,11 @@ async fn a_plain_read_starts_no_subscription() {
         .unwrap();
     assert_eq!(page["messages"].as_array().unwrap().len(), 3);
     assert_eq!(route.attaches.load(Ordering::Relaxed), 0);
-    assert!(app.display.projection("alfonso:s1").is_none());
+    assert!(app
+        .display
+        .runner("broca")
+        .projection("alfonso:s1")
+        .is_none());
     // A session named under another harness opens no Broca route either: one
     // Entorhinal doesn't know is refused naming no runner.
     for harness in ["opencode2", "pi"] {
@@ -1929,7 +1933,11 @@ async fn serving_watch_leases_share_feed_cancel_linger_and_drop_on_route_close()
     }
     users(&source, 2).await;
     assert_eq!(route.attaches.load(Ordering::Relaxed), 1);
-    assert!(app.display.projection("alfonso:s1").is_some());
+    assert!(app
+        .display
+        .runner("broca")
+        .projection("alfonso:s1")
+        .is_some());
     connection.cancel((1, 1, 1));
     ended(&mut rx, 1).await;
     users(&source, 1).await;
@@ -1941,7 +1949,11 @@ async fn serving_watch_leases_share_feed_cancel_linger_and_drop_on_route_close()
     tokio::time::advance(SUBSCRIPTION_LINGER).await;
     live.changed().await.unwrap();
     assert_eq!(route.detaches.load(Ordering::Relaxed), 1);
-    assert!(app.display.projection("alfonso:s1").is_none());
+    assert!(app
+        .display
+        .runner("broca")
+        .projection("alfonso:s1")
+        .is_none());
 
     open_watch(&mut connection, &tx, 3, super::super::DISPLAY_WATCH).await;
     users(&source, 1).await;
@@ -2025,7 +2037,7 @@ async fn a_moved_binding_retires_the_old_feed_before_attaching_its_replacement()
         .await
         .unwrap();
     drop(old_watch);
-    assert!(hub.projection("alfonso:s1").is_some());
+    assert!(hub.runner("broca").projection("alfonso:s1").is_some());
     assert_eq!(
         *routes.1.lock().unwrap(),
         vec![
@@ -2160,3 +2172,21 @@ mod simple_samples;
 mod tag_rows;
 mod tool_display_samples;
 mod tool_times_samples;
+
+#[tokio::test]
+async fn losing_one_runner_does_not_remove_another_runners_local_session() {
+    let hub = Arc::new(DisplayHub::default());
+    let a = BrocaSource::new(resolved(), FakeRoute::new());
+    let mut other = resolved();
+    other.reference.runner = PI_RUNNER_MODULE_ID.into();
+    other.harness = "pi".into();
+    let b = BrocaSource::new(other, FakeRoute::new());
+    let _a = a.acquire_inner(Some(("same", &hub))).await.unwrap();
+    let _b = b.acquire_inner(Some(("same", &hub))).await.unwrap();
+    let first = hub.runner("broca").projection("same").unwrap();
+    let second = hub.runner(PI_RUNNER_MODULE_ID).projection("same").unwrap();
+    assert!(!Arc::ptr_eq(&first, &second));
+    a.lost();
+    assert!(hub.runner("broca").projection("same").is_none());
+    assert!(hub.runner(PI_RUNNER_MODULE_ID).projection("same").is_some());
+}

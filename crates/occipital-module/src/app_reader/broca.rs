@@ -181,6 +181,17 @@ impl SourceConnector for Unavailable {
 
 #[async_trait]
 impl SourceResolver for LazyBrocaSources {
+    async fn display_runner(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+    ) -> Result<String, ReadError> {
+        self.connected()
+            .await?
+            .display_runner(session, harness)
+            .await
+    }
+
     async fn validate_session(
         &self,
         session: &str,
@@ -959,6 +970,23 @@ impl BrocaSources {
 
 #[async_trait]
 impl SourceResolver for BrocaSources {
+    async fn display_runner(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+    ) -> Result<String, ReadError> {
+        let reference = self.reference(session, harness).await?;
+        match self.resolver.resolve(&reference).await {
+            Ok(_) => {}
+            Err(error) if super::resolve::unrecorded_broca(&reference, &error) => {
+                // Only a successful read from Broca admits an unregistered chat.
+                self.source(&reference).await?.head().await?;
+            }
+            Err(error) => return Err(error),
+        }
+        Ok(reference.runner)
+    }
+
     async fn validate_session(
         &self,
         session: &str,
@@ -1064,6 +1092,7 @@ impl SourceResolver for BrocaSources {
         let live = Some(source.feed_state());
         Ok(SourceWatch {
             source: Some(source),
+            display: Some(hub.runner(&reference.runner)),
             lease: Some(Box::new(lease)),
             live,
         })
@@ -1091,7 +1120,7 @@ pub struct BrocaSource {
     route: Arc<dyn BrocaRoute>,
     changes: watch::Sender<u64>,
     display: broadcast::Sender<DisplayInput>,
-    display_targets: Mutex<Vec<(String, Weak<DisplayHub>)>>,
+    display_targets: Mutex<Vec<(String, Weak<super::display_hub::RunnerDisplay>)>>,
     live: watch::Sender<bool>,
     activity: Mutex<Option<(&'static str, i64)>>,
     /// The rich UI stamp of the run the last head read found still running, as the
@@ -1411,7 +1440,8 @@ impl BrocaSource {
 
     fn attach_display(&self, session: &str, hub: &Arc<DisplayHub>) {
         let mut targets = self.display_targets.guard();
-        let weak = Arc::downgrade(hub);
+        let hub = hub.runner(&self.runner());
+        let weak = Arc::downgrade(&hub);
         if !targets
             .iter()
             .any(|(name, target)| name == session && target.ptr_eq(&weak))
