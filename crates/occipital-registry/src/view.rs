@@ -155,15 +155,21 @@ fn check_template(
     if !report.problems.is_empty() {
         return report;
     }
+    let mut input = input(input_schema);
+    // No call arguments are available yet. Use a declared example when the
+    // input is enumerated; otherwise the empty object stands in for a call.
+    let placeholder = input
+        .enumeration
+        .as_ref()
+        .and_then(|values| values.first())
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    input.required.clear();
     let context = tool_context(
         profile,
         &template,
-        json!({}),
-        Schema {
-            // Checking supplies no arguments, so none may be required.
-            required: Vec::new(),
-            ..input(input_schema)
-        },
+        placeholder,
+        input,
         waiting_view(profile),
         record_schema,
     );
