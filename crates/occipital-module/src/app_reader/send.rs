@@ -236,6 +236,8 @@ pub struct Sender {
     /// signal that makes its task ask the runner now rather than at its next
     /// [`FOLLOW_INTERVAL`] (see [`Sender::nudge`]).
     following: Arc<Mutex<Following>>,
+    receipt_cursor: Mutex<(String, String)>,
+    queue_cursor: Mutex<(String, String)>,
     /// The follow tasks; dropping the sender stops them.
     tasks: Mutex<tokio::task::JoinSet<()>>,
     /// Stop answers by session and `clientRequestId`, so a repeat gets the first answer.
@@ -277,6 +279,8 @@ impl Sender {
             late: broadcast::channel(64).0,
             queue_changed: broadcast::channel(64).0,
             following: Arc::default(),
+            receipt_cursor: Mutex::default(),
+            queue_cursor: Mutex::default(),
             tasks: Mutex::default(),
             stops: Mutex::default(),
             model_names: std::sync::OnceLock::new(),
@@ -1254,8 +1258,11 @@ impl Sender {
         let Some(receipts) = self.receipts.clone() else {
             return;
         };
-        let rows = match tokio::task::spawn_blocking(move || receipts.followed(RECOVERY_BATCH))
-            .await
+        let after = self.receipt_cursor.guard().clone();
+        let rows = match tokio::task::spawn_blocking(move || {
+            receipts.followed_after(RECOVERY_BATCH, &after)
+        })
+        .await
         {
             Ok(Ok(rows)) => rows,
             _ => {
@@ -1263,6 +1270,11 @@ impl Sender {
                 return;
             }
         };
+        *self.receipt_cursor.guard() = rows
+            .last()
+            .filter(|_| rows.len() == RECOVERY_BATCH)
+            .map(|row| (row.session.clone(), row.client_message_id.clone()))
+            .unwrap_or_default();
         for row in rows {
             let key = (row.session.clone(), row.send_id.clone());
             if self.following.guard().contains_key(&key) {
@@ -1284,14 +1296,13 @@ impl Sender {
                 },
             );
         }
-        // Then the oldest queued head sends, up to [`RECOVERY_BATCH`], that no task
-        // here follows: those queued when the module last stopped, and those whose
-        // runner didn't answer before their follower gave up.
+        // A queue row can outlive its receipt or arrive without one in a move.
         let Some(receipts) = self.receipts.clone() else {
             return;
         };
+        let after = self.queue_cursor.guard().clone();
         let queued = match tokio::task::spawn_blocking(move || {
-            receipts.queue().queued_heads(RECOVERY_BATCH)
+            receipts.queue().queued_after(RECOVERY_BATCH, &after)
         })
         .await
         {
@@ -1301,6 +1312,11 @@ impl Sender {
                 return;
             }
         };
+        *self.queue_cursor.guard() = queued
+            .last()
+            .filter(|_| queued.len() == RECOVERY_BATCH)
+            .map(|row| (row.session.clone(), row.client_message_id.clone()))
+            .unwrap_or_default();
         for row in queued {
             let key = (row.session.clone(), row.send_id.clone());
             if self.following.guard().contains_key(&key) {
@@ -1318,8 +1334,14 @@ impl Sender {
                 row.session,
                 Some(row.client_message_id),
                 row.send_id,
-                Follow::Head {
-                    give_up_at: row.accepted_at.saturating_add(HEAD_HOLD.as_millis() as i64),
+                match row.steer_until {
+                    Some(until) => Follow::Steer {
+                        until,
+                        run_id: None,
+                    },
+                    None => Follow::Head {
+                        give_up_at: row.accepted_at.saturating_add(HEAD_HOLD.as_millis() as i64),
+                    },
                 },
             );
         }

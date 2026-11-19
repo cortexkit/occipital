@@ -218,15 +218,23 @@ impl Receipts {
         })?)
     }
 
-    /// Up to `limit` sends still followed, the earliest deadline first.
+    #[cfg(test)]
     pub fn followed(&self, limit: usize) -> Result<Vec<Followed>, crate::Error> {
+        self.followed_after(limit, &Default::default())
+    }
+
+    pub(super) fn followed_after(
+        &self,
+        limit: usize,
+        after: &(String, String),
+    ) -> Result<Vec<Followed>, crate::Error> {
         Ok(self.0.with_read(|conn| {
             conn.prepare(
                 "SELECT s.session,s.client_message_id,s.send_id,s.follow_until,r.run_id FROM harness_app_send s \
                  LEFT JOIN harness_app_send_run r ON s.session=r.session AND s.client_message_id=r.client_message_id \
-                 WHERE s.follow_until IS NOT NULL ORDER BY s.follow_until LIMIT ?1",
+                 WHERE s.follow_until IS NOT NULL AND (s.session,s.client_message_id)>(?2,?3) ORDER BY s.session,s.client_message_id LIMIT ?1",
             )?
-            .query_map([limit as i64], |row| {
+            .query_map(params![limit as i64, after.0, after.1], |row| {
                 Ok(Followed {
                     session: row.get(0)?,
                     client_message_id: row.get(1)?,

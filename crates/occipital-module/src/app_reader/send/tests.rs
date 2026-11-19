@@ -3040,3 +3040,69 @@ async fn a_finished_head_without_delivery_returns_terminal_failure() {
     assert_eq!(reply["terminal"], true);
     assert_eq!(reply["reason"], "error");
 }
+
+#[tokio::test]
+async fn recovery_reaches_later_head_and_worker_batches() {
+    let f = fixture(Kind::Head);
+    for i in 0..=RECOVERY_BATCH {
+        let id = format!("msg-{i:03}");
+        f.receipts
+            .queue()
+            .queue(&super::super::send_queue::Queued {
+                session: "head".into(),
+                client_message_id: id.clone(),
+                harness: None,
+                send_id: format!("head-{id}"),
+                accepted_at: START,
+                steer_until: None,
+            })
+            .unwrap();
+        f.receipts
+            .record(
+                "worker",
+                &id,
+                "digest",
+                "queue",
+                &format!("worker-{id}"),
+                &json!({"ok":true}),
+                Some((START + 1000, "run")),
+                START,
+            )
+            .unwrap();
+    }
+    f.sender.recover().await;
+    f.sender.recover().await;
+    for role in ["head", "worker"] {
+        assert!(
+            f.sender.nudge(&format!("{role}-msg-{RECOVERY_BATCH:03}")),
+            "{role}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn a_moved_worker_without_a_receipt_resumes_from_its_queue_row() {
+    let f = fixture(Kind::Worker);
+    f.receipts
+        .queue()
+        .queue(&super::super::send_queue::Queued {
+            session: "s".into(),
+            client_message_id: "one".into(),
+            harness: Some("broca".into()),
+            send_id: "worker-send".into(),
+            accepted_at: START,
+            steer_until: Some(START + 10),
+        })
+        .unwrap();
+    f.runner
+        .captured
+        .guard()
+        .insert("session.send_status", json!({"result":{"state":"expired"}}));
+    f.sender.recover().await;
+    assert!(f.sender.nudge("worker-send"));
+    eventually(|| {
+        f.receipts.queue().list("s", START).unwrap().unwrap().0[0]["reason"] == codes::STEER_EXPIRED
+    })
+    .await;
+    assert!(f.runner.written().is_empty());
+}

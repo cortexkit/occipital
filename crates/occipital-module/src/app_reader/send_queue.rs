@@ -85,8 +85,7 @@ pub struct Queued {
     pub harness: Option<String>,
     pub send_id: String,
     pub accepted_at: i64,
-    /// A worker steer's expiry. Such a send is followed from its receipt, which
-    /// carries the same deadline; only head sends are resumed from this table.
+    /// A worker steer's expiry, kept with the queue row when the session moves.
     pub steer_until: Option<i64>,
 }
 
@@ -210,22 +209,33 @@ impl SendQueue {
         self.update_alone(session, id, End::Unconfirmed, None, now)
     }
 
-    /// Up to `limit` queued head sends, the oldest first, for the follower to resume.
-    /// A worker steer is resumed from its receipt instead.
+    #[cfg(test)]
     pub fn queued_heads(&self, limit: usize) -> Result<Vec<Queued>, crate::Error> {
+        self.queued_after(limit, &Default::default())
+    }
+
+    /// A moved worker has only its queue row. A local worker instead uses the
+    /// receipt's run binding, even when its recovery batch hasn't been read yet.
+    pub(super) fn queued_after(
+        &self,
+        limit: usize,
+        after: &(String, String),
+    ) -> Result<Vec<Queued>, crate::Error> {
         Ok(self.0.with_read(|conn| {
             conn.prepare(
-                "SELECT session,client_message_id,harness,send_id,accepted_at FROM harness_app_send_queue \
-                 WHERE state='queued' AND steer_until IS NULL ORDER BY accepted_at LIMIT ?1",
+                "SELECT session,client_message_id,harness,send_id,accepted_at,steer_until FROM harness_app_send_queue q \
+                 WHERE state='queued' AND (session,client_message_id)>(?2,?3) AND (steer_until IS NULL OR NOT EXISTS \
+                 (SELECT 1 FROM harness_app_send s WHERE s.session=q.session AND s.client_message_id=q.client_message_id AND s.follow_until IS NOT NULL)) \
+                 ORDER BY session,client_message_id LIMIT ?1",
             )?
-            .query_map([limit as i64], |row| {
+            .query_map(params![limit as i64, after.0, after.1], |row| {
                 Ok(Queued {
                     session: row.get(0)?,
                     client_message_id: row.get(1)?,
                     harness: row.get(2)?,
                     send_id: row.get(3)?,
                     accepted_at: row.get(4)?,
-                    steer_until: None,
+                    steer_until: row.get(5)?,
                 })
             })?
             .collect()
@@ -330,7 +340,10 @@ mod tests {
         let store = crate::store::tests::shared(&dir.path().join("store.db"));
         // The store outlives the test's directory handle.
         std::mem::forget(dir);
-        SendQueue::open(store).unwrap()
+        super::super::send_store::Receipts::open(store)
+            .unwrap()
+            .queue()
+            .clone()
     }
 
     fn entry(id: &str, at: i64) -> Queued {
