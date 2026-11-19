@@ -21,7 +21,7 @@
 //! here, since only the store holds it and a message is drawn from it in the
 //! page itself (`occipital_app_reader::say`).
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex, OnceLock};
 
 use occipital_app_reader::tool_times::CallIdentity;
@@ -54,10 +54,8 @@ pub struct CallPins {
     /// The display store, also read while a page is built for the message
     /// records of its `say` calls ([`CallPins::message_record`]).
     store: Arc<DisplayStore>,
-    /// The digest of `(minting runner, call key, session)` of each call already kept. The
-    /// minting runner is the one that gave the call its key: the call's carrier when it
-    /// moved from another runner, else the runner whose page carries it.
-    kept: Mutex<HashSet<KeyDigest>>,
+    /// Last session queued for each (minting runner, call key).
+    kept: Arc<Mutex<HashMap<KeyDigest, KeyDigest>>>,
 }
 
 impl CallPins {
@@ -67,6 +65,7 @@ impl CallPins {
         let Ok(mut kept) = self.kept.lock() else {
             return;
         };
+        let owner = key_digest(&[session]);
         let fresh: Vec<(String, String, String)> = calls
             .into_iter()
             .map(|call| {
@@ -74,7 +73,7 @@ impl CallPins {
                 (minted_by, call.call_key, call.schema_pin)
             })
             .filter(|(minted_by, call_key, _)| {
-                !kept.contains(&key_digest(&[minted_by, call_key, session]))
+                kept.get(&key_digest(&[minted_by, call_key])) != Some(&owner)
             })
             .collect();
         if fresh.is_empty() {
@@ -84,9 +83,9 @@ impl CallPins {
             kept.clear();
         }
         // Remembered only once queued, so a dropped sighting is reported again.
-        let remembered: Vec<KeyDigest> = fresh
+        let remembered: Vec<_> = fresh
             .iter()
-            .map(|(minted_by, call_key, _)| key_digest(&[minted_by, call_key, session]))
+            .map(|(minted_by, call_key, _)| (key_digest(&[minted_by, call_key]), owner))
             .collect();
         let sighting = Sighting {
             session: session.to_owned(),
@@ -128,6 +127,8 @@ pub fn start(
 ) -> (CallPins, tokio::task::JoinHandle<()>) {
     let (queue, mut sightings) = mpsc::channel::<Sighting>(QUEUE);
     let store_for_reads = store.clone();
+    let kept = Arc::new(Mutex::new(HashMap::new()));
+    let remembered = kept.clone();
     let task = tokio::spawn(async move {
         let mut wanted: HashSet<String> = HashSet::new();
         while let Some(first) = sightings.recv().await {
@@ -161,9 +162,16 @@ pub fn start(
             let store = store.clone();
             let kept = tokio::task::spawn_blocking(move || store.keep_call_pins(&rows, now_ms()));
             match kept.await {
-                Ok(Ok(())) => {}
+                Ok(Ok(())) => continue,
                 Ok(Err(error)) => tracing::warn!(%error, "cannot keep call pins"),
                 Err(error) => tracing::warn!(%error, "keeping call pins stopped early"),
+            }
+            if let Ok(mut remembered) = remembered.lock() {
+                for sighting in batch {
+                    for (runner, call, _) in sighting.calls {
+                        remembered.remove(&key_digest(&[&runner, &call]));
+                    }
+                }
             }
         }
     });
@@ -171,7 +179,7 @@ pub fn start(
         CallPins {
             queue,
             store: store_for_reads,
-            kept: Mutex::new(HashSet::new()),
+            kept,
         },
         task,
     )
@@ -272,5 +280,11 @@ mod tests {
             vec![call("ck_1", "tp1:bash:00:1")],
         );
         assert!(kept_in("ses_2").await);
+        pins.seen(
+            "thalamus-harness",
+            "ses_1",
+            vec![call("ck_1", "tp1:bash:00:1")],
+        );
+        assert!(kept_in("ses_1").await);
     }
 }
