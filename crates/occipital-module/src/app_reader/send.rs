@@ -402,6 +402,9 @@ impl Sender {
         device: Option<&str>,
         params: Value,
     ) -> Result<Value, SendRefusal> {
+        if let Some(cuts) = self.moves.get() {
+            cuts.check_readable()?;
+        }
         let request = SendRequest::parse(&params)?;
         let content = if request.attachments().is_empty() {
             request.content()
@@ -471,13 +474,11 @@ impl Sender {
         // A send whose chat is moving to another computer, or has moved, never
         // reaches the runner here: one that landed after the move's cut would be
         // left behind. A send already answered keeps its receipt (above).
-        if let Some(hold) = self
+        let admitted = self
             .moves
             .get()
-            .and_then(|cuts| cuts.hold(&request.session))
-        {
-            return Err(crate::moves::refusal(&hold));
-        }
+            .map(|cuts| cuts.admit(&request.session))
+            .transpose()?;
 
         let target = match self
             .targets
@@ -714,6 +715,9 @@ impl Sender {
                 },
             });
             tokio::task::spawn_blocking(move || {
+                // A cancelled handler doesn't cancel this write. The move
+                // must wait for the rows, not just the handler future.
+                let _admitted = admitted;
                 receipts.record(
                     &session,
                     &id,

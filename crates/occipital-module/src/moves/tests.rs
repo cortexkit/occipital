@@ -879,3 +879,5 @@ async fn a_slow_prepare_does_not_block_status_or_other_agents() {
     pending.await.unwrap();
     same.await.unwrap();
 }
+
+mod admitted;

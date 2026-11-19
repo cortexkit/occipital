@@ -380,6 +380,13 @@ impl Moves {
         // The stream is written once; a repeat after a failed admission
         // carries on admitting the same bytes.
         if cut.item.is_none() {
+            if !self.cuts.drain(&cut.sessions).await {
+                return Err(Refusal {
+                    code: "unavailable",
+                    message: "waiting for admitted sends to finish".into(),
+                    detail: Some(json!({"retryable":true})),
+                });
+            }
             let path = self.cuts.stream_path(cut_id);
             let (stores, agent_id, moved) =
                 (self.stores.clone(), agent.to_owned(), cut.sessions.clone());

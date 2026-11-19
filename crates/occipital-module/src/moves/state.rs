@@ -110,10 +110,12 @@ pub struct Cuts {
     dir: PathBuf,
     state: RwLock<State>,
     readable: AtomicBool,
+    completed: tokio::sync::Notify,
 }
 
 #[derive(Default)]
 struct State {
+    in_flight: HashMap<String, usize>,
     ordered: BTreeMap<u64, (PathBuf, Cut)>,
     holds: HashMap<String, (String, Hold)>,
 }
@@ -158,9 +160,11 @@ impl Cuts {
             dir: data_root.join(DIR),
             state: Default::default(),
             readable: AtomicBool::new(false),
+            completed: Default::default(),
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn open(data_root: &Path) -> std::io::Result<Self> {
         let cuts = Self::unopened(data_root);
         cuts.recover()?;
@@ -278,6 +282,55 @@ impl Cuts {
         Ok(())
     }
 
+    pub(crate) fn check_readable(&self) -> Result<(), occipital_app_reader::send::SendRefusal> {
+        if self.readable() {
+            Ok(())
+        } else {
+            Err(occipital_app_reader::send::SendRefusal {
+                code: "provider_unavailable",
+                message: "the move state is unreadable; retry once the move records can be read"
+                    .into(),
+                detail: Some(serde_json::json!({"retryable":true})),
+            })
+        }
+    }
+
+    pub(crate) fn admit(
+        self: &std::sync::Arc<Self>,
+        session: &str,
+    ) -> Result<Admitted, occipital_app_reader::send::SendRefusal> {
+        let mut state = self.state.write().unwrap_or_else(|p| p.into_inner());
+        self.check_readable()?;
+        if let Some((_, hold)) = state.holds.get(session) {
+            return Err(super::refusal(hold));
+        }
+        *state.in_flight.entry(session.into()).or_default() += 1;
+        Ok(Admitted {
+            cuts: self.clone(),
+            session: session.into(),
+        })
+    }
+
+    pub(crate) async fn drain(&self, sessions: &[Session]) -> bool {
+        tokio::time::timeout(std::time::Duration::from_secs(30), async {
+            loop {
+                let changed = self.completed.notified();
+                if !sessions.iter().any(|s| {
+                    self.state
+                        .read()
+                        .unwrap_or_else(|p| p.into_inner())
+                        .in_flight
+                        .contains_key(&s.session)
+                }) {
+                    break;
+                }
+                changed.await;
+            }
+        })
+        .await
+        .is_ok()
+    }
+
     /// Where a cut's stream waits: written by the source's `prepare`, read
     /// into it by the receiver's `import`.
     pub(crate) fn stream_path(&self, cut_id: &str) -> PathBuf {
@@ -329,6 +382,24 @@ impl State {
             }
         }
         self.holds = holds;
+    }
+}
+
+/// Kept until the send has stored its result, or returned a refusal.
+pub(crate) struct Admitted {
+    cuts: std::sync::Arc<Cuts>,
+    session: String,
+}
+impl Drop for Admitted {
+    fn drop(&mut self) {
+        let mut state = self.cuts.state.write().unwrap_or_else(|p| p.into_inner());
+        if let Some(n) = state.in_flight.get_mut(&self.session) {
+            *n -= 1;
+            if *n == 0 {
+                state.in_flight.remove(&self.session);
+                self.cuts.completed.notify_waiters();
+            }
+        }
     }
 }
 
