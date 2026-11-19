@@ -253,6 +253,18 @@ impl Rows {
         Ok(())
     }
 
+    /// Save the chosen name and the synced temporary file's identity before rename.
+    /// The upload stays open or ready until the renamed file is durable.
+    pub fn intend(
+        &self,
+        upload_id: &str,
+        placed: &super::destination::Placed,
+        now: i64,
+    ) -> Result<(), crate::Error> {
+        self.0.with_conn(|conn| conn.execute("UPDATE harness_app_upload SET path=?2,inode=?3,mtime_ns=?4,finished_at=?5 WHERE upload_id=?1 AND state IN ('open','ready')",params![upload_id,placed.path.to_string_lossy(),placed.inode as i64,placed.mtime_ns,now]))?;
+        Ok(())
+    }
+
     /// Record the file an upload became in the project. A prompt upload placed this
     /// way, after a refused send, becomes a folder upload.
     pub fn finish(&self, upload_id: &str, placed: &Placed) -> Result<(), crate::Error> {

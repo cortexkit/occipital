@@ -1,5 +1,6 @@
 //! Owner-free Broca reads and one lingering feed shared by transcript/display watches.
 
+mod metadata;
 use crate::app_reader::Guard as _;
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
@@ -180,6 +181,17 @@ impl SourceConnector for Unavailable {
 
 #[async_trait]
 impl SourceResolver for LazyBrocaSources {
+    async fn display_runner(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+    ) -> Result<String, ReadError> {
+        self.connected()
+            .await?
+            .display_runner(session, harness)
+            .await
+    }
+
     async fn validate_session(
         &self,
         session: &str,
@@ -576,11 +588,8 @@ fn not_ready(op: ReadOp, code: Option<&str>, detail: Option<&Value>) -> Option<&
         .then_some("context_not_ready")
 }
 
-/// The plan view refusals that say for good whether the session has a plan to
-/// read: the runner serves no plan view, holds no plan for the session, or
-/// holds one too large to serve. A session refused any of these has no `say`
-/// to draw its calls by; any other refusal may pass.
-const PLAN_VIEW_FINAL: [&str; 3] = ["unsupported", "no_plan", "too_large"];
+/// A `too_large` plan-view refusal does not say which tools the plan contains.
+const NO_MESSAGE_TOOL: [&str; 2] = ["unsupported", "no_plan"];
 
 /// The app code a runner's refusal of `op` keeps, if any: [`final_refusal`], or
 /// [`not_ready`].
@@ -763,8 +772,7 @@ pub struct BrocaSources {
     resolver: Arc<Resolver>,
     routes: Arc<dyn BrocaRoutes>,
     sources: tokio::sync::Mutex<HashMap<SessionRef, SourceSlot>>,
-    describes: Mutex<HashMap<SessionRef, DescribeSlot>>,
-    message_tools: Mutex<HashMap<SessionRef, super::message_tool::MessageToolSlot>>,
+    metadata: Arc<Mutex<metadata::Metadata>>,
     call_pins: CallPinSlot,
     notices: NoticeSlot,
     /// The image sizes every session's pages share.
@@ -794,8 +802,7 @@ impl BrocaSources {
             resolver,
             routes,
             sources: tokio::sync::Mutex::new(HashMap::new()),
-            describes: Mutex::new(HashMap::new()),
-            message_tools: Mutex::new(HashMap::new()),
+            metadata: Arc::default(),
             call_pins: CallPinSlot::default(),
             notices: NoticeSlot::default(),
             sizes: Arc::default(),
@@ -887,7 +894,10 @@ impl BrocaSources {
         let mut slot = super::observe::step("source_slot", slot.lock()).await;
         if let Some(source) = slot.upgrade() {
             match source.refresh_binding().await {
-                Ok(()) => return Ok(source),
+                Ok(()) => {
+                    self.metadata.guard().touch(reference);
+                    return Ok(source);
+                }
                 Err(error) if error.code == "session_binding_changed" => source.retire().await,
                 Err(error) => return Err(error),
             }
@@ -905,19 +915,10 @@ impl BrocaSources {
         };
         let route = self.routes.open(&resolved).await?;
         let sendable = recorded && self.routes.sender(&resolved).is_some();
-        let describe = self
-            .describes
-            .guard()
-            .entry(reference.clone())
-            .or_default()
-            .clone();
-        let message_tool = self
-            .message_tools
-            .guard()
-            .entry(reference.clone())
-            .or_default()
-            .clone();
+        let (lease, describe, message_tool) =
+            metadata::Metadata::acquire(&self.metadata, reference);
         let source = BrocaSource::with_send_path(resolved, route, sendable, describe);
+        let _ = source.metadata.set(lease);
         *source.message_tool.guard() = message_tool;
         source.recorded.store(recorded, Ordering::Release);
         *source.resolver.guard() = Some(self.resolver.clone());
@@ -969,6 +970,23 @@ impl BrocaSources {
 
 #[async_trait]
 impl SourceResolver for BrocaSources {
+    async fn display_runner(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+    ) -> Result<String, ReadError> {
+        let reference = self.reference(session, harness).await?;
+        match self.resolver.resolve(&reference).await {
+            Ok(_) => {}
+            Err(error) if super::resolve::unrecorded_broca(&reference, &error) => {
+                // Only a successful read from Broca admits an unregistered chat.
+                self.source(&reference).await?.head().await?;
+            }
+            Err(error) => return Err(error),
+        }
+        Ok(reference.runner)
+    }
+
     async fn validate_session(
         &self,
         session: &str,
@@ -1074,6 +1092,7 @@ impl SourceResolver for BrocaSources {
         let live = Some(source.feed_state());
         Ok(SourceWatch {
             source: Some(source),
+            display: Some(hub.runner(&reference.runner)),
             lease: Some(Box::new(lease)),
             live,
         })
@@ -1101,7 +1120,7 @@ pub struct BrocaSource {
     route: Arc<dyn BrocaRoute>,
     changes: watch::Sender<u64>,
     display: broadcast::Sender<DisplayInput>,
-    display_targets: Mutex<Vec<(String, Weak<DisplayHub>)>>,
+    display_targets: Mutex<Vec<(String, Weak<super::display_hub::RunnerDisplay>)>>,
     live: watch::Sender<bool>,
     activity: Mutex<Option<(&'static str, i64)>>,
     /// The rich UI stamp of the run the last head read found still running, as the
@@ -1121,6 +1140,7 @@ pub struct BrocaSource {
     /// Entorhinal once it is recorded.
     recorded: AtomicBool,
     describe: DescribeSlot,
+    metadata: std::sync::OnceLock<metadata::Lease>,
     /// Where the pins of the calls this source's pages carry are kept.
     call_pins: Mutex<CallPinSlot>,
     /// Where the notices that rode this session's calls are reported.
@@ -1211,11 +1231,13 @@ impl BrocaSource {
         offset: u64,
         length: u64,
     ) -> Result<Value, ReadError> {
-        if !self
-            .describe()
-            .await
-            .is_some_and(|describe| describe.declares("attachments"))
-        {
+        let describe = self.describe().await.ok_or_else(|| {
+            ReadError::new(
+                "provider_unavailable",
+                "this session's runner can't describe itself now",
+            )
+        })?;
+        if !describe.declares("attachments") {
             return Err(ReadError::new(
                 "unsupported",
                 "this session's runner serves no media",
@@ -1288,7 +1310,7 @@ impl BrocaSource {
         }
         let tool = match self.plan_view().await {
             Ok(view) => super::message_tool::from_plan(&view),
-            Err(error) if PLAN_VIEW_FINAL.contains(&error.code) => None,
+            Err(error) if NO_MESSAGE_TOOL.contains(&error.code) => None,
             Err(error) => {
                 if let Some((_, tool)) = kept {
                     return Ok(tool);
@@ -1400,6 +1422,7 @@ impl BrocaSource {
             sendable,
             recorded: AtomicBool::new(true),
             describe,
+            metadata: Default::default(),
             call_pins: Mutex::new(CallPinSlot::default()),
             notices: Mutex::new(NoticeSlot::default()),
             sizes: Mutex::default(),
@@ -1417,7 +1440,8 @@ impl BrocaSource {
 
     fn attach_display(&self, session: &str, hub: &Arc<DisplayHub>) {
         let mut targets = self.display_targets.guard();
-        let weak = Arc::downgrade(hub);
+        let hub = hub.runner(&self.runner());
+        let weak = Arc::downgrade(&hub);
         if !targets
             .iter()
             .any(|(name, target)| name == session && target.ptr_eq(&weak))

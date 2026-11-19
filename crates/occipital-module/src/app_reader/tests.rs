@@ -182,7 +182,7 @@ pub(crate) async fn serve_frame(
             module_id: crate::MODULE_ID.into(),
         },
         None,
-        Some(BindIdentity::new("phone:test", "caller")),
+        Some(BindIdentity::new("fed-phone:test", "caller")),
         None,
     );
     let (tx, mut rx) = mpsc::channel(16);
@@ -988,8 +988,12 @@ async fn an_operator_app_stamp_admits_the_desktop_to_reads_only() {
         let mut h = Harness::new();
         h.app
             .display
+            .runner("broca")
             .ingest("s", DisplayInput::TurnEnd { run_id: None });
-        h.app.display.ingest("s", DisplayInput::Reset);
+        h.app
+            .display
+            .runner("broca")
+            .ingest("s", DisplayInput::Reset);
         h.bind(7, 1, desktop_binding()).await;
         h.request(method, 1, params(method, "s")).await;
         let reply = h.next().await;
@@ -1030,16 +1034,27 @@ async fn rebind_without_operator_app_does_not_retain_desktop_admission() {
     h.finish().await;
 }
 
+// Callosum opens app routes only with a classified device, never for a local operator.
+#[test]
+fn a_carrier_without_device_facts_does_not_earn_app_admission() {
+    let mut route = binding("operator");
+    route.3 = None;
+    assert!(admit_principal(Some(&route)).is_none());
+}
+
 #[tokio::test]
 async fn app_reads_admit_unscoped_callosum_routes_and_development_direct_callers() {
     let mut cases = vec![];
-    for label in ["operator", "fed-phone:fp", "fed-sim:fp", "fed-app:fp"] {
+    for label in ["fed-phone:fp", "fed-sim:fp", "fed-app:fp"] {
         cases.push((label, binding(label), true));
     }
     // Callosum's other device classes aren't the person's app: a paired
     // computer, a class it couldn't name, and any class added later until it is
     // named here.
     for label in [
+        "operator", // Callosum does not attest local operators.
+        "fed-:fp",
+        "fed-phone:",
         "fed-computer:fp",
         "fed-unknown:fp",
         "fed-desktop:fp",
@@ -1090,8 +1105,12 @@ async fn app_reads_admit_unscoped_callosum_routes_and_development_direct_callers
             let mut h = Harness::new();
             h.app
                 .display
+                .runner("broca")
                 .ingest("s", DisplayInput::TurnEnd { run_id: None });
-            h.app.display.ingest("s", DisplayInput::Reset);
+            h.app
+                .display
+                .runner("broca")
+                .ingest("s", DisplayInput::Reset);
             h.bind(7, 1, b.clone()).await;
             h.request(method, 1, params(method, "s")).await;
             let reply = h.next().await;
@@ -1528,7 +1547,7 @@ async fn module_shutdown_ends_every_open_watch_with_stream_end() {
 async fn cancel_interrupts_a_stalled_transcript_source_read() {
     let mut h = Harness::new();
     h.resolver.source.stalled.store(true, Ordering::SeqCst);
-    h.bind(7, 1, binding("operator")).await;
+    h.bind(7, 1, binding("fed-phone:fp")).await;
     h.request(TRANSCRIPT_WATCH, 1, params(TRANSCRIPT_WATCH, "s"))
         .await;
     h.barrier().await;
@@ -1540,23 +1559,23 @@ async fn cancel_interrupts_a_stalled_transcript_source_read() {
 #[tokio::test]
 async fn display_watchers_share_one_live_projection_and_reads_do_not_create_it() {
     let mut h = Harness::new();
-    h.bind(7, 1, binding("operator")).await;
+    h.bind(7, 1, binding("fed-phone:fp")).await;
     h.request(DISPLAY_READ, 9, params(DISPLAY_READ, "s")).await;
     assert_eq!(
         body(&h.next().await),
         json!({"result":{"absent":"no_ring_attached"}})
     );
-    assert!(h.app.display.projection("s").is_none());
+    assert!(h.app.display.runner("broca").projection("s").is_none());
     for corr in [1, 2] {
         h.request(DISPLAY_WATCH, corr, params(DISPLAY_WATCH, "s"))
             .await;
     }
     h.barrier().await;
-    assert!(h.app.display.projection("s").is_none());
-    let a = h.app.display.attach("s");
-    let b = h.app.display.attach("s");
+    assert!(h.app.display.runner("broca").projection("s").is_none());
+    let a = h.app.display.runner("broca").attach("s");
+    let b = h.app.display.runner("broca").attach("s");
     assert!(Arc::ptr_eq(&a, &b));
-    h.app.display.ingest(
+    h.app.display.runner("broca").ingest(
         "s",
         DisplayInput::Delta {
             mid: "m1".into(),
@@ -1577,7 +1596,7 @@ async fn display_watchers_share_one_live_projection_and_reads_do_not_create_it()
 
 #[tokio::test(start_paused = true)]
 async fn display_hub_reset_discards_pending_text_and_its_stale_timer() {
-    let hub = Arc::new(display_hub::DisplayHub::default());
+    let hub = Arc::new(display_hub::RunnerDisplay::default());
     let mut changes = hub.changes("s");
     let projection = hub.attach("s");
     assert!(changes.has_changed().unwrap());
@@ -1592,6 +1611,10 @@ async fn display_hub_reset_discards_pending_text_and_its_stale_timer() {
     );
     tokio::task::yield_now().await;
     tokio::time::advance(std::time::Duration::from_millis(100)).await;
+    assert!(
+        !changes.has_changed().unwrap(),
+        "buffering text did not replace the projection"
+    );
     hub.ingest("s", DisplayInput::Reset);
     hub.ingest(
         "s",

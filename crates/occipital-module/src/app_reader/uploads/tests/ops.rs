@@ -265,17 +265,17 @@ async fn only_the_opening_device_may_touch_an_upload() {
     let file = content(2_000);
     let id = wire.begin("a.bin", &file).await;
     wire.chunk(&id, 0, &file[..1000]).await.ok();
-    for channel in [OTHER_ROUTE, OPERATOR_ROUTE] {
+    // Callosum does not open routes for local operators; refuse the route before checking upload ownership.
+    for (channel, code) in [
+        (OTHER_ROUTE, codes::UPLOAD_NOT_YOURS),
+        (OPERATOR_ROUTE, "carrier_op_not_permitted"),
+    ] {
         for method in [STATUS, FINISH, ABORT] {
             let reply = wire.call(channel, method, json!({"upload_id": id})).await;
-            assert_eq!(
-                reply.code(),
-                codes::UPLOAD_NOT_YOURS,
-                "{method} on {channel}"
-            );
+            assert_eq!(reply.code(), code, "{method} on {channel}");
         }
         let (_, reply) = wire.chunk_on(channel, &id, 1000, &file[1000..]).await;
-        assert_eq!(reply.code(), codes::UPLOAD_NOT_YOURS);
+        assert_eq!(reply.code(), code);
     }
     // Nothing the other callers sent reached the upload.
     assert_eq!(
@@ -835,4 +835,39 @@ async fn upload_calls_are_logged_like_other_app_requests() {
     let refused = line(STATUS);
     assert!(refused.starts_with("WARN "), "{refused}");
     assert!(!refused.contains("outcome=\"ok\""), "{refused}");
+}
+
+#[tokio::test]
+async fn a_chunk_checks_data_space_only_for_new_bytes() {
+    let f = Fixture::new();
+    let mut wire = f.wire();
+    wire.bind_all().await;
+    let id = wire.begin("a.bin", b"abcd").await;
+    wire.chunk(&id, 0, b"ab").await.ok();
+    f.free_data.store(DISK_FLOOR_BYTES, Ordering::SeqCst);
+    assert_eq!(wire.chunk(&id, 0, b"ab").await.ok()["committed"], 2);
+    assert_eq!(wire.chunk(&id, 1, b"bcd").await.code(), codes::DISK_FLOOR);
+    assert_eq!(std::fs::read(f.blob(&id)).unwrap(), b"ab");
+    f.free_data.store(DISK_FLOOR_BYTES + 2, Ordering::SeqCst);
+    assert_eq!(wire.chunk(&id, 1, b"bcd").await.ok()["committed"], 4);
+}
+
+#[tokio::test]
+async fn a_failed_finish_commit_recovers_the_original_project_file() {
+    let f = Fixture::new();
+    let mut wire = f.wire();
+    wire.bind_all().await;
+    let id = wire.begin("note.txt", b"note").await;
+    wire.chunk(&id, 0, b"note").await.ok();
+    f.store.with_conn(|db| db.execute_batch("CREATE TRIGGER fail_finish BEFORE UPDATE OF state ON harness_app_upload WHEN NEW.state='finished' BEGIN SELECT RAISE(ABORT,'offline'); END")).unwrap();
+    let _ = wire.id_call(FINISH, &id).await.code();
+    let folder = f.date_dir();
+    assert_eq!(listing(&folder), ["note.txt"]);
+    f.store
+        .with_conn(|db| db.execute_batch("DROP TRIGGER fail_finish"))
+        .unwrap();
+    f.advance(1000);
+    let path = wire.id_call(FINISH, &id).await.ok()["path"].clone();
+    assert_eq!(path, folder.join("note.txt").to_string_lossy().as_ref());
+    assert_eq!(listing(&folder), ["note.txt"]);
 }

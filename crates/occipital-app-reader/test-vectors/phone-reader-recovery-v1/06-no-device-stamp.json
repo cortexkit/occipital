@@ -1,0 +1,1 @@
+{"code":"carrier_op_not_permitted","message":"principal Some(Reserved { module_id: \"callosum\" }) is not permitted to call session.transcript_page"}

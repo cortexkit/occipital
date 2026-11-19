@@ -41,6 +41,7 @@ struct FakeRunner {
     /// Whether a steer joins the running turn at once, instead of waiting.
     lands: AtomicBool,
     unreachable: AtomicBool,
+    lose_next_send_reply: AtomicBool,
     calls: Mutex<Vec<(String, Value)>>,
     sends: Mutex<HashMap<String, (Value, String)>>,
     scripted: Mutex<VecDeque<Result<Value, RunnerError>>>,
@@ -61,6 +62,7 @@ impl FakeRunner {
             retract_race: Mutex::default(),
             lands: AtomicBool::new(false),
             unreachable: AtomicBool::new(false),
+            lose_next_send_reply: AtomicBool::new(false),
             calls: Mutex::default(),
             sends: Mutex::default(),
             scripted: Mutex::default(),
@@ -166,7 +168,13 @@ impl FakeRunner {
         let send_id = body["send_id"].as_str().unwrap().to_owned();
         let mut sends = self.sends.lock().unwrap();
         if let Some((recorded, state)) = sends.get(&send_id) {
-            if recorded != body {
+            // A retry can carry a later deadline; the runner keeps the first deadline.
+            let identity = |body: &Value| {
+                let mut fields = body.as_object().unwrap().clone();
+                fields.remove("expires_at_ms");
+                fields
+            };
+            if identity(recorded) != identity(body) {
                 return Self::refuse("send_id_reuse", Some("delivery"));
             }
             return Ok(match state.as_str() {
@@ -245,7 +253,15 @@ impl SendTarget for Target {
                         .unwrap(),
                 )
             }
-            "session.send" => self.0.send(&params),
+            "session.send" => {
+                let reply = self.0.send(&params)?;
+                if self.0.lose_next_send_reply.swap(false, Ordering::SeqCst) {
+                    return Err(RunnerError::Unreachable(
+                        "reply lost after acceptance".into(),
+                    ));
+                }
+                Ok(reply)
+            }
             "session.send_status" => self.0.status(&params),
             "session.retract" => self.0.retract(&params),
             other => panic!("the sender called {other}"),
@@ -307,6 +323,37 @@ impl Fixture {
         ));
         drop(std::mem::replace(&mut self.sender, restarted));
     }
+}
+
+// Without clientMessageId or send_id, the runner cannot recognize a retry after a lost reply.
+#[tokio::test]
+async fn an_unkeyed_send_is_refused_before_the_runner() {
+    let f = granted_fixture(Kind::Head);
+    for _ in 0..2 {
+        let reply = f
+            .sender
+            .send(json!({"session":"s", "text":"hello"}))
+            .await
+            .unwrap_err();
+        assert_eq!(reply.code, "invalid_request");
+    }
+    assert_eq!(f.targets.opened.load(Ordering::SeqCst), 0);
+    assert!(f.runner.calls().is_empty());
+}
+
+#[tokio::test]
+async fn a_worker_retry_with_a_later_deadline_replays_the_first_send() {
+    let f = granted_fixture(Kind::Worker);
+    f.runner.lose_next_send_reply.store(true, Ordering::SeqCst);
+    let message = message("one", "hello");
+    assert_eq!(f.sender.send(message.clone()).await.unwrap()["ok"], false);
+    let recorded = f.runner.written();
+    assert_eq!(recorded.len(), 1);
+    f.now.fetch_add(1000, Ordering::SeqCst);
+    let reply = f.sender.send(message).await.unwrap();
+    assert_eq!(reply["ok"], true);
+    assert_eq!(reply["effectId"], recorded[0]["send_id"]);
+    assert_eq!(f.runner.written(), recorded);
 }
 
 const START: i64 = 1_767_225_600_000;
@@ -546,7 +593,7 @@ async fn granted_interrupts_require_a_head_and_its_interrupt_permission() {
         assert_eq!(
             f.sender
                 .send(json!({
-                    "session": "s", "text": "stop", "mode": "interrupt"
+                    "session": "s", "text": "stop", "mode": "interrupt", "clientMessageId": "interrupt-1"
                 }))
                 .await
                 .unwrap_err()
@@ -2939,4 +2986,173 @@ fn the_published_runner_refused_samples_match_the_mapping() {
             "message": refusal.message, "detail": refusal.detail});
         assert_eq!(wire, published(name), "{name}");
     }
+}
+
+#[tokio::test]
+async fn receipt_and_queue_insert_roll_back_together() {
+    let f = granted_fixture(Kind::Head);
+    let db = rusqlite::Connection::open(f._dir.path().join("store.db")).unwrap();
+    db.execute_batch("CREATE TRIGGER fail_queue BEFORE INSERT ON harness_app_send_queue BEGIN SELECT RAISE(ABORT,'queue unavailable'); END").unwrap();
+    let msg = message("one", "later");
+    assert!(f.sender.send(msg.clone()).await.is_err());
+    assert!(f.receipts.get("s", "one", START).unwrap().is_none());
+    db.execute_batch("DROP TRIGGER fail_queue").unwrap();
+    assert_eq!(f.sender.send(msg).await.unwrap()["ok"], true);
+    assert!(f.receipts.queue().list("s", START).unwrap().is_some());
+    assert_eq!(f.runner.written().len(), 1);
+}
+
+#[tokio::test]
+async fn worker_settlement_rolls_back_when_dequeue_fails() {
+    let f = granted_fixture(Kind::Worker);
+    let db = rusqlite::Connection::open(f._dir.path().join("store.db")).unwrap();
+    let reply = f.sender.send(message("one", "later")).await.unwrap();
+    let id = reply["effectId"].as_str().unwrap();
+    db.execute_batch("CREATE TRIGGER fail_dequeue BEFORE DELETE ON harness_app_send_queue BEGIN SELECT RAISE(ABORT,'queue unavailable'); END").unwrap();
+    f.runner.set_state(&reply["effectId"], "delivered");
+    assert!(f.sender.nudge(id));
+    eventually(|| {
+        !f.sender
+            .following
+            .guard()
+            .contains_key(&("s".into(), id.into()))
+    })
+    .await;
+    assert!(f
+        .receipts
+        .get("s", "one", START)
+        .unwrap()
+        .unwrap()
+        .follow_until
+        .is_some());
+    db.execute_batch("DROP TRIGGER fail_dequeue").unwrap();
+    f.sender.recover().await;
+    assert!(f.sender.nudge(id));
+    eventually(|| f.receipts.queue().list("s", START).unwrap().is_none()).await;
+}
+
+#[tokio::test]
+async fn a_finished_head_without_delivery_returns_terminal_failure() {
+    let f = granted_fixture(Kind::Head);
+    f.runner.scripted.guard().push_back(Ok(
+        json!({"state":"finished","reason":"error","run_id":"r1"}),
+    ));
+    let reply = f.sender.send(message("one", "later")).await.unwrap();
+    assert_eq!(reply["ok"], false);
+    assert_eq!(reply["terminal"], true);
+    assert_eq!(reply["reason"], "error");
+}
+
+#[tokio::test]
+async fn recovery_reaches_later_head_and_worker_batches() {
+    let f = fixture(Kind::Head);
+    for i in 0..=RECOVERY_BATCH {
+        let id = format!("msg-{i:03}");
+        f.receipts
+            .queue()
+            .queue(&super::super::send_queue::Queued {
+                session: "head".into(),
+                client_message_id: id.clone(),
+                harness: None,
+                send_id: format!("head-{id}"),
+                accepted_at: START,
+                steer_until: None,
+            })
+            .unwrap();
+        f.receipts
+            .record(
+                "worker",
+                &id,
+                "digest",
+                "queue",
+                &format!("worker-{id}"),
+                &json!({"ok":true}),
+                Some((START + 1000, "run")),
+                START,
+            )
+            .unwrap();
+    }
+    f.sender.recover().await;
+    f.sender.recover().await;
+    for role in ["head", "worker"] {
+        assert!(
+            f.sender.nudge(&format!("{role}-msg-{RECOVERY_BATCH:03}")),
+            "{role}"
+        );
+    }
+}
+
+#[tokio::test]
+async fn a_moved_worker_without_a_receipt_resumes_from_its_queue_row() {
+    let f = fixture(Kind::Worker);
+    f.receipts
+        .queue()
+        .queue(&super::super::send_queue::Queued {
+            session: "s".into(),
+            client_message_id: "one".into(),
+            harness: Some("broca".into()),
+            send_id: "worker-send".into(),
+            accepted_at: START,
+            steer_until: Some(START + 10),
+        })
+        .unwrap();
+    f.runner
+        .captured
+        .guard()
+        .insert("session.send_status", json!({"result":{"state":"expired"}}));
+    f.sender.recover().await;
+    assert!(f.sender.nudge("worker-send"));
+    eventually(|| {
+        f.receipts.queue().list("s", START).unwrap().unwrap().0[0]["reason"] == codes::STEER_EXPIRED
+    })
+    .await;
+    assert!(f.runner.written().is_empty());
+}
+
+#[tokio::test]
+async fn a_queued_message_can_be_promoted_after_receipt_expiry() {
+    let f = granted_fixture(Kind::Head);
+    let first = f.sender.send(message("one", "later")).await.unwrap();
+    f.now
+        .fetch_add(super::super::send_store::RETENTION_MS + 1, Ordering::SeqCst);
+    f.runner.captured.guard().extend([
+        (
+            "role.describe",
+            json!({"result":{"capabilities":["send_promote"]}}),
+        ),
+        ("session.promote", json!({"result":{"outcome":"promoted"}})),
+    ]);
+    let reply = f
+        .sender
+        .promote(json!({"session":"s","clientMessageId":"one","clientRequestId":"press"}))
+        .await
+        .unwrap();
+    assert_eq!(reply["outcome"], "promoted");
+    assert_eq!(
+        f.runner.calls().last().unwrap().1["send_id"],
+        first["effectId"]
+    );
+}
+
+#[tokio::test]
+async fn an_unreadable_stop_status_is_not_remembered() {
+    let f = fixture(Kind::Head);
+    f.runner.captured.guard().extend([
+        (
+            "role.describe",
+            json!({"result":{"capabilities":["run_cancel_by_interrupt"]}}),
+        ),
+        ("run.cancel", json!({"result":"not_active"})),
+        ("run.status", json!({"code":"transient","message":"retry"})),
+    ]);
+    let press = json!({"session":"s","runId":"r1","clientRequestId":"stop"});
+    assert_eq!(
+        f.sender.stop(press.clone()).await.unwrap_err().code,
+        "provider_unavailable"
+    );
+    f.runner
+        .captured
+        .guard()
+        .insert("run.status", json!({"result":{"state":"cancelled"}}));
+    assert_eq!(f.sender.stop(press).await.unwrap()["state"], "stopped");
 }

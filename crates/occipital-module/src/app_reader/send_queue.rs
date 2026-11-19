@@ -85,8 +85,7 @@ pub struct Queued {
     pub harness: Option<String>,
     pub send_id: String,
     pub accepted_at: i64,
-    /// A worker steer's expiry. Such a send is followed from its receipt, which
-    /// carries the same deadline; only head sends are resumed from this table.
+    /// A worker steer's expiry, kept with the queue row when the session moves.
     pub steer_until: Option<i64>,
 }
 
@@ -102,6 +101,12 @@ pub struct EndedRun {
     pub runner_code: String,
     pub retry_after_ms: Option<i64>,
     pub cause: Option<String>,
+}
+
+pub(super) enum End {
+    Delivered,
+    Unsent(String),
+    Unconfirmed,
 }
 
 pub struct SendQueue(Arc<SqliteStore>);
@@ -120,107 +125,130 @@ impl SendQueue {
         Ok(Arc::new(Self(store)))
     }
 
-    /// Record an accepted, undelivered send as queued. A repeat of a send already
-    /// recorded changes nothing.
-    pub fn queue(&self, entry: &Queued) -> Result<(), crate::Error> {
-        self.0.with_conn(|conn| {
-            conn.execute(
-                "INSERT INTO harness_app_send_queue(session,client_message_id,harness,send_id,accepted_at,steer_until,state) \
-                 VALUES(?1,?2,?3,?4,?5,?6,'queued') ON CONFLICT(session,client_message_id) DO NOTHING",
-                params![entry.session, entry.client_message_id, entry.harness, entry.send_id, entry.accepted_at, entry.steer_until],
-            )
-        })?;
+    pub(super) fn insert(
+        tx: &rusqlite::Transaction<'_>,
+        entry: &Queued,
+        unknown: bool,
+    ) -> rusqlite::Result<()> {
+        tx.execute(
+            "INSERT INTO harness_app_send_queue(session,client_message_id,harness,send_id,accepted_at,steer_until,state,ended_at) \
+             VALUES(?1,?2,?3,?4,?5,?6,?7,?8) ON CONFLICT(session,client_message_id) DO NOTHING",
+            params![entry.session, entry.client_message_id, entry.harness, entry.send_id, entry.accepted_at, entry.steer_until, if unknown { UNKNOWN } else { QUEUED }, unknown.then_some(entry.accepted_at)],
+        )?;
         Ok(())
     }
 
-    /// The send's message is stored: it leaves the list.
-    pub fn delivered(&self, session: &str, client_message_id: &str) -> Result<bool, crate::Error> {
-        Ok(self.0.with_conn(|conn| {
-            conn.execute(
-                "DELETE FROM harness_app_send_wait WHERE session=?1 AND client_message_id=?2",
-                params![session, client_message_id],
-            )?;
-            conn.execute(
-                "DELETE FROM harness_app_send_queue WHERE session=?1 AND client_message_id=?2",
-                params![session, client_message_id],
-            )
-        })? > 0)
+    pub(super) fn update(
+        tx: &rusqlite::Transaction<'_>,
+        session: &str,
+        id: &str,
+        end: &End,
+        ended: Option<&EndedRun>,
+        now: i64,
+    ) -> rusqlite::Result<bool> {
+        let changed = match end {
+            End::Delivered => {
+                tx.execute("DELETE FROM harness_app_send_wait WHERE session=?1 AND client_message_id=?2", params![session,id])?;
+                tx.execute("DELETE FROM harness_app_send_queue WHERE session=?1 AND client_message_id=?2", params![session,id])?
+            }
+            End::Unsent(reason) => {
+                let changed = tx.execute("UPDATE harness_app_send_queue SET state='unsent', reason=?3, ended_at=?4 WHERE session=?1 AND client_message_id=?2 AND state='queued'", params![session,id,reason,now])?;
+                if let (true, Some(ended)) = (changed > 0, ended) {
+                    tx.execute("INSERT OR REPLACE INTO harness_app_send_wait(session,client_message_id,runner_code,retry_after_ms,cause) VALUES(?1,?2,?3,?4,?5)", params![session,id,ended.runner_code,ended.retry_after_ms,ended.cause])?;
+                }
+                changed
+            }
+            End::Unconfirmed => tx.execute("UPDATE harness_app_send_queue SET state=?3, ended_at=?4 WHERE session=?1 AND client_message_id=?2 AND state='queued'", params![session,id,UNKNOWN,now])?,
+        };
+        Ok(changed > 0)
     }
 
-    /// The send ended undelivered: it stays listed as unsent, with `reason`, and
-    /// with the code its run ended with when there is one.
-    pub fn unsent(
+    #[cfg(test)]
+    pub fn queue(&self, entry: &Queued) -> Result<(), crate::Error> {
+        Ok(self.0.with_conn(|conn| {
+            let tx = conn.unchecked_transaction()?;
+            Self::insert(&tx, entry, false)?;
+            tx.commit()
+        })?)
+    }
+
+    #[cfg(test)]
+    fn update_alone(
         &self,
         session: &str,
-        client_message_id: &str,
-        reason: &str,
+        id: &str,
+        end: End,
         ended: Option<&EndedRun>,
         now: i64,
     ) -> Result<bool, crate::Error> {
         Ok(self.0.with_conn(|conn| {
-            // One transaction, so a read on another connection never sees the entry
-            // unsent without the code its run ended with.
             let tx = conn.unchecked_transaction()?;
-            let changed = tx.execute(
-                "UPDATE harness_app_send_queue SET state='unsent', reason=?3, ended_at=?4 \
-                 WHERE session=?1 AND client_message_id=?2 AND state='queued'",
-                params![session, client_message_id, reason, now],
-            )?;
-            if let (true, Some(ended)) = (changed > 0, ended) {
-                tx.execute(
-                    "INSERT OR REPLACE INTO harness_app_send_wait(session,client_message_id,runner_code,retry_after_ms,cause) \
-                     VALUES(?1,?2,?3,?4,?5)",
-                    params![
-                        session,
-                        client_message_id,
-                        ended.runner_code,
-                        ended.retry_after_ms,
-                        ended.cause
-                    ],
-                )?;
-            }
+            let changed = Self::update(&tx, session, id, &end, ended, now)?;
             tx.commit()?;
             Ok(changed)
-        })? > 0)
+        })?)
     }
 
-    /// The runner handed the send on but can't confirm it ran: it stays listed as
-    /// unknown, with no reason. Only a queued row changes.
-    pub fn unconfirmed(
+    #[cfg(test)]
+    pub fn delivered(&self, session: &str, id: &str) -> Result<bool, crate::Error> {
+        self.update_alone(session, id, End::Delivered, None, 0)
+    }
+    #[cfg(test)]
+    pub fn unsent(
         &self,
         session: &str,
-        client_message_id: &str,
+        id: &str,
+        reason: &str,
+        ended: Option<&EndedRun>,
         now: i64,
     ) -> Result<bool, crate::Error> {
-        Ok(self.0.with_conn(|conn| {
-            conn.execute(
-                "UPDATE harness_app_send_queue SET state=?3, ended_at=?4 \
-                 WHERE session=?1 AND client_message_id=?2 AND state='queued'",
-                params![session, client_message_id, UNKNOWN, now],
-            )
-        })? > 0)
+        self.update_alone(session, id, End::Unsent(reason.into()), ended, now)
+    }
+    #[cfg(test)]
+    pub fn unconfirmed(&self, session: &str, id: &str, now: i64) -> Result<bool, crate::Error> {
+        self.update_alone(session, id, End::Unconfirmed, None, now)
     }
 
-    /// Up to `limit` queued head sends, the oldest first, for the follower to resume.
-    /// A worker steer is resumed from its receipt instead.
+    #[cfg(test)]
     pub fn queued_heads(&self, limit: usize) -> Result<Vec<Queued>, crate::Error> {
+        self.queued_after(limit, &Default::default())
+    }
+
+    /// A moved worker has only its queue row. A local worker instead uses the
+    /// receipt's run binding, even when its recovery batch hasn't been read yet.
+    pub(super) fn queued_after(
+        &self,
+        limit: usize,
+        after: &(String, String),
+    ) -> Result<Vec<Queued>, crate::Error> {
         Ok(self.0.with_read(|conn| {
             conn.prepare(
-                "SELECT session,client_message_id,harness,send_id,accepted_at FROM harness_app_send_queue \
-                 WHERE state='queued' AND steer_until IS NULL ORDER BY accepted_at LIMIT ?1",
+                "SELECT session,client_message_id,harness,send_id,accepted_at,steer_until FROM harness_app_send_queue q \
+                 WHERE state='queued' AND (session,client_message_id)>(?2,?3) AND (steer_until IS NULL OR NOT EXISTS \
+                 (SELECT 1 FROM harness_app_send s WHERE s.session=q.session AND s.client_message_id=q.client_message_id AND s.follow_until IS NOT NULL)) \
+                 ORDER BY session,client_message_id LIMIT ?1",
             )?
-            .query_map([limit as i64], |row| {
+            .query_map(params![limit as i64, after.0, after.1], |row| {
                 Ok(Queued {
                     session: row.get(0)?,
                     client_message_id: row.get(1)?,
                     harness: row.get(2)?,
                     send_id: row.get(3)?,
                     accepted_at: row.get(4)?,
-                    steer_until: None,
+                    steer_until: row.get(5)?,
                 })
             })?
             .collect()
         })?)
+    }
+
+    pub(super) fn pending_id(
+        &self,
+        session: &str,
+        id: &str,
+    ) -> Result<Option<String>, crate::Error> {
+        use rusqlite::OptionalExtension;
+        Ok(self.0.with_read(|conn| conn.query_row("SELECT send_id FROM harness_app_send_queue WHERE session=?1 AND client_message_id=?2 AND state='queued'", params![session,id], |r| r.get(0)).optional())?)
     }
 
     /// The session's list as the apps read it: queued sends and those that ended
@@ -321,7 +349,10 @@ mod tests {
         let store = crate::store::tests::shared(&dir.path().join("store.db"));
         // The store outlives the test's directory handle.
         std::mem::forget(dir);
-        SendQueue::open(store).unwrap()
+        super::super::send_store::Receipts::open(store)
+            .unwrap()
+            .queue()
+            .clone()
     }
 
     fn entry(id: &str, at: i64) -> Queued {

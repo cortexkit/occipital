@@ -75,10 +75,21 @@ impl PromoteSendRequest {
 impl Sender {
     pub async fn promote(&self, params: Value) -> Result<Value, SendRefusal> {
         let request = PromoteSendRequest::parse(&params)?;
-        // The runner knows the message only by the send id it went out under,
-        // which its receipt here recorded. A message this module never sent, or
-        // one whose receipt has expired, can't be named to the runner.
-        let Some(stored) = self.stored(&request.session, &request.client_message_id)? else {
+        // The queue row outlives the receipt and is copied without it when a chat moves to another computer.
+        let send_id = match self.stored(&request.session, &request.client_message_id)? {
+            Some(stored) => Some(stored.send_id),
+            None => self
+                .receipts
+                .as_ref()
+                .map(|r| {
+                    r.queue()
+                        .pending_id(&request.session, &request.client_message_id)
+                })
+                .transpose()
+                .map_err(|e| store_error(e.to_string()))?
+                .flatten(),
+        };
+        let Some(send_id) = send_id else {
             return Err(SendRefusal {
                 code: codes::NOT_FOUND,
                 message: "no message sent through this module has this clientMessageId".into(),
@@ -146,13 +157,10 @@ impl Sender {
                 detail: Some(json!({"field": OPERATION})),
             });
         }
-        let body = serde_json::to_value(PromoteRequest::new(
-            stored.send_id,
-            request.client_request_id,
-        ))
-        .map_err(|error| {
-            SendRefusal::new("internal", format!("cannot encode the promote: {error}"))
-        })?;
+        let body = serde_json::to_value(PromoteRequest::new(send_id, request.client_request_id))
+            .map_err(|error| {
+                SendRefusal::new("internal", format!("cannot encode the promote: {error}"))
+            })?;
         let reply = target
             .call(ops::SESSION_PROMOTE, body)
             .await

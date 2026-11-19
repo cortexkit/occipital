@@ -7,6 +7,7 @@ use crate::app_reader::{uploads, Caller, SourceResolver};
 use std::{path::PathBuf, sync::atomic::AtomicU64};
 
 mod attachments_samples;
+mod recovery_samples;
 mod samples;
 mod video_samples;
 
@@ -25,6 +26,7 @@ struct Held {
 /// A head on a runner declaring `attachments`, keeping what each upload received.
 struct UploadRunner {
     attachments: AtomicBool,
+    describe_offline: AtomicBool,
     /// Whether it also declares `media_only_send`, storing a message of files alone.
     media_only: AtomicBool,
     input: Mutex<Option<Value>>,
@@ -41,6 +43,7 @@ impl UploadRunner {
     fn new() -> Arc<Self> {
         Arc::new(Self {
             attachments: AtomicBool::new(true),
+            describe_offline: AtomicBool::default(),
             media_only: AtomicBool::new(false),
             input: Mutex::default(),
             model: Mutex::default(),
@@ -112,6 +115,9 @@ impl SendTarget for UploadTarget {
                     head["model"] = model;
                 }
                 Ok(head)
+            }
+            "role.describe" if runner.describe_offline.load(Ordering::SeqCst) => {
+                Err(RunnerError::Unreachable("offline".into()))
             }
             "role.describe" => {
                 let mut groups = vec!["head_sender".to_owned()];
@@ -741,4 +747,46 @@ async fn only_the_uploading_device_can_send_its_file() {
         assert_eq!(refusal.code, uploads::codes::UPLOAD_NOT_YOURS, "{device:?}");
     }
     assert!(!p.runner.methods().iter().any(|m| m == "session.send"));
+}
+
+#[tokio::test]
+async fn a_failed_receipt_write_leaves_the_prompt_upload_replayable() {
+    let p = Prompt::new();
+    let id = p.upload("image/png", b"tiny").await;
+    let msg = with_files("one", "look", &[&id]);
+    let db = rusqlite::Connection::open(p._dir.path().join("store.db")).unwrap();
+    db.execute_batch("CREATE TRIGGER fail_receipt BEFORE INSERT ON harness_app_send BEGIN SELECT RAISE(ABORT,'receipt unavailable'); END").unwrap();
+    assert!(p.sender.send_from(Some(PHONE), msg.clone()).await.is_err());
+    let first = p.runner.last_send();
+    db.execute_batch("DROP TRIGGER fail_receipt").unwrap();
+    assert_eq!(
+        p.sender.send_from(Some(PHONE), msg.clone()).await.unwrap()["effectId"],
+        first["send_id"]
+    );
+    assert_eq!(p.runner.last_send(), first);
+    assert_eq!(
+        p.sender.send_from(Some(PHONE), msg).await.unwrap()["duplicate"],
+        true
+    );
+}
+
+#[tokio::test]
+async fn a_description_outage_does_not_make_a_prompt_file_unsupported() {
+    let p = Prompt::new();
+    let id = p.upload("image/png", b"tiny").await;
+    let msg = with_files("one", "look", &[&id]);
+    p.runner.describe_offline.store(true, Ordering::SeqCst);
+    assert_eq!(
+        p.sender
+            .send_from(Some(PHONE), msg.clone())
+            .await
+            .unwrap_err()
+            .code,
+        "provider_unavailable"
+    );
+    p.runner.describe_offline.store(false, Ordering::SeqCst);
+    assert_eq!(
+        p.sender.send_from(Some(PHONE), msg).await.unwrap()["ok"],
+        true
+    );
 }

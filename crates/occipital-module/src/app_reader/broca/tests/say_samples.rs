@@ -474,13 +474,17 @@ fn kinds(page: &Value, mid: &str) -> Vec<String> {
 /// as messages, and a later read that fails keeps that answer.
 #[tokio::test]
 async fn say_calls_wait_for_a_readable_plan() {
+    check_plan_outage("provider_unavailable").await;
+}
+
+#[tokio::test]
+async fn an_oversized_plan_is_not_evidence_about_say() {
+    check_plan_outage("too_large").await;
+}
+
+async fn check_plan_outage(code: &'static str) {
     let (_, route) = chat(true);
-    let unreadable = || {
-        Some(Err(ReadError::new(
-            "provider_unavailable",
-            "Broca is starting",
-        )))
-    };
+    let unreadable = || Some(Err(ReadError::new(code, "the plan cannot be read")));
     *route.plan_view.lock().unwrap() = unreadable();
     let sources = BrocaSources::new(
         Arc::new(Resolver::new(Arc::new(OneChat))),
@@ -531,6 +535,10 @@ async fn an_unread_description_isnt_taken_for_a_runner_without_plans() {
     };
     let source = sources.source(&reference).await.unwrap();
     let described = route.describe.lock().unwrap().take();
+    assert_eq!(
+        source.media_read("sha", 0, 1).await.unwrap_err().code,
+        "provider_unavailable"
+    );
     let refused = source.plan_view().await.unwrap_err();
     assert_eq!(refused.code, "provider_unavailable", "{}", refused.message);
 

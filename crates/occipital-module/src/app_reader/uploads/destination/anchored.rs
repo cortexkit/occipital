@@ -128,6 +128,30 @@ pub(crate) fn place(blob: &mut File, request: &Request<'_>) -> Result<Placed, Pl
         }
     }
     let directory = &chain[3];
+    if let Some(previous) = request
+        .previous
+        .filter(|p| p.path.parent() == Some(&folder))
+    {
+        if let Some(name) = previous.path.file_name() {
+            match fs::openat(
+                directory,
+                name,
+                OFlags::RDONLY | OFlags::CLOEXEC | OFlags::NOFOLLOW | OFlags::NONBLOCK,
+                Mode::empty(),
+            ) {
+                Ok(fd) => {
+                    if let Some(placed) = recovered(&mut File::from(fd), request, previous)? {
+                        recheck(&chain, &paths, &names, request.owner)?;
+                        directory.sync_all()?;
+                        return Ok(placed);
+                    }
+                }
+                Err(rustix::io::Errno::NOENT | rustix::io::Errno::LOOP) => {}
+                Err(error) => return Err(io::Error::from(error).into()),
+            }
+        }
+    }
+    (request.before_copy)()?;
     // Reusing the upload's temporary name bounds leftovers after an interrupted finish.
     let temporary = format!(".{}.partial", request.upload_id);
     match fs::statat(directory, temporary.as_str(), AtFlags::SYMLINK_NOFOLLOW) {
@@ -177,6 +201,12 @@ pub(crate) fn place(blob: &mut File, request: &Request<'_>) -> Result<Placed, Pl
             test_hook::run(request.project_root);
             // Both names are single components in the same pinned directory. rustix
             // uses renameat2 on Linux and renameatx_np(RENAME_EXCL) on macOS.
+            let placed = Placed {
+                path: folder.join(&name),
+                inode,
+                mtime_ns,
+            };
+            (request.record_intent)(&placed)?;
             match fs::renameat_with(
                 directory,
                 temporary.as_str(),
@@ -194,11 +224,7 @@ pub(crate) fn place(blob: &mut File, request: &Request<'_>) -> Result<Placed, Pl
                         return Err(error);
                     }
                     directory.sync_all()?;
-                    return Ok(Placed {
-                        path: folder.join(name),
-                        inode,
-                        mtime_ns,
-                    });
+                    return Ok(placed);
                 }
                 Err(rustix::io::Errno::EXIST) => continue,
                 Err(error) => return Err(io::Error::from(error).into()),

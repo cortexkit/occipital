@@ -94,6 +94,7 @@ fn head_reads(route: &FakeRoute) -> usize {
 fn ring(app: &super::super::super::AppReader) -> Value {
     serde_json::to_value(
         app.display
+            .runner("broca")
             .projection(SESSION)
             .unwrap()
             .display_read(Some(0)),

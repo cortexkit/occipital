@@ -122,6 +122,7 @@ fn detailed_error(code: &str, message: &str, detail: Option<Value>) -> HandlerOu
 }
 
 struct Watch {
+    display: Arc<super::display_hub::RunnerDisplay>,
     app: Arc<AppReader>,
     binding: Option<RouteBinding>,
     params: Value,
@@ -504,6 +505,7 @@ pub(super) async fn serve(
 ) -> HandlerOutcome {
     let cancelled = exchange.cancellation();
     let mut host = Watch {
+        display: app.display.runner("broca"),
         app,
         binding,
         params,
@@ -570,6 +572,9 @@ pub(super) async fn serve(
         } else {
             super::SourceWatch::default()
         };
+        if let Some(display) = source_watch.display {
+            host.display = display;
+        }
         host.source = source_watch.source;
         let _lease = source_watch.lease;
         opened.store(true, std::sync::atomic::Ordering::Relaxed);
@@ -683,13 +688,13 @@ impl TranscriptWatchHost for Watch {
 impl DisplayWatchHost for Watch {
     async fn read(&self, params: Value) -> Result<DisplayReadReply, DisplayReadError> {
         let request = DisplayReadRequest::parse(&params)?;
-        Ok(request.read(self.app.display.projection(request.session).as_deref()))
+        Ok(request.read(self.display.projection(request.session).as_deref()))
     }
     fn projection(&self, session: &str) -> Option<Arc<DisplayProjection>> {
-        self.app.display.projection(session)
+        self.display.projection(session)
     }
     fn projection_changes(&self, session: &str) -> watch::Receiver<u64> {
-        self.app.display.changes(session)
+        self.display.changes(session)
     }
     fn readmit(&self) -> Result<(), DisplayReadError> {
         admit(self.binding.as_ref(), super::DISPLAY_READ)

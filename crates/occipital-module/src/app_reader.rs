@@ -306,7 +306,7 @@ fn admit_principal(binding: Option<&RouteBinding>) -> Option<Caller> {
                     fingerprint: fingerprint.into(),
                 });
             }
-            return Some(Caller::Operator);
+            return None;
         }
     }
     None
@@ -336,6 +336,16 @@ pub trait SourceResolver: Send + Sync {
         _harness: Option<&str>,
     ) -> Result<(), ReadError> {
         Ok(())
+    }
+
+    /// Validate placement before reading buffered live text, and select the runner that published it.
+    async fn display_runner(
+        &self,
+        session: &str,
+        harness: Option<&str>,
+    ) -> Result<String, ReadError> {
+        self.validate_session(session, harness).await?;
+        Ok("broca".into())
     }
 
     async fn resolve(
@@ -417,6 +427,7 @@ pub trait SourceResolver: Send + Sync {
     ) -> Result<SourceWatch, ReadError> {
         Ok(SourceWatch {
             source: self.resolve(session, harness).await?,
+            display: None,
             lease: None,
             live: None,
         })
@@ -440,6 +451,7 @@ pub trait SourceResolver: Send + Sync {
 /// The lease keeps the source subscription active until the device watch ends.
 #[derive(Default)]
 pub struct SourceWatch {
+    pub display: Option<Arc<display_hub::RunnerDisplay>>,
     pub source: Option<Arc<dyn TranscriptSource>>,
     pub lease: Option<Box<dyn Send>>,
     /// Feed loss ends the device watch so its next subscription can attach afresh.
@@ -796,13 +808,18 @@ impl AppReader {
                 .map_err(|e| ReadError::new(e.code, e.message))?;
             let harness = occipital_app_reader::page::optional_transcript_harness(&params)
                 .map_err(|e| ReadError::new(e.code, e.message))?;
-            observe::step(
+            let runner = observe::step(
                 "resolution",
-                self.resolver.validate_session(request.session, harness),
+                self.resolver.display_runner(request.session, harness),
             )
             .await?;
             return serde_json::to_value(
-                request.read(self.display.projection(request.session).as_deref()),
+                request.read(
+                    self.display
+                        .runner(&runner)
+                        .projection(request.session)
+                        .as_deref(),
+                ),
             )
             .map_err(|error| {
                 ReadError::new(

@@ -1271,3 +1271,52 @@ async fn the_run_awaits_samples_are_what_the_handlers_answer() {
     }
     served.check();
 }
+
+#[tokio::test]
+async fn recent_and_live_chat_metadata_survive_closed_cache_pressure() {
+    let sources = BrocaSources::new(
+        Arc::new(Resolver::new(Arc::new(Unrecorded::default()))),
+        Arc::new(SendingRoutes(sample_route())),
+    );
+    let reference = |n| SessionRef {
+        runner: "broca".into(),
+        session: format!("dream-{n}"),
+    };
+    let live = sources.source(&reference(0)).await.unwrap();
+    let first = sources.source(&reference(1)).await.unwrap();
+    let old = Arc::downgrade(&first.describe);
+    let old_tool = Arc::downgrade(&first.message_tool.guard());
+    drop(first);
+    for n in 2..=129 {
+        drop(sources.source(&reference(n)).await.unwrap());
+    }
+    let recent = sources.source(&reference(2)).await.unwrap();
+    let warm = Arc::downgrade(&recent.describe);
+    drop(recent);
+    drop(sources.source(&reference(130)).await.unwrap());
+    assert!(old.upgrade().is_none() && old_tool.upgrade().is_none());
+    assert!(warm.upgrade().is_some());
+    assert!(Arc::ptr_eq(
+        &live,
+        &sources.source(&reference(0)).await.unwrap()
+    ));
+}
+
+#[tokio::test]
+async fn an_unrecorded_live_chat_can_read_its_display_baseline() {
+    use crate::app_reader::{SourceResolver, DISPLAY_READ};
+    let sources = Arc::new(BrocaSources::new(
+        Arc::new(Resolver::new(Arc::new(Unrecorded::default()))),
+        Arc::new(SendingRoutes(sample_route())),
+    ));
+    let app = AppReader::new(sources.clone());
+    let _watch = sources
+        .watch("dream", None, app.display.clone())
+        .await
+        .unwrap();
+    let baseline = app
+        .read(DISPLAY_READ, json!({"session":"dream"}))
+        .await
+        .unwrap();
+    assert!(baseline.get("absent").is_none(), "{baseline}");
+}

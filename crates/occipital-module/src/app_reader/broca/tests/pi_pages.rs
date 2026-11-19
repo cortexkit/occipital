@@ -160,7 +160,7 @@ async fn display_of(
     let source = BrocaSource::new(pi_binding(), route.clone());
     let mut lease = source.acquire().await.unwrap();
     let asked = route.live_ids.lock().unwrap().clone();
-    let hub = Arc::new(DisplayHub::default());
+    let hub = Arc::new(crate::app_reader::display_hub::RunnerDisplay::default());
     for frame in sample(set, file).as_array().unwrap() {
         route.emit(frame.clone()).await;
     }

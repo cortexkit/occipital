@@ -9,6 +9,7 @@
 //! content digest covers each attached file's bytes, so neither column is
 //! carried over.
 
+use super::send_queue::{End, EndedRun, Queued, SendQueue};
 use std::sync::Arc;
 
 use cortexkit_store::{Migration, SqliteStore};
@@ -136,6 +137,7 @@ impl Receipts {
     /// past retention the id names a new send. A held steer's deadline and target
     /// run are committed together so recovery never loses the run binding.
     #[allow(clippy::too_many_arguments)]
+    #[cfg(test)]
     pub fn record(
         &self,
         session: &str,
@@ -146,6 +148,24 @@ impl Receipts {
         receipt: &Value,
         follow: Option<(i64, &str)>,
         now: i64,
+    ) -> Result<(), crate::Error> {
+        self.record_send(
+            session, id, digest, mode, send_id, receipt, follow, now, None,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn record_send(
+        &self,
+        session: &str,
+        id: &str,
+        digest: &str,
+        mode: &str,
+        send_id: &str,
+        receipt: &Value,
+        follow: Option<(i64, &str)>,
+        now: i64,
+        queued: Option<(&Queued, bool)>,
     ) -> Result<(), crate::Error> {
         self.0.with_conn(|conn| {
             let tx = conn.unchecked_transaction()?;
@@ -158,6 +178,9 @@ impl Receipts {
                 params![session, id, digest, mode, send_id, receipt.to_string(), follow.map(|(until, _)| until), now, now.saturating_sub(RETENTION_MS)],
             )?;
             if changed > 0 {
+                if let Some((queued, unknown)) = queued {
+                    SendQueue::insert(&tx, queued, unknown)?;
+                }
                 tx.execute(
                     "DELETE FROM harness_app_send_run WHERE session=?1 AND client_message_id=?2",
                     params![session, id],
@@ -174,38 +197,44 @@ impl Receipts {
         Ok(())
     }
 
-    /// Settle a followed send: a changed final receipt replaces the first one, and
-    /// the send is no longer followed either way.
-    pub fn settle(
+    /// Commit the list change and the worker's final receipt together: recovery must
+    /// not lose its follower while the list still says the send is queued.
+    pub(super) fn settle(
         &self,
         session: &str,
         id: &str,
         receipt: Option<&Value>,
-    ) -> Result<(), crate::Error> {
-        self.0.with_conn(|conn| {
+        end: &End,
+        ended: Option<&EndedRun>,
+        now: i64,
+    ) -> Result<bool, crate::Error> {
+        Ok(self.0.with_conn(|conn| {
             let tx = conn.unchecked_transaction()?;
-            tx.execute(
-                "UPDATE harness_app_send SET receipt_json=COALESCE(?3,receipt_json), follow_until=NULL WHERE session=?1 AND client_message_id=?2",
-                params![session, id, receipt.map(Value::to_string)],
-            )?;
-            tx.execute(
-                "DELETE FROM harness_app_send_run WHERE session=?1 AND client_message_id=?2",
-                params![session, id],
-            )?;
-            tx.commit()
-        })?;
-        Ok(())
+            tx.execute("UPDATE harness_app_send SET receipt_json=COALESCE(?3,receipt_json), follow_until=NULL WHERE session=?1 AND client_message_id=?2 AND follow_until IS NOT NULL",params![session,id,receipt.map(Value::to_string)])?;
+            tx.execute("DELETE FROM harness_app_send_run WHERE session=?1 AND client_message_id=?2", params![session,id])?;
+            let changed = SendQueue::update(&tx, session,id,end,ended,now)?;
+            tx.commit()?;
+            Ok(changed)
+        })?)
     }
 
-    /// Up to `limit` sends still followed, the earliest deadline first.
+    #[cfg(test)]
     pub fn followed(&self, limit: usize) -> Result<Vec<Followed>, crate::Error> {
+        self.followed_after(limit, &Default::default())
+    }
+
+    pub(super) fn followed_after(
+        &self,
+        limit: usize,
+        after: &(String, String),
+    ) -> Result<Vec<Followed>, crate::Error> {
         Ok(self.0.with_read(|conn| {
             conn.prepare(
                 "SELECT s.session,s.client_message_id,s.send_id,s.follow_until,r.run_id FROM harness_app_send s \
                  LEFT JOIN harness_app_send_run r ON s.session=r.session AND s.client_message_id=r.client_message_id \
-                 WHERE s.follow_until IS NOT NULL ORDER BY s.follow_until LIMIT ?1",
+                 WHERE s.follow_until IS NOT NULL AND (s.session,s.client_message_id)>(?2,?3) ORDER BY s.session,s.client_message_id LIMIT ?1",
             )?
-            .query_map([limit as i64], |row| {
+            .query_map(params![limit as i64, after.0, after.1], |row| {
                 Ok(Followed {
                     session: row.get(0)?,
                     client_message_id: row.get(1)?,
@@ -281,7 +310,9 @@ mod tests {
             receipts.followed(1).unwrap()[0].run_id.as_deref(),
             Some("r2")
         );
-        receipts.settle("s", "w1", None).unwrap();
+        receipts
+            .settle("s", "w1", None, &End::Delivered, None, 101)
+            .unwrap();
         assert_eq!(bindings(), 0);
         record("w2", "r3", 100);
         assert_eq!(bindings(), 1);
