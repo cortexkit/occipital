@@ -4,13 +4,13 @@
 //! Every table here is keyed so a row means the same on any computer: by
 //! session name, by the runner that minted a call and its call key, or by a
 //! sender and its send id. So a row is exported as its column values, and
-//! imported with `INSERT OR IGNORE`: a row the receiver already holds is the
-//! same row (records and notices are immutable), and is kept.
+//! the receiver keeps any existing payload. Pins and riding notices take the
+//! incoming session because their call can move between sessions.
 //!
 //! Tool records and details carry no session; they belong to the sessions
 //! whose calls they answer, found through the call pins.
 
-use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 use cortexkit_store::SqliteStore;
 use rusqlite::types::Value as Sql;
@@ -213,92 +213,96 @@ impl Files<'_> {
         }
     }
 
-    /// The calls the sessions' pins name, as `(runner principal JSON, call
-    /// key)`, the form the tool record tables key them by.
-    fn calls(&self, sessions: &BTreeSet<String>) -> Result<HashSet<(String, String)>, String> {
-        let pins: Vec<(String, String, String)> = self
-            .records
-            .with_conn(|conn| {
-                let mut statement =
-                    conn.prepare("SELECT runner, call_key, session FROM display_call_pins")?;
-                let rows = statement
-                    .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
-                    .collect::<rusqlite::Result<_>>()?;
-                Ok(rows)
-            })
-            .map_err(|error| error.to_string())?;
-        let mut calls = HashSet::new();
-        for (runner, call_key, session) in pins {
-            if !sessions.contains(&session) {
-                continue;
-            }
-            let principal = Principal::Reserved { module_id: runner };
-            let runner = crate::display::store::principal_json(&principal)
-                .map_err(|error| error.to_string())?;
-            calls.insert((runner, call_key));
-        }
-        Ok(calls)
-    }
-
-    /// Each row of every table that belongs to `sessions`, handed to `each`
-    /// table by table, in [`TABLES`] order. Returns how many rows each table
-    /// gave.
+    /// Write matching rows directly from SQLite's cursor. Only pin identities
+    /// cross database boundaries: a detail lives in a different file from
+    /// the pin that places it in a session.
     pub(crate) fn export(
         &self,
         sessions: &BTreeSet<String>,
         mut each: impl FnMut(Row) -> Result<(), String>,
     ) -> Result<BTreeMap<&'static str, u64>, String> {
-        let calls = self.calls(sessions)?;
+        let sessions = serde_json::to_string(sessions).map_err(|e| e.to_string())?;
         let mut counts = BTreeMap::new();
         for table in TABLES {
-            let rows = self.matching(table, sessions, &calls)?;
-            counts.insert(table.name, rows.len() as u64);
-            for row in rows {
-                each((table, row))?;
+            let mut count = 0;
+            let mut emit = |row: &rusqlite::Row<'_>| -> rusqlite::Result<()> {
+                let values = (0..table.columns())
+                    .map(|i| row.get(i))
+                    .collect::<rusqlite::Result<_>>()?;
+                each((table, values)).map_err(|e| {
+                    rusqlite::Error::ToSqlConversionFailure(std::io::Error::other(e).into())
+                })?;
+                count += 1;
+                Ok(())
+            };
+            let select = format!("SELECT {} FROM {}", table.columns.join(","), table.sql_name);
+            if table.belongs == Belongs::Call {
+                let by_call = format!("{select} WHERE runner=?1 AND call_key=?2");
+                self.records.with_conn(|conn| {
+                    let mut pins = conn.prepare("SELECT runner, call_key FROM display_call_pins WHERE session IN (SELECT value FROM json_each(?1))")?;
+                    let mut pins = pins.query([&sessions])?;
+                    while let Some(row) = pins.next()? {
+                        let runner = crate::display::store::principal_json(&Principal::Reserved { module_id: row.get(0)? }).map_err(|e| rusqlite::Error::ToSqlConversionFailure(e.into()))?;
+                        let call: String = row.get(1)?;
+                        let mut take = |conn: &rusqlite::Connection| {
+                            let mut stmt = conn.prepare_cached(&by_call)?;
+                            let mut rows = stmt.query([&runner,&call])?;
+                            while let Some(row) = rows.next()? { emit(row)?; }
+                            Ok(())
+                        };
+                        if table.file == File::Records { take(conn)?; } else {
+                            self.details.with_conn(take).map_err(|e|rusqlite::Error::ToSqlConversionFailure(e.into()))?;
+                        }
+                    }
+                    Ok(())
+                }).map_err(|e| e.to_string())?;
+            } else {
+                let mut select =
+                    format!("{select} WHERE session IN (SELECT value FROM json_each(?1))");
+                if table.name == "wake_records" {
+                    // An exact-session wake is selected above. A row carried
+                    // from another session resolves only a unique sender/send.
+                    select.push_str(" OR ((sender,send_id) IN (SELECT sender,send_id FROM sends WHERE session IN (SELECT value FROM json_each(?1)) UNION SELECT sender,send_id FROM notices WHERE session IN (SELECT value FROM json_each(?1))) AND NOT EXISTS (SELECT 1 FROM wake_records other WHERE other.sender=wake_records.sender AND other.send_id=wake_records.send_id AND other.session!=wake_records.session))");
+                }
+                self.file(table.file)
+                    .with_conn(|conn| {
+                        let mut stmt = conn.prepare(&select)?;
+                        let mut rows = stmt.query([&sessions])?;
+                        while let Some(row) = rows.next()? {
+                            emit(row)?;
+                        }
+                        Ok(())
+                    })
+                    .map_err(|e| e.to_string())?;
             }
+            counts.insert(table.name, count);
         }
         Ok(counts)
     }
 
-    /// Delete the queued and unsent sends of `sessions`, once a move has
-    /// carried them to the computer that follows them now: a send has one
-    /// follower, or it would be asked after on two computers. Display rows are
-    /// kept: they are immutable, so a copy here costs nothing, and a record a
-    /// provider writes here after the cut is kept for a move back.
-    pub(crate) fn delete_waiting_sends(&self, sessions: &BTreeSet<String>) -> Result<u64, String> {
-        let calls = HashSet::new();
-        let mut deleted = 0;
-        for table in TABLES.iter().filter(|table| table.file == File::Store) {
-            let rows = self.matching(table, sessions, &calls)?;
-            if rows.is_empty() {
-                continue;
-            }
-            let delete = format!(
-                "DELETE FROM {} WHERE {}",
-                table.sql_name,
-                table
-                    .key
-                    .iter()
-                    .enumerate()
-                    .map(|(i, column)| format!("{column} = ?{}", i + 1))
-                    .collect::<Vec<_>>()
-                    .join(" AND ")
-            );
-            let positions: Vec<usize> = table.key.iter().map(|c| table.position(c)).collect();
-            deleted += self
-                .file(table.file)
-                .with_conn_fenced(|tx| {
-                    let mut statement = tx.prepare(&delete)?;
-                    let mut n = 0;
-                    for row in &rows {
-                        let key = positions.iter().map(|&i| &row[i]);
-                        n += statement.execute(rusqlite::params_from_iter(key))? as u64;
-                    }
-                    Ok(n)
-                })
-                .map_err(|error| error.to_string())?;
-        }
-        Ok(deleted)
+    /// Delete only waiting-send keys recorded in the prepared stream.
+    pub(crate) fn delete_waiting_sends(&self, rows: &[Row]) -> Result<u64, String> {
+        self.store
+            .with_conn_fenced(|tx| {
+                let mut n = 0;
+                for (table, row) in rows.iter().filter(|(table, _)| table.file == File::Store) {
+                    let predicate = table
+                        .key
+                        .iter()
+                        .map(|col| format!("{col} = ?"))
+                        .collect::<Vec<_>>()
+                        .join(" AND ");
+                    let mut stmt = tx.prepare_cached(&format!(
+                        "DELETE FROM {} WHERE {predicate}",
+                        table.sql_name
+                    ))?;
+                    n += stmt.execute(rusqlite::params_from_iter(
+                        table.key.iter().map(|col| &row[table.position(col)]),
+                    ))? as u64;
+                }
+                Ok(n)
+            })
+            .map_err(|e| e.to_string())
     }
 
     /// Insert `rows`, keeping every row already held. Each file's rows go in
@@ -316,7 +320,7 @@ impl Files<'_> {
                 .with_conn_fenced(|tx| {
                     let mut n = 0;
                     for (table, values) in rows {
-                        let insert = format!(
+                        let mut insert = format!(
                             "INSERT OR IGNORE INTO {} ({}) VALUES ({})",
                             table.sql_name,
                             table.columns.join(", "),
@@ -325,6 +329,9 @@ impl Files<'_> {
                                 .collect::<Vec<_>>()
                                 .join(", ")
                         );
+                        if matches!(table.name,"call_pins"|"notices") {
+                            insert.push_str(&format!(" ON CONFLICT ({}) DO UPDATE SET session=excluded.session WHERE session!=excluded.session",table.key.join(",")));
+                        }
                         let mut statement = tx.prepare_cached(&insert)?;
                         n += statement.execute(rusqlite::params_from_iter(values.iter()))? as u64;
                     }
@@ -333,52 +340,6 @@ impl Files<'_> {
                 .map_err(|error| error.to_string())?;
         }
         Ok(inserted)
-    }
-
-    /// `table`'s rows that belong to `sessions`, whole. Tables here are read
-    /// once each, rather than once per session, since a head can have thousands
-    /// of sessions and most tables aren't indexed by session.
-    fn matching(
-        &self,
-        table: &Table,
-        sessions: &BTreeSet<String>,
-        calls: &HashSet<(String, String)>,
-    ) -> Result<Vec<Vec<Sql>>, String> {
-        let select = format!(
-            "SELECT {} FROM {}",
-            table.columns.join(", "),
-            table.sql_name
-        );
-        // The columns that decide whether a row belongs: the session, or the
-        // call's runner and key.
-        let (first, second) = match table.belongs {
-            Belongs::Session => (table.position("session"), 0),
-            Belongs::Call => (table.position("runner"), table.position("call_key")),
-        };
-        self.file(table.file)
-            .with_conn(|conn| {
-                let mut statement = conn.prepare(&select)?;
-                let mut rows = statement.query([])?;
-                let mut kept = Vec::new();
-                while let Some(row) = rows.next()? {
-                    let belongs = match table.belongs {
-                        Belongs::Session => sessions.contains(&row.get::<_, String>(first)?),
-                        Belongs::Call => calls.contains(&(
-                            row.get::<_, String>(first)?,
-                            row.get::<_, String>(second)?,
-                        )),
-                    };
-                    if belongs {
-                        kept.push(
-                            (0..table.columns.len())
-                                .map(|i| row.get::<_, Sql>(i))
-                                .collect::<rusqlite::Result<_>>()?,
-                        );
-                    }
-                }
-                Ok(kept)
-            })
-            .map_err(|error| error.to_string())
     }
 }
 

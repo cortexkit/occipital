@@ -434,11 +434,16 @@ impl Moves {
             .ok_or_else(|| refuse("cut_unknown", "prepare this cut first"))?;
         match (cut.side, cut.step) {
             (Some(Side::Source), Step::Exported) => {
-                let (stores, sessions) = (self.stores.clone(), session_names(&cut.sessions));
-                tokio::task::spawn_blocking(move || stores.files().delete_waiting_sends(&sessions))
+                if let Some(item) = cut.item.clone() {
+                    let (stores, path) = (self.stores.clone(), self.cuts.stream_path(cut_id));
+                    tokio::task::spawn_blocking(move || {
+                        apply_stream(&path, &item, |batch| {
+                            stores.files().delete_waiting_sends(batch)
+                        })
+                    })
                     .await
-                    .map_err(unavailable)?
-                    .map_err(unavailable)?;
+                    .map_err(unavailable)??;
+                }
                 cut.step = Step::Released;
                 cut.holder = Some(holder.into());
                 cut.holder_box = holder_box.map(str::to_owned);
@@ -526,11 +531,10 @@ impl Moves {
             .ok_or_else(|| refuse("cut_unknown", "import this cut first"))?;
         match (cut.side, cut.step) {
             (Some(Side::Receiver), Step::Imported) => {
-                if cut.item.is_some() {
+                if let Some(item) = cut.item.clone() {
                     let (stores, path) = (self.stores.clone(), self.cuts.stream_path(cut_id));
-                    tokio::task::spawn_blocking(move || -> Result<u64, Refusal> {
-                        let read = read_stream(&path)?;
-                        stores.files().import(&read.rows).map_err(unavailable)
+                    tokio::task::spawn_blocking(move || {
+                        apply_stream(&path, &item, |batch| stores.files().import(batch))
                     })
                     .await
                     .map_err(unavailable)??;
@@ -923,7 +927,57 @@ fn row_session((table, values): &rows::Row) -> Option<String> {
 
 fn read_stream(path: &std::path::Path) -> Result<payload::Read, Refusal> {
     let file = std::fs::File::open(path).map_err(unavailable)?;
-    payload::read(std::io::BufReader::new(file)).map_err(|unreadable| match unreadable {
+    visit_stream(file, |_| Ok(()))
+}
+
+fn apply_stream(
+    path: &std::path::Path,
+    item: &Item,
+    mut apply: impl FnMut(&[rows::Row]) -> Result<u64, String>,
+) -> Result<(), Refusal> {
+    use std::io::Seek;
+    // Check the staged bytes before deleting any queued send or inserting a row.
+    let mut file = std::fs::File::open(path).map_err(unavailable)?;
+    let mut hash = Sha256::new();
+    let length = std::io::copy(&mut file, &mut hash).map_err(unavailable)?;
+    if length != item.end_offset || payload::hex(&hash.finalize()) != item.digest {
+        return Err(digest_mismatch("the staged stream changed"));
+    }
+    file.rewind().map_err(unavailable)?;
+    let mut batch = Vec::new();
+    let mut bytes = 0;
+    visit_stream(file, |row| {
+        use rusqlite::types::Value as Sql;
+        let size = row
+            .1
+            .iter()
+            .map(|v| match v {
+                Sql::Blob(b) => b.len(),
+                Sql::Text(t) => t.len(),
+                _ => 8,
+            })
+            .sum::<usize>();
+        if !batch.is_empty() && (batch.len() == 128 || bytes + size > 1 << 20) {
+            apply(&batch)?;
+            batch.clear();
+            bytes = 0;
+        }
+        batch.push(row);
+        bytes += size;
+        Ok(())
+    })?;
+    if !batch.is_empty() {
+        apply(&batch).map_err(unavailable)?;
+    }
+    Ok(())
+}
+
+fn visit_stream(
+    file: std::fs::File,
+    each: impl FnMut(rows::Row) -> Result<(), String>,
+) -> Result<payload::Read, Refusal> {
+    payload::read(std::io::BufReader::new(file), each).map_err(|unreadable| match unreadable {
+        payload::Unreadable::Apply(why) => unavailable(why),
         payload::Unreadable::Format(found) => Refusal {
             code: "incompatible_version",
             message: format!("this build reads {FORMAT}, not {found}"),

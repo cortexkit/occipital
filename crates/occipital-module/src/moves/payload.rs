@@ -10,7 +10,7 @@
 //!   sessions the rows belong to and counts them, so a stream cut short reads
 //!   as broken, not as fewer rows.
 
-use std::io::{BufRead, Write};
+use std::io::{BufRead, Read as _, Write};
 
 use rusqlite::types::Value as Sql;
 use serde::{Deserialize, Serialize};
@@ -20,6 +20,8 @@ use sha2::{Digest, Sha256};
 use super::rows::{self, Row};
 
 /// The stream's format, which `prepare` reports and `import` checks first.
+const LINE_LIMIT: usize = 16 << 20;
+
 pub(crate) const FORMAT: &str = "occipital-chat-display/v1";
 
 /// One session the stream carries rows for, as its runner keys it.
@@ -52,6 +54,7 @@ pub(crate) enum Unreadable {
     Format(String),
     /// It breaks this format's rules.
     Broken(String),
+    Apply(String),
 }
 
 /// Writes rows to `out` as the stream, hashing as it goes.
@@ -93,6 +96,12 @@ impl<W: Write> Writer<W> {
 
     fn line(&mut self, value: &Value) -> std::io::Result<()> {
         let mut bytes = serde_json::to_vec(value)?;
+        if bytes.len() > LINE_LIMIT {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "move stream line exceeds limit",
+            ));
+        }
         bytes.push(b'\n');
         self.out.write_all(&bytes)?;
         self.hash.update(&bytes);
@@ -101,28 +110,28 @@ impl<W: Write> Writer<W> {
     }
 }
 
-/// A read stream: the agent it was written for, the sessions it names, and
-/// its rows.
+/// The identity and session list from a validated stream.
 pub(crate) struct Read {
     pub agent: String,
     pub sessions: Vec<Session>,
-    pub rows: Vec<Row>,
 }
 
 /// Read a whole stream. The first line decides the format before anything
 /// else is read.
-pub(crate) fn read(input: impl BufRead) -> Result<Read, Unreadable> {
-    let mut lines = input.lines();
-    let first = next_line(&mut lines)?.ok_or_else(|| broken("the stream is empty"))?;
+pub(crate) fn read(
+    mut input: impl BufRead,
+    mut each: impl FnMut(Row) -> Result<(), String>,
+) -> Result<Read, Unreadable> {
+    let first = next_line(&mut input)?.ok_or_else(|| broken("the stream is empty"))?;
     let header: Value = serde_json::from_str(&first).map_err(broken)?;
     let format = header.get("format").and_then(Value::as_str).unwrap_or("");
     if format != FORMAT {
         return Err(Unreadable::Format(format.into()));
     }
     let header: Header = serde_json::from_value(header).map_err(broken)?;
-    let mut rows = Vec::new();
+    let mut rows = 0u64;
     let mut end = None;
-    while let Some(line) = next_line(&mut lines)? {
+    while let Some(line) = next_line(&mut input)? {
         if end.is_some() {
             return Err(broken("a line follows the end"));
         }
@@ -131,25 +140,38 @@ pub(crate) fn read(input: impl BufRead) -> Result<Read, Unreadable> {
             end = Some(serde_json::from_value::<End>(found.clone()).map_err(broken)?);
             continue;
         }
-        rows.push(decode_row(&value)?);
+        each(decode_row(&value)?).map_err(Unreadable::Apply)?;
+        rows += 1;
     }
     let end = end.ok_or_else(|| broken("the stream has no end"))?;
-    if end.rows != rows.len() as u64 {
+    if end.rows != rows {
         return Err(broken(format!(
             "the end counts {} rows, the stream holds {}",
-            end.rows,
-            rows.len()
+            end.rows, rows
         )));
     }
     Ok(Read {
         agent: header.agent,
         sessions: end.sessions,
-        rows,
     })
 }
 
-fn next_line(lines: &mut std::io::Lines<impl BufRead>) -> Result<Option<String>, Unreadable> {
-    lines.next().transpose().map_err(broken)
+fn next_line(input: &mut impl BufRead) -> Result<Option<String>, Unreadable> {
+    let mut bytes = Vec::new();
+    let n = input
+        .take(LINE_LIMIT as u64 + 1)
+        .read_until(b'\n', &mut bytes)
+        .map_err(broken)?;
+    if n == 0 {
+        return Ok(None);
+    }
+    if bytes.last() == Some(&b'\n') {
+        bytes.pop();
+    }
+    if bytes.len() > LINE_LIMIT {
+        return Err(broken("move stream line exceeds limit"));
+    }
+    String::from_utf8(bytes).map(Some).map_err(broken)
 }
 
 fn decode_row(value: &Value) -> Result<Row, Unreadable> {
@@ -226,3 +248,6 @@ pub(crate) fn unhex(text: &str) -> Option<Vec<u8>> {
 fn broken(why: impl std::fmt::Display) -> Unreadable {
     Unreadable::Broken(why.to_string())
 }
+
+#[cfg(test)]
+mod tests;

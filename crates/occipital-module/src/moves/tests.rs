@@ -774,3 +774,30 @@ async fn the_participant_samples_are_what_it_serves() {
         );
     }
 }
+
+#[tokio::test]
+async fn release_preserves_waiting_sends_written_after_export() {
+    let fleet = Arc::new(Fleet::default());
+    let source = computer("moves-late-send", &fleet);
+    seed(&source.files(), "moved", "broca", "call");
+    let cut = cut_id(1);
+    fleet.moves(&cut, &[session("moved")]);
+    source.op("agent_data.prepare", &cut).await.unwrap();
+    source.op("agent_data.export", &cut).await.unwrap();
+    source.files().store.with_conn_fenced(|tx| tx.execute("INSERT INTO harness_app_send_queue (session,client_message_id,harness,send_id,accepted_at,state) VALUES ('moved','late','broca','late',8,'queued')", [])).unwrap();
+    source
+        .call(
+            "agent_data.release",
+            json!({"refs": refs(), "cutId": cut, "holder":"author-b"}),
+        )
+        .await
+        .unwrap();
+    let left = exported(&source.files(), "moved");
+    assert_eq!(
+        left.iter()
+            .filter(|(t, _)| t == "queued_sends")
+            .map(|(_, row)| &row[1])
+            .collect::<Vec<_>>(),
+        [&rusqlite::types::Value::Text("late".into())]
+    );
+}
