@@ -219,15 +219,15 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-bus-client"
-version = "0.1.4"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f49f294985b669e4440c01ba3b31e0897adc107f0dd3b50454808f8ab833c0e"
+checksum = "2138258ff809265a7478914e99cc32988978b0b5fd4247e87bdeb2cbbeae5d1b"
 dependencies = [
  "async-nats",
  "async-trait",
  "base64",
  "bytes",
- "cortexkit-bus-naming 0.4.3",
+ "cortexkit-bus-naming",
  "cortexkit-bus-nats",
  "cortexkit-bus-trait",
  "futures-util",
@@ -242,29 +242,24 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-bus-naming"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58f6552b5782846fd9f592b49434bb17c53a34573d421467009c1d20d1195655"
-
-[[package]]
-name = "cortexkit-bus-naming"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4adb53df9a18359089a51781ea08d83c3ceb32c48ad9845ec48b978602a963a8"
 
 [[package]]
 name = "cortexkit-bus-nats"
-version = "0.5.0"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d321fc4091746e63c719f722f7658a26c40fdc20b41f0bf9cde0e78b6cea2234"
+checksum = "55a7bd392e37c754ff51d56d1ded432f9db4c453d9c7a924abbbdc619ad601a5"
 dependencies = [
  "async-nats",
  "async-trait",
  "bytes",
- "cortexkit-bus-naming 0.4.3",
+ "cortexkit-bus-naming",
  "cortexkit-bus-trait",
  "futures-util",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -392,7 +387,7 @@ version = "0.15.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c02e51fd1d2d1dba5162d4a688d51eb7722d4e95b33dae7ef4a55e93673ae1c"
 dependencies = [
- "cortexkit-bus-naming 0.5.1",
+ "cortexkit-bus-naming",
  "cortexkit-role-tool-display",
  "serde",
  "serde_jcs",
@@ -1150,7 +1145,7 @@ dependencies = [
  "async-trait",
  "cortexkit-agent-identity",
  "cortexkit-bus-client",
- "cortexkit-bus-naming 0.4.3",
+ "cortexkit-bus-naming",
  "cortexkit-log",
  "cortexkit-occipital-lang",
  "cortexkit-occipital-registry",
