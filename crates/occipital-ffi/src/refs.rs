@@ -144,7 +144,7 @@ mod tests {
         assert_eq!(status, OCC_OK);
         assert_eq!(
             json.unwrap(),
-            r#"{"rules":2,"references":[{"start":9,"end":16,"kind":"issue","target":"https://github.com/cortexkit/occipital/issues/499"}]}"#
+            r#"{"rules":3,"references":[{"start":9,"end":16,"kind":"issue","target":"https://github.com/cortexkit/occipital/issues/499"}]}"#
         );
     }
 
@@ -166,12 +166,12 @@ mod tests {
         assert_eq!(status, OCC_OK);
         assert_eq!(
             json.unwrap(),
-            r#"{"rules":2,"references":[{"start":9,"end":25,"kind":"repository_issue","target":"https://github.com/cortexkit/aft/issues/12"},{"start":27,"end":34,"kind":"mention","target":"CKDESK"}]}"#
+            r#"{"rules":3,"references":[{"start":9,"end":25,"kind":"repository_issue","target":"https://github.com/cortexkit/aft/issues/12"},{"start":27,"end":34,"kind":"mention","target":"CKDESK"}]}"#
         );
         let (status, json) = call(b"PR 4", Some("{}"));
         assert_eq!(
             (status, json.as_deref()),
-            (OCC_OK, Some(r#"{"rules":2,"references":[]}"#))
+            (OCC_OK, Some(r#"{"rules":3,"references":[]}"#))
         );
     }
 

@@ -1,6 +1,5 @@
-//! The rules, case by case, and the `text-references-v2` vectors written from
-//! the same cases. `text-references-v1` pinned rules version 1 and stays as
-//! it was tagged; only its checksums are checked here.
+//! The rules, case by case, and the `text-references-v3` vectors written from
+//! the same cases. Previously tagged sets keep their original bytes.
 //!
 //! Each case's text marks every expected mention with `⟦` and `⟧`. The
 //! expected ranges come from where the marks sit, never from [`references`],
@@ -17,6 +16,22 @@ use std::path::Path;
 const BLESS: &str = "OCCIPITAL_BLESS_VECTORS";
 const OPEN: &str = "⟦";
 const CLOSE: &str = "⟧";
+
+thread_local! { pub(super) static TICK_BYTES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
+
+#[test]
+fn unmatched_tick_lengths_do_not_rescan_the_suffix() {
+    let work = |suffix: &str| {
+        TICK_BYTES.set(0);
+        references(
+            &format!("The options are `, `` and ```;{suffix}"),
+            &Project::default(),
+        );
+        TICK_BYTES.get()
+    };
+    let suffix = " ask @Ada for help.";
+    assert!(work(suffix) - work("") <= suffix.len());
+}
 
 const OCCIPITAL: Option<Repository<'static>> = Some(Repository {
     host: "github.com",
@@ -50,20 +65,20 @@ struct Case {
     /// The project's repository; `None` is a project with none, or text with
     /// no project at all, such as a room post by the person.
     repository: Option<Repository<'static>>,
-    marked: &'static str,
+    marked: String,
     expected: Vec<(&'static str, String)>,
 }
 
 fn case(
     name: &'static str,
     repository: Option<Repository<'static>>,
-    marked: &'static str,
+    marked: impl Into<String>,
     expected: Vec<(&'static str, String)>,
 ) -> Case {
     Case {
         name,
         repository,
-        marked,
+        marked: marked.into(),
         expected,
     }
 }
@@ -253,7 +268,40 @@ fn cases() -> Vec<Case> {
             "**⟦@CKDESK⟧** and *⟦@CKIOS⟧* and >⟦@ALF⟧ quote; <⟦@ENTO⟧> is text, not a tag; _@AFT_ is not, as `_` is part of a word.",
             vec![agent("CKDESK"), agent("CKIOS"), agent("ALF"), agent("ENTO")],
         ),
+        bracket_in_code_label(),
+        unicode_label(),
+        definition_in_code(),
+        case("32-tick-in-destination", None, "[see @Ada](a`b) [press @Cy](help) then ` and ⟦@Bea⟧", vec![agent("Bea")]),
+        case("33-tick-in-bare-url", None, "https://example.test/a`b [press @Cy](help) then ` and ⟦@Bea⟧", vec![agent("Bea")]),
+        case("34-tick-in-html-attribute", None, "<b title=\"a`b\"> [press @Cy](help) then ` and ⟦@Bea⟧", vec![agent("Bea")]),
     ]
+}
+
+fn bracket_in_code_label() -> Case {
+    case(
+        "29-bracket-in-code-label",
+        None,
+        "[press `]` with @Ada](help) and ⟦@Bea⟧",
+        vec![agent("Bea")],
+    )
+}
+
+fn unicode_label() -> Case {
+    case(
+        "30-unicode-link-label",
+        None,
+        format!("[{} @Ada](help) and ⟦@Bea⟧", "猫".repeat(994)),
+        vec![agent("Bea")],
+    )
+}
+
+fn definition_in_code() -> Case {
+    case(
+        "31-definition-in-code-span",
+        None,
+        "Compare `example\n[@Ada]: help\nexample` then [⟦@Ada⟧].",
+        vec![agent("Ada")],
+    )
 }
 
 /// The text without its marks, and the byte ranges the marks held.
@@ -283,33 +331,50 @@ fn unmark(marked: &str) -> (String, Vec<(usize, usize)>) {
 #[test]
 fn every_case_finds_exactly_its_marked_mentions() {
     for case in cases() {
-        let (text, ranges) = unmark(case.marked);
-        assert_eq!(
-            ranges.len(),
-            case.expected.len(),
-            "{}: marks and expectations",
-            case.name
-        );
-        let expected: Vec<Reference> = ranges
-            .iter()
-            .zip(&case.expected)
-            .map(|(&(start, end), (kind, target))| Reference {
-                start,
-                end,
-                kind,
-                target: target.clone(),
-            })
-            .collect();
-        let project = Project {
-            repository: case.repository,
-        };
-        assert_eq!(
-            references(&text, &project),
-            expected,
-            "{}: {text:?}",
-            case.name
-        );
+        check_case(case);
     }
+}
+
+#[test]
+fn brackets_inside_code_do_not_close_link_labels() {
+    check_case(bracket_in_code_label());
+}
+#[test]
+fn link_labels_are_counted_in_characters() {
+    check_case(unicode_label());
+}
+#[test]
+fn code_spans_do_not_define_shortcut_links() {
+    check_case(definition_in_code());
+}
+
+fn check_case(case: Case) {
+    let (text, ranges) = unmark(&case.marked);
+    assert_eq!(
+        ranges.len(),
+        case.expected.len(),
+        "{}: marks and expectations",
+        case.name
+    );
+    let expected: Vec<Reference> = ranges
+        .iter()
+        .zip(&case.expected)
+        .map(|(&(start, end), (kind, target))| Reference {
+            start,
+            end,
+            kind,
+            target: target.clone(),
+        })
+        .collect();
+    let project = Project {
+        repository: case.repository,
+    };
+    assert_eq!(
+        references(&text, &project),
+        expected,
+        "{}: {text:?}",
+        case.name
+    );
 }
 
 /// Text full of brackets, backticks and fences that never close still takes
@@ -349,9 +414,9 @@ fn json_string(out: &mut String, value: &str) {
     out.push('"');
 }
 
-const README: &str = "# text-references-v2
+const README: &str = "# text-references-v3
 
-Test vectors for `cortexkit-occipital-refs` rules version 2. They are
+Test vectors for `cortexkit-occipital-refs` rules version 3. They are
 generated by `crates/occipital-refs/src/tests.rs`; do not edit by hand.
 `SHA256SUMS` lists the SHA-256 of every other file here
 (`sha256sum -c SHA256SUMS`). Run the crate's tests with
@@ -377,7 +442,7 @@ fn generate() -> BTreeMap<String, Vec<u8>> {
     let mut out = String::from("[\n");
     let all = cases();
     for (index, case) in all.iter().enumerate() {
-        let (text, _) = unmark(case.marked);
+        let (text, _) = unmark(&case.marked);
         let project = Project {
             repository: case.repository,
         };
@@ -432,12 +497,17 @@ fn generate() -> BTreeMap<String, Vec<u8>> {
     files
 }
 
-/// The tagged version 1 set is never rewritten: its files still match its own
-/// checksums. Version 2 adds `@NAME`, so replaying it under today's rules
-/// would differ wherever its text has an `@`.
+/// Apps pin tagged sets, so an older set is checked but never regenerated.
 #[test]
-fn the_version_1_vectors_are_unchanged() {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("vectors/text-references-v1");
+fn earlier_tagged_vectors_are_unchanged() {
+    for version in [1, 2] {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(format!("vectors/text-references-v{version}"));
+        check_sums(&dir);
+    }
+}
+
+fn check_sums(dir: &Path) {
     let sums = fs::read_to_string(dir.join("SHA256SUMS")).unwrap();
     assert_eq!(sums.lines().count(), 2);
     for line in sums.lines() {
@@ -453,7 +523,8 @@ fn the_version_1_vectors_are_unchanged() {
 #[test]
 fn the_vectors_are_current() {
     let files = generate();
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("vectors/text-references-v2");
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join(format!("vectors/text-references-v{RULES_VERSION}"));
     if std::env::var_os(BLESS).is_some() {
         fs::create_dir_all(&dir).unwrap();
         for (name, bytes) in &files {

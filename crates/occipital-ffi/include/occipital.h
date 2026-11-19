@@ -429,7 +429,7 @@ int32_t occ_template_evaluate(const uint8_t *src, size_t len,
  * passed as it arrived (members other than "repository" are ignored), or
  * JSON null for text with no project, such as a room post by the person.
  *
- * *out is {"rules": 2, "references": [{"start", "end", "kind", "target"}]},
+ * *out is {"rules": 3, "references": [{"start", "end", "kind", "target"}]},
  * in text order, none overlapping. "start" and "end" are UTF-8 byte offsets
  * into `text`. "kind" is "issue" or "repository_issue", whose "target" is
  * the URL, or "mention", whose "target" is the name after the "@" as typed:

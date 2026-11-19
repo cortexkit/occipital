@@ -32,7 +32,7 @@ use std::collections::{HashMap, HashSet};
 /// The version of the rules [`references`] applies. It goes up whenever the
 /// same text and project could give different references, so apps can tell
 /// which rules a set of test vectors pins.
-pub const RULES_VERSION: u32 = 2;
+pub const RULES_VERSION: u32 = 3;
 
 /// The kind of "Issue N", "PR N" and the like: an issue or pull request in
 /// the project's own repository.
@@ -96,10 +96,17 @@ pub fn references(text: &str, project: &Project<'_>) -> Vec<Reference> {
         .repository
         .is_none_or(|repository| repository.host.eq_ignore_ascii_case(GITHUB));
     let mut found = Vec::new();
-    let stretches = prose(text);
-    let defined = definitions(text, &stretches);
-    for &(start, end) in &stretches {
-        Stretch::new(text, start, end, &defined).scan(start, home, host_known, &mut found);
+    let mut defined = HashSet::new();
+    let stretches: Vec<_> = prose(text)
+        .into_iter()
+        .map(|(start, end)| {
+            let mut stretch = Stretch::new(text, start, end);
+            stretch.collect_definitions(start, &mut defined);
+            (start, stretch)
+        })
+        .collect();
+    for (start, mut stretch) in stretches {
+        stretch.scan(start, home, host_known, &defined, &mut found);
     }
     found
 }
@@ -155,27 +162,6 @@ fn prose(text: &str) -> Vec<(usize, usize)> {
     ranges
 }
 
-/// The normalized labels of the link reference definitions in the prose
-/// stretches: lines whose first non-blank character opens `[label]:`.
-/// Definitions apply to the whole text, wherever they sit.
-fn definitions(text: &str, stretches: &[(usize, usize)]) -> HashSet<String> {
-    let mut defined = HashSet::new();
-    for &(start, end) in stretches {
-        for line in text[start..end].split('\n') {
-            let Some(rest) = line.trim_start_matches([' ', '\t']).strip_prefix('[') else {
-                continue;
-            };
-            let Some(close) = rest.find(']') else {
-                continue;
-            };
-            if rest[close + 1..].starts_with(':') && !rest[..close].contains('[') {
-                defined.insert(normalize(&rest[..close]));
-            }
-        }
-    }
-    defined
-}
-
 /// A link label as CommonMark matches it: blanks collapsed to one space,
 /// trimmed, and ASCII letters in lower case.
 fn normalize(label: &str) -> String {
@@ -213,12 +199,9 @@ fn fence(trimmed: &str) -> Option<(u8, usize)> {
 /// to its length.
 struct Stretch<'t> {
     text: &'t str,
-    /// The labels of the text's link reference definitions, normalized.
-    defined: &'t HashSet<String>,
     end: usize,
-    /// Where each line holding only blanks starts, in order. No code span or
-    /// link crosses one.
-    breaks: Vec<usize>,
+    /// Where each backtick opener ends (past the closer, or the run alone).
+    ticks: HashMap<usize, usize>,
     /// Where each `[` and `(` that a `]` or `)` closes in the same paragraph
     /// is closed, counting nested pairs and skipping escaped brackets.
     closers: HashMap<usize, usize>,
@@ -229,7 +212,7 @@ struct Stretch<'t> {
 }
 
 impl<'t> Stretch<'t> {
-    fn new(text: &'t str, start: usize, end: usize, defined: &'t HashSet<String>) -> Self {
+    fn new(text: &'t str, start: usize, end: usize) -> Self {
         let bytes = text.as_bytes();
         let mut breaks = Vec::new();
         let mut line_start = start;
@@ -243,40 +226,56 @@ impl<'t> Stretch<'t> {
             line_start = line_end;
         }
         let mut closers = HashMap::new();
-        let (mut brackets, mut parens) = (Vec::new(), Vec::new());
-        let mut next_break = breaks.iter().peekable();
-        let mut at = start;
-        while at < end {
-            if next_break.next_if(|&&blank| blank <= at).is_some() {
-                brackets.clear();
-                parens.clear();
-            }
-            match bytes[at] {
-                b'\\' if at + 1 < end && bytes[at + 1].is_ascii_punctuation() => at += 1,
-                b'[' => brackets.push(at),
-                b'(' => parens.push(at),
-                b']' => {
-                    if let Some(open) = brackets.pop() {
-                        closers.insert(open, at);
-                    }
-                }
-                b')' => {
-                    if let Some(open) = parens.pop() {
-                        closers.insert(open, at);
-                    }
-                }
-                _ => {}
-            }
-            at += 1;
+        let mut ticks = HashMap::new();
+        let mut paragraph = start;
+        for limit in breaks.iter().copied().chain([end]) {
+            index_ticks(bytes, paragraph, limit, &mut ticks);
+            index_pairs(bytes, paragraph, limit, &ticks, &mut closers);
+            paragraph = limit;
         }
         Self {
             text,
-            defined,
             end,
-            breaks,
+            ticks,
             closers,
             next_angle: None,
             next_line: None,
+        }
+    }
+
+    /// A definition may follow its uses. Walk the same markup as the mention
+    /// scan so an example inside code, a link, a tag or a URL cannot define it.
+    fn collect_definitions(&mut self, mut at: usize, defined: &mut HashSet<String>) {
+        let bytes = self.text.as_bytes();
+        while at < self.end {
+            if bytes[at] == b'[' {
+                if let Some(&close) = self.closers.get(&at) {
+                    if bytes.get(close + 1) == Some(&b':') && line_starts_at(self.text, at) {
+                        let label = &self.text[at + 1..close];
+                        if label_fits(label) && !label.contains(['[', '\n']) {
+                            defined.insert(normalize(label));
+                        }
+                    }
+                }
+            }
+            at = self
+                .skip_markup(at, defined)
+                .unwrap_or_else(|| at + utf8_len(bytes[at]));
+        }
+        // The mention pass starts at the beginning again.
+        self.next_angle = None;
+        self.next_line = None;
+    }
+
+    fn skip_markup(&mut self, at: usize, defined: &HashSet<String>) -> Option<usize> {
+        let bytes = self.text.as_bytes();
+        match bytes[at] {
+            b'\\' => (at + 1 < self.end && bytes[at + 1].is_ascii_punctuation()).then_some(at + 2),
+            b'`' => self.ticks.get(&at).copied(),
+            b'[' => self.link(at, defined),
+            b'<' => self.tag(at),
+            b'h' | b'H' => url(self.text, at, self.end),
+            _ => None,
         }
     }
 
@@ -286,6 +285,7 @@ impl<'t> Stretch<'t> {
         start: usize,
         home: Option<Repository<'_>>,
         host_known: bool,
+        defined: &HashSet<String>,
         found: &mut Vec<Reference>,
     ) {
         let (text, end) = (self.text, self.end);
@@ -293,15 +293,7 @@ impl<'t> Stretch<'t> {
         let mut at = start;
         while at < end {
             let byte = bytes[at];
-            let skip = match byte {
-                b'\\' => (at + 1 < end && bytes[at + 1].is_ascii_punctuation()).then_some(at + 2),
-                b'`' => Some(self.code_span(at)),
-                b'[' => self.link(at),
-                b'<' => self.tag(at),
-                b'h' | b'H' => url(text, at, end),
-                _ => None,
-            };
-            if let Some(next) = skip {
+            if let Some(next) = self.skip_markup(at, defined) {
                 at = next;
                 continue;
             }
@@ -348,53 +340,17 @@ impl<'t> Stretch<'t> {
         }
     }
 
-    /// Where the paragraph holding `at` ends: at the next blank line, or the
-    /// end of the stretch.
-    fn paragraph_end(&self, at: usize) -> usize {
-        let next = self.breaks.partition_point(|&blank| blank <= at);
-        self.breaks.get(next).copied().unwrap_or(self.end)
-    }
-
-    /// Past the code span a backtick run at `at` opens, or past the run alone
-    /// when no run of the same length closes it in the same paragraph.
-    fn code_span(&self, at: usize) -> usize {
-        let bytes = self.text.as_bytes();
-        let run = bytes[at..self.end]
-            .iter()
-            .take_while(|&&byte| byte == b'`')
-            .count();
-        let limit = self.paragraph_end(at + run);
-        let mut look = at + run;
-        while look < limit {
-            if bytes[look] == b'`' {
-                let close = bytes[look..limit]
-                    .iter()
-                    .take_while(|&&byte| byte == b'`')
-                    .count();
-                if close == run {
-                    return look + close;
-                }
-                look += close;
-            } else {
-                look += 1;
-            }
-        }
-        at + run
-    }
-
     /// Past a Markdown link or image starting at its `[`, or past a link
     /// reference definition's line: a mention the agent already linked keeps
     /// the agent's link. The forms are an inline link `[label](destination)`,
     /// a full or collapsed reference `[label][ref]` or `[label][]`, a
     /// shortcut reference `[label]` whose label the text defines, and a
     /// definition `[label]: destination` at the start of a line.
-    fn link(&self, at: usize) -> Option<usize> {
-        // CommonMark caps a link label at 999 characters.
-        const LABEL: usize = 1_000;
+    fn link(&self, at: usize, defined: &HashSet<String>) -> Option<usize> {
         const DESTINATION: usize = 2_048;
         let bytes = self.text.as_bytes();
         let close = *self.closers.get(&at)?;
-        if close - at > LABEL {
+        if !label_fits(&self.text[at + 1..close]) {
             return None;
         }
         match bytes.get(close + 1).filter(|_| close + 1 < self.end) {
@@ -404,15 +360,14 @@ impl<'t> Stretch<'t> {
             }
             Some(b'[') => {
                 let after = *self.closers.get(&(close + 1))?;
-                (after - close <= LABEL).then_some(after + 1)
+                label_fits(&self.text[close + 2..after]).then_some(after + 1)
             }
             Some(b':') if line_starts_at(self.text, at) => Some(
                 self.text[close..self.end]
                     .find('\n')
                     .map_or(self.end, |offset| close + offset + 1),
             ),
-            _ => self
-                .defined
+            _ => defined
                 .contains(&normalize(&self.text[at + 1..close]))
                 .then_some(close + 1),
         }
@@ -430,6 +385,95 @@ impl<'t> Stretch<'t> {
         let line = next_of(&mut self.next_line, bytes, at, self.end, b'\n');
         (angle < line).then_some(angle + 1)
     }
+}
+
+/// Pair destination parentheses as literal punctuation; code spans do not
+/// open inside destinations. For labels, find the next unmatched `]` from
+/// each opener independently. Working backwards lets a nested label or code
+/// span reuse the answer just after its end. A tick in a preceding URL or tag
+/// can therefore never hide this opener.
+fn index_pairs(
+    bytes: &[u8],
+    start: usize,
+    end: usize,
+    ticks: &HashMap<usize, usize>,
+    pairs: &mut HashMap<usize, usize>,
+) {
+    let mut parens = Vec::new();
+    let mut at = start;
+    while at < end {
+        match bytes[at] {
+            b'\\' if at + 1 < end && bytes[at + 1].is_ascii_punctuation() => at += 1,
+            b'(' => parens.push(at),
+            b')' => {
+                if let Some(open) = parens.pop() {
+                    pairs.insert(open, at);
+                }
+            }
+            _ => {}
+        }
+        at += 1;
+    }
+    let mut after = HashMap::new();
+    let (mut next, mut past_one) = (None, None);
+    for at in (start..end).rev() {
+        let old = next;
+        match bytes[at] {
+            b']' => {
+                after.insert(at + 1, next);
+                next = Some(at);
+            }
+            b'[' => {
+                if let Some(close) = next {
+                    pairs.insert(at, close);
+                    next = after.get(&(close + 1)).copied().flatten();
+                }
+            }
+            b'`' => {
+                if at + 1 == end || bytes[at + 1] != b'`' {
+                    after.insert(at + 1, next);
+                }
+                if let Some(past) = ticks.get(&at) {
+                    next = after.get(past).copied().flatten();
+                }
+            }
+            b'\\' if at + 1 < end && bytes[at + 1].is_ascii_punctuation() => next = past_one,
+            _ => {}
+        }
+        past_one = old;
+    }
+}
+
+/// Looking backwards makes the next run of each length available when an
+/// opener is reached. Backslashes can escape an opening tick, but cannot
+/// escape a closing run inside code.
+fn index_ticks(bytes: &[u8], start: usize, mut end: usize, ticks: &mut HashMap<usize, usize>) {
+    let mut next = HashMap::new();
+    while end > start {
+        #[cfg(test)]
+        tests::TICK_BYTES.update(|n| n + 1);
+        if bytes[end - 1] != b'`' {
+            end -= 1;
+            continue;
+        }
+        let mut open = end - 1;
+        while open > start && bytes[open - 1] == b'`' {
+            open -= 1;
+        }
+        let len = end - open;
+        if len > 1 && open > start && bytes[open - 1] == b'\\' {
+            ticks.insert(open + 1, next.get(&(len - 1)).copied().unwrap_or(end));
+        }
+        ticks.insert(open, next.insert(len, end).unwrap_or(end));
+        end = open;
+    }
+}
+
+/// A Markdown label has at most 999 Unicode scalar values. Avoid walking
+/// long overlapping labels: none can occupy more than four bytes per scalar.
+fn label_fits(label: &str) -> bool {
+    const MAX: usize = 999;
+    label.len() <= MAX || (label.len() <= MAX * 4 && label.chars().count() <= MAX)
 }
 
 /// The first `byte` at or after `from` before `end`, or `end`, reusing the
