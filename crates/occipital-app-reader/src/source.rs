@@ -594,18 +594,19 @@ impl TranscriptReader {
             return self.read_positioned(source, &request).await;
         }
         if let Some(ordinal) = request.message_ordinal {
-            let head = source.head().await.unwrap_or_default();
+            let head = source.head().await?;
             let full = source.exact(&Anchor::Ordinal(ordinal as u64)).await;
             let mut reply = match full {
                 Ok(Some(row)) if row.ordinal == Some(ordinal as u64) => {
                     json!({"messages": [row.value()?], "reachedStart": true, "fullContent": true})
                 }
+                Err(error) if error.code != "full_content_unavailable" => return Err(error),
                 unavailable => {
                     let reason = match unavailable {
                         Err(error) => error.message,
                         _ => format!("source no longer contains message [{ordinal}]"),
                     };
-                    // A retained summary is useful during an outage, but must
+                    // A retained summary is useful for a missing full body, but must
                     // never masquerade as the full arguments or tool output.
                     // The summary is read as the one row after `ordinal - 1`.
                     // Reading the one row older than `ordinal + 1` instead finds
@@ -614,11 +615,13 @@ impl TranscriptReader {
                     // only for a source that can't read after an ordinal.
                     let summary = match source.after((ordinal as u64).saturating_sub(1), 1).await {
                         Ok(positioned) => positioned.page.rows,
-                        Err(_) => source
-                            .older(&Anchor::Ordinal(ordinal as u64 + 1), 1)
-                            .await
-                            .map(|page| page.rows)
-                            .unwrap_or_default(),
+                        Err(error) if error.code == "unsupported" => {
+                            source
+                                .older(&Anchor::Ordinal(ordinal as u64 + 1), 1)
+                                .await?
+                                .rows
+                        }
+                        Err(error) => return Err(error),
                     };
                     let rows = summary
                         .into_iter()
@@ -946,6 +949,12 @@ impl TranscriptReader {
             let ordinal = request.after_ordinal.expect("checked by the caller") as u64;
             source.after(ordinal, limit).await?
         };
+        if !positioned.page.agrees_with(&head) {
+            return Err(ReadError::new(
+                "provider_unavailable",
+                "the history changed while the positioned page was read",
+            ));
+        }
         // The page ends at its last message; an empty page (limit 0) ends where it began.
         let end = positioned
             .page

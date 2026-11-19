@@ -27,6 +27,7 @@ struct State {
     rewrite_at: Option<usize>,
     wrong_page_version: bool,
     exact_unavailable: bool,
+    exact_error: Option<ReadError>,
     last_run: Option<cortexkit_role_llm_runner::read::LastRunState>,
     service_tier: Option<String>,
     history_intake: bool,
@@ -56,6 +57,7 @@ impl FakeSource {
                 rewrite_at: None,
                 wrong_page_version: false,
                 exact_unavailable: false,
+                exact_error: None,
                 last_run: None,
                 service_tier: None,
                 history_intake: false,
@@ -208,11 +210,30 @@ impl TranscriptSource for FakeSource {
         }
         Ok(page)
     }
+    async fn after(
+        &self,
+        ordinal: u64,
+        limit: u32,
+    ) -> Result<occipital_app_reader::source::Positioned, ReadError> {
+        if !self.state.lock().unwrap().wrong_page_version {
+            return Err(occipital_app_reader::source::unsupported("afterOrdinal"));
+        }
+        let len = self.state.lock().unwrap().rows.len();
+        let from = (ordinal as usize + 1).min(len);
+        Ok(occipital_app_reader::source::Positioned {
+            page: self.page(from, (from + limit as usize).min(len))?,
+            anchor: None,
+            newest: len.checked_sub(1).map(|n| n as u64),
+        })
+    }
     async fn exact(&self, anchor: &Anchor) -> Result<Option<Row>, ReadError> {
         let state = self.state.lock().unwrap();
+        if let Some(error) = &state.exact_error {
+            return Err(error.clone());
+        }
         if state.exact_unavailable {
             return Err(ReadError::new(
-                "provider_unavailable",
+                "full_content_unavailable",
                 "full content was pruned",
             ));
         }
@@ -1367,4 +1388,34 @@ async fn a_claim_after_applying_its_diverged_resync_matches() {
     advance_claim(params["claim"].as_object_mut().unwrap(), &changed);
     let caught_up = read(&reader, &source, params).await;
     assert_eq!(caught_up["claim"], "matched", "{caught_up}");
+}
+
+#[tokio::test]
+async fn a_positioned_page_of_a_different_generation_is_refused() {
+    let source = FakeSource::new("broca", 4, 8, true);
+    source.state.lock().unwrap().wrong_page_version = true;
+    let error = TranscriptReader::default()
+        .read(Some(&*source), json!({"session":"s","afterOrdinal":1}))
+        .await
+        .unwrap_err();
+    assert_eq!(error.code, "provider_unavailable");
+}
+
+#[tokio::test]
+async fn an_exact_read_preserves_refusals_and_the_move_holder() {
+    for code in [
+        "session_held_elsewhere",
+        "session_moving",
+        "session_unknown",
+        "provider_unavailable",
+    ] {
+        let source = FakeSource::new("broca", 3, 8, true);
+        let refused =
+            ReadError::new(code, "read refused").with_detail(json!({"holder":"next-box"}));
+        source.state.lock().unwrap().exact_error = Some(refused.clone());
+        let reply = TranscriptReader::default()
+            .read(Some(&*source), json!({"session":"s","messageOrdinal":1}))
+            .await;
+        assert_eq!(reply.unwrap_err(), refused);
+    }
 }
