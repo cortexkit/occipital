@@ -8,7 +8,8 @@ use crate::app_reader::{resolve::Entorhinal, AppReader, DETAILS, TRANSCRIPT_PAGE
 use cortexkit_role_llm_runner::capabilities::HEAD_SENDER;
 use occipital_app_reader::source::SENDER_UNKNOWN;
 
-const SAMPLES: &str = "phone-session-facts-v3";
+// The frozen v3 claims vouched below the compared range; v4 checks the current handler.
+const SAMPLES: &str = "phone-session-facts-v4";
 
 fn last_run() -> Value {
     json!({"runId":"r1", "state":"active"})
@@ -798,7 +799,7 @@ impl Entorhinal for Unrecorded {
 /// read only: its replies carry no `sender` (so the apps offer no composer or
 /// Stop) and no command subject, and the send path and uploads refuse it. Once
 /// Entorhinal records it, it is read through Entorhinal again and takes sends.
-/// The replies are kept as the sample set `phone-reader-unrecorded-v1`; its
+/// The replies are kept as the sample set `phone-reader-unrecorded-v2`; its
 /// README says what each file shows.
 #[tokio::test]
 async fn a_session_entorhinal_does_not_record_is_read_only() {
@@ -812,7 +813,8 @@ async fn a_session_entorhinal_does_not_record_is_read_only() {
         Arc::new(SendingRoutes(route.clone())),
     ));
     let app = Arc::new(AppReader::new(sources.clone()));
-    let mut served = super::served_samples::Served::new("phone-reader-unrecorded-v1", app.clone());
+    // The v1 claim vouched below the page; phone-reader-unrecorded-v2 checks the bounded vouch.
+    let mut served = super::served_samples::Served::new("phone-reader-unrecorded-v2", app.clone());
     let session = "mc-dream:1.59:0.0";
     let request = json!({"session": session, "harness": "broca", "limit": 3});
     let details_request = json!({"session": session, "harness": "broca", "commandSubject": true});
@@ -886,7 +888,7 @@ async fn a_session_entorhinal_does_not_record_is_read_only() {
     served.check();
 }
 
-/// The session fact samples the apps pin, `phone-session-facts-v3`, are what the
+/// The session fact samples the apps pin, `phone-session-facts-v4`, are what the
 /// handlers answer; `served_samples` says how the set is checked and rewritten.
 #[tokio::test]
 async fn the_session_fact_samples_are_what_the_handlers_answer() {

@@ -14,6 +14,7 @@ use cortexkit_test_support::ScratchDir;
 use subc_client_rs::HandlerOutcome;
 use subc_protocol::Principal;
 
+// The frozen v1 replies include hidden tool summaries; v2 checks the current handler.
 const SET: &str = "phone-reader-simple-v2";
 const SESSION: &str = "alfonso:head";
 /// The agent's own prose between the messages the view shows.

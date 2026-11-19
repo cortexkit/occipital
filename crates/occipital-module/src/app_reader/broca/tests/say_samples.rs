@@ -149,6 +149,7 @@ fn parts(page: &Value, mid: &str) -> Vec<Value> {
 #[tokio::test]
 async fn the_say_samples_are_what_the_reader_serves() {
     let (app, route) = chat(true);
+    // The frozen v1 and v2 tokens describe only the head; v3 covers both sets of message rows.
     let mut served = Served::new("phone-reader-say-v3", app);
     let newest = json!({"method": super::super::super::TRANSCRIPT_PAGE,
         "params": {"session": SESSION}});
@@ -421,6 +422,7 @@ async fn the_say_diff_samples_are_what_the_reader_serves() {
             "level": "chat"}),
     );
     let (app, _store, _dir, _task) = chat_with_records(&[&first, &later]);
+    // The diff pages from v1 are frozen; v2 checks their record-sensitive tokens.
     let mut served = Served::new("phone-reader-say-diff-v2", app);
 
     let newest = json!({"method": super::super::super::TRANSCRIPT_PAGE,

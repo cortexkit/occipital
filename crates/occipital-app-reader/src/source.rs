@@ -834,17 +834,20 @@ impl TranscriptReader {
             // result as a later entry, which gives the call's row its finish. So a native
             // claim is also checked against the copy its claimant was served, when one is
             // kept, and a changed held row answers `diverged` with a resync from it.
-            let changed = (native && held.held_version == version)
+            let compared = (native && held.held_version == version)
                 .then(|| {
                     let claims = self.claims.lock().expect("transcript claims poisoned");
                     claims.share_unchanged(&claims_key, &mut current);
                     claims.held_snapshot(&claims_key, held)
                 })
                 .flatten()
-                .map(|previous| claim::evaluate_claim(held, Some(&previous), &current))
-                .filter(|evaluation| matches!(evaluation, claim::ClaimEvaluation::Diverged { .. }));
-            let mut reply = if let Some(diverged) = changed {
-                let mut reply = claim::claim_reply(&version, diverged);
+                .map(|previous| claim::evaluate_claim(held, Some(&previous), &current));
+            let mut reply = if let Some(
+                evaluation @ (claim::ClaimEvaluation::Diverged { .. }
+                | claim::ClaimEvaluation::Matched { .. }),
+            ) = compared
+            {
+                let mut reply = claim::claim_reply(&version, evaluation);
                 reply["diagnostics"] = claim::diagnostics("durable", "native");
                 reply
             } else if native {
@@ -856,7 +859,16 @@ impl TranscriptReader {
                     {
                         claim::RunnerClaimEvaluation::Matched {
                             new_turns: messages[index + 1..].to_vec(),
-                            vouched_from_message_id: held.held_floor_message_id.clone(),
+                            // Without a kept copy, an equal history version only vouches
+                            // for the visible portion of the claimed range.
+                            vouched_from_message_id: messages[messages
+                                .iter()
+                                .position(|row| row["messageId"] == held.held_floor_message_id)
+                                .unwrap_or(0)
+                                .min(index)]["messageId"]
+                                .as_str()
+                                .unwrap_or(&held.since_message_id)
+                                .to_owned(),
                         }
                     } else if numbered_anchor && request.accepts_outside_window {
                         // Equal versions preserve held ordinals; only the delivery window was missed.
