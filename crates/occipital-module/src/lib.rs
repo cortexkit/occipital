@@ -30,6 +30,7 @@ pub mod catalog_generation;
 pub mod commands;
 pub mod display;
 pub mod key_digest;
+mod key_locks;
 pub mod manifest;
 pub mod media;
 pub mod moves;

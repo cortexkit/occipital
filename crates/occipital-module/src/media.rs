@@ -161,24 +161,35 @@ fn thumbnail_within(bytes: &[u8], max_pixels: u64) -> Result<Thumb, ThumbRefusal
     }
     let transparent =
         image.color().has_alpha() && image.to_rgba8().pixels().any(|pixel| pixel.0[3] < u8::MAX);
-    let mut out = Vec::new();
-    let mime = if transparent {
-        image
-            .write_to(&mut Cursor::new(&mut out), ImageFormat::Png)
-            .map_err(|_| ThumbRefusal::NotImage)?;
-        "image/png"
-    } else {
-        JpegEncoder::new_with_quality(&mut out, JPEG_QUALITY)
-            .encode_image(&DynamicImage::ImageRgb8(image.to_rgb8()))
-            .map_err(|_| ThumbRefusal::NotImage)?;
-        "image/jpeg"
-    };
-    Ok(Thumb {
-        mime,
-        width: image.width(),
-        height: image.height(),
-        bytes: out,
-    })
+    loop {
+        let mut out = Vec::new();
+        let mime = if transparent {
+            image
+                .write_to(&mut Cursor::new(&mut out), ImageFormat::Png)
+                .map_err(|_| ThumbRefusal::NotImage)?;
+            "image/png"
+        } else {
+            JpegEncoder::new_with_quality(&mut out, JPEG_QUALITY)
+                .encode_image(&DynamicImage::ImageRgb8(image.to_rgb8()))
+                .map_err(|_| ThumbRefusal::NotImage)?;
+            "image/jpeg"
+        };
+        // Base64 takes four bytes per three input bytes. The fixed JSON fields,
+        // including the result envelope and both dimensions, fit in 128 bytes.
+        if out.len().div_ceil(3) * 4 + 128 <= occipital_app_reader::page::MAX_REPLY_BODY_BYTES {
+            return Ok(Thumb {
+                mime,
+                width: image.width(),
+                height: image.height(),
+                bytes: out,
+            });
+        }
+        let side = image.width().max(image.height()) / 2;
+        if side == 0 {
+            return Err(ThumbRefusal::TooLarge);
+        }
+        image = image.thumbnail(side, side);
+    }
 }
 
 /// A map that forgets its oldest entries once it holds `cap` of them, or `cap`
@@ -301,6 +312,7 @@ fn image_parts(display: &Value) -> impl Iterator<Item = &Value> {
 /// take [`MAX_PIXELS`] times four bytes, so they run one by one.
 pub struct Thumbs {
     made: Mutex<Bounded<Thumb>>,
+    making: crate::key_locks::KeyLocks,
     decoding: tokio::sync::Semaphore,
 }
 
@@ -308,6 +320,7 @@ impl Default for Thumbs {
     fn default() -> Self {
         Self {
             made: Mutex::new(Bounded::new(THUMB_BYTES)),
+            making: Default::default(),
             decoding: tokio::sync::Semaphore::new(1),
         }
     }
@@ -442,6 +455,7 @@ pub async fn answer(
     // The runner admits the read first: a digest this chat doesn't reference is
     // refused there, even when another chat's thumbnail is already made.
     let probe = media_piece(read(0, 0).await?)?;
+    let _making = thumbs.making.lock(&request.sha256).await;
     if let Some(thumb) = thumbs.made.guard().get(&request.sha256) {
         return Ok(thumb_reply(&thumb));
     }
