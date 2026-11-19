@@ -836,3 +836,38 @@ async fn upload_calls_are_logged_like_other_app_requests() {
     assert!(refused.starts_with("WARN "), "{refused}");
     assert!(!refused.contains("outcome=\"ok\""), "{refused}");
 }
+
+#[tokio::test]
+async fn a_chunk_checks_data_space_only_for_new_bytes() {
+    let f = Fixture::new();
+    let mut wire = f.wire();
+    wire.bind_all().await;
+    let id = wire.begin("a.bin", b"abcd").await;
+    wire.chunk(&id, 0, b"ab").await.ok();
+    f.free_data.store(DISK_FLOOR_BYTES, Ordering::SeqCst);
+    assert_eq!(wire.chunk(&id, 0, b"ab").await.ok()["committed"], 2);
+    assert_eq!(wire.chunk(&id, 1, b"bcd").await.code(), codes::DISK_FLOOR);
+    assert_eq!(std::fs::read(f.blob(&id)).unwrap(), b"ab");
+    f.free_data.store(DISK_FLOOR_BYTES + 2, Ordering::SeqCst);
+    assert_eq!(wire.chunk(&id, 1, b"bcd").await.ok()["committed"], 4);
+}
+
+#[tokio::test]
+async fn a_failed_finish_commit_recovers_the_original_project_file() {
+    let f = Fixture::new();
+    let mut wire = f.wire();
+    wire.bind_all().await;
+    let id = wire.begin("note.txt", b"note").await;
+    wire.chunk(&id, 0, b"note").await.ok();
+    f.store.with_conn(|db| db.execute_batch("CREATE TRIGGER fail_finish BEFORE UPDATE OF state ON harness_app_upload WHEN NEW.state='finished' BEGIN SELECT RAISE(ABORT,'offline'); END")).unwrap();
+    let _ = wire.id_call(FINISH, &id).await.code();
+    let folder = f.date_dir();
+    assert_eq!(listing(&folder), ["note.txt"]);
+    f.store
+        .with_conn(|db| db.execute_batch("DROP TRIGGER fail_finish"))
+        .unwrap();
+    f.advance(1000);
+    let path = wire.id_call(FINISH, &id).await.ok()["path"].clone();
+    assert_eq!(path, folder.join("note.txt").to_string_lossy().as_ref());
+    assert_eq!(listing(&folder), ["note.txt"]);
+}

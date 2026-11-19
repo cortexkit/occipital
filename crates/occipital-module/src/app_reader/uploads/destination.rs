@@ -58,6 +58,7 @@ pub(crate) enum PlaceError {
     /// The bytes in the destination are not the declared file.
     Checksum(String),
     Io(io::Error),
+    Refused(occipital_app_reader::source::ReadError),
 }
 
 impl From<io::Error> for PlaceError {
@@ -358,12 +359,40 @@ pub(crate) fn mtime_ns(meta: &std::fs::Metadata) -> io::Result<i64> {
     })
 }
 
+/// A completed rename can outlive the commit that acknowledges it. Accept the
+/// old name only if it still identifies the very file staged by this upload.
+fn recovered(
+    file: &mut File,
+    request: &Request<'_>,
+    previous: &super::store::Placed,
+) -> Result<Option<Placed>, PlaceError> {
+    let meta = file.metadata()?;
+    if !meta.is_file()
+        || file_identity(file)? != previous.inode
+        || mtime_ns(&meta)? != previous.mtime_ns
+        || meta.len() != request.size
+    {
+        return Ok(None);
+    }
+    let (hash, size) = digest(file)?;
+    Ok(
+        (hash == request.sha256 && size == request.size).then(|| Placed {
+            path: previous.path.clone(),
+            inode: previous.inode,
+            mtime_ns: previous.mtime_ns,
+        }),
+    )
+}
+
 /// One finish's destination request.
 pub(crate) struct Request<'a> {
     pub project_root: &'a Path,
     pub date: &'a str,
     pub name: &'a str,
     pub upload_id: &'a str,
+    pub previous: Option<&'a super::store::Placed>,
+    pub record_intent: &'a dyn Fn(&Placed) -> io::Result<()>,
+    pub before_copy: &'a dyn Fn() -> Result<(), PlaceError>,
     pub size: u64,
     pub sha256: &'a str,
     /// The user id destination folders must belong to on Unix. Unused on Windows,
@@ -394,6 +423,27 @@ pub(crate) fn place(blob: &mut File, request: &Request<'_>) -> Result<Placed, Pl
     private_dir(&folder, request.owner)?;
     let chain = [cortexkit, uploads, folder.clone()];
 
+    if let Some(previous) = request
+        .previous
+        .filter(|p| p.path.parent() == Some(&folder))
+    {
+        match std::fs::symlink_metadata(&previous.path) {
+            Ok(meta) if meta.is_file() && !is_link(&meta) => {
+                recheck(&chain, request.owner)?;
+                if let Some(placed) =
+                    recovered(&mut File::open(&previous.path)?, request, previous)?
+                {
+                    recheck(&chain, request.owner)?;
+                    sync_dir(&folder)?;
+                    return Ok(placed);
+                }
+            }
+            Ok(_) => {}
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e.into()),
+        }
+    }
+    (request.before_copy)()?;
     // A fixed temporary name per upload, so a retried finish replaces its own
     // leftover instead of piling up new ones.
     let temporary = folder.join(format!(".{}.partial", request.upload_id));
@@ -437,13 +487,15 @@ pub(crate) fn place(blob: &mut File, request: &Request<'_>) -> Result<Placed, Pl
             }
             let path = folder.join(&name);
             // Never replaces a file: a name taken since the listing is just skipped.
+            let placed = Placed {
+                path: path.clone(),
+                inode,
+                mtime_ns,
+            };
+            (request.record_intent)(&placed)?;
             if occipital_files::move_new(&temporary, &path)? {
                 sync_dir(&folder)?;
-                return Ok(Placed {
-                    path,
-                    inode,
-                    mtime_ns,
-                });
+                return Ok(placed);
             }
         }
         Err(PlaceError::Unsafe(format!(

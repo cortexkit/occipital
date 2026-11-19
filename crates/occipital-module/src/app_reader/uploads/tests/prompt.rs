@@ -224,3 +224,15 @@ fn rows_written_before_prompt_uploads_read_as_folder_uploads() {
     assert_eq!(row.destination, store::Destination::Folder);
     assert_eq!(row.runner_upload, None);
 }
+
+#[tokio::test]
+async fn sent_upload_status_and_late_chunks_never_recreate_the_blob() {
+    let f = Fixture::new();
+    let mut wire = f.prompt_wire(true);
+    wire.bind_all().await;
+    let id = ready(&mut wire, b"done").await;
+    f.uploads.mark_sent(&id).unwrap();
+    assert_eq!(wire.id_call(STATUS, &id).await.ok()["committed"], 4);
+    assert_eq!(wire.chunk(&id, 0, b"done").await.ok()["committed"], 4);
+    assert!(!f.blob(&id).exists());
+}

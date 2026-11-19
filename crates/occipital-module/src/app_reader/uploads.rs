@@ -227,6 +227,8 @@ pub struct Uploads {
     owner: u32,
     clock: Clock,
     free: FreeSpace,
+    /// All upload blobs share a volume: two writers must not spend the same free bytes.
+    volume_writer: Mutex<()>,
     ids: Ids,
     /// One lock per upload, so pieces of the same upload apply in turn while other
     /// uploads proceed.
@@ -284,6 +286,7 @@ impl Uploads {
             clock,
             free,
             ids,
+            volume_writer: Mutex::default(),
             locks: Mutex::default(),
             #[cfg(test)]
             crash_after_blob_sync: Default::default(),
@@ -400,22 +403,20 @@ impl Uploads {
         incoming: u64,
         blob_incoming: u64,
     ) -> Result<(), ReadError> {
-        for (volume, path, adding) in [
-            ("data", self.blobs.as_path(), blob_incoming),
-            ("project", project_root, incoming),
-        ] {
-            let available = (self.free)(path)
-                .map_err(|error| storage(format!("free space on the {volume} volume: {error}")))?;
-            let needed = adding.saturating_add(DISK_FLOOR_BYTES);
-            if available < needed {
-                return Err(refusal(
-                    codes::DISK_FLOOR,
-                    format!(
-                        "the {volume} volume would keep less than {DISK_FLOOR_BYTES} bytes free"
-                    ),
-                )
-                .with_detail(json!({"volume": volume, "available": available, "needed": needed})));
-            }
+        self.check_space("data", &self.blobs, blob_incoming)?;
+        self.check_space("project", project_root, incoming)
+    }
+
+    fn check_space(&self, volume: &str, path: &Path, adding: u64) -> Result<(), ReadError> {
+        let available = (self.free)(path)
+            .map_err(|error| storage(format!("free space on the {volume} volume: {error}")))?;
+        let needed = adding.saturating_add(DISK_FLOOR_BYTES);
+        if available < needed {
+            return Err(refusal(
+                codes::DISK_FLOOR,
+                format!("the {volume} volume would keep less than {DISK_FLOOR_BYTES} bytes free"),
+            )
+            .with_detail(json!({"volume": volume, "available": available, "needed": needed})));
         }
         Ok(())
     }
@@ -565,7 +566,7 @@ impl Uploads {
         let lock = self.lock(upload_id);
         let _held = lock.lock().unwrap_or_else(|e| e.into_inner());
         let row = self.lookup(device, upload_id)?;
-        if row.state == State::Finished {
+        if matches!(row.state, State::Finished | State::Sent) {
             // Every piece was taken before the finish, and the blob is gone, so a late
             // repeat is answered without being stored or compared.
             return Ok(json!({"committed": row.size}));
@@ -606,6 +607,8 @@ impl Uploads {
             }
         }
         if end > committed {
+            let _writer = self.volume_writer.lock().unwrap_or_else(|e| e.into_inner());
+            self.check_space("data", &self.blobs, end - committed)?;
             file.seek(SeekFrom::Start(committed)).map_err(storage)?;
             file.write_all(&payload[overlap..]).map_err(storage)?;
             // Durable before the prefix moves, so the row never claims bytes a crash
@@ -627,7 +630,7 @@ impl Uploads {
         let lock = self.lock(upload_id);
         let _held = lock.lock().unwrap_or_else(|e| e.into_inner());
         let row = self.lookup(device, upload_id)?;
-        if row.state == State::Finished {
+        if matches!(row.state, State::Finished | State::Sent) {
             return Ok(json!({"committed": row.size}));
         }
         self.refuse_expired(&row)?;
@@ -696,16 +699,28 @@ impl Uploads {
         let upload_id = row.upload_id.as_str();
         // The blob already sits on the data volume; the copy adds the file to the
         // project's.
-        self.disk_floor(&row.project_root, row.size, 0)?;
         blob.seek(SeekFrom::Start(0)).map_err(storage)?;
         let now = (self.clock)();
         let name = destination::clean_name(&row.name);
-        let date = destination::utc_date(now);
+        let placement_time = row.placed.as_ref().map_or(now, |placed| placed.finished_at);
+        let date = destination::utc_date(placement_time);
+        // The project and the blobs can be on the same volume.
+        let _writer = self.volume_writer.lock().unwrap_or_else(|e| e.into_inner());
         let placed = destination::place(
             &mut blob,
             &destination::Request {
                 project_root: &row.project_root,
                 date: &date,
+                previous: row.placed.as_ref(),
+                record_intent: &|placed| {
+                    self.rows
+                        .intend(upload_id, placed, placement_time)
+                        .map_err(std::io::Error::other)
+                },
+                before_copy: &|| {
+                    self.disk_floor(&row.project_root, row.size, 0)
+                        .map_err(destination::PlaceError::Refused)
+                },
                 name: &name,
                 upload_id,
                 size: row.size,
@@ -717,6 +732,7 @@ impl Uploads {
             destination::PlaceError::Unsafe(reason) => refusal(codes::DESTINATION_UNSAFE, reason),
             destination::PlaceError::Checksum(reason) => refusal(codes::CHECKSUM_MISMATCH, reason),
             destination::PlaceError::Io(error) => storage(error),
+            destination::PlaceError::Refused(error) => error,
         })?;
         self.rows
             .finish(
