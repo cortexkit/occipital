@@ -322,15 +322,19 @@ pub fn start(
                 if due.is_empty() && served.is_empty() {
                     continue;
                 }
-                match fetch(&store, providers.as_ref(), &writer, version, &due, &served).await {
-                    Ok(replaced) => {
+                match fetch(
+                    &store,
+                    providers.as_ref(),
+                    &writer,
+                    version,
+                    &due,
+                    &served,
+                    hints.as_ref(),
+                )
+                .await
+                {
+                    Ok(()) => {
                         resting.remove(&writer);
-                        if let Some(hints) = &hints {
-                            for pin in replaced {
-                                // No watch open is no one to tell.
-                                let _ = hints.send(Hint::Pin(pin));
-                            }
-                        }
                     }
                     Err(error) => {
                         tracing::warn!(%writer, %error, "cannot fetch display views");
@@ -371,7 +375,8 @@ fn is_due(kept: &KeptView, version: &str, now_ms: i64) -> bool {
 /// Fetch `writer`'s answers for `due`, each pin with what is kept for it, take
 /// the answers it `served` without asking, and keep, replace or stamp each as
 /// [`decide`] says. A served answer that isn't one entry for its own pin is
-/// left out. Returns the pins whose kept answer was replaced.
+/// left out. Announce each usable view once stored: a later entry in the
+/// batch can fail after this entry is already visible.
 async fn fetch(
     store: &DisplayStore,
     providers: &dyn Providers,
@@ -379,7 +384,8 @@ async fn fetch(
     version: &str,
     due: &[(String, Option<ViewState>)],
     served: &[(String, ViewsReply)],
-) -> Result<Vec<String>, String> {
+    hints: Option<&broadcast::Sender<Hint>>,
+) -> Result<(), String> {
     let catalog = providers.catalog(writer).await?;
     let schemas: HashMap<String, &Value> = catalog
         .iter()
@@ -391,20 +397,23 @@ async fn fetch(
         })
         .collect();
     let now = now_ms();
-    let mut replaced = Vec::new();
-    let mut take = |pin: &String, kept: Option<&ViewState>, answer: &ViewEntry| {
+    let take = |pin: &String, kept: Option<&ViewState>, answer: &ViewEntry| -> Result<(), String> {
         let (view, input_schema) = resolve(pin, answer, schemas.get(pin).copied());
         let decision = decide(kept, view, input_schema)?;
         if let Decision::Stamp(Some(reason)) = &decision {
             tracing::warn!(%writer, %pin, %reason, "kept the display view");
         }
-        if matches!(
+        let changed = matches!(
             decision,
             Decision::Replace(_) | Decision::Keep(ViewState::View { .. })
-        ) {
-            replaced.push(pin.clone());
+        );
+        put(store, writer, pin, decision, version, now)?;
+        if changed {
+            if let Some(hints) = hints {
+                let _ = hints.send(Hint::Pin(pin.clone()));
+            }
         }
-        put(store, writer, pin, decision, version, now)
+        Ok(())
     };
     for (pin, reply) in served {
         if let Err(refusal) = reply.validate_for(&ViewsRequest::new(vec![pin.clone()])) {
@@ -427,7 +436,7 @@ async fn fetch(
             take(pin, kept.as_ref(), &reply.views[pin])?;
         }
     }
-    Ok(replaced)
+    Ok(())
 }
 
 /// The writer's answer for `pin` as [`decide`] reads it: the view, and the input
