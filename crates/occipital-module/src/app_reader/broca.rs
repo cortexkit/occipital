@@ -576,6 +576,12 @@ fn not_ready(op: ReadOp, code: Option<&str>, detail: Option<&Value>) -> Option<&
         .then_some("context_not_ready")
 }
 
+/// The plan view refusals that say for good whether the session has a plan to
+/// read: the runner serves no plan view, holds no plan for the session, or
+/// holds one too large to serve. A session refused any of these has no `say`
+/// to draw its calls by; any other refusal may pass.
+const PLAN_VIEW_FINAL: [&str; 3] = ["unsupported", "no_plan", "too_large"];
+
 /// The app code a runner's refusal of `op` keeps, if any: [`final_refusal`], or
 /// [`not_ready`].
 fn own_refusal(op: ReadOp, code: Option<&str>, detail: Option<&Value>) -> Option<&'static str> {
@@ -1225,29 +1231,75 @@ impl BrocaSource {
     /// the agent prefrontal's `say`, and as tool calls elsewhere
     /// (`occipital_app_reader::say`). The plan is read only for rows that have
     /// a `say` call, and its answer is kept for a minute.
-    async fn settle_say(&self, rows: &mut [Row]) {
+    ///
+    /// Rows whose `say` calls can't be settled yet are refused, retryably,
+    /// rather than served either way: an app keeps a page until its version
+    /// moves, and settling the calls doesn't move it, so a guess would stay on
+    /// the app's screen after the plan can be read again.
+    async fn settle_say(&self, rows: &mut [Row]) -> Result<(), ReadError> {
         if !occipital_app_reader::say::any_marked(rows.iter().map(|row| &row.display)) {
-            return;
+            return Ok(());
         }
-        let tool = self.message_tool().await;
+        let tool = self.read_message_tool().await.map_err(|error| {
+            ReadError::new(
+                "provider_unavailable",
+                format!(
+                    "this session's plan can't be read now, which says how its say calls draw: {}",
+                    error.message
+                ),
+            )
+        })?;
         for row in rows {
             occipital_app_reader::say::resolve(&mut row.display, tool.is_some());
+        }
+        Ok(())
+    }
+
+    /// The tool the agent talks to the person through, as `session.details`
+    /// names it: none while the session's plan can't be read and no earlier
+    /// answer is kept (see [`Self::read_message_tool`]).
+    pub async fn message_tool(&self) -> Option<&'static str> {
+        self.read_message_tool().await.ok().flatten()
+    }
+
+    /// Make the kept message-tool answer due for a fresh plan read, as a minute
+    /// passing would, so a test can read past it without waiting.
+    #[cfg(test)]
+    pub(crate) fn expire_message_tool(&self) {
+        let slot = self.message_tool.guard().clone();
+        let mut kept = slot.guard();
+        if let Some((at, _)) = kept.as_mut() {
+            if let Some(earlier) = at.checked_sub(super::message_tool::FRESH) {
+                *at = earlier;
+            }
         }
     }
 
     /// The tool the agent talks to the person through, from the session's
-    /// kept answer or its plan (`super::message_tool`). A plan the runner
-    /// can't serve now gives none, and isn't kept, so the next read asks again.
-    pub async fn message_tool(&self) -> Option<&'static str> {
+    /// kept answer or its plan (`super::message_tool`). A runner that serves
+    /// no plan view, or holds no plan for the session, answers none. A plan
+    /// read that fails for now gives the answer last kept, however old, and
+    /// isn't kept, so the next read asks again; with none kept, it's `Err`.
+    async fn read_message_tool(&self) -> Result<Option<&'static str>, ReadError> {
         let slot = self.message_tool.guard().clone();
         let kept = *slot.guard();
         if let Some((_, tool)) = kept.filter(|(at, _)| at.elapsed() < super::message_tool::FRESH) {
-            return tool;
+            return Ok(tool);
         }
-        let view = self.plan_view().await.ok()?;
-        let tool = super::message_tool::from_plan(&view);
+        let tool = match self.plan_view().await {
+            Ok(view) => super::message_tool::from_plan(&view),
+            Err(error) if PLAN_VIEW_FINAL.contains(&error.code) => None,
+            Err(error) => {
+                if let Some((_, tool)) = kept {
+                    return Ok(tool);
+                }
+                tracing::warn!(code = error.code, message = %error.message,
+                    "say calls wait on the session's plan, which can't be read now");
+                return Err(error);
+            }
+        };
         *slot.guard() = Some((std::time::Instant::now(), tool));
-        tool
+        Ok(tool)
     }
 
     /// The system text and tools of the plan in force, from the runner's
@@ -1256,11 +1308,15 @@ impl BrocaSource {
     /// never passed on. A runner without the contract's `plan_view` group isn't
     /// asked, and the read is refused `unsupported`.
     pub async fn plan_view(&self) -> Result<PlanView, ReadError> {
-        if !self
-            .describe()
-            .await
-            .is_some_and(|describe| describe.declares(capabilities::PLAN_VIEW))
-        {
+        // A description that can't be read now says nothing about the
+        // runner, so it's refused for now, not as unsupported, which is final.
+        let Some(describe) = self.describe().await else {
+            return Err(ReadError::new(
+                "provider_unavailable",
+                "this session's runner can't describe itself now",
+            ));
+        };
+        if !describe.declares(capabilities::PLAN_VIEW) {
             return Err(ReadError::new(
                 "unsupported",
                 "this session's runner doesn't serve its plan's system text and tools",
@@ -1773,7 +1829,7 @@ impl BrocaSource {
             self.rows(&entries, false, &pruned_reasoning)
         })?;
         self.size_images(&mut rows).await;
-        self.settle_say(&mut rows).await;
+        self.settle_say(&mut rows).await?;
         // The apps draw every system row as a prompt card that opens on tap, so
         // one with nothing in it, such as the entry Pi writes when a session
         // starts, is left out of pages. So is the user entry a runner wrote for a
@@ -2448,7 +2504,7 @@ impl TranscriptSource for BrocaSource {
         // Start result pairing at the selected message, as the full-message read
         // does, so an older unanswered call cannot consume an id-less result.
         let mut rows = self.rows(&snapshot.entries, true, &snapshot.pruned_reasoning)?;
-        self.settle_say(&mut rows).await;
+        self.settle_say(&mut rows).await?;
         let mut row = rows.remove(0);
         if let Some(reason) = row
             .display
