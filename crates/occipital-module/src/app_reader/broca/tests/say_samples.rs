@@ -450,3 +450,95 @@ async fn the_say_diff_samples_are_what_the_reader_serves() {
 
     served.check();
 }
+
+/// The kinds of the newest page's row `mid`'s parts, read straight from a
+/// session source.
+fn kinds(page: &Value, mid: &str) -> Vec<String> {
+    page["messages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["messageId"] == mid)
+        .unwrap_or_else(|| panic!("{page}"))["parts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|part| part["type"].as_str().unwrap_or_default().to_owned())
+        .collect()
+}
+
+/// While a chat's plan can't be read and no earlier answer is kept, a page
+/// holding a `say` call is refused for now, never served with its calls
+/// guessed: an app keeps a page until its version moves, and settling the
+/// calls later doesn't move it. Once the plan reads, the same page draws them
+/// as messages, and a later read that fails keeps that answer.
+#[tokio::test]
+async fn say_calls_wait_for_a_readable_plan() {
+    let (_, route) = chat(true);
+    let unreadable = || {
+        Some(Err(ReadError::new(
+            "provider_unavailable",
+            "Broca is starting",
+        )))
+    };
+    *route.plan_view.lock().unwrap() = unreadable();
+    let sources = BrocaSources::new(
+        Arc::new(Resolver::new(Arc::new(OneChat))),
+        Arc::new(OneRoute(route.clone())),
+    );
+    let reference = SessionRef {
+        runner: "broca".into(),
+        session: SESSION.into(),
+    };
+    let source = sources.source(&reference).await.unwrap();
+    let reader = TranscriptReader::default();
+    let params = json!({"session": SESSION});
+
+    let refused = reader
+        .read(Some(source.as_ref()), params.clone())
+        .await
+        .unwrap_err();
+    assert_eq!(refused.code, "provider_unavailable", "{}", refused.message);
+    assert_eq!(source.message_tool().await, None);
+
+    *route.plan_view.lock().unwrap() = Some(Ok(plan(true)));
+    let page = reader
+        .read(Some(source.as_ref()), params.clone())
+        .await
+        .unwrap();
+    assert_eq!(kinds(&page, "m2"), ["text", "tool", "message"], "{page}");
+
+    *route.plan_view.lock().unwrap() = unreadable();
+    source.expire_message_tool();
+    let page = reader.read(Some(source.as_ref()), params).await.unwrap();
+    assert_eq!(kinds(&page, "m2"), ["text", "tool", "message"], "{page}");
+    assert_eq!(source.message_tool().await, Some("say"));
+}
+
+/// A runner whose description can't be read now is refused its plan view for
+/// now, not as one that serves none, which is final; and a page whose plan the
+/// runner holds none of draws its `say` calls as tool cards.
+#[tokio::test]
+async fn an_unread_description_isnt_taken_for_a_runner_without_plans() {
+    let (_, route) = chat(true);
+    let sources = BrocaSources::new(
+        Arc::new(Resolver::new(Arc::new(OneChat))),
+        Arc::new(OneRoute(route.clone())),
+    );
+    let reference = SessionRef {
+        runner: "broca".into(),
+        session: SESSION.into(),
+    };
+    let source = sources.source(&reference).await.unwrap();
+    let described = route.describe.lock().unwrap().take();
+    let refused = source.plan_view().await.unwrap_err();
+    assert_eq!(refused.code, "provider_unavailable", "{}", refused.message);
+
+    *route.describe.lock().unwrap() = described;
+    *route.plan_view.lock().unwrap() = None;
+    let page = TranscriptReader::default()
+        .read(Some(source.as_ref()), json!({"session": SESSION}))
+        .await
+        .unwrap();
+    assert_eq!(kinds(&page, "m2"), ["text", "tool", "tool"], "{page}");
+}
