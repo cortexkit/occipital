@@ -127,6 +127,11 @@ pub struct Handlers {
 #[derive(Default)]
 pub struct Stats {
     attached: AtomicBool,
+    /// The client the reader runs on, so the report can say whether its
+    /// connection is up. A reader stays attached while the client replaces a
+    /// lost connection, which can take minutes, so `attached` alone can't
+    /// show that gap.
+    client: std::sync::RwLock<Option<Arc<BusClient>>>,
     send_states: AtomicU64,
     catalog_changes: AtomicU64,
     records_stored: AtomicU64,
@@ -140,8 +145,22 @@ impl Stats {
     /// The counts as the health report's `bus` member.
     pub fn metrics(&self) -> serde_json::Value {
         let count = |counter: &AtomicU64| counter.load(Ordering::Relaxed);
+        // `null` when there is no client yet, or the slot is being replaced:
+        // the report never waits on a lock.
+        let connected = self
+            .client
+            .try_read()
+            .ok()
+            .and_then(|client| client.as_ref().map(|client| client.connection()))
+            .map(|connection| {
+                matches!(
+                    connection.client().connection_state(),
+                    async_nats::connection::State::Connected
+                )
+            });
         serde_json::json!({
             "readerAttached": self.attached.load(Ordering::Relaxed),
+            "connected": connected,
             "sendStates": count(&self.send_states),
             "catalogChanges": count(&self.catalog_changes),
             "recordsStored": count(&self.records_stored),
@@ -234,6 +253,9 @@ pub fn start(calls: Arc<DaemonCalls>, handlers: Handlers) -> tokio::task::JoinHa
                     continue;
                 }
             };
+            if let Ok(mut client) = handlers.stats.client.write() {
+                *client = Some(bus.clone());
+            }
             let upkeep = bus.connection_changes();
             // The view watches live as long as this connection: dropping the
             // set when it is replaced ends them.
@@ -602,7 +624,8 @@ mod tests {
         assert_eq!(wake("cerebellum", "tool_display", 1, None, b"{}"), Ok(None));
     }
 
-    /// The health report carries every count under its own name.
+    /// The health report carries every count under its own name, and no
+    /// connection state before a client exists.
     #[test]
     fn the_counts_reach_the_health_report() {
         let stats = Stats::default();
@@ -612,7 +635,8 @@ mod tests {
         Stats::add(&stats.send_states);
         assert_eq!(
             stats.metrics(),
-            serde_json::json!({"readerAttached": true, "sendStates": 1, "catalogChanges": 0,
+            serde_json::json!({"readerAttached": true, "connected": null,
+                "sendStates": 1, "catalogChanges": 0,
                 "recordsStored": 2, "recordsRefused": 0, "recordsRetried": 0,
                 "viewsServed": 0, "unreadable": 0})
         );
