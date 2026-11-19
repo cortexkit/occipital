@@ -124,6 +124,7 @@ fn shapes_outside_the_three_forms_are_refused() {
         );
     }
     let daily = json!({"every": "day", "at": "09:00", "time_zone": ZONE});
+    assert_eq!(code(daily.clone(), i32::MIN), "schedule_malformed");
     assert_eq!(code(daily.clone(), 26 * 60 + 1), "schedule_malformed");
     assert_eq!(word(daily, -26 * 60), "Every day at 07:00");
 }

@@ -98,7 +98,7 @@ fn malformed(detail: impl Into<String>) -> ScheduleError {
 /// A cron-only schedule is [`ScheduleError::Unworded`]; any other shape is
 /// [`ScheduleError::Malformed`].
 pub fn format_schedule(schedule: &Json, shift_minutes: i32) -> Result<String, ScheduleError> {
-    if shift_minutes.abs() > MAX_SHIFT_MINUTES {
+    if !(-MAX_SHIFT_MINUTES..=MAX_SHIFT_MINUTES).contains(&shift_minutes) {
         return Err(malformed("shift must be within 26 hours"));
     }
     let wire: Wire =

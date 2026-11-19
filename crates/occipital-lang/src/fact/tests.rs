@@ -204,3 +204,11 @@ fn text_values_and_unknown_members_are_malformed() {
         );
     }
 }
+
+#[test]
+fn approximate_zero_still_requires_a_valid_noun() {
+    for noun in [String::new(), "n".repeat(25)] {
+        let fact = json!({"label": "Parts", "value": 0, "approx": true, "noun": noun});
+        assert_eq!(code(fact), "fact_range");
+    }
+}
