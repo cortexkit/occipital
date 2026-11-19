@@ -422,3 +422,82 @@ async fn the_tool_display_samples_are_what_the_reader_serves() {
 
     served.check();
 }
+
+/// `phone-reader-view-halves-v1`: views that pair their row with a wake record
+/// for the same event (`half_of`, tool-provider 0.15.13), so the apps show and
+/// hide the two together. Each view is one of the contract's own
+/// `view-halves.json` cases that a reader keeps, as a provider serves it: a
+/// sent peer message, an ask and its answer, a row paired with a notice of one
+/// family, an unfamiliar kind, and a family where a writer must not put one.
+/// The last two are passed on as written. A view without the member carries
+/// no `halfOf`.
+#[tokio::test]
+async fn the_view_halves_samples_are_what_the_reader_serves() {
+    let vectors: Value =
+        serde_json::from_str(cortexkit_role_tool_provider::vectors::VIEW_HALVES_JSON).unwrap();
+    let kept: Vec<Value> = vectors["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|case| case.get("view").is_some() && case.get("reader_error_field").is_none())
+        .map(|case| case["view"].clone())
+        .collect();
+    assert_eq!(kept.len(), 5, "{vectors}");
+
+    let dir = ScratchDir::new("occipital-view-halves-samples");
+    let descriptor = crate::store::tests::descriptor(&dir);
+    let store = Arc::new(DisplayStore::open(&descriptor, dir.path()).unwrap());
+    let input = input_schema("x", json!({"x": {"type": "string"}}));
+    let tools = ["peer", "ask", "noted", "future", "family", "plain"];
+    for (tool, view) in tools.iter().zip(kept.iter()) {
+        let manifest: ViewManifest = serde_json::from_value(view.clone()).unwrap();
+        let state = ViewState::View {
+            manifest: serde_jcs::to_vec(&manifest).unwrap(),
+            input_schema: input.clone(),
+        };
+        store
+            .keep_view("prefrontal", &pin(tool, 'f'), &state, "1.0", 1)
+            .unwrap();
+    }
+    // The first case without its member: an ordinary row.
+    let mut ordinary = kept[0].clone();
+    ordinary.as_object_mut().unwrap().remove("half_of");
+    let ordinary: ViewManifest = serde_json::from_value(ordinary).unwrap();
+    let plain = ViewState::View {
+        manifest: serde_jcs::to_vec(&ordinary).unwrap(),
+        input_schema: input,
+    };
+    store
+        .keep_view("prefrontal", &pin("plain", 'f'), &plain, "1.0", 1)
+        .unwrap();
+    let hints = tokio::sync::broadcast::channel(crate::display::app::HINTS).0;
+    let tool = Arc::new(ToolDisplay::new(store.clone(), None, hints));
+    let app = Arc::new(super::super::super::AppReader::new(Arc::new(
+        BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
+                THALAMUS_RUNNER_MODULE_ID,
+            ))))),
+            Arc::new(AnyHarness(FakeRoute::new())),
+        ),
+    )));
+    app.set_tool_display(tool);
+    let mut served = Served::new("phone-reader-view-halves-v1", app);
+
+    let pins: Vec<String> = tools.iter().map(|tool| pin(tool, 'f')).collect();
+    let request = json!({"method": VIEWS, "params": {"pins": pins}});
+    let reply = served.read(1, &request).await;
+    let answers = &decoded(&reply)["result"]["views"];
+    for (tool, view) in tools.iter().zip(kept.iter()) {
+        assert_eq!(
+            answers[pin(tool, 'f')]["halfOf"],
+            view["half_of"],
+            "{answers}"
+        );
+    }
+    assert!(
+        answers[pin("plain", 'f')].get("halfOf").is_none(),
+        "{answers}"
+    );
+    served.keep("01-views", &request, reply);
+    served.check();
+}

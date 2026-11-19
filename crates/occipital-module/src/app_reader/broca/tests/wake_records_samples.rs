@@ -235,3 +235,76 @@ async fn the_wake_records_samples_are_what_the_reader_serves() {
 
     served.check();
 }
+
+/// `phone-reader-wake-ask-answer-v1`: a wake whose record holds the person's
+/// answers to asks (`ask_answer`, tool-display 0.1.11), so the apps draw a
+/// "You answered" card instead of the prompt text. The items are the
+/// contract's own: an option the default chose, the person's own words, a form
+/// answered in part, and a form's follow-up round.
+#[tokio::test]
+async fn the_wake_ask_answer_samples_are_what_the_reader_serves() {
+    let (_, text) = cortexkit_role_tool_display::vectors::FILES
+        .iter()
+        .find(|(name, _)| *name == "wakes.json")
+        .unwrap();
+    let vectors: Value = serde_json::from_str(text).unwrap();
+    let answers: Vec<Value> = vectors["writes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|case| case["write"]["body"]["items"].as_array().unwrap().clone())
+        .filter(|item| item["kind"] == "ask_answer")
+        .collect();
+    assert_eq!(answers.len(), 4, "{vectors}");
+    let body = json!({ "items": answers });
+
+    let dir = ScratchDir::new("occipital-wake-ask-answer-samples");
+    let descriptor = crate::store::tests::descriptor(&dir);
+    let main = crate::store::open(&descriptor).unwrap();
+    let file = Arc::new(crate::notices::NoticeStore::open(&descriptor, main.data_root()).unwrap());
+    let (notices, _task) = crate::notices::Notices::start(file);
+    let slot = crate::notices::NoticeSlot::default();
+    let _ = slot.set(notices.clone());
+    let write = json!({"kind": "wake", "runner": {"kind": "reserved",
+        "module_id": THALAMUS_RUNNER_MODULE_ID}, "session": SESSION, "send_id": send(1),
+        "body": body});
+    let reply = crate::notices::wakes::write(
+        Some(&notices),
+        Some(Principal::Reserved {
+            module_id: CORE.into(),
+        }),
+        &write,
+    )
+    .await;
+    assert!(matches!(reply, HandlerOutcome::Response(_)), "{reply:?}");
+
+    let route = FakeRoute::new();
+    *route.entries.lock().unwrap() = chat();
+    *route.run_state.lock().unwrap() = Value::Null;
+    let app = Arc::new(super::super::super::AppReader::new(Arc::new(
+        BrocaSources::new(
+            Arc::new(Resolver::new(Arc::new(super::ByHarness(Some(
+                THALAMUS_RUNNER_MODULE_ID,
+            ))))),
+            Arc::new(AnyHarness(route)),
+        )
+        .with_notices(slot),
+    )));
+    app.set_notices(notices);
+    let mut served = Served::new("phone-reader-wake-ask-answer-v1", app);
+    // A page read learns which send each row came from, as the app's first
+    // read of the chat does; the records are then read by row.
+    let page = json!({"method": super::super::super::TRANSCRIPT_PAGE,
+        "params": {"session": SESSION, "harness": "opencode2", "limit": 50}});
+    let reply = served.read(1, &page).await;
+    served.keep("01-page", &page, reply);
+    let request = json!({"method": crate::notices::wakes::READ,
+        "params": {"session": SESSION, "harness": "opencode2", "messageIds": ["msg_1"]}});
+    let records = served.read(2, &request).await;
+    assert_eq!(
+        decoded(&records)["result"],
+        json!({"messages": {"msg_1": body}})
+    );
+    served.keep("02-wake-records", &request, records);
+    served.check();
+}
