@@ -15,18 +15,33 @@ use std::{fs::File, io, path::Path};
 pub fn move_new(from: &Path, to: &Path) -> io::Result<bool> {
     #[cfg(unix)]
     {
-        match std::fs::hard_link(from, to) {
-            Ok(()) => {
-                std::fs::remove_file(from)?;
-                Ok(true)
-            }
-            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => Ok(false),
-            Err(error) => Err(error),
-        }
+        link_and_remove(from, to, |path| std::fs::remove_file(path))
     }
     #[cfg(windows)]
     {
         windows::move_new(from, to)
+    }
+}
+
+#[cfg(unix)]
+fn link_and_remove(
+    from: &Path,
+    to: &Path,
+    unlink: impl Fn(&Path) -> io::Result<()>,
+) -> io::Result<bool> {
+    match std::fs::hard_link(from, to) {
+        Ok(()) => {
+            if let Err(error) = unlink(from) {
+                // A move that failed must not leave its new name published.
+                return match unlink(to) {
+                    Ok(()) => Err(error),
+                    Err(cleanup) => Err(io::Error::new(error.kind(), format!("removing the source failed ({error}); rollback failed ({cleanup}); both names exist"))),
+                };
+            }
+            Ok(true)
+        }
+        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => Ok(false),
+        Err(error) => Err(error),
     }
 }
 
@@ -136,6 +151,32 @@ mod tests {
         assert!(move_new(&from, &to).unwrap());
         assert_eq!(std::fs::read(&to).unwrap(), b"new");
         assert!(!from.exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn failed_move_rolls_back_or_reports_both_names() {
+        for cleanup_fails in [false, true] {
+            let dir = tempfile::tempdir().unwrap();
+            let (from, to) = (dir.path().join("from"), dir.path().join("to"));
+            std::fs::write(&from, b"source").unwrap();
+            // Inject the unlink errors so the test also exercises rollback as root.
+            let err = link_and_remove(&from, &to, |path| {
+                if path == from || cleanup_fails {
+                    Err(io::ErrorKind::PermissionDenied.into())
+                } else {
+                    std::fs::remove_file(path)
+                }
+            })
+            .unwrap_err();
+            assert_eq!(std::fs::read(&from).unwrap(), b"source");
+            assert_eq!(to.exists(), cleanup_fails);
+            if cleanup_fails {
+                assert!(err.to_string().contains("both names exist"), "{err}");
+            } else {
+                assert_eq!(err.kind(), io::ErrorKind::PermissionDenied);
+            }
+        }
     }
 
     #[test]
