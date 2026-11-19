@@ -103,9 +103,15 @@ pub struct EndedRun {
     pub cause: Option<String>,
 }
 
+/// How a followed send ended, for its entry on the apps' list.
 pub(super) enum End {
+    /// Its message is in a step or a turn: the entry leaves the list.
     Delivered,
+    /// The runner ended it undelivered: listed `unsent` with this reason.
     Unsent(String),
+    /// It may or may not have run: listed `unknown`, so the apps can say it may
+    /// not have arrived. Sending the words again could run them twice, so only
+    /// the person decides that.
     Unconfirmed,
 }
 
