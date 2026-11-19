@@ -8,6 +8,7 @@ use std::{path::PathBuf, sync::atomic::AtomicU64};
 
 mod attachments_samples;
 mod samples;
+mod video_samples;
 
 const PHONE: &str = "0123456789abcdef0123456789abcdef";
 const OTHER_PHONE: &str = "fedcba9876543210fedcba9876543210";
