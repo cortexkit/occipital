@@ -41,6 +41,7 @@ struct FakeRunner {
     /// Whether a steer joins the running turn at once, instead of waiting.
     lands: AtomicBool,
     unreachable: AtomicBool,
+    lose_next_send_reply: AtomicBool,
     calls: Mutex<Vec<(String, Value)>>,
     sends: Mutex<HashMap<String, (Value, String)>>,
     scripted: Mutex<VecDeque<Result<Value, RunnerError>>>,
@@ -61,6 +62,7 @@ impl FakeRunner {
             retract_race: Mutex::default(),
             lands: AtomicBool::new(false),
             unreachable: AtomicBool::new(false),
+            lose_next_send_reply: AtomicBool::new(false),
             calls: Mutex::default(),
             sends: Mutex::default(),
             scripted: Mutex::default(),
@@ -166,7 +168,13 @@ impl FakeRunner {
         let send_id = body["send_id"].as_str().unwrap().to_owned();
         let mut sends = self.sends.lock().unwrap();
         if let Some((recorded, state)) = sends.get(&send_id) {
-            if recorded != body {
+            // A retry can carry a later deadline; the runner keeps the first deadline.
+            let identity = |body: &Value| {
+                let mut fields = body.as_object().unwrap().clone();
+                fields.remove("expires_at_ms");
+                fields
+            };
+            if identity(recorded) != identity(body) {
                 return Self::refuse("send_id_reuse", Some("delivery"));
             }
             return Ok(match state.as_str() {
@@ -245,7 +253,15 @@ impl SendTarget for Target {
                         .unwrap(),
                 )
             }
-            "session.send" => self.0.send(&params),
+            "session.send" => {
+                let reply = self.0.send(&params)?;
+                if self.0.lose_next_send_reply.swap(false, Ordering::SeqCst) {
+                    return Err(RunnerError::Unreachable(
+                        "reply lost after acceptance".into(),
+                    ));
+                }
+                Ok(reply)
+            }
             "session.send_status" => self.0.status(&params),
             "session.retract" => self.0.retract(&params),
             other => panic!("the sender called {other}"),
@@ -307,6 +323,35 @@ impl Fixture {
         ));
         drop(std::mem::replace(&mut self.sender, restarted));
     }
+}
+
+// Without clientMessageId or sendId, a retry after a lost reply can write the same words twice.
+#[tokio::test]
+#[ignore = "pending the apps' retry contract for sends without an id"]
+async fn an_unkeyed_retry_after_acceptance_must_not_write_twice() {
+    let f = granted_fixture(Kind::Head);
+    f.runner.lose_next_send_reply.store(true, Ordering::SeqCst);
+    let message = json!({"session":"s", "text":"hello"});
+    let first = f.sender.send(message.clone()).await.unwrap();
+    if first["terminal"] == false {
+        f.sender.send(message).await.unwrap();
+    }
+    assert_eq!(f.runner.written().len(), 1);
+}
+
+#[tokio::test]
+async fn a_worker_retry_with_a_later_deadline_replays_the_first_send() {
+    let f = granted_fixture(Kind::Worker);
+    f.runner.lose_next_send_reply.store(true, Ordering::SeqCst);
+    let message = message("one", "hello");
+    assert_eq!(f.sender.send(message.clone()).await.unwrap()["ok"], false);
+    let recorded = f.runner.written();
+    assert_eq!(recorded.len(), 1);
+    f.now.fetch_add(1000, Ordering::SeqCst);
+    let reply = f.sender.send(message).await.unwrap();
+    assert_eq!(reply["ok"], true);
+    assert_eq!(reply["effectId"], recorded[0]["send_id"]);
+    assert_eq!(f.runner.written(), recorded);
 }
 
 const START: i64 = 1_767_225_600_000;
