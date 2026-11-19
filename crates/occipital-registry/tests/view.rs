@@ -212,6 +212,63 @@ fn sample_rows_keep_their_height_and_bad_records_are_reported() {
     assert!(error.contains("refuses the sample's record"), "{error}");
 }
 
+/// A field declared for completions only, such as a command's last output
+/// lines, can be read from the completion, and a sample completion holding it
+/// is measured like any other, while one with a malformed line is refused.
+#[test]
+fn completion_only_lines_are_read_from_the_completion() {
+    let schema: RecordSchema = serde_json::from_value(json!({
+        "name": "aft.bash", "revision": 2, "fields": {"exitCode": "integer"},
+        "completion_fields": {"tail": "text_lines"}
+    }))
+    .unwrap();
+    let row = |member: &str| {
+        template(
+            "tool_row",
+            &format!(
+                "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\n<InlineCode code={{input.command}} />\n<Slot width=\"fill\" lines={{3}} box=\"code\" needs={{view.{member}}}>\n<ToolText text={{Join(Each(view.{member}.tail ?? [], \"line\", line.text), \" \")}} font=\"mono\" />\n</Slot>\n</Card>\n"
+            ),
+        )
+    };
+    let report = check_view(&json!({"row": row("completion")}), &schema, &bash_input())
+        .unwrap()
+        .remove(0);
+    assert!(
+        report.passed(),
+        "{:?} {:?}",
+        report.problems,
+        report.diagnostics
+    );
+
+    let done = json!({"durationMs": 900, "outcome": "success", "exitCode": 0,
+        "tail": [{"text": "running 12 tests"}, {"text": "test result: ok", "tone": "muted"}]});
+    let input = json!({"command": "cargo test"});
+    let heights = row_heights(
+        &row("completion"),
+        &schema,
+        &bash_input(),
+        &input,
+        None,
+        Some(&done),
+    )
+    .unwrap();
+    for height in &heights {
+        assert_eq!(height.waiting, height.filled, "width {}", height.width);
+    }
+    let mut bad = done.clone();
+    bad["tail"][0]["text"] = json!("line\tbreak");
+    let error = row_heights(
+        &row("completion"),
+        &schema,
+        &bash_input(),
+        &input,
+        None,
+        Some(&bad),
+    )
+    .unwrap_err();
+    assert!(error.contains("refuses the sample's completion"), "{error}");
+}
+
 /// The clock, the agent and the model draw in rows and pages, and the item
 /// link in pages only, since tapping a row already opens its page.
 #[test]

@@ -375,9 +375,9 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-role-tool-display"
-version = "0.1.11"
+version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "544ba356cdfa65cd444ff3a1880e038d4ec56a7babe8837865b14fa62a45a09e"
+checksum = "6100169f0f49cb0f8e0c7346530550a17383c636d2d44c19f1ae68dfa8ca5819"
 dependencies = [
  "serde",
  "serde_jcs",
@@ -388,9 +388,9 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-role-tool-provider"
-version = "0.15.13"
+version = "0.15.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d647e69d3211875d52c647378cd2773079a76d5f64e12f831754f27b358e6473"
+checksum = "8c02e51fd1d2d1dba5162d4a688d51eb7722d4e95b33dae7ef4a55e93673ae1c"
 dependencies = [
  "cortexkit-bus-naming 0.5.1",
  "cortexkit-role-tool-display",
