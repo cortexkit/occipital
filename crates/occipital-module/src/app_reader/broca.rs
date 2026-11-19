@@ -1,5 +1,6 @@
 //! Owner-free Broca reads and one lingering feed shared by transcript/display watches.
 
+mod metadata;
 use crate::app_reader::Guard as _;
 use std::{
     collections::{BTreeMap, HashMap, HashSet},
@@ -760,8 +761,7 @@ pub struct BrocaSources {
     resolver: Arc<Resolver>,
     routes: Arc<dyn BrocaRoutes>,
     sources: tokio::sync::Mutex<HashMap<SessionRef, SourceSlot>>,
-    describes: Mutex<HashMap<SessionRef, DescribeSlot>>,
-    message_tools: Mutex<HashMap<SessionRef, super::message_tool::MessageToolSlot>>,
+    metadata: Arc<Mutex<metadata::Metadata>>,
     call_pins: CallPinSlot,
     notices: NoticeSlot,
     /// The image sizes every session's pages share.
@@ -791,8 +791,7 @@ impl BrocaSources {
             resolver,
             routes,
             sources: tokio::sync::Mutex::new(HashMap::new()),
-            describes: Mutex::new(HashMap::new()),
-            message_tools: Mutex::new(HashMap::new()),
+            metadata: Arc::default(),
             call_pins: CallPinSlot::default(),
             notices: NoticeSlot::default(),
             sizes: Arc::default(),
@@ -884,7 +883,10 @@ impl BrocaSources {
         let mut slot = super::observe::step("source_slot", slot.lock()).await;
         if let Some(source) = slot.upgrade() {
             match source.refresh_binding().await {
-                Ok(()) => return Ok(source),
+                Ok(()) => {
+                    self.metadata.guard().touch(reference);
+                    return Ok(source);
+                }
                 Err(error) if error.code == "session_binding_changed" => source.retire().await,
                 Err(error) => return Err(error),
             }
@@ -902,19 +904,10 @@ impl BrocaSources {
         };
         let route = self.routes.open(&resolved).await?;
         let sendable = recorded && self.routes.sender(&resolved).is_some();
-        let describe = self
-            .describes
-            .guard()
-            .entry(reference.clone())
-            .or_default()
-            .clone();
-        let message_tool = self
-            .message_tools
-            .guard()
-            .entry(reference.clone())
-            .or_default()
-            .clone();
+        let (lease, describe, message_tool) =
+            metadata::Metadata::acquire(&self.metadata, reference);
         let source = BrocaSource::with_send_path(resolved, route, sendable, describe);
+        let _ = source.metadata.set(lease);
         *source.message_tool.guard() = message_tool;
         source.recorded.store(recorded, Ordering::Release);
         *source.resolver.guard() = Some(self.resolver.clone());
@@ -1118,6 +1111,7 @@ pub struct BrocaSource {
     /// Entorhinal once it is recorded.
     recorded: AtomicBool,
     describe: DescribeSlot,
+    metadata: std::sync::OnceLock<metadata::Lease>,
     /// Where the pins of the calls this source's pages carry are kept.
     call_pins: Mutex<CallPinSlot>,
     /// Where the notices that rode this session's calls are reported.
@@ -1399,6 +1393,7 @@ impl BrocaSource {
             sendable,
             recorded: AtomicBool::new(true),
             describe,
+            metadata: Default::default(),
             call_pins: Mutex::new(CallPinSlot::default()),
             notices: Mutex::new(NoticeSlot::default()),
             sizes: Mutex::default(),
