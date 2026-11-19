@@ -1,4 +1,4 @@
-6c5ceef653e8bebfbac401ac4572a440286e8d21147c938cf70c3dfc42dc5ee3  README.md
+2229deabcbb747ef9824ecd9d9c7265c561a1be671ffee73df0620dced0a65a4  README.md
 7e685b0f6d08f01426081f06dd04717be067c09156d9573be3b86b86965e7d5f  check-16.01-row-bash-1-running.json
 8575f572540104d09646644c13077386e894ab647c82e65ed2a3097f5d9b5ae4  check-16.01-row-bash-2-succeeded.json
 902e4ab8ba1303b8951b261f06ae61a0dd9def7f9d5cfa9895d65a892feb6469  check-16.01-row-bash-3-failed.json
@@ -51,6 +51,7 @@ c0bc504ceec39d1ad8e59b2937e699c3e090e9e9687a037f3825829e8bc3cb68  measure-tree-b
 d6d3fb97dd6f3b87ed22591c76b3f4ec6be443e5ac7766ce1f42a5aa8ed3834d  measure-tree-bash-row-preview-filled.json
 6b3242100b87c07cd0e0b21cd20643d0c4c643066455f3fda4ce5f9984ff51e3  measure-tree-bash-row-preview-waiting.json
 f50b84e26b3611edfc06936eb4fd5878e89493418f378bd328405e69a5c5732e  measure-tree-bash-row-waiting.json
+b82360408e88a75c54e82fa98361a2a5d729f45cd7bcad1d7ccf12d38ed25d51  measure-tree-edit-page-diff.json
 6ec1569f6ad6f044d46fe8bde6d7d9529077786d43db9ade0e2b729e3321eeb8  measure-tree-edit-row-header-filled.json
 eab7815a3a4b8e0bd64dbca898385d876cfc4372f795eae5f374f1f89d6af446  measure-tree-edit-row-header-waiting.json
 075743b715a577fa000952de2942637d6e36cd7954cf9d52f2de5f185b3c052f  reply-16.08-reply-test-run-one-shot.json
@@ -69,6 +70,7 @@ b934d8efd051d9e48e8725ad3aca3df7934855ce24efd8895bd161a5f8ca4900  template-bash-
 e51698f1b9e71b6df721e7404f95763a82c063482a75e0a3ae10e9bddd4c44bc  template-bash-row-preview-filled.json
 84eaf50a1e72591391ae416b35e5da39e3c8ab2a57e0382b016da1ca85b38263  template-bash-row-preview-waiting.json
 eef7825e752f24fcb9222c8cf305e129cef441046b0ec50ee6f4809b0fec9a81  template-bash-row-waiting.json
+928756ffd0a11c3cbf2cbf79cb49475014189176b4b0e91fcb268f02617207e8  template-edit-page-diff.json
 6d7c4bc3afe689b05ad7db50c1852996f6af4636677504a7176fde169a4f401b  template-edit-row-header-filled.json
 aff3b14da7fa2447fa54266c1f6d1e55173de218c9351d282b0170f6a1251582  template-edit-row-header-waiting.json
 5a97e39a07db5ce4ae7e1cda4495ce84d728d3381e807d05dc43508f25603af7  text-references.json

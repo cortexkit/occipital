@@ -1,0 +1,9 @@
+{
+  "entry": "occ_template_evaluate",
+  "request": {
+    "ctx_json": "{\"context\":{\"catalog\":\"1.1\",\"execution_dialect\":\"1.0\",\"handles\":[],\"profile\":\"tool_page\",\"references\":{},\"registry\":{},\"show_ui\":{\"data_columns\":{},\"data_format\":null,\"summary\":\"\",\"title\":\"\"},\"tool\":{\"input\":{\"schema\":{},\"value\":{\"path\":\"src/send.rs\"}},\"truncated\":false,\"truncated_fields\":[],\"view\":{\"schema\":{},\"value\":{\"detail\":{\"hunks\":[{\"lines\":[{\"kind\":\"context\",\"text\":\"let sent = queue.take();\"},{\"kind\":\"delete\",\"text\":\"send(sent);\"},{\"kind\":\"add\",\"text\":\"send(sent).await;\"}],\"newStart\":12,\"oldStart\":12,\"title\":\"Change 1\"},{\"lines\":[{\"kind\":\"plain\",\"text\":\"No line numbers in this hunk.\"}]}]},\"record\":null}}}}}",
+    "src": "PERpZmYgaHVua3M9e3ZpZXcuZGV0YWlsLmh1bmtzfSAvPgo="
+  },
+  "status": 0,
+  "response": "{\"tree\":{\"m\":\"root\",\"k\":[{\"c\":\"Diff\",\"p\":{\"hunks\":[{\"record\":{\"lines\":[{\"record\":{\"kind\":\"context\",\"text\":\"let sent = queue.take();\"}},{\"record\":{\"kind\":\"delete\",\"text\":\"send(sent);\"}},{\"record\":{\"kind\":\"add\",\"text\":\"send(sent).await;\"}}],\"newStart\":{\"number\":\"12\"},\"oldStart\":{\"number\":\"12\"},\"title\":\"Change 1\"}},{\"record\":{\"lines\":[{\"record\":{\"kind\":\"plain\",\"text\":\"No line numbers in this hunk.\"}}]}}]},\"k\":[]}]},\"diagnostics\":[],\"outcome\":\"ok\"}"
+}

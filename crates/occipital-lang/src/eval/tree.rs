@@ -788,13 +788,15 @@ impl<'a> Evaluator<'a> {
             return Some(DiagnosticCode::PropType);
         }
         // A list prop whose catalog entry names a record shape (Table
-        // `columns`) needs a string `key` and `label` in each record entry.
-        if let (true, ValueKind::List(items)) = (prop.rules.contains_key("record"), value.kind()) {
+        // `columns`, Diff `hunks`) needs each record entry to hold the
+        // members that shape requires.
+        let rule = prop.rules.get("record").and_then(serde_json::Value::as_str);
+        if let (Some(rule), ValueKind::List(items)) = (rule, value.kind()) {
+            let required = required_members(rule);
             let shaped = |item: &Value| match item.kind() {
-                ValueKind::Record(record) => {
-                    matches!(record.get("key").kind(), ValueKind::String(_))
-                        && matches!(record.get("label").kind(), ValueKind::String(_))
-                }
+                ValueKind::Record(record) => required
+                    .iter()
+                    .all(|(name, kind)| member_fits(&record.get(name), kind)),
                 _ => true,
             };
             if !items.iter().all(shaped) {
@@ -1009,4 +1011,52 @@ fn alternatives(expected: &str) -> Vec<&str> {
     }
     parts.push(&expected[start..]);
     parts
+}
+
+/// The members a catalog `record` rule requires, each with the type the rule
+/// gives it: `{key: string, label: string}` requires both, and
+/// `{title?: string, lines: list<…>}` requires only `lines`, since a `?`
+/// marks a member that may be left out. Members are split at the top level
+/// only, so a nested record's members aren't taken for the rule's own.
+fn required_members(rule: &str) -> Vec<(&str, &str)> {
+    let inner = rule
+        .trim()
+        .strip_prefix('{')
+        .and_then(|rest| rest.strip_suffix('}'))
+        .unwrap_or_default();
+    let (mut depth, mut start, mut parts) = (0i32, 0, Vec::new());
+    for (index, byte) in inner.bytes().enumerate() {
+        match byte {
+            b'{' | b'<' | b'(' => depth += 1,
+            b'}' | b'>' | b')' => depth -= 1,
+            b',' if depth == 0 => {
+                parts.push(&inner[start..index]);
+                start = index + 1;
+            }
+            _ => {}
+        }
+    }
+    parts.push(&inner[start..]);
+    parts
+        .into_iter()
+        .filter_map(|member| {
+            let (name, kind) = member.split_once(':')?;
+            let name = name.trim();
+            (!name.is_empty() && !name.ends_with('?')).then_some((name, kind.trim()))
+        })
+        .collect()
+}
+
+/// Whether a record's member `value` is present and of the type its rule
+/// names: a string, a number or a list where the rule says so, and anything
+/// present for a type this check doesn't look into.
+fn member_fits(value: &Value, kind: &str) -> bool {
+    match (kind, value.kind()) {
+        (_, ValueKind::Missing) => false,
+        ("string", ValueKind::String(_)) | ("number", ValueKind::Number(_)) => true,
+        ("string" | "number", _) => false,
+        (list, ValueKind::List(_)) if list.starts_with("list<") => true,
+        (list, _) if list.starts_with("list<") => false,
+        _ => true,
+    }
 }

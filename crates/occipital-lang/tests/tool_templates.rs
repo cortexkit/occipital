@@ -101,3 +101,40 @@ fn only_a_tool_template_is_evaluated_and_a_failing_one_is_refused() {
         Err(HostError::Rejected(_))
     ));
 }
+
+/// An edit page's `Diff`, evaluated with the detail a provider writes.
+fn diff_page(hunks: Value) -> occipital_lang::TemplateEvaluation {
+    let mut page = context(json!({"call": {"phase": "answered"}, "record": null,
+        "completion": null, "detail": {"hunks": hunks}}));
+    page.profile = Profile::ToolPage;
+    evaluate_template(
+        b"<Diff hunks={view.detail.hunks} />\n",
+        &page,
+        &HostValues::default(),
+    )
+    .unwrap()
+}
+
+/// A `Diff`'s hunks are checked against the shape the catalog gives them, not
+/// against Table's columns: hunks holding only the documented members draw,
+/// and a hunk without the `lines` it needs is refused.
+#[test]
+fn a_diff_draws_hunks_of_the_documented_shape() {
+    let line = |kind: &str, text: &str| json!({"kind": kind, "text": text});
+    let drawn = diff_page(json!([
+        {"title": "Change 1", "oldStart": 3, "newStart": 3,
+            "lines": [line("context", "fn main() {"), line("delete", "old"), line("add", "new")]},
+        {"lines": [line("plain", "no numbers")]}
+    ]));
+    assert!(drawn.abort.is_none(), "{:?}", drawn.diagnostics);
+    assert!(drawn.diagnostics.is_empty(), "{:?}", drawn.diagnostics);
+    let tree = drawn.tree.unwrap();
+    assert!(!format!("{tree:?}").contains("Error("), "{tree:?}");
+
+    let refused = diff_page(json!([{"title": "Change 1"}]));
+    assert!(
+        format!("{:?}", refused.diagnostics).contains("PropType"),
+        "{:?}",
+        refused.diagnostics
+    );
+}

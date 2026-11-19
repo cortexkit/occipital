@@ -135,6 +135,12 @@ a narrow Slot, the command as monospace `ToolText` on at most 2 lines, and a
 each a monospace `ToolText` with its own tone. Each row measures the same
 waiting and filled.
 
+The `template-edit-page-diff` case evaluates an edit page's `Diff` whose
+hunks hold only the members the catalog documents (`title`, `oldStart` and
+`newStart` optional, `lines` required): a titled hunk with line numbers and
+one without either. It evaluates with no diagnostic. `measure-tree-edit-page-diff`
+measures that tree as a 320-wide page.
+
 The `version` case is `occ_version` with no arguments; its request is `{}`.
 
 The `text-references` case is `occ_text_references` on a reply naming an
@@ -860,6 +866,73 @@ fn tool_rows(files: &mut Vec<(String, Vector)>) {
     );
 }
 
+/// An edit page drawing the provider's diff detail.
+const DIFF_PAGE: &str = "<Diff hunks={view.detail.hunks} />\n";
+
+/// A tool page 320 wide.
+const PAGE_LAYOUT: &str =
+    r#"{"width":"320","content_size_category":"normal","network":"yes","placement":"page"}"#;
+
+/// An edit page's `Diff` with hunks holding only the members the catalog
+/// documents, `{title?, oldStart?, newStart?, lines}`: a titled hunk with
+/// line numbers, and one without either. It evaluates with no diagnostic,
+/// and its tree is then measured as a page.
+fn tool_pages(files: &mut Vec<(String, Vector)>) {
+    let line = |kind: &str, text: &str| json!({"kind": kind, "text": text});
+    let hunks = json!([
+        {"title": "Change 1", "oldStart": 12, "newStart": 12, "lines": [
+            line("context", "let sent = queue.take();"),
+            line("delete", "send(sent);"),
+            line("add", "send(sent).await;")
+        ]},
+        {"lines": [line("plain", "No line numbers in this hunk.")]}
+    ]);
+    let mut ctx = context(
+        "tool_page",
+        json!({}),
+        json!({
+            "input": {"value": {"path": "src/send.rs"}, "schema": {}},
+            "view": {"value": {"record": null, "detail": {"hunks": hunks}}, "schema": {}},
+            "truncated": false,
+            "truncated_fields": [],
+        }),
+    );
+    ctx["catalog"] = json!("1.1");
+    let ctx = json!({ "context": ctx }).to_string();
+    let ctx_c = c(&ctx);
+    // SAFETY: `DIFF_PAGE` is valid for its length and `ctx_c` a live C string.
+    let result = call(|out| unsafe {
+        occ_template_evaluate(DIFF_PAGE.as_ptr(), DIFF_PAGE.len(), ctx_c.as_ptr(), out)
+    });
+    let evaluated = Vector::call(
+        "occ_template_evaluate",
+        json!({ "src": base64::encode(DIFF_PAGE.as_bytes()), "ctx_json": ctx }),
+        result,
+    );
+    let reply = json(evaluated.ok());
+    assert_eq!(reply["diagnostics"], json!([]), "{reply}");
+    let tree_json = reply["tree"].to_string();
+    files.push(("template-edit-page-diff".into(), evaluated));
+
+    let (tree_c, layout) = (c(&tree_json), c(PAGE_LAYOUT));
+    let mut script = Script::default();
+    let metrics = table(&mut script);
+    // SAFETY: every pointer is a live C string or table.
+    let result =
+        call(|out| unsafe { occ_measure_tree(tree_c.as_ptr(), layout.as_ptr(), &metrics, out) });
+    let measured = Vector::call(
+        "occ_measure_tree",
+        json!({ "tree_json": tree_json, "layout_json": PAGE_LAYOUT, "metrics": METRICS }),
+        result,
+    );
+    assert!(
+        json(measured.ok())["height"]["known"].is_string(),
+        "{}",
+        measured.ok()
+    );
+    files.push(("measure-tree-edit-page-diff".into(), measured));
+}
+
 fn tool_row(
     files: &mut Vec<(String, Vector)>,
     name: &str,
@@ -1086,6 +1159,7 @@ fn generate() -> BTreeMap<String, Vec<u8>> {
     section16_checks(&mut vectors);
     reserved_writes(&mut vectors);
     tool_rows(&mut vectors);
+    tool_pages(&mut vectors);
     // The version descriptor, with the tool catalog a template must name.
     // SAFETY: `call` passes a valid pointer for `out`.
     let result = call(|out| unsafe { occ_version(out) });

@@ -59,6 +59,12 @@ a narrow Slot, the command as monospace `ToolText` on at most 2 lines, and a
 each a monospace `ToolText` with its own tone. Each row measures the same
 waiting and filled.
 
+The `template-edit-page-diff` case evaluates an edit page's `Diff` whose
+hunks hold only the members the catalog documents (`title`, `oldStart` and
+`newStart` optional, `lines` required): a titled hunk with line numbers and
+one without either. It evaluates with no diagnostic. `measure-tree-edit-page-diff`
+measures that tree as a 320-wide page.
+
 The `version` case is `occ_version` with no arguments; its request is `{}`.
 
 The `text-references` case is `occ_text_references` on a reply naming an
