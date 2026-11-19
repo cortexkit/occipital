@@ -1,4 +1,4 @@
-//! The sample set `phone-reader-say-v1`: an agent's `say` calls as the apps
+//! The sample set `phone-reader-say-v3`: an agent's `say` calls as the apps
 //! get them. On a chat whose plan gives the agent prefrontal's `say`, an
 //! answered call is the agent's message, a `message` part in the call's place;
 //! a call that failed stays a tool card; one still running is left out. On any
@@ -149,7 +149,8 @@ fn parts(page: &Value, mid: &str) -> Vec<Value> {
 #[tokio::test]
 async fn the_say_samples_are_what_the_reader_serves() {
     let (app, route) = chat(true);
-    let mut served = Served::new("phone-reader-say-v1", app);
+    // The frozen v1 and v2 tokens describe only the head; v3 covers both sets of message rows.
+    let mut served = Served::new("phone-reader-say-v3", app);
     let newest = json!({"method": super::super::super::TRANSCRIPT_PAGE,
         "params": {"session": SESSION}});
 
@@ -217,7 +218,7 @@ async fn the_say_samples_are_what_the_reader_serves() {
     assert!(decoded(&reply)["result"].get("messageTool").is_none());
     served.keep("05-details-without-say", &details, reply);
 
-    served.check();
+    check_say_record_samples(served).await;
 }
 
 /// The same chat with each call's key and pin, as a runner serving call
@@ -299,12 +300,11 @@ fn chat_with_records(
     (app, store, dir, task)
 }
 
-/// `phone-reader-say-v2`: the messages with prefrontal's records joined. The
+/// The keyed half of `phone-reader-say-v3`: the messages with prefrontal's records joined. The
 /// first answers the person's message with a verified quote, carries a picture
 /// and a link, and alerts; the second answers without a quote, since its quote
 /// didn't match the person's words, so prefrontal left it out.
-#[tokio::test]
-async fn the_say_record_samples_are_what_the_reader_serves() {
+async fn check_say_record_samples(mut served: Served) {
     let first = message(
         "ck_say",
         json!({"v": 1, "reply_to": "m1", "quote": "Did the build pass?",
@@ -328,10 +328,10 @@ async fn the_say_record_samples_are_what_the_reader_serves() {
         store.write(&reserved("prefrontal"), &first, 2).unwrap(),
         cortexkit_role_tool_display::WriteReply::AlreadyStored
     );
-    let mut served = Served::new("phone-reader-say-v2", app);
+    served.serve_with(app);
     let newest = json!({"method": super::super::super::TRANSCRIPT_PAGE,
         "params": {"session": SESSION}});
-    let reply = served.read(1, &newest).await;
+    let reply = served.read(6, &newest).await;
     let page = decoded(&reply);
     assert_eq!(
         parts(&page, "m2")[2],
@@ -359,14 +359,14 @@ async fn the_say_record_samples_are_what_the_reader_serves() {
             "{marker}"
         );
     }
-    served.keep("01-newest-page", &newest, reply);
+    served.keep("06-newest-page-with-records", &newest, reply);
 
     let exact = json!({"method": super::super::super::TRANSCRIPT_PAGE,
         "params": {"session": SESSION, "messageOrdinal": 2}});
-    let reply = served.read(2, &exact).await;
+    let reply = served.read(7, &exact).await;
     let message = decoded(&reply)["result"]["messages"][0]["parts"][2].clone();
     assert_eq!(message["replyTo"]["verified"], true, "{message}");
-    served.keep("02-exact-read", &exact, reply);
+    served.keep("07-exact-read-with-records", &exact, reply);
 
     served.check();
 }
@@ -376,7 +376,7 @@ fn sha(digit: char) -> String {
     digit.to_string().repeat(40)
 }
 
-/// `phone-reader-say-diff-v1`: messages whose records carry `diff` media, as
+/// `phone-reader-say-diff-v2`: messages whose records carry `diff` media, as
 /// prefrontal writes them (tool-display contract §9). The first carries a
 /// pull request's changes and a commit's, with a renamed and a binary file in
 /// each list; the second a range in a local checkout, which names no host or
@@ -422,7 +422,8 @@ async fn the_say_diff_samples_are_what_the_reader_serves() {
             "level": "chat"}),
     );
     let (app, _store, _dir, _task) = chat_with_records(&[&first, &later]);
-    let mut served = Served::new("phone-reader-say-diff-v1", app);
+    // The diff pages from v1 are frozen; v2 checks their record-sensitive tokens.
+    let mut served = Served::new("phone-reader-say-diff-v2", app);
 
     let newest = json!({"method": super::super::super::TRANSCRIPT_PAGE,
         "params": {"session": SESSION}});

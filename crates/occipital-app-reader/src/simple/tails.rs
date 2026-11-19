@@ -62,6 +62,7 @@ struct Tail {
 pub struct Tails {
     tails: Mutex<HashMap<String, Tail>>,
     uses: AtomicU64,
+    invalidations: AtomicU64,
 }
 
 /// The ordinal of a numbered row.
@@ -85,8 +86,17 @@ impl Tails {
                 next_before: None,
             });
         };
+        let generation = self.invalidations.load(Ordering::Acquire);
         let mut read = 0;
-        let refreshed = match self.kept(session, version).filter(|tail| tail.to <= newest) {
+        let refreshed = match self.kept(session, version).filter(|tail| {
+            tail.to <= newest
+                && newest.saturating_sub(
+                    tail.to
+                        .saturating_sub(RECHECK)
+                        .max(tail.from)
+                        .saturating_sub(1),
+                ) <= NEWEST_BOUND
+        }) {
             Some(mut tail) => {
                 let from = tail.to.saturating_sub(RECHECK).max(tail.from);
                 match after(source, head, from.saturating_sub(1), &mut read).await {
@@ -123,7 +133,7 @@ impl Tails {
             back(source, head, &mut tail, limit, NEWEST_BOUND, &mut read).await?;
         }
         let found = serve(&tail, u64::MAX, limit);
-        self.keep(session, tail);
+        self.keep(session, tail, generation);
         Ok(found)
     }
 
@@ -137,6 +147,7 @@ impl Tails {
         before: u64,
         limit: usize,
     ) -> Result<Found, ReadError> {
+        let generation = self.invalidations.load(Ordering::Acquire);
         let mut read = 0;
         match self
             .kept(session, version)
@@ -149,7 +160,7 @@ impl Tails {
                     back(source, head, &mut tail, wanted, BACKWARD_BOUND, &mut read).await?;
                 }
                 let found = serve(&tail, before, limit);
-                self.keep(session, tail);
+                self.keep(session, tail, generation);
                 Ok(found)
             }
             // Outside the kept range, the page is read on its own and kept
@@ -178,23 +189,28 @@ impl Tails {
             .tails
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        self.invalidations.fetch_add(1, Ordering::Release);
         tails.retain(|_, tail| !tail.rows.iter().any(|row| draws_call(row, call_key)));
     }
 
     /// Forget every chat's kept rows, as after missed news of records.
     pub fn forget_all(&self) {
-        self.tails
+        let mut tails = self
+            .tails
             .lock()
-            .unwrap_or_else(|poison| poison.into_inner())
-            .clear();
+            .unwrap_or_else(|poison| poison.into_inner());
+        self.invalidations.fetch_add(1, Ordering::Release);
+        tails.clear();
     }
 
     /// Forget `session`'s kept rows.
     pub fn forget(&self, session: &str) {
-        self.tails
+        let mut tails = self
+            .tails
             .lock()
-            .unwrap_or_else(|poison| poison.into_inner())
-            .remove(session);
+            .unwrap_or_else(|poison| poison.into_inner());
+        self.invalidations.fetch_add(1, Ordering::Release);
+        tails.remove(session);
     }
 
     fn kept(&self, session: &str, version: &str) -> Option<Tail> {
@@ -209,7 +225,7 @@ impl Tails {
     /// Keep `tail` for `session`, unless a read that finished meanwhile kept
     /// a newer one, at most [`MAX_ROWS`] rows of it, and at most
     /// [`MAX_CHATS`] chats.
-    fn keep(&self, session: &str, mut tail: Tail) {
+    fn keep(&self, session: &str, mut tail: Tail, generation: u64) {
         if tail.rows.len() > MAX_ROWS {
             let dropped = tail.rows.len() - MAX_ROWS;
             tail.from = ordinal(&tail.rows[dropped - 1]).saturating_add(1);
@@ -221,6 +237,11 @@ impl Tails {
             .tails
             .lock()
             .unwrap_or_else(|poison| poison.into_inner());
+        // A record may have arrived while this read was outside the lock, even
+        // on a cold read whose rows were not yet in the map to be evicted.
+        if self.invalidations.load(Ordering::Acquire) != generation {
+            return;
+        }
         if let Some(kept) = tails.get(session) {
             if kept.version == tail.version && kept.to > tail.to {
                 return;
@@ -320,7 +341,11 @@ async fn back(
             .filter(|row| row.ordinal.is_some_and(|at| at < tail.from))
             .collect();
         *read = read.saturating_add(numbered.len() as u64);
-        let oldest = numbered.first().map(ordinal);
+        let oldest = numbered.first().map(ordinal).or_else(|| {
+            let before = page.empty_before.filter(|at| *at < tail.from)?;
+            *read = read.saturating_add(tail.from.saturating_sub(before));
+            Some(before)
+        });
         let mut found = admitted(source, numbered).await;
         found.append(&mut tail.rows);
         tail.rows = found;
@@ -351,19 +376,24 @@ async fn after(
     let mut next = ordinal;
     let mut rows = Vec::new();
     loop {
-        let positioned = source.after(next, SCAN_PAGE).await?;
+        let through = head.last_ordinal.unwrap_or(next);
+        let limit = through.saturating_sub(next).min(u64::from(SCAN_PAGE)) as u32;
+        if limit == 0 {
+            return Ok(After { rows, to: next });
+        }
+        let positioned = source.after(next, limit).await?;
         agreed(&positioned.page, head)?;
         let page: Vec<Row> = positioned
             .page
             .rows
             .into_iter()
-            .filter(|row| row.ordinal.is_some_and(|at| at > next))
+            .filter(|row| row.ordinal.is_some_and(|at| at > next && at <= through))
             .collect();
         *read = read.saturating_add(page.len() as u64);
         let last = page.last().map(self::ordinal);
         rows.extend(admitted(source, page).await);
         match (last, positioned.newest) {
-            (Some(last), Some(newest)) if last < newest => next = last,
+            (Some(last), Some(newest)) if last < newest.min(through) => next = last,
             (Some(last), _) => {
                 return Ok(After { rows, to: last });
             }

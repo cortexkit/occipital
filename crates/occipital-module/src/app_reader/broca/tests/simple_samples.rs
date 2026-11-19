@@ -1,4 +1,4 @@
-//! The sample set `phone-reader-simple-v1`: the Simple view of a busy chat as
+//! The sample set `phone-reader-simple-v2`: the Simple view of a busy chat as
 //! the apps read it with `view: "simple"` (`occipital_app_reader::simple`).
 //! Its README says what each file shows. The chat is a Broca head whose plan
 //! gives the agent prefrontal's `say` and `ask`: the person's messages and
@@ -14,7 +14,8 @@ use cortexkit_test_support::ScratchDir;
 use subc_client_rs::HandlerOutcome;
 use subc_protocol::Principal;
 
-const SET: &str = "phone-reader-simple-v1";
+// The frozen v1 replies include hidden tool summaries; v2 checks the current handler.
+const SET: &str = "phone-reader-simple-v2";
 const SESSION: &str = "alfonso:head";
 /// The agent's own prose between the messages the view shows.
 const FILLER: u64 = 1_300;
@@ -346,7 +347,7 @@ async fn the_simple_view_samples_are_what_the_reader_serves() {
     let first = &newest["result"];
     assert_eq!(first["view"], "simple");
     assert!(
-        first["version"].as_str().unwrap().ends_with(":simple:1"),
+        first["version"].as_str().unwrap().ends_with(":simple:2"),
         "{first}"
     );
     let rows = first["messages"].as_array().unwrap();
@@ -488,7 +489,7 @@ async fn the_simple_view_samples_are_what_the_reader_serves() {
     assert_eq!(outside["result"]["claim"], "outside_window", "{outside}");
 
     // 08: a full claim sent with the view names the full version: expired.
-    let full = version.as_str().unwrap().trim_end_matches(":simple:1");
+    let full = version.as_str().unwrap().trim_end_matches(":simple:2");
     let expired = served
         .read(
             "08-full-claim-on-the-view",
@@ -673,4 +674,31 @@ async fn late_record_after_full_reads(refreshed: bool) {
         claimed["result"]["validThroughMessageId"], "m1306",
         "{claimed}"
     );
+}
+
+#[tokio::test]
+async fn answered_say_crossing_a_page_boundary_is_kept_in_either_view() {
+    let mut entries: Vec<_> = (1..=201).map(prose).collect();
+    entries[100] = entry(
+        101,
+        json!({"role":"assistant","content":[call("c","say",json!({"text":"Done."}))]}),
+    );
+    entries[101] = result(102, "c", "sent");
+    let c = chat(true, entries).await;
+    let mut sample = Sample {
+        served: Served::new(SET, c.app.clone()),
+        corr: 0,
+    };
+    let simple = sample.quiet(page(json!({"limit":1}))).await;
+    let mut request = page(json!({"beforeOrdinal":102,"limit":1}));
+    request["params"].as_object_mut().unwrap().remove("view");
+    let full = sample.quiet(request).await;
+    for reply in [&full, &simple] {
+        assert_eq!(ids(reply), ["m101"], "{reply}");
+        assert_eq!(
+            reply["result"]["messages"][0]["parts"][0]["type"], "message",
+            "{reply}"
+        );
+        assert_eq!(reply["result"]["messages"][0]["parts"][0]["text"], "Done.");
+    }
 }

@@ -374,3 +374,18 @@ fn the_outage_tool_result_record_inner_result_decodes() {
     assert_eq!(part["isError"], true);
     assert!(part["content"].as_str().unwrap().contains(EXPECTED_MESSAGE));
 }
+
+#[tokio::test]
+async fn older_page_joins_the_outage_result_beyond_its_last_row() {
+    let (_, app) = serving(outage_route());
+    let mut params = outage_page_params();
+    params["beforeOrdinal"] = json!(3);
+    let reply: Value =
+        serde_json::from_slice(&serve(&app, TRANSCRIPT_PAGE, &params).await).unwrap();
+    let page = &reply["result"];
+    assert_eq!(message_ids(page), ["m0", "m1"]);
+    let call = &page["messages"][1]["parts"][0];
+    assert_eq!(call["callId"], "call-1");
+    assert_eq!(call["isError"], true);
+    assert_eq!(call["outputBytes"], 185);
+}

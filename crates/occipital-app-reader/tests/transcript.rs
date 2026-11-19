@@ -22,11 +22,13 @@ struct State {
     history_version: Option<u64>,
     incarnation: Option<String>,
     activity: (&'static str, i64),
+    durable_token: Option<String>,
     error: Option<&'static str>,
     unstable: usize,
     rewrite_at: Option<usize>,
     wrong_page_version: bool,
     exact_unavailable: bool,
+    exact_error: Option<ReadError>,
     last_run: Option<cortexkit_role_llm_runner::read::LastRunState>,
     service_tier: Option<String>,
     history_intake: bool,
@@ -51,11 +53,13 @@ impl FakeSource {
                 history_version: native.then_some(1),
                 incarnation: None,
                 activity: ("idle", 1),
+                durable_token: None,
                 error: None,
                 unstable: 0,
                 rewrite_at: None,
                 wrong_page_version: false,
                 exact_unavailable: false,
+                exact_error: None,
                 last_run: None,
                 service_tier: None,
                 history_intake: false,
@@ -84,6 +88,7 @@ impl FakeSource {
             return Err(ReadError::new(code, "injected source failure"));
         }
         Ok(HistoryPage {
+            empty_before: None,
             rows: state.rows[start..end].to_vec(),
             older: (start > 0 && start < state.rows.len())
                 .then(|| format!("older:{}", state.rows[start].mid)),
@@ -119,7 +124,8 @@ impl TranscriptSource for FakeSource {
         }
         Ok(Head {
             first_ordinal: state.rows.iter().find_map(|row| row.ordinal),
-            activity_token: None,
+            last_ordinal: state.rows.last().and_then(|row| row.ordinal),
+            activity_token: state.durable_token.clone(),
             history_version: state.history_version,
             incarnation: state.incarnation.clone(),
             last_run: state.last_run.clone(),
@@ -207,11 +213,30 @@ impl TranscriptSource for FakeSource {
         }
         Ok(page)
     }
+    async fn after(
+        &self,
+        ordinal: u64,
+        limit: u32,
+    ) -> Result<occipital_app_reader::source::Positioned, ReadError> {
+        if !self.state.lock().unwrap().wrong_page_version {
+            return Err(occipital_app_reader::source::unsupported("afterOrdinal"));
+        }
+        let len = self.state.lock().unwrap().rows.len();
+        let from = (ordinal as usize + 1).min(len);
+        Ok(occipital_app_reader::source::Positioned {
+            page: self.page(from, (from + limit as usize).min(len))?,
+            anchor: None,
+            newest: len.checked_sub(1).map(|n| n as u64),
+        })
+    }
     async fn exact(&self, anchor: &Anchor) -> Result<Option<Row>, ReadError> {
         let state = self.state.lock().unwrap();
+        if let Some(error) = &state.exact_error {
+            return Err(error.clone());
+        }
         if state.exact_unavailable {
             return Err(ReadError::new(
-                "provider_unavailable",
+                "full_content_unavailable",
                 "full content was pruned",
             ));
         }
@@ -1306,4 +1331,189 @@ async fn an_empty_claim_watch_is_silent_until_the_first_message() {
     assert_eq!(next["claim"], "matched", "{next}");
     assert_eq!(message_ids(&json!({"messages": next["newTurns"]})), ["m1"]);
     running.end().await;
+}
+
+/// The current window still contains the claimant's newest message,
+/// but its oldest row, a call that just gained its result, has slid out.
+#[tokio::test]
+async fn a_native_claim_does_not_vouch_for_a_changed_call_below_its_window() {
+    let source = FakeSource::new("broca", 2, 0, true);
+    let reader = TranscriptReader::default();
+    source.state.lock().unwrap().rows[0].display["parts"] =
+        json!([{"type":"tool", "callId":"c", "tool":"read"}]);
+    let params = json!({"session":"s", "limit":2});
+    let baseline = read(&reader, &source, params.clone()).await;
+    assert_eq!(message_ids(&baseline), ["m0", "m1"]);
+    let mut params = params;
+    params["claim"] = claim_for(&baseline);
+    source.state.lock().unwrap().rows[0].display["parts"][0]["outputBytes"] = json!(7);
+    source.append(1, 0);
+    for reader in [&reader, &TranscriptReader::default()] {
+        let reply = read(reader, &source, params.clone()).await;
+        assert_eq!(reply["claim"], "matched");
+        assert_eq!(reply["vouchedFromMessageId"], "m1", "{reply}");
+    }
+}
+
+/// TE-02: Paging back changes the phone's floor. A desktop's wider page with
+/// that floor isn't evidence that the phone has received the same material.
+#[tokio::test]
+#[ignore = "TE-02: a claim naming its held copy distinguishes overlapping readers"]
+async fn a_wider_read_by_another_app_cannot_hide_a_held_message_change() {
+    let source = FakeSource::new("broca", 5, 0, true);
+    let reader = TranscriptReader::default();
+    source.state.lock().unwrap().rows[3].display["parts"] =
+        json!([{"type":"message", "callKey":"k", "text":"ok"}]);
+    let newest = read(&reader, &source, json!({"session":"s", "limit":2})).await;
+    let older = read(&reader, &source, json!({"session":"s", "beforeOrdinal":3})).await;
+    let mut claim = claim_for(&newest);
+    claim["heldFloorMessageId"] = older["messages"][0]["messageId"].clone();
+    source.state.lock().unwrap().rows[3].display["parts"][0]["replyTo"] = json!({"messageId":"m0"});
+    let _desktop = read(&reader, &source, json!({"session":"s"})).await;
+    let reply = read(&reader, &source, json!({"session":"s", "claim":claim})).await;
+    assert_ne!(reply["claim"], "matched", "{reply}");
+}
+
+/// TE-02: Once a reader has applied a resync, its unchanged next claim must
+/// not keep comparing against the copy from before that resync.
+#[tokio::test]
+#[ignore = "TE-02: a claim naming its held copy identifies the recipient of this resync"]
+async fn a_claim_after_applying_its_diverged_resync_matches() {
+    assert_claim_after_resync_matches(false).await;
+}
+
+#[tokio::test]
+async fn a_claim_after_a_resync_that_advances_since_matches() {
+    assert_claim_after_resync_matches(true).await;
+}
+
+async fn assert_claim_after_resync_matches(appended: bool) {
+    let source = FakeSource::new("broca", 3, 0, true);
+    let reader = TranscriptReader::default();
+    let page = read(&reader, &source, json!({"session":"s"})).await;
+    let mut params = json!({"session":"s", "claim":claim_for(&page)});
+    source.state.lock().unwrap().rows[1].display["parts"] =
+        json!([{"type":"message", "text":"landed"}]);
+    if appended {
+        source.append(1, 0);
+    }
+    let changed = read(&reader, &source, params.clone()).await;
+    assert_eq!(changed["claim"], "diverged");
+    advance_claim(params["claim"].as_object_mut().unwrap(), &changed);
+    if appended {
+        assert_eq!(params["claim"]["sinceMessageId"], "m3");
+    }
+    let caught_up = read(&reader, &source, params).await;
+    assert_eq!(caught_up["claim"], "matched", "{caught_up}");
+}
+
+#[tokio::test]
+async fn a_positioned_page_of_a_different_generation_is_refused() {
+    let source = FakeSource::new("broca", 4, 8, true);
+    source.state.lock().unwrap().wrong_page_version = true;
+    let error = TranscriptReader::default()
+        .read(Some(&*source), json!({"session":"s","afterOrdinal":1}))
+        .await
+        .unwrap_err();
+    assert_eq!(error.code, "provider_unavailable");
+}
+
+#[tokio::test]
+async fn an_exact_read_preserves_refusals_and_the_move_holder() {
+    for code in [
+        "session_held_elsewhere",
+        "session_moving",
+        "session_unknown",
+        "provider_unavailable",
+    ] {
+        let source = FakeSource::new("broca", 3, 8, true);
+        let refused =
+            ReadError::new(code, "read refused").with_detail(json!({"holder":"next-box"}));
+        source.state.lock().unwrap().exact_error = Some(refused.clone());
+        let reply = TranscriptReader::default()
+            .read(Some(&*source), json!({"session":"s","messageOrdinal":1}))
+            .await;
+        assert_eq!(reply.unwrap_err(), refused);
+    }
+}
+
+#[test]
+fn matched_watch_notices_report_changed_session_facts_without_new_turns() {
+    let quiet = json!({"claim":"matched","version":"history:1","historyVersion":1,"newTurns":[]});
+    for (field, value) in [
+        ("host", json!("unknown")),
+        ("sender", json!({"modes":["queue"]})),
+        ("senderUnknown", json!(true)),
+        ("historyIntake", json!("running")),
+        ("model", json!({"model":"other"})),
+        ("serviceTier", json!("fast")),
+    ] {
+        let mut changed = quiet.clone();
+        changed[field] = value;
+        let mut emitted = TranscriptEmitted::default();
+        emitted.record(&quiet);
+        assert!(emitted.should_emit(&changed), "added {field}");
+        emitted.record(&changed);
+        assert!(!emitted.should_emit(&changed), "repeated {field}");
+        assert!(emitted.should_emit(&quiet), "removed {field}");
+    }
+}
+
+#[test]
+fn an_empty_resync_replaces_held_anchors_with_an_empty_claim() {
+    for verdict in ["cursor_expired", "outside_window"] {
+        let mut claim =
+            json!({"heldFloorMessageId":"first","sinceMessageId":"last","heldVersion":"v1"});
+        advance_claim(
+            claim.as_object_mut().unwrap(),
+            &json!({"claim":verdict,"version":"v2","resync":{"messages":[]}}),
+        );
+        assert_eq!(claim, json!({"heldVersion":"v2"}));
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn an_oversize_simple_notice_names_its_view_even_without_a_resync() {
+    let source = FakeSource::new("broca", 2, 0, true);
+    source.state.lock().unwrap().rows[1].display = json!({"role":"user","text":"", "blockSummaries":[], "parts":[{"type":"text","text":"x".repeat(NOTICE_BOUND)}]});
+    let mut watch = Running::with_params(
+        source,
+        Arc::new(TranscriptReader::default()),
+        json!({"session":"s","view":"simple","claim":{"heldVersion":"old"}}),
+    );
+    let notice = watch.next().await;
+    assert_eq!(notice["claim"], "cursor_expired");
+    assert!(notice.get("resync").is_none());
+    assert_eq!(notice["view"], "simple");
+}
+
+#[tokio::test]
+async fn a_record_sensitive_token_rechecks_joined_message_parts_even_after_restart() {
+    let source = FakeSource::new("broca", 2, 3, true);
+    let r = TranscriptReader::default();
+    source.state.lock().unwrap().durable_token = Some("head".into());
+    let request = json!({"session":"s"});
+    let plain = read(&r, &source, request.clone()).await;
+    let poll = |token: &Value| json!({"session":"s","activityToken":token});
+    let reads = source.newest_reads.load(Ordering::SeqCst);
+    assert_eq!(plain["activityToken"], "head");
+    assert_eq!(
+        read(&r, &source, poll(&plain["activityToken"])).await["unchanged"],
+        true
+    );
+    assert_eq!(reads, source.newest_reads.load(Ordering::SeqCst));
+    source.state.lock().unwrap().rows[1].display["parts"] =
+        json!([{"type":"message","callKey":"k","text":"ok"}]);
+    let held = read(&r, &source, request).await;
+    let token = &held["activityToken"];
+    let quiet = read(&r, &source, poll(token)).await;
+    assert_eq!(quiet["unchanged"], true);
+    source.state.lock().unwrap().rows[1].display["parts"][0]["replyTo"] = json!({"messageId":"m0"});
+    let restarted = TranscriptReader::default();
+    let fresh = read(&restarted, &source, poll(token)).await;
+    assert_eq!(
+        fresh["messages"][1]["parts"][0]["replyTo"]["messageId"], "m0",
+        "{fresh}"
+    );
+    assert_ne!(&fresh["activityToken"], token);
 }

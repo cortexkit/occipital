@@ -710,7 +710,7 @@ async fn reader_window_cost_does_not_grow_with_the_transcript() {
     );
     assert_eq!(
         costs[0],
-        (8, 16, 9),
-        "eight raw reads, sixteen raw entries, eight display echoes and one anchor lookup"
+        (10, 20, 9),
+        "the older window reads four later entries for tool results; only the sixteen served entries need display echoes"
     );
 }

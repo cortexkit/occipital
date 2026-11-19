@@ -3,7 +3,7 @@
 //! Adapters supply canonical display rows and durable cursors, not transport or
 //! authorization. The caller resolves the session and admits the request first.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::Mutex;
 
 use async_trait::async_trait;
@@ -340,6 +340,7 @@ impl Row {
             ));
         }
         let mut value = self.display.clone();
+        crate::simple::clear_ask_marks(&mut value);
         let Some(object) = value.as_object_mut() else {
             return Err(ReadError::new(
                 "identity_unsupported",
@@ -364,6 +365,8 @@ impl Row {
 pub struct HistoryPage {
     pub rows: Vec<Row>,
     pub older: Option<String>,
+    /// The raw range's exclusive backward cursor when every row was hidden.
+    pub empty_before: Option<u64>,
     pub newer: Option<String>,
     pub history_version: Option<u64>,
     pub incarnation: Option<String>,
@@ -458,7 +461,7 @@ struct HistoryCursor {
 pub struct TranscriptReader {
     pub activity: ActivityTokens,
     claims: Mutex<TranscriptClaimState>,
-    revisions: Mutex<HashMap<String, u64>>,
+    revisions: Mutex<crate::activity::SessionMap<u64>>,
     /// Each chat's Simple rows, kept between reads.
     simple: std::sync::Arc<crate::simple::tails::Tails>,
 }
@@ -592,18 +595,19 @@ impl TranscriptReader {
             return self.read_positioned(source, &request).await;
         }
         if let Some(ordinal) = request.message_ordinal {
-            let head = source.head().await.unwrap_or_default();
+            let head = source.head().await?;
             let full = source.exact(&Anchor::Ordinal(ordinal as u64)).await;
             let mut reply = match full {
                 Ok(Some(row)) if row.ordinal == Some(ordinal as u64) => {
                     json!({"messages": [row.value()?], "reachedStart": true, "fullContent": true})
                 }
+                Err(error) if error.code != "full_content_unavailable" => return Err(error),
                 unavailable => {
                     let reason = match unavailable {
                         Err(error) => error.message,
                         _ => format!("source no longer contains message [{ordinal}]"),
                     };
-                    // A retained summary is useful during an outage, but must
+                    // A retained summary is useful for a missing full body, but must
                     // never masquerade as the full arguments or tool output.
                     // The summary is read as the one row after `ordinal - 1`.
                     // Reading the one row older than `ordinal + 1` instead finds
@@ -612,11 +616,13 @@ impl TranscriptReader {
                     // only for a source that can't read after an ordinal.
                     let summary = match source.after((ordinal as u64).saturating_sub(1), 1).await {
                         Ok(positioned) => positioned.page.rows,
-                        Err(_) => source
-                            .older(&Anchor::Ordinal(ordinal as u64 + 1), 1)
-                            .await
-                            .map(|page| page.rows)
-                            .unwrap_or_default(),
+                        Err(error) if error.code == "unsupported" => {
+                            source
+                                .older(&Anchor::Ordinal(ordinal as u64 + 1), 1)
+                                .await?
+                                .rows
+                        }
+                        Err(error) => return Err(error),
                     };
                     let rows = summary
                         .into_iter()
@@ -646,6 +652,7 @@ impl TranscriptReader {
                     HistoryPage {
                         rows: found.rows,
                         older: None,
+                        empty_before: None,
                         newer: None,
                         history_version: head.history_version,
                         incarnation: head.incarnation.clone(),
@@ -739,6 +746,21 @@ impl TranscriptReader {
                 "empty"
             });
         }
+        let captured_token = stable
+            .activity_token
+            .as_deref()
+            .map(|captured| {
+                message_activity_token(head.activity_token.as_deref().unwrap_or(captured), &mapped)
+            })
+            .transpose()?;
+        if newest_request
+            && request.activity_token.is_some()
+            && request.activity_token == captured_token
+        {
+            let mut reply = json!({"unchanged":true,"activityToken":captured_token});
+            decorate(&mut reply, &head, source);
+            return Ok(reply);
+        }
         let version = head
             .claim_version()
             .unwrap_or_else(|| self.activity.ensure_transcript_version(&request.session_id));
@@ -812,17 +834,20 @@ impl TranscriptReader {
             // result as a later entry, which gives the call's row its finish. So a native
             // claim is also checked against the copy its claimant was served, when one is
             // kept, and a changed held row answers `diverged` with a resync from it.
-            let changed = (native && held.held_version == version)
+            let compared = (native && held.held_version == version)
                 .then(|| {
                     let claims = self.claims.lock().expect("transcript claims poisoned");
                     claims.share_unchanged(&claims_key, &mut current);
                     claims.held_snapshot(&claims_key, held)
                 })
                 .flatten()
-                .map(|previous| claim::evaluate_claim(held, Some(&previous), &current))
-                .filter(|evaluation| matches!(evaluation, claim::ClaimEvaluation::Diverged { .. }));
-            let mut reply = if let Some(diverged) = changed {
-                let mut reply = claim::claim_reply(&version, diverged);
+                .map(|previous| claim::evaluate_claim(held, Some(&previous), &current));
+            let mut reply = if let Some(
+                evaluation @ (claim::ClaimEvaluation::Diverged { .. }
+                | claim::ClaimEvaluation::Matched { .. }),
+            ) = compared
+            {
+                let mut reply = claim::claim_reply(&version, evaluation);
                 reply["diagnostics"] = claim::diagnostics("durable", "native");
                 reply
             } else if native {
@@ -834,7 +859,16 @@ impl TranscriptReader {
                     {
                         claim::RunnerClaimEvaluation::Matched {
                             new_turns: messages[index + 1..].to_vec(),
-                            vouched_from_message_id: held.held_floor_message_id.clone(),
+                            // Without a kept copy, an equal history version only vouches
+                            // for the visible portion of the claimed range.
+                            vouched_from_message_id: messages[messages
+                                .iter()
+                                .position(|row| row["messageId"] == held.held_floor_message_id)
+                                .unwrap_or(0)
+                                .min(index)]["messageId"]
+                                .as_str()
+                                .unwrap_or(&held.since_message_id)
+                                .to_owned(),
                         }
                     } else if numbered_anchor && request.accepts_outside_window {
                         // Equal versions preserve held ordinals; only the delivery window was missed.
@@ -895,16 +929,8 @@ impl TranscriptReader {
             }
             mapped
         };
-        if stable.activity_token.is_some() {
-            if let Some(token) = head.activity_token.as_deref() {
-                reply["activityToken"] = json!(token);
-            } else {
-                self.activity.attach_captured_transcript_activity_token(
-                    &request.session_id,
-                    stable.activity_token.as_deref(),
-                    &mut reply,
-                );
-            }
+        if let Some(token) = captured_token {
+            reply["activityToken"] = json!(token);
         } else {
             self.activity
                 .attach_unstable_transcript_activity_discard(&request.session_id, &mut reply);
@@ -943,6 +969,12 @@ impl TranscriptReader {
             let ordinal = request.after_ordinal.expect("checked by the caller") as u64;
             source.after(ordinal, limit).await?
         };
+        if !positioned.page.agrees_with(&head) {
+            return Err(ReadError::new(
+                "provider_unavailable",
+                "the history changed while the positioned page was read",
+            ));
+        }
         // The page ends at its last message; an empty page (limit 0) ends where it began.
         let end = positioned
             .page
@@ -1062,6 +1094,37 @@ impl TranscriptReader {
     }
 }
 
+/// Locally joined message records can change without moving the runner's head.
+/// Qualify only pages that draw them, so ordinary pages retain their cheap
+/// head-only probe. Recomputing this digest also works after a daemon restart.
+fn message_activity_token(base: &str, page: &Value) -> Result<String, ReadError> {
+    use sha2::{Digest, Sha256};
+    let mut digest = None;
+    for row in page["messages"].as_array().into_iter().flatten() {
+        for part in row["parts"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|part| part["type"] == "message")
+        {
+            serde_json::to_writer(
+                digest.get_or_insert_with(Sha256::new),
+                &(&row["messageId"], part),
+            )
+            .map_err(|_| {
+                ReadError::new(
+                    "provider_unavailable",
+                    "message part could not be fingerprinted",
+                )
+            })?;
+        }
+    }
+    Ok(match digest {
+        Some(digest) => format!("message:{}:{:x}", base, digest.finalize()),
+        None => base.to_owned(),
+    })
+}
+
 fn map_page(
     page: HistoryPage,
     head: &Head,
@@ -1142,6 +1205,8 @@ fn map_page(
             })
             .expect("a history cursor serializes"));
         }
+    } else if let Some(before) = page.empty_before {
+        reply["nextBeforeOrdinal"] = json!(before);
     } else {
         reply["reachedStart"] = json!(true);
     }
@@ -1195,4 +1260,24 @@ fn bounded(reply: Value) -> Result<Value, ReadError> {
             .len(),
     )?;
     Ok(reply)
+}
+
+#[cfg(test)]
+#[test]
+fn inactive_revision_and_activity_entries_are_evicted_together_or_revalidated() {
+    let reader = TranscriptReader::default();
+    reader.sync_revision("old", 0);
+    let token = reader
+        .activity
+        .current_transcript_activity_token("old")
+        .unwrap();
+    for at in 0..1024 {
+        reader.sync_revision(&at.to_string(), 0);
+    }
+    assert!(reader.revisions.lock().unwrap().len() < 1024);
+    assert!(!reader
+        .activity
+        .transcript_activity_token_matches("old", &token));
+    reader.sync_revision("old", 0);
+    assert_ne!(reader.activity.ensure_transcript_version("old"), token);
 }

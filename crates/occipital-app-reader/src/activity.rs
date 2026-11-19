@@ -1,18 +1,52 @@
 //! Activity tokens and a newest-page read that retries once if its watermark changes.
 
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Mutex,
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Forget an old session rather than letting metadata for closed chats grow for
+/// the daemon's lifetime. An evicted activity token can only miss the cache.
+#[derive(Debug, Default)]
+pub(crate) struct SessionMap<T> {
+    entries: HashMap<String, T>,
+    order: VecDeque<String>,
+}
+
+impl<T> SessionMap<T> {
+    pub(crate) fn get(&self, session: &str) -> Option<&T> {
+        self.entries.get(session)
+    }
+    pub(crate) fn insert(&mut self, session: String, value: T) -> Option<T> {
+        if !self.entries.contains_key(&session) {
+            if self.entries.len() >= 256 {
+                if let Some(old) = self.order.pop_front() {
+                    self.entries.remove(&old);
+                }
+            }
+            self.order.push_back(session.clone());
+        }
+        self.entries.insert(session, value)
+    }
+    pub(crate) fn remove(&mut self, session: &str) {
+        if self.entries.remove(session).is_some() {
+            self.order.retain(|id| id != session);
+        }
+    }
+    #[cfg(test)]
+    pub(crate) fn len(&self) -> usize {
+        self.entries.len()
+    }
+}
+
 #[derive(Debug)]
 pub struct ActivityTokens {
     transcript_activity_watermark_seq: AtomicU64,
     transcript_activity_boot_nonce: u32,
-    transcript_activity_watermarks: Mutex<HashMap<String, String>>,
+    transcript_activity_watermarks: Mutex<SessionMap<String>>,
 }
 
 impl Default for ActivityTokens {
@@ -31,7 +65,7 @@ impl ActivityTokens {
         Self {
             transcript_activity_watermark_seq: AtomicU64::new(0),
             transcript_activity_boot_nonce: boot_nonce,
-            transcript_activity_watermarks: Mutex::new(HashMap::new()),
+            transcript_activity_watermarks: Mutex::default(),
         }
     }
 
@@ -97,7 +131,7 @@ impl ActivityTokens {
                 .transcript_activity_watermarks
                 .lock()
                 .expect("transcript activity watermarks poisoned");
-            if !watermarks.contains_key(session_id) {
+            if watermarks.get(session_id).is_none() {
                 // A quiet session starts with no event-fed watermark. Publish its captured token
                 // only after the event watermark stays unchanged across the provider read.
                 watermarks.insert(session_id.to_string(), before.captured_token.clone());
@@ -222,11 +256,16 @@ impl ActivityTokens {
     }
 
     pub fn ensure_transcript_version(&self, session_id: &str) -> String {
-        if self.current_transcript_activity_token(session_id).is_none() {
-            self.note_transcript_activity(session_id);
+        let mut tokens = self
+            .transcript_activity_watermarks
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if let Some(token) = tokens.get(session_id) {
+            return token.clone();
         }
-        self.current_transcript_activity_token(session_id)
-            .expect("a transcript version was just minted")
+        let token = self.next_transcript_activity_token();
+        tokens.insert(session_id.to_owned(), token.clone());
+        token
     }
 }
 
