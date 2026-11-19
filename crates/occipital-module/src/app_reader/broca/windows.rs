@@ -132,7 +132,11 @@ impl BrocaSource {
             // With display facts the read already carries the client ids, so no
             // display-history read is needed.
             if !display_facts {
-                self.echo_client_message_ids(&mut page.messages).await;
+                let served = page
+                    .messages
+                    .partition_point(|entry| entry["ordinal"].as_u64().is_some_and(|at| at < end));
+                self.echo_client_message_ids(&mut page.messages[..served])
+                    .await;
             }
             entries.extend(page.messages);
             pruned_reasoning.extend(page.pruned_reasoning);
