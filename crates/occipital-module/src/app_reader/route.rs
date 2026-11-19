@@ -135,6 +135,45 @@ struct Watch {
     /// the waiting messages, for the line logged when it ends.
     notices: std::sync::atomic::AtomicU32,
     queue_lists: std::sync::atomic::AtomicU32,
+    /// For a display watch: the tool frames and message frames among them,
+    /// running calls and live messages on a baseline counted too, so the end
+    /// line shows whether a reader that asked for them got any.
+    tool_frames: std::sync::atomic::AtomicU32,
+    message_frames: std::sync::atomic::AtomicU32,
+}
+
+/// The tool frames and message frames in a display watch notice: an
+/// incremental one's `frames`, or a baseline's running calls and live
+/// messages. A message frame is a message's words (`partType: "message"`) or
+/// its freeze or withdrawal (`kind: "message"`).
+pub(super) fn frames_in(body: &[u8]) -> (u32, u32) {
+    let Ok(notice) = serde_json::from_slice::<Value>(body) else {
+        return (0, 0);
+    };
+    let count = |member: &str| {
+        notice[member]
+            .as_array()
+            .map_or(0, |list| u32::try_from(list.len()).unwrap_or(u32::MAX))
+    };
+    let (mut tools, mut messages) = (count("tools"), count("messages"));
+    for sequenced in notice["frames"].as_array().into_iter().flatten() {
+        let frame = &sequenced["frame"];
+        if frame["kind"] == "tool" {
+            tools = tools.saturating_add(1);
+        } else if frame["kind"] == "message" || frame["partType"] == "message" {
+            messages = messages.saturating_add(1);
+        }
+    }
+    (tools, messages)
+}
+
+/// A watch refused before it opened, for a request the module can't read,
+/// such as a member this build doesn't know. Its opening is never logged
+/// otherwise, since the session is never resolved.
+fn refused_opening(method: &str, params: &Value, code: &str, message: &str) {
+    let session = params["session"].as_str().unwrap_or_default();
+    tracing::warn!(method = %method, session = %session, code = %code, message = %message,
+        "app watch refused before it opened");
 }
 
 async fn signalled(mut receiver: watch::Receiver<bool>) {
@@ -475,6 +514,8 @@ pub(super) async fn serve(
         quiet: watch::channel(0).0,
         notices: std::sync::atomic::AtomicU32::new(0),
         queue_lists: std::sync::atomic::AtomicU32::new(0),
+        tool_frames: std::sync::atomic::AtomicU32::new(0),
+        message_frames: std::sync::atomic::AtomicU32::new(0),
     };
     let ended = slot.ended();
     let started = std::time::Instant::now();
@@ -491,10 +532,14 @@ pub(super) async fn serve(
         .then(|| host.app.sends.queue_changes());
     let work = async {
         let selection = if method == DISPLAY_WATCH {
+            let unreadable = |code: &str, message: String| {
+                refused_opening(&method, &host.params, code, &message);
+                (code.to_owned(), message, None)
+            };
             let request = DisplayReadRequest::parse(&host.params)
-                .map_err(|e| (e.code.to_owned(), e.message, None))?;
+                .map_err(|e| unreadable(e.code, e.message))?;
             let harness = occipital_app_reader::page::optional_transcript_harness(&host.params)
-                .map_err(|e| (e.code.to_owned(), e.message, None))?;
+                .map_err(|e| unreadable(e.code, e.message))?;
             Some((request.session.to_owned(), harness.map(str::to_string)))
         } else {
             occipital_app_reader::page::PageRequest::parse(&host.params)
@@ -560,10 +605,18 @@ pub(super) async fn serve(
     // so a missed update can be told apart from one never sent.
     if opened.load(std::sync::atomic::Ordering::Relaxed) {
         let session = host.params["session"].as_str().unwrap_or_default();
+        let asked = |member: &str| host.params[member] == Value::Bool(true);
+        let load = |counter: &std::sync::atomic::AtomicU32| {
+            counter.load(std::sync::atomic::Ordering::Relaxed)
+        };
         tracing::info!(method = %method, session = %session, correlation = %logged_correlation,
             duration_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
-            notices = host.notices.load(std::sync::atomic::Ordering::Relaxed),
-            queue_lists = host.queue_lists.load(std::sync::atomic::Ordering::Relaxed),
+            notices = load(&host.notices),
+            queue_lists = load(&host.queue_lists),
+            accept_tool_frames = asked("acceptToolFrames"),
+            accept_message_frames = asked("acceptMessageFrames"),
+            tool_frames = load(&host.tool_frames),
+            message_frames = load(&host.message_frames),
             end, "app watch ended");
     }
     match result {
@@ -639,7 +692,15 @@ impl DisplayWatchHost for Watch {
             })
     }
     async fn emit(&self, body: Vec<u8>) -> Result<(), DisplayWatchStopped> {
-        self.emit_body(body).await.map_err(|_| DisplayWatchStopped)
+        let (tools, messages) = frames_in(&body);
+        self.emit_body(body)
+            .await
+            .map_err(|_| DisplayWatchStopped)?;
+        self.tool_frames
+            .fetch_add(tools, std::sync::atomic::Ordering::Relaxed);
+        self.message_frames
+            .fetch_add(messages, std::sync::atomic::Ordering::Relaxed);
+        Ok(())
     }
     async fn stopped(&self) {
         self.stop().await;

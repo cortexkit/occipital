@@ -1362,6 +1362,86 @@ async fn open_both(h: &mut Harness) {
     assert_eq!(h.app.watches.open_count(), 2);
 }
 
+/// A display watch's end names which frames it asked for and how many of each
+/// reached the app, and a watch refused before it opened, such as for a member
+/// this build doesn't know, is logged with its code. An app whose live view
+/// fails at once is then visible in the log.
+#[tokio::test(start_paused = true)]
+async fn a_display_watch_logs_what_it_asked_for_and_a_refused_opening() {
+    let log = crate::test_tracing::Lines::default();
+    let _guard = crate::test_tracing::enter(log.clone());
+    let mut h = Harness::new();
+    h.bind(7, 1, binding("fed-phone:fp")).await;
+    let mut unknown = params(DISPLAY_WATCH, "s");
+    unknown["acceptFutureFrames"] = json!(true);
+    h.request(DISPLAY_WATCH, 1, unknown).await;
+    let refused = h.next().await;
+    assert_eq!(refused.header.ty, FrameType::Error);
+    h.barrier().await;
+    let line = log
+        .find("app watch refused before it opened", "")
+        .expect("the refused opening is logged");
+    for field in [
+        "level=WARN",
+        "method=session.display_watch",
+        "session=s",
+        "code=invalid_request",
+        "acceptFutureFrames",
+    ] {
+        assert!(line.contains(field), "missing {field}: {line}");
+    }
+
+    let mut asked = params(DISPLAY_WATCH, "s");
+    asked["acceptToolFrames"] = json!(true);
+    asked["acceptMessageFrames"] = json!(true);
+    h.request(DISPLAY_WATCH, 2, asked).await;
+    h.barrier().await;
+    h.cancel(7, 1, 2);
+    let ended = h.next().await;
+    assert_eq!(
+        (ended.header.corr, ended.header.ty),
+        (2, FrameType::StreamEnd)
+    );
+    h.barrier().await;
+    let end = log
+        .find("app watch ended", "method=session.display_watch")
+        .expect("the watch's end is logged");
+    for field in [
+        "accept_tool_frames=true",
+        "accept_message_frames=true",
+        "tool_frames=0",
+        "message_frames=0",
+    ] {
+        assert!(end.contains(field), "missing {field}: {end}");
+    }
+    h.finish().await;
+}
+
+/// The frames a display watch notice carries are counted by kind: tool frames
+/// and message frames in an incremental notice, and a baseline's running
+/// calls and live messages.
+#[test]
+fn a_display_notices_frames_are_counted_by_kind() {
+    let incremental = json!({"frames": [
+        {"frame": {"kind": "display", "partType": "text", "chunk": "a"}, "seq": 1},
+        {"frame": {"kind": "display", "partType": "message", "chunk": "b"}, "seq": 2},
+        {"frame": {"kind": "message", "callId": "c", "withdrawn": true}, "seq": 3},
+        {"frame": {"kind": "tool", "callId": "d", "phase": "running"}, "seq": 4},
+        {"frame": {"kind": "display_end"}, "seq": 5}
+    ], "seq": 5});
+    assert_eq!(
+        super::route::frames_in(&serde_json::to_vec(&incremental).unwrap()),
+        (1, 2)
+    );
+    let baseline = json!({"frame": {"kind": "display_gap"}, "seq": 9,
+        "tools": [{"callId": "d"}, {"callId": "e"}], "messages": [{"callId": "c"}]});
+    assert_eq!(
+        super::route::frames_in(&serde_json::to_vec(&baseline).unwrap()),
+        (2, 1)
+    );
+    assert_eq!(super::route::frames_in(b"not json"), (0, 0));
+}
+
 async fn ends(h: &mut Harness) {
     let mut corrs = vec![];
     for _ in 0..2 {
