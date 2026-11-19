@@ -277,3 +277,22 @@ fn unique_wakes_referenced_by_messages_and_notices_follow_the_session() {
     files.notices.with_conn_fenced(|tx| tx.execute_batch("INSERT INTO wake_records SELECT 'older',sender,send_id,runner,body,written_at_ms FROM wake_records WHERE send_id='s2-ride'")).unwrap();
     assert_eq!(wakes(), 1);
 }
+
+#[test]
+fn export_delivers_the_first_row_before_reading_the_next() {
+    let dir = ScratchDir::new("moves-export-cursor");
+    let opened = opened(&dir);
+    let files = opened.files();
+    seed(&files, "moved", "broca", "call");
+    // The final table can supply its first row, but raises a SQLite integer
+    // overflow if the exporter reads ahead to the second row.
+    files.store.with_conn_fenced(|tx| tx.execute_batch("ALTER TABLE harness_app_send_wait RENAME TO real_wait; CREATE VIEW harness_app_send_wait AS SELECT * FROM real_wait UNION ALL SELECT session,client_message_id,runner_code,abs(-9223372036854775808),cause FROM real_wait")).unwrap();
+    let result = files.export(&sessions(&["moved"]), |(table, _)| {
+        if table.name == "send_waits" {
+            Err("consumer stopped".into())
+        } else {
+            Ok(())
+        }
+    });
+    assert!(result.unwrap_err().contains("consumer stopped"));
+}

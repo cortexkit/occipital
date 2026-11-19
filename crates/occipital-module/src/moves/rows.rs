@@ -305,9 +305,9 @@ impl Files<'_> {
             .map_err(|e| e.to_string())
     }
 
-    /// Insert `rows`, keeping every row already held. Each file's rows go in
-    /// one transaction, so a failed import leaves that file as it was.
-    /// Returns how many rows were new.
+    /// Insert missing payloads and follow the stream's call associations.
+    /// Each file's share of this batch is committed in one transaction.
+    /// Returns how many rows were inserted or reassociated.
     pub(crate) fn import(&self, rows: &[Row]) -> Result<u64, String> {
         let mut by_file: BTreeMap<File, Vec<&Row>> = BTreeMap::new();
         for row in rows {

@@ -12,9 +12,9 @@
 //! - **export** (source): checks the door holds the whole stream.
 //! - **import** (receiver): reads the stream back through the door with the
 //!   cut's id, checks its digest, and keeps it, unapplied.
-//! - **activate** (receiver): inserts the rows, keeping every row already held,
+//! - **activate** (receiver): inserts missing rows and updates moved call associations,
 //!   and lifts any hold an earlier move away left on those sessions.
-//! - **release** (source, after activation): drops the sessions' waiting
+//! - **release** (source, after activation): drops the stream's waiting
 //!   sends, which the new computer follows now, and keeps holding sends to
 //!   the sessions as living there. The display rows stay: a record a provider
 //!   writes after the cut is kept for a move back.
@@ -305,8 +305,8 @@ impl Moves {
                         for r in refs {
                             agent_of(r)?;
                         }
-                        // Import inserts without replacing, and every row is
-                        // immutable, so importing a cut here never loses one.
+                        // Import keeps existing payloads; only call-to-session
+                        // associations follow the incoming history.
                         let at_cut: Vec<Value> =
                             refs.iter().map(|_| json!({"state": "at_cut"})).collect();
                         Ok(json!({ "refs": at_cut }))
@@ -914,7 +914,7 @@ fn write_stream(
         payload::Writer::start(std::io::BufWriter::new(file), agent).map_err(|e| e.to_string())?;
     let mut held = BTreeSet::new();
     let counts = stores.files().export(&names, |row| {
-        if let Some(session) = row_session(&row) {
+        if let Some(session) = row_session(&row).filter(|name| names.contains(name)) {
             held.insert(session);
         }
         writer.row(&row).map_err(|e| e.to_string())
