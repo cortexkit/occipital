@@ -1030,16 +1030,27 @@ async fn rebind_without_operator_app_does_not_retain_desktop_admission() {
     h.finish().await;
 }
 
+// Callosum opens app routes only with a classified device, never for a local operator.
+#[test]
+fn a_carrier_without_device_facts_does_not_earn_app_admission() {
+    let mut route = binding("operator");
+    route.3 = None;
+    assert!(admit_principal(Some(&route)).is_none());
+}
+
 #[tokio::test]
 async fn app_reads_admit_unscoped_callosum_routes_and_development_direct_callers() {
     let mut cases = vec![];
-    for label in ["operator", "fed-phone:fp", "fed-sim:fp", "fed-app:fp"] {
+    for label in ["fed-phone:fp", "fed-sim:fp", "fed-app:fp"] {
         cases.push((label, binding(label), true));
     }
     // Callosum's other device classes aren't the person's app: a paired
     // computer, a class it couldn't name, and any class added later until it is
     // named here.
     for label in [
+        "operator", // Callosum does not attest local operators.
+        "fed-:fp",
+        "fed-phone:",
         "fed-computer:fp",
         "fed-unknown:fp",
         "fed-desktop:fp",
@@ -1528,7 +1539,7 @@ async fn module_shutdown_ends_every_open_watch_with_stream_end() {
 async fn cancel_interrupts_a_stalled_transcript_source_read() {
     let mut h = Harness::new();
     h.resolver.source.stalled.store(true, Ordering::SeqCst);
-    h.bind(7, 1, binding("operator")).await;
+    h.bind(7, 1, binding("fed-phone:fp")).await;
     h.request(TRANSCRIPT_WATCH, 1, params(TRANSCRIPT_WATCH, "s"))
         .await;
     h.barrier().await;
@@ -1540,7 +1551,7 @@ async fn cancel_interrupts_a_stalled_transcript_source_read() {
 #[tokio::test]
 async fn display_watchers_share_one_live_projection_and_reads_do_not_create_it() {
     let mut h = Harness::new();
-    h.bind(7, 1, binding("operator")).await;
+    h.bind(7, 1, binding("fed-phone:fp")).await;
     h.request(DISPLAY_READ, 9, params(DISPLAY_READ, "s")).await;
     assert_eq!(
         body(&h.next().await),

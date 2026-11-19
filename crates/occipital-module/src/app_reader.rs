@@ -306,7 +306,7 @@ fn admit_principal(binding: Option<&RouteBinding>) -> Option<Caller> {
                     fingerprint: fingerprint.into(),
                 });
             }
-            return Some(Caller::Operator);
+            return None;
         }
     }
     None
