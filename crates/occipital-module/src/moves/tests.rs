@@ -476,7 +476,7 @@ async fn abort_lifts_the_hold_and_closes_the_cut() {
 #[tokio::test]
 async fn a_move_back_lifts_the_hold() {
     let fleet = Arc::new(Fleet::default());
-    let home = computer("moves-home", &fleet);
+    let mut home = computer("moves-home", &fleet);
     let away = computer("moves-away", &fleet);
     seed(&home.files(), "moved", "broca", "moved-call");
     let out = cut_id(5);
@@ -502,6 +502,7 @@ async fn a_move_back_lifts_the_hold() {
     for op in ["agent_data.prepare", "agent_data.export"] {
         away.op(op, &back).await.unwrap();
     }
+    home.moves.clock = || 0;
     home.op("agent_data.import", &back).await.unwrap();
     home.op("agent_data.activate", &back).await.unwrap();
     assert_eq!(home.cuts.hold("moved"), None);
@@ -800,4 +801,42 @@ async fn release_preserves_waiting_sends_written_after_export() {
             .collect::<Vec<_>>(),
         [&rusqlite::types::Value::Text("late".into())]
     );
+}
+
+#[tokio::test]
+async fn partial_activation_refuses_abort_and_can_finish_after_restart() {
+    let fleet = Arc::new(Fleet::default());
+    let src = computer("moves-partial-src", &fleet);
+    let mut dst = computer("moves-partial-dst", &fleet);
+    let cut = cut_id(1);
+    seed(&src.files(), "s", "broca", "c");
+    fleet.moves(&cut, &[session("s")]);
+    src.op("agent_data.prepare", &cut).await.unwrap();
+    dst.op("agent_data.import", &cut).await.unwrap();
+    dst.files().details.with_conn_fenced(|tx| tx.execute_batch("CREATE TRIGGER stop BEFORE INSERT ON display_writes BEGIN SELECT RAISE(ABORT,'busy'); END")).unwrap();
+    dst.op("agent_data.activate", &cut).await.unwrap_err();
+    assert_eq!(
+        dst.opened
+            .display
+            .call_pin("broca", "c")
+            .unwrap()
+            .unwrap()
+            .0,
+        "s"
+    );
+    dst.moves.cuts = Arc::new(Cuts::open(dst.opened.main.data_root()).unwrap());
+    assert_eq!(
+        dst.op("agent_data.status", &cut).await.unwrap()["step"],
+        "imported"
+    );
+    assert_eq!(
+        dst.op("agent_data.abort", &cut).await.unwrap_err().0,
+        "invalid_state"
+    );
+    dst.files()
+        .details
+        .with_conn_fenced(|tx| tx.execute_batch("DROP TRIGGER stop"))
+        .unwrap();
+    dst.op("agent_data.activate", &cut).await.unwrap();
+    assert_eq!(exported(&src.files(), "s"), exported(&dst.files(), "s"));
 }

@@ -468,7 +468,9 @@ impl Moves {
     async fn import(&self, cut_id: &str, agent: &str) -> Result<Value, Refusal> {
         if let Some(cut) = self.existing(cut_id, agent)? {
             return match (cut.side, cut.step) {
-                (Some(Side::Receiver), Step::Imported | Step::Activated) => Ok(import_reply(&cut)),
+                (Some(Side::Receiver), Step::Imported | Step::Activating | Step::Activated) => {
+                    Ok(import_reply(&cut))
+                }
                 (_, step) => Err(invalid_state(step)),
             };
         }
@@ -530,7 +532,11 @@ impl Moves {
             .existing(cut_id, agent)?
             .ok_or_else(|| refuse("cut_unknown", "import this cut first"))?;
         match (cut.side, cut.step) {
-            (Some(Side::Receiver), Step::Imported) => {
+            (Some(Side::Receiver), Step::Imported | Step::Activating) => {
+                if cut.step == Step::Imported {
+                    cut.step = Step::Activating;
+                    self.save(cut_id, &cut)?;
+                }
                 if let Some(item) = cut.item.clone() {
                     let (stores, path) = (self.stores.clone(), self.cuts.stream_path(cut_id));
                     tokio::task::spawn_blocking(move || {
@@ -582,7 +588,9 @@ impl Moves {
             },
         };
         match cut.step {
-            Step::Activated | Step::Released => return Err(invalid_state(cut.step)),
+            Step::Activating | Step::Activated | Step::Released => {
+                return Err(invalid_state(cut.step))
+            }
             Step::Aborted if cut.side.is_none() => {}
             _ => {
                 cut.step = Step::Aborted;
