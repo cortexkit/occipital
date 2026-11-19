@@ -14,12 +14,17 @@ use crate::output::to_json;
 /// to the rules; every other member, today's or a later one, is ignored, so
 /// an app can pass the record exactly as it arrived.
 #[derive(Deserialize)]
+#[serde(remote = "Self")]
 struct ProjectJson {
     #[serde(default)]
     repository: Option<RepositoryJson>,
 }
 
+crate::envelope::object_only!(ProjectJson);
+crate::envelope::object_only!(RepositoryJson);
+
 #[derive(Deserialize)]
+#[serde(remote = "Self")]
 struct RepositoryJson {
     host: String,
     owner: String,
@@ -139,8 +144,18 @@ mod tests {
         assert_eq!(status, OCC_OK);
         assert_eq!(
             json.unwrap(),
-            r#"{"rules":2,"references":[{"start":9,"end":16,"kind":"issue","target":"https://github.com/cortexkit/occipital/issues/499"}]}"#
+            r#"{"rules":3,"references":[{"start":9,"end":16,"kind":"issue","target":"https://github.com/cortexkit/occipital/issues/499"}]}"#
         );
+    }
+
+    #[test]
+    fn project_and_repository_are_objects_not_positional_arrays() {
+        for project in [
+            "[null]",
+            r#"{"repository":["github.com","cortexkit","occipital"]}"#,
+        ] {
+            assert_eq!(call(b"PR 1", Some(project)), (OCC_INVALID_ARGUMENT, None));
+        }
     }
 
     /// JSON `null` is text with no project: only `owner/repo#N` links, and
@@ -151,12 +166,12 @@ mod tests {
         assert_eq!(status, OCC_OK);
         assert_eq!(
             json.unwrap(),
-            r#"{"rules":2,"references":[{"start":9,"end":25,"kind":"repository_issue","target":"https://github.com/cortexkit/aft/issues/12"},{"start":27,"end":34,"kind":"mention","target":"CKDESK"}]}"#
+            r#"{"rules":3,"references":[{"start":9,"end":25,"kind":"repository_issue","target":"https://github.com/cortexkit/aft/issues/12"},{"start":27,"end":34,"kind":"mention","target":"CKDESK"}]}"#
         );
         let (status, json) = call(b"PR 4", Some("{}"));
         assert_eq!(
             (status, json.as_deref()),
-            (OCC_OK, Some(r#"{"rules":2,"references":[]}"#))
+            (OCC_OK, Some(r#"{"rules":3,"references":[]}"#))
         );
     }
 

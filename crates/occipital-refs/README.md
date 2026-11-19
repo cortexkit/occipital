@@ -27,12 +27,13 @@ assert_eq!(found[0].target, "https://github.com/cortexkit/occipital/issues/499")
 The crate has no dependencies, so depending on it never changes the features
 of an app's other crates.
 
-## Rules, version 2
+## Rules, version 3
 
-`RULES_VERSION` is 2. Test vectors pinning these rules are in
-`vectors/text-references-v2/` in the repository, tagged
-`text-references-v2`. Version 1 had no `mention` kind; its vectors stay in
-`vectors/text-references-v1/`, tagged `text-references-v1`.
+`RULES_VERSION` is 3. Test vectors pinning these rules are in
+`vectors/text-references-v3/`. Version 3 counts link labels in characters,
+not bytes, ignores brackets in code spans when pairing a label, and ignores
+link definitions inside code spans. The version 1 and 2 sets remain under
+`vectors/text-references-v1/` and `vectors/text-references-v2/`.
 
 ### The project
 

@@ -1,5 +1,4 @@
-//! Measuring trees outside a session: `occ_measure_tree` and
-//! `occ_measure_block`.
+//! Measuring whole trees and individual components outside a session.
 
 use std::ffi::c_char;
 
@@ -15,7 +14,11 @@ use crate::tree::{node_at, TreeDe};
 /// Measures `tree` and encodes the measurement. A tree measured outside a
 /// session has no instance, revision or evaluated state, so its layout key
 /// carries instance epoch 0, revision 0 and an empty state hash.
-fn measure_json(tree: &Tree, layout: &LayoutContext, metrics: &Adapter) -> Result<String, Failure> {
+fn measurement(
+    tree: &Tree,
+    layout: &LayoutContext,
+    metrics: &Adapter,
+) -> Result<MeasurementJson, Failure> {
     let revision = MeasureRevision {
         instance_epoch: 0,
         revision: 0,
@@ -24,7 +27,7 @@ fn measure_json(tree: &Tree, layout: &LayoutContext, metrics: &Adapter) -> Resul
         first: None,
     };
     match measure(&revision, layout, metrics) {
-        Ok(measured) if !metrics.failed() => to_json(&MeasurementJson::new(&measured)),
+        Ok(measured) if !metrics.failed() => Ok(MeasurementJson::new(&measured)),
         _ => Err(Failure::bare(OCC_MEASURE_ERROR)),
     }
 }
@@ -57,7 +60,7 @@ pub unsafe extern "C" fn occ_measure_tree(
                 Adapter::new(metrics)?,
             )
         };
-        measure_json(&tree.0, &layout.into_context()?, &metrics)
+        to_json(&measurement(&tree.0, &layout.into_context()?, &metrics)?)
     };
     // SAFETY: the caller's guarantee about `out` is `string_entry`'s.
     unsafe { string_entry(out, body) }
@@ -92,14 +95,82 @@ pub unsafe extern "C" fn occ_measure_block(
                 Adapter::new(metrics)?,
             )
         };
-        let node = match node_at(&tree.0, &path) {
-            Some(node @ TreeNode::Component { .. }) => node.clone(),
-            _ => return Err(Failure::invalid()),
-        };
-        let block = Tree { blocks: vec![node] };
-        measure_json(&block, &layout.into_context()?, &metrics)
+        to_json(&block_measurement(
+            &tree.0,
+            &path,
+            &layout.into_context()?,
+            &metrics,
+        )?)
     };
     // SAFETY: the caller's guarantee about `out` is `string_entry`'s.
+    unsafe { string_entry(out, body) }
+}
+
+fn block_measurement(
+    tree: &Tree,
+    path: &[usize],
+    layout: &LayoutContext,
+    metrics: &Adapter,
+) -> Result<MeasurementJson, Failure> {
+    let Some(node @ TreeNode::Component { .. }) = node_at(tree, path) else {
+        return Err(Failure::invalid());
+    };
+    measurement(
+        &Tree {
+            blocks: vec![node.clone()],
+        },
+        layout,
+        metrics,
+    )
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+enum BlockResult {
+    Measurement(Box<MeasurementJson>),
+    Status(i32),
+}
+
+/// Measures each component path with one shared decode of the tree and layout.
+/// A path that does not name a component has its own status in the result.
+///
+/// # Safety
+///
+/// As [`occ_measure_block`], with `paths_json` a NULL or NUL-terminated string.
+#[no_mangle]
+pub unsafe extern "C" fn occ_measure_blocks(
+    tree_json: *const c_char,
+    paths_json: *const c_char,
+    layout_json: *const c_char,
+    metrics: *const OccMetrics,
+    out: *mut *mut c_char,
+) -> i32 {
+    let body = || {
+        // SAFETY: the strings and callback table stay valid for this call.
+        let (tree, paths, layout, metrics) = unsafe {
+            (
+                json_arg::<TreeDe>(tree_json)?,
+                json_arg::<Vec<Vec<usize>>>(paths_json)?,
+                json_arg::<LayoutEnvelope>(layout_json)?.into_context()?,
+                Adapter::new(metrics)?,
+            )
+        };
+        if paths.iter().any(Vec::is_empty) {
+            return Err(Failure::invalid());
+        }
+        let results: Vec<_> = paths
+            .iter()
+            .map(|path| {
+                // Each path has the same callback failure state as a fresh single call.
+                match block_measurement(&tree.0, path, &layout, &metrics.clone()) {
+                    Ok(value) => BlockResult::Measurement(Box::new(value)),
+                    Err(error) => BlockResult::Status(error.status),
+                }
+            })
+            .collect();
+        to_json(&results)
+    };
+    // SAFETY: `out` is NULL or writable for one pointer.
     unsafe { string_entry(out, body) }
 }
 

@@ -1,4 +1,4 @@
-2229deabcbb747ef9824ecd9d9c7265c561a1be671ffee73df0620dced0a65a4  README.md
+a7869eeb874c7d92d3b670bad308bd3a3ca1a5f00dbef9f6a5a7dbfa5219a884  README.md
 7e685b0f6d08f01426081f06dd04717be067c09156d9573be3b86b86965e7d5f  check-16.01-row-bash-1-running.json
 8575f572540104d09646644c13077386e894ab647c82e65ed2a3097f5d9b5ae4  check-16.01-row-bash-2-succeeded.json
 902e4ab8ba1303b8951b261f06ae61a0dd9def7f9d5cfa9895d65a892feb6469  check-16.01-row-bash-3-failed.json
@@ -41,6 +41,7 @@ d0a04716edae1f27ebee09a96ca82a0c6b21a14e894bd44d4ebe7ae612758ea5  format-schedul
 ce331cb0c857dca7d692e793fb10734e9db77c2174d674dad6ca99a4d95e1f7f  measure-block-16.09-reply-places-4.json
 ffc0b804536d8c4e7ede816eb2f5fc84d1c9272c51fccf1c677e818d2be02e35  measure-block-16.09-reply-places-5.json
 12a6a15aa25f2e0ea3abf76fad6abd41d8a2b7b8c4cbea229d96d9bab68df2f8  measure-block-16.10-reply-disk-use-1.json
+e2c6e34dab6765c49c75afe5075854c28950911e26fe6f11c8afda4955bd3c47  measure-blocks-mixed.json
 743f83567631abdf55c2ffc9d4ae46c8b224dd4b291f0190377134a4c049c370  measure-tree-16.08-reply-test-run.json
 e82d9433389073230c865bf80f25dc0065e73f421150a7b3bb7d1d4168c09558  measure-tree-16.09-reply-places.json
 2b47f14a17cd45f7fec8d8f65e11799469ff00df8bc9b623e1dafdc04bdb248e  measure-tree-16.10-reply-disk-use.json
@@ -73,5 +74,5 @@ eef7825e752f24fcb9222c8cf305e129cef441046b0ec50ee6f4809b0fec9a81  template-bash-
 928756ffd0a11c3cbf2cbf79cb49475014189176b4b0e91fcb268f02617207e8  template-edit-page-diff.json
 6d7c4bc3afe689b05ad7db50c1852996f6af4636677504a7176fde169a4f401b  template-edit-row-header-filled.json
 aff3b14da7fa2447fa54266c1f6d1e55173de218c9351d282b0170f6a1251582  template-edit-row-header-waiting.json
-5a97e39a07db5ce4ae7e1cda4495ce84d728d3381e807d05dc43508f25603af7  text-references.json
+7c84d5785e2e697295454ddb1192b19473a27c9857b187c0d37d0bc1696d4ef9  text-references.json
 83515b6c965619f080294f42434cc5b0495a280d666857fa2251b3ba35ee81e9  version.json

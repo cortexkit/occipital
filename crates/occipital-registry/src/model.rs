@@ -49,12 +49,24 @@ pub struct CatalogRef {
 }
 
 /// One `{id, version}` entry of a `reads` array.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Eq)]
+#[cfg_attr(not(test), derive(PartialEq))]
 pub struct ReadRef {
     /// `id`: the operation id.
     pub id: String,
     /// `version`: from 1.
     pub version: Integer,
+}
+
+#[cfg(test)]
+thread_local! { pub(crate) static READ_COMPARISONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
+
+#[cfg(test)]
+impl PartialEq for ReadRef {
+    fn eq(&self, other: &Self) -> bool {
+        READ_COMPARISONS.update(|n| n + 1);
+        self.id == other.id && self.version == other.version
+    }
 }
 
 /// An `occipital.template/1` document. Its `schema` member is always

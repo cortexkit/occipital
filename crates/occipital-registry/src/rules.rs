@@ -45,9 +45,10 @@ fn catalog(catalog: &CatalogRef, path: &Path<'_>, faults: &mut Faults) {
 
 /// Checks a `reads` array: each entry's id and version, and repeats.
 fn reads(reads: &[ReadRef], path: &Path<'_>, faults: &mut Faults) {
+    let mut seen = std::collections::HashSet::with_capacity(reads.len());
     for (index, read) in reads.iter().enumerate() {
         let entry = path.index(index);
-        if reads[..index].contains(read) {
+        if !seen.insert((&read.id, read.version)) {
             faults.report(Tier::Cross, RuleCode::DuplicateEntry, &entry);
         }
         if !is_operation_id(&read.id) {
@@ -56,5 +57,30 @@ fn reads(reads: &[ReadRef], path: &Path<'_>, faults: &mut Faults) {
         if read.version.get() < 1 {
             value(faults, RuleCode::InvalidValue, &entry.key("version"));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{canon::Integer, model::READ_COMPARISONS};
+
+    #[test]
+    fn distinct_reads_do_not_compare_every_pair() {
+        let entries: Vec<_> = (0..256)
+            .map(|i| ReadRef {
+                id: format!("op{i}"),
+                version: Integer::new(1).unwrap(),
+            })
+            .collect();
+        READ_COMPARISONS.set(0);
+        let mut faults = Faults::default();
+        reads(&entries, &Path::ROOT, &mut faults);
+        assert!(!faults.any());
+        assert!(
+            READ_COMPARISONS.get() < 4 * entries.len(),
+            "{} comparisons",
+            READ_COMPARISONS.get()
+        );
     }
 }

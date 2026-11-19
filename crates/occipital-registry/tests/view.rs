@@ -293,3 +293,22 @@ fn the_app_drawn_parts_check_in_their_profiles() {
 fn reports_for_row(source: &str) -> Vec<TemplateReport> {
     reports(json!({"row": template("tool_row", source)}))
 }
+
+#[test]
+fn constant_row_with_a_valid_enumerated_input() {
+    let schema = json!({"type":"object", "properties":{"mode":{"type":"string"}},
+        "required":["mode"], "enum":[{"mode":"fast"},{"mode":"safe"}]});
+    let row = template("tool_row", "<Badge text=\"Ready\" />");
+    let heights = row_heights(
+        &row,
+        &record_schema(),
+        &schema,
+        &json!({"mode":"safe"}),
+        None,
+        None,
+    )
+    .unwrap();
+    assert_eq!(heights.len(), SAMPLE_WIDTHS.len());
+    let reports = check_view(&json!({"row":row}), &record_schema(), &schema).unwrap();
+    assert!(reports[0].passed(), "{:?}", reports[0].diagnostics);
+}

@@ -155,15 +155,21 @@ fn check_template(
     if !report.problems.is_empty() {
         return report;
     }
+    let mut input = input(input_schema);
+    // No call arguments are available yet. Use a declared example when the
+    // input is enumerated; otherwise the empty object stands in for a call.
+    let placeholder = input
+        .enumeration
+        .as_ref()
+        .and_then(|values| values.first())
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    input.required.clear();
     let context = tool_context(
         profile,
         &template,
-        json!({}),
-        Schema {
-            // Checking supplies no arguments, so none may be required.
-            required: Vec::new(),
-            ..input(input_schema)
-        },
+        placeholder,
+        input,
         waiting_view(profile),
         record_schema,
     );
@@ -237,19 +243,7 @@ pub fn row_heights(
     record: Option<&Json>,
     completion: Option<&Json>,
 ) -> Result<Vec<RowHeight>, String> {
-    for (name, value, validate) in [
-        ("record", record, schema::validate_record as Validator),
-        ("completion", completion, schema::validate_completion),
-    ] {
-        if let Some(value) = value {
-            let object = value
-                .as_object()
-                .ok_or_else(|| format!("the sample's {name} is not an object"))?;
-            validate(object, record_schema).map_err(|error| {
-                format!("the record schema refuses the sample's {name}: {error}")
-            })?;
-        }
-    }
+    validate_sample(record_schema, record, completion)?;
     let template = serde_json::to_vec(row)
         .map_err(|error| error.to_string())
         .and_then(|bytes| Template::parse(&bytes).map_err(|error| error.to_string()))?;
@@ -292,6 +286,28 @@ pub fn row_heights(
             })
         })
         .collect()
+}
+
+/// Checks a sample's record and completion even when the provider ships no row to measure.
+pub fn validate_sample(
+    record_schema: &RecordSchema,
+    record: Option<&Json>,
+    completion: Option<&Json>,
+) -> Result<(), String> {
+    for (name, value, validate) in [
+        ("record", record, schema::validate_record as Validator),
+        ("completion", completion, schema::validate_completion),
+    ] {
+        if let Some(value) = value {
+            let object = value
+                .as_object()
+                .ok_or_else(|| format!("the sample's {name} is not an object"))?;
+            validate(object, record_schema).map_err(|error| {
+                format!("the record schema refuses the sample's {name}: {error}")
+            })?;
+        }
+    }
+    Ok(())
 }
 
 type Validator = fn(

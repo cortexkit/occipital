@@ -254,7 +254,13 @@ fn every_member_is_required_and_typed() {
 
 #[test]
 fn an_unknown_member_is_refused_in_each_object() {
-    for path in ["/extra", "/catalog/extra", "/reads/0/extra"] {
+    for path in [
+        "/extra",
+        "/catalog/extra",
+        "/reads/0/extra",
+        "/catalog/",
+        "/reads/0/",
+    ] {
         refused(&[(path, Some("null"))], "unknown_field", path);
     }
 }

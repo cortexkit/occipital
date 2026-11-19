@@ -64,7 +64,7 @@ pub use account::{occ_account_free, occ_account_new, OccAccount};
 pub use fact::{occ_format_fact, occ_format_schedule};
 #[cfg(any(test, feature = "test-hooks"))]
 pub use hooks::{occ_test_decode_layout, occ_test_force_panic};
-pub use measure::{occ_measure_block, occ_measure_tree};
+pub use measure::{occ_measure_block, occ_measure_blocks, occ_measure_tree};
 pub use metrics::{LineHeight, OccMetrics, TextHeight, TextWidth};
 pub use program::{occ_program_check, occ_template_evaluate};
 pub use refs::occ_text_references;

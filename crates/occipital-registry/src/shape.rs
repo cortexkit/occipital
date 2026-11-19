@@ -76,7 +76,7 @@ fn check_schema(object: &Object, faults: &mut Faults) {
 fn members<'v>(
     object: &'v Object,
     required: &[&'static str],
-    skip: &str,
+    skip: Option<&str>,
     path: &Path<'_>,
     faults: &mut Faults,
     mut visit: impl FnMut(&str, &'v Value, &Path<'_>, &mut Faults),
@@ -86,7 +86,7 @@ fn members<'v>(
     names.sort_by(|a, b| compare_keys(a, b));
     names.dedup();
     for name in names {
-        if name == skip {
+        if Some(name) == skip {
             continue;
         }
         let member_path = path.key(name);
@@ -151,7 +151,7 @@ fn catalog_ref(value: &Value, path: &Path<'_>, faults: &mut Faults) -> Option<Ca
     members(
         object,
         &["digest", "version"],
-        "",
+        None,
         path,
         faults,
         |name, value, path, faults| match name {
@@ -172,7 +172,7 @@ fn read_ref(value: &Value, path: &Path<'_>, faults: &mut Faults) -> Option<ReadR
     members(
         object,
         &["id", "version"],
-        "",
+        None,
         path,
         faults,
         |name, value, path, faults| match name {
@@ -202,7 +202,7 @@ fn template(object: &Object, faults: &mut Faults) -> Option<Template> {
     members(
         object,
         TEMPLATE_MEMBERS,
-        "schema",
+        Some("schema"),
         &Path::ROOT,
         faults,
         |name, value, path, faults| match name {

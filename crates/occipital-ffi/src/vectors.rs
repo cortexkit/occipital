@@ -43,7 +43,7 @@ use serde_json::{json, Value as Json};
 use crate::account::occ_account_free;
 use crate::base64;
 use crate::fact::{occ_format_fact, occ_format_schedule};
-use crate::measure::{occ_measure_block, occ_measure_tree};
+use crate::measure::{occ_measure_block, occ_measure_blocks, occ_measure_tree};
 use crate::metrics::tests::{table, Script};
 use crate::occ_version;
 use crate::output::to_json;
@@ -119,6 +119,10 @@ source with invalid UTF-8; both return `OCC_OK` with the diagnostics in the
 result. The scheduler traces drive a program session, which this library
 does not expose, so they have no vectors.
 
+The `measure-blocks-mixed` case measures a component twice, a paragraph and
+an absent block. Each path gets the measurement or status it would get from
+`occ_measure_block`, in request order.
+
 The `template-bash-row-*` cases evaluate a tool row with
 `occ_template_evaluate`: a command far wider than the row, then a short Slot
 for its outcome, once while the outcome is still to come (`waiting`) and once
@@ -146,7 +150,7 @@ The `version` case is `occ_version` with no arguments; its request is `{}`.
 The `text-references` case is `occ_text_references` on a reply naming an
 issue, a pull request in another repository, a pull request inside a code
 span and an agent, under a project record as core serves it. The rules
-themselves are pinned by the `text-references-v2` vectors of
+themselves are pinned by the `text-references-v3` vectors of
 cortexkit-occipital-refs;
 this case pins the entry point's JSON.
 
@@ -1137,6 +1141,22 @@ fn format_schedules() -> Vec<(String, Vector)> {
 
 fn generate() -> BTreeMap<String, Vec<u8>> {
     let mut vectors: Vec<(String, Vector)> = vec![];
+    let mixed = r#"{"m":"root","k":[{"c":"Badge","p":{"text":"Ready"},"k":[]},{"m":"p","k":[{"t":"Done"}]}]}"#;
+    let paths = "[[0],[1],[2],[0]]";
+    let (tree, list, layout) = (c(mixed), c(paths), c(LAYOUT));
+    let mut script = Script::default();
+    let metrics = table(&mut script);
+    // SAFETY: all strings and the callback table stay valid through the call.
+    let result = call(|out| unsafe {
+        occ_measure_blocks(tree.as_ptr(), list.as_ptr(), layout.as_ptr(), &metrics, out)
+    });
+    let batch = Vector::call(
+        "occ_measure_blocks",
+        json!({"tree_json":mixed,"paths_json":paths,"layout_json":LAYOUT,"metrics":METRICS}),
+        result,
+    );
+    assert!(json(batch.ok())[0]["measurement"].is_object());
+    vectors.push(("measure-blocks-mixed".into(), batch));
     for case in reply_cases() {
         let (streamed, tree, height) = reply(&case, true);
         vectors.push((format!("reply-{}-streamed", case.name), streamed));

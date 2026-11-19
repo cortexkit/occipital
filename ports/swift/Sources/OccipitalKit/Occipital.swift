@@ -44,6 +44,21 @@ public enum Occipital {
         }.get()
     }
 
+    /// Measures several components with one tree decode. `paths` is a JSON
+    /// array of non-empty index arrays. The returned array has one object per
+    /// path, in order, with either its `measurement` or its error `status`.
+    public static func measureBlocks(
+        tree: String, paths: String, layout: String, metrics: some TextMetrics
+    ) throws(OccipitalError) -> String {
+        try withCStrings(tree, paths) { tree, paths in
+            layout.withCString { layout in
+                withMetricsTable(metrics) { table in
+                    call { occ_measure_blocks(tree, paths, layout, table, $0) }
+                }
+            }
+        }.get()
+    }
+
     /// Measures a whole tree.
     ///
     /// - Parameters:

@@ -47,6 +47,26 @@ fn measure_stub(reply: *mut OccReply) -> (i32, Option<String>) {
     measure_with(reply, &mut Script::default())
 }
 
+thread_local! {
+    pub(super) static MEASURED_EXPORTS: std::cell::Cell<(*const u8, *const u8)> = const { std::cell::Cell::new((ptr::null(), ptr::null())) };
+}
+
+#[test]
+fn measuring_borrows_the_candidates_text_exports() {
+    let reply = new_reply();
+    ok(finish(reply, b"Some prose to measure.", NO_RECORDS));
+    let candidate = session_of(reply).candidate.as_ref().unwrap();
+    let exports = (
+        candidate.plain_text.as_str(),
+        candidate.readable_text.as_str(),
+    );
+    assert!(!exports.0.is_empty() && !exports.1.is_empty());
+    let expected = (exports.0.as_ptr(), exports.1.as_ptr());
+    ok(measure_stub(reply));
+    free(reply);
+    assert_eq!(MEASURED_EXPORTS.get(), expected);
+}
+
 fn free(reply: *mut OccReply) {
     // SAFETY: `reply` is live and freed exactly once.
     unsafe { occ_reply_free(reply) };
@@ -441,6 +461,7 @@ fn reply_new_refuses_bad_arguments_with_out_null() {
     let bad_utf8 = std::ffi::CString::new(&b"{\"dialect\":\"1.\xFF\"}"[..]).unwrap();
     let bad_stamps = [
         bad_utf8,
+        c(r#"["1.0"]"#),
         c("{\"dialect\":"),
         c("{\"dialect\":\"1.0\",\"extra\":1}"),
         c("{}"),
@@ -457,6 +478,7 @@ fn reply_new_refuses_bad_arguments_with_out_null() {
         c(&LAYOUT.replace('}', ",\"extra\":true}")),
         c(&LAYOUT.replace("\"320\"", "320")),
         c("[]"),
+        c(r#"["320","large","unknown","row"]"#),
     ];
     for layout in &bad_layouts {
         assert_eq!(
