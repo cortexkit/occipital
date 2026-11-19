@@ -11,6 +11,57 @@ const EXAMPLES: [&str; 4] = [
 ];
 
 #[test]
+fn callout_exports_its_description_or_nested_badge_label() {
+    for (source, expected) in [
+        (
+            r#"<Callout title="Time" description="Monday morning" />"#,
+            "Time: Monday morning",
+        ),
+        (
+            "<Callout title=\"Status\">\nWork: <Badge text=\"Pending\" />\n</Callout>",
+            "Status: Work: Pending",
+        ),
+    ] {
+        let result = finish(source.as_bytes());
+        assert!(result.diagnostics.is_empty());
+        assert_eq!(result.plain_text.as_str(), expected);
+        assert_eq!(result.readable_text.as_str(), expected);
+    }
+}
+
+#[test]
+fn unsupported_dialect_publishes_only_readable_text() {
+    let mut s = Session::new(
+        Profile::Reply,
+        "2.0".into(),
+        Catalog::v1(),
+        layout(),
+        crate::SharedAccount::chat(),
+        crate::SharedAccount::app(),
+    )
+    .unwrap();
+    let check = |revision: &Revision| {
+        assert_eq!(
+            revision.tree.blocks,
+            vec![crate::TreeNode::Text(revision.readable_text.clone())]
+        );
+    };
+    let chunk = s
+        .chunk(b"Waiting <Badge text=\"Pending\" />\n\n")
+        .unwrap()
+        .unwrap();
+    check(&chunk);
+    let done = s.finish(b"", Default::default(), vec![]).unwrap();
+    assert!(done
+        .diagnostics
+        .iter()
+        .any(|d| d.code() == Code::UnsupportedVersion));
+    assert!(done.readable_text.as_str().contains("Pending"));
+    check(&done);
+    check(&s.event(Event::AccountRelease).unwrap().unwrap());
+}
+
+#[test]
 fn worked_replies_every_split_and_single_bytes_equal_one_shot_and_replay() {
     let records = || [7, 12, 14, 22].into_iter().map(|n| (n, record())).collect();
     for (example, source) in EXAMPLES.into_iter().enumerate() {
@@ -644,4 +695,40 @@ fn a_provisional_revision_carries_the_words_so_far() {
         .readable_text
         .as_str()
         .starts_with("First paragraph.\nSecond one"));
+}
+
+#[test]
+fn table_export_does_not_copy_an_unselected_cell() {
+    let source = br#"<Table columns={["keep"]} data={[{keep: 1}]} />"#;
+    let context = CheckContext::new(Profile::Reply);
+    let program = crate::check::check(source, &context).unwrap();
+    let revision = finish(source);
+    let mut tree = (*revision.tree).clone();
+    use crate::{TreeNode, TreeValue};
+    let TreeNode::Component { props, .. } = &mut tree.blocks[0] else {
+        panic!("expected table")
+    };
+    let (_, TreeValue::List(rows)) = props
+        .iter_mut()
+        .find(|(k, _)| k.as_str() == "data")
+        .unwrap()
+    else {
+        panic!("expected rows")
+    };
+    let TreeValue::Record(fields) = &mut rows[0] else {
+        panic!("expected record")
+    };
+    fields.push((
+        DisplayText::new("unused"),
+        TreeValue::String(DisplayText::new(&"a".repeat(32_768))),
+    ));
+    let used = allocation_counter::measure(|| {
+        let (_, readable) = render::plain_text(&program, source, &tree, &context);
+        assert_eq!(readable.as_str(), "keep\n1");
+    });
+    assert!(
+        used.bytes_total < 32_768,
+        "allocated {} bytes",
+        used.bytes_total
+    );
 }

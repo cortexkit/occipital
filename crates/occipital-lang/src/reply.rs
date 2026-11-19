@@ -430,6 +430,15 @@ impl Session {
         (plain_text, readable_text): (DisplayText, DisplayText),
         provisional: bool,
     ) -> Result<Revision, Error> {
+        // When the recorded dialect isn't supported, publish the readable
+        // fallback, not controls or tags with guessed display semantics.
+        let tree = if self.context.execution_dialect != crate::host::EXECUTION_DIALECT {
+            Tree {
+                blocks: vec![crate::TreeNode::Text(readable_text.clone())],
+            }
+        } else {
+            tree
+        };
         let retention = self.accounts.retain_tree(&tree)?;
         self.revision += 1;
         let state_hash = hmac_sha256::Hash::hash(format!("{tree:?}").as_bytes())
