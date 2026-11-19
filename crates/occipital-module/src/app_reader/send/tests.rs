@@ -325,18 +325,20 @@ impl Fixture {
     }
 }
 
-// Without clientMessageId or sendId, a retry after a lost reply can write the same words twice.
+// Without clientMessageId or send_id, the runner cannot recognize a retry after a lost reply.
 #[tokio::test]
-#[ignore = "pending the apps' retry contract for sends without an id"]
-async fn an_unkeyed_retry_after_acceptance_must_not_write_twice() {
+async fn an_unkeyed_send_is_refused_before_the_runner() {
     let f = granted_fixture(Kind::Head);
-    f.runner.lose_next_send_reply.store(true, Ordering::SeqCst);
-    let message = json!({"session":"s", "text":"hello"});
-    let first = f.sender.send(message.clone()).await.unwrap();
-    if first["terminal"] == false {
-        f.sender.send(message).await.unwrap();
+    for _ in 0..2 {
+        let reply = f
+            .sender
+            .send(json!({"session":"s", "text":"hello"}))
+            .await
+            .unwrap_err();
+        assert_eq!(reply.code, "invalid_request");
     }
-    assert_eq!(f.runner.written().len(), 1);
+    assert_eq!(f.targets.opened.load(Ordering::SeqCst), 0);
+    assert!(f.runner.calls().is_empty());
 }
 
 #[tokio::test]
@@ -591,7 +593,7 @@ async fn granted_interrupts_require_a_head_and_its_interrupt_permission() {
         assert_eq!(
             f.sender
                 .send(json!({
-                    "session": "s", "text": "stop", "mode": "interrupt"
+                    "session": "s", "text": "stop", "mode": "interrupt", "clientMessageId": "interrupt-1"
                 }))
                 .await
                 .unwrap_err()

@@ -407,6 +407,7 @@ impl Sender {
         params: Value,
     ) -> Result<Value, SendRefusal> {
         let request = SendRequest::parse(&params)?;
+        let key = send_key(&request)?;
         let content = if request.attachments().is_empty() {
             request.content()
         } else {
@@ -525,7 +526,7 @@ impl Sender {
             Err(error) => return Ok(not_sent(None, &request, &error.message)),
         };
 
-        let head_id = runner_send_id(target.reference(), &request, Role::Head);
+        let head_id = runner_send_id(target.reference(), key, Role::Head);
         let head = match target.call("session.head", json!({})).await {
             Ok(head) => head,
             Err(RunnerError::Unreachable(message)) => {
@@ -1075,7 +1076,7 @@ impl Sender {
                 SendRefusal::new("invalid_provider_reply", "active worker head has no run_id")
             })?
             .to_owned();
-        let send_id = runner_send_id(target.reference(), request, Role::Worker);
+        let send_id = runner_send_id(target.reference(), send_key(request)?, Role::Worker);
         let expires = (self.clock)().saturating_add(WORKER_STEER_EXPIRY.as_millis() as i64);
         let steer = Planned::Order(
             DeliveryOrder::new(vec![Order::Steer]).with_expires_at_ms(expires.max(0) as u64),
@@ -1640,6 +1641,20 @@ enum Planned {
     Order(DeliveryOrder),
 }
 
+fn send_key(request: &SendRequest) -> Result<(&'static str, &str), SendRefusal> {
+    match (
+        request.client_message_id.as_deref(),
+        request.send_id.as_deref(),
+    ) {
+        (Some(id), _) => Ok(("client_message_id", id)),
+        (None, Some(id)) => Ok(("send_id", id)),
+        _ => Err(SendRefusal::new(
+            "invalid_request",
+            "a send needs a clientMessageId or send_id so a retry can be identified",
+        )),
+    }
+}
+
 /// The runner key: derived from what is delivered, never from the attempt, so every
 /// retry of one app message names the same send, and two sessions' messages never
 /// share one.
@@ -1649,13 +1664,7 @@ enum Planned {
 /// key: the head delivery tried first on a worker is refused without being
 /// recorded, but keeping the two apart means a retry of that probe can never be
 /// mistaken for a reuse of the steer's key.
-pub fn runner_send_id(reference: &SessionRef, request: &SendRequest, role: Role) -> String {
-    let (kind, id) = match (&request.client_message_id, &request.send_id) {
-        (Some(id), _) => ("client_message_id", id.clone()),
-        (None, Some(id)) => ("send_id", id.clone()),
-        // Prefrontal's sends without either id were not idempotent either.
-        (None, None) => ("attempt", uuid::Uuid::new_v4().to_string()),
-    };
+fn runner_send_id(reference: &SessionRef, (kind, id): (&str, &str), role: Role) -> String {
     let role = match role {
         Role::Head => "head",
         Role::Worker => "worker-steer",
