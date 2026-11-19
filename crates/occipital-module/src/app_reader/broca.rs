@@ -2534,6 +2534,44 @@ impl TranscriptSource for BrocaSource {
             .first()
             .is_some_and(|entry| entry["mid"] == mid && entry["ordinal"].as_u64().is_some())
     }
+    /// The wake rows among `rows` whose record holds the person's answer to
+    /// an ask, from the wake records prefrontal wrote before each wake. The
+    /// rows were read from this session, which named each one's send then.
+    /// Records that can't be read now answer none, so those rows stay out of
+    /// this read only.
+    async fn answered_asks(&self, rows: &[Row]) -> std::collections::HashSet<String> {
+        let wakes: Vec<&str> = rows
+            .iter()
+            .filter(|row| row.display.get("notice").is_some())
+            .map(|row| row.mid.as_str())
+            .collect();
+        let notices = self.notices.guard().clone();
+        let Some(notices) = notices.get().filter(|_| !wakes.is_empty()) else {
+            return std::collections::HashSet::new();
+        };
+        let reference = self.resolved.guard().reference.clone();
+        let records = notices
+            .wake_records(
+                &reference.runner,
+                &reference.session,
+                &json!({ "messageIds": wakes }),
+            )
+            .await;
+        let Ok(records) = records else {
+            return std::collections::HashSet::new();
+        };
+        records["messages"]
+            .as_object()
+            .into_iter()
+            .flatten()
+            .filter(|(_, record)| {
+                record["items"]
+                    .as_array()
+                    .is_some_and(|items| items.iter().any(|item| item["kind"] == "ask_answer"))
+            })
+            .map(|(mid, _)| mid.clone())
+            .collect()
+    }
     fn changes(&self) -> watch::Receiver<u64> {
         self.changes.subscribe()
     }

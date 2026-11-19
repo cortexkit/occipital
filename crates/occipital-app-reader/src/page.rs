@@ -26,6 +26,9 @@ pub struct PageRequest {
     pub around_message_id: Option<String>,
     /// A page of up to `limit` numbered messages after this ordinal, oldest first.
     pub after_ordinal: Option<i64>,
+    /// The page is of the Simple view (`view: "simple"`, [`crate::simple`]):
+    /// only the messages that view shows.
+    pub simple: bool,
 }
 
 impl PageRequest {
@@ -128,6 +131,26 @@ impl PageRequest {
                 "afterOrdinal cannot be combined with messageOrdinal, beforeOrdinal, beforeCursor, claim or activityToken",
             ));
         }
+        // The Simple view is a stream of its own: its pages and claims, never a
+        // read of one message by position, which the full stream serves. Any
+        // other view is refused, so a later view is never read as this one.
+        let simple = match params.get("view") {
+            None => false,
+            Some(Value::String(view)) if view == crate::simple::VIEW => true,
+            Some(_) => {
+                return Err(invalid(format!(
+                    "view must be \"{}\" when present",
+                    crate::simple::VIEW
+                )))
+            }
+        };
+        if simple
+            && (message_ordinal.is_some() || around_message_id.is_some() || after_ordinal.is_some())
+        {
+            return Err(invalid(
+                "view cannot be combined with messageOrdinal, aroundMessageId or afterOrdinal: a read of one message by position reads the full stream",
+            ));
+        }
         let before_ordinal =
             transcript_page_before_ordinal(message_ordinal, requested_before_ordinal);
         let limit = if message_ordinal.is_some() {
@@ -165,6 +188,7 @@ impl PageRequest {
             accepts_outside_window,
             around_message_id,
             after_ordinal,
+            simple,
         })
     }
 }

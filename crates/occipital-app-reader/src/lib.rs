@@ -13,6 +13,7 @@ pub mod say;
 pub mod say_text;
 pub mod send;
 pub mod signals;
+pub mod simple;
 pub mod source;
 pub mod tool_input;
 pub mod tool_times;

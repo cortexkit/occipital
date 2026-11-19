@@ -2156,6 +2156,7 @@ mod say_live_samples;
 mod say_samples;
 pub(crate) mod served_samples;
 mod session_facts;
+mod simple_samples;
 mod tag_rows;
 mod tool_display_samples;
 mod tool_times_samples;
