@@ -2,7 +2,7 @@
 //! shape for every runner:
 //! - Broca's stored blocks are decoded here ([`rows`]), since the llm-runner
 //!   contract's display projections don't cover Broca's own stored format. Ported
-//!   from prefrontal-core at a13318fba1581db2776e91f4954744f35dbbbef6
+//!   from prefrontal at a13318fba1581db2776e91f4954744f35dbbbef6
 //!   (`llm_runner_consumer::{mod,runtime,full_message}`), without runner
 //!   dependencies.
 //! - Runners whose stored format the contract does project (OpenCode 2, Claude
