@@ -1307,3 +1307,63 @@ async fn an_empty_claim_watch_is_silent_until_the_first_message() {
     assert_eq!(message_ids(&json!({"messages": next["newTurns"]})), ["m1"]);
     running.end().await;
 }
+
+/// TE-01: The current window still contains the claimant's newest message,
+/// but its oldest row, a call that just gained its result, has slid out.
+#[tokio::test]
+#[ignore = "pending decision on what a native match vouches for below its window"]
+async fn a_native_claim_does_not_vouch_for_a_changed_call_below_its_window() {
+    let source = FakeSource::new("broca", 5, 0, true);
+    let reader = TranscriptReader::default();
+    source.state.lock().unwrap().rows[3].display["parts"] =
+        json!([{"type":"tool", "callId":"c", "tool":"read"}]);
+    let params = json!({"session":"s", "limit":2});
+    let baseline = read(&reader, &source, params.clone()).await;
+    assert_eq!(message_ids(&baseline), ["m3", "m4"]);
+    let mut params = params;
+    params["claim"] = claim_for(&baseline);
+    source.state.lock().unwrap().rows[3].display["parts"][0]["outputBytes"] = json!(7);
+    source.append(1, 0);
+    let reply = read(&reader, &source, params).await;
+    assert!(
+        reply["claim"] != "matched" || reply["vouchedFromMessageId"] != "m3",
+        "certified a changed row below the comparison window: {reply}"
+    );
+}
+
+/// TE-02: Paging back changes the phone's floor. A desktop's wider page with
+/// that floor isn't evidence that the phone has received the same material.
+#[tokio::test]
+#[ignore = "pending decision on selecting kept copies for overlapping readers"]
+async fn a_wider_read_by_another_app_cannot_hide_a_held_message_change() {
+    let source = FakeSource::new("broca", 5, 0, true);
+    let reader = TranscriptReader::default();
+    source.state.lock().unwrap().rows[3].display["parts"] =
+        json!([{"type":"message", "callKey":"k", "text":"ok"}]);
+    let newest = read(&reader, &source, json!({"session":"s", "limit":2})).await;
+    let older = read(&reader, &source, json!({"session":"s", "beforeOrdinal":3})).await;
+    let mut claim = claim_for(&newest);
+    claim["heldFloorMessageId"] = older["messages"][0]["messageId"].clone();
+    source.state.lock().unwrap().rows[3].display["parts"][0]["replyTo"] = json!({"messageId":"m0"});
+    let _desktop = read(&reader, &source, json!({"session":"s"})).await;
+    let reply = read(&reader, &source, json!({"session":"s", "claim":claim})).await;
+    assert_ne!(reply["claim"], "matched", "{reply}");
+}
+
+/// TE-02: Once a reader has applied a resync, its unchanged next claim must
+/// not keep comparing against the copy from before that resync.
+#[tokio::test]
+#[ignore = "pending decision on distinguishing the recipient of a resync"]
+async fn a_claim_after_applying_its_diverged_resync_matches() {
+    let source = FakeSource::new("broca", 3, 0, true);
+    let reader = TranscriptReader::default();
+    let page = read(&reader, &source, json!({"session":"s"})).await;
+    let mut params = json!({"session":"s", "claim":claim_for(&page)});
+    source.state.lock().unwrap().rows[1].display["parts"] =
+        json!([{"type":"message", "text":"landed"}]);
+    let changed = read(&reader, &source, params.clone()).await;
+    assert_eq!(changed["claim"], "diverged");
+    advance_claim(params["claim"].as_object_mut().unwrap(), &changed);
+    let caught_up = read(&reader, &source, params).await;
+    assert_eq!(caught_up["claim"], "matched", "{caught_up}");
+}
