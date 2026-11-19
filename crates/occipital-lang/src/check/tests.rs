@@ -64,6 +64,16 @@ fn clean_in(source: &str, context: &CheckContext) {
     assert!(diagnostics.is_empty(), "{source}: {diagnostics:?}");
 }
 
+#[test]
+fn literal_diff_hunks_obey_their_own_record_shape() {
+    let page = tool(Profile::ToolPage);
+    clean_in(
+        r#"<Diff hunks={[{lines: [{kind: "add", text: "new"}]}]} />"#,
+        &page,
+    );
+    assert!(codes(r#"<Diff hunks={[{key: "x", label: "X"}]} />"#, &page).contains(&Code::PropType));
+}
+
 /// A tool row is measured once and never resized, so whatever changes while
 /// it is on screen (the call's view, the time) must sit in a Slot's fixed box,
 /// whether it is read directly or through declarations.

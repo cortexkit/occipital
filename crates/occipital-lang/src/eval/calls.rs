@@ -331,7 +331,14 @@ impl<'a> Evaluator<'a> {
         let schema = Catalog::tool_templates().components.get(name);
         let mut fields = Vec::with_capacity(props.len());
         let mut bindings = Vec::new();
+        let mut slot_children = None;
         for prop in props {
+            if name == "Slot" && prop.name == "children" {
+                // Like written content, this expression must not run while
+                // the Slot is waiting, even if it precedes `needs`.
+                slot_children = Some((fields.len(), &prop.value));
+                continue;
+            }
             let binding = schema
                 .and_then(|component| component.props.get(&prop.name))
                 .is_some_and(|schema| schema.t.starts_with("binding"));
@@ -363,6 +370,12 @@ impl<'a> Evaluator<'a> {
             }
             Vec::new()
         } else {
+            if let Some((index, expression)) = slot_children {
+                fields.insert(
+                    index,
+                    (ScalarString::new("children"), self.expr(expression)?),
+                );
+            }
             self.content(&node.children)?
         };
         self.component(name, fields, bindings, children)

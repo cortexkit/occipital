@@ -123,7 +123,15 @@ impl Checker<'_> {
             if expected.starts_with("binding") {
                 self.binding(&p.value, schema, component, props, &signature);
             } else {
-                if schema.rules.contains_key("record") && !column_records(&self.ty(&p.value)) {
+                let members = schema
+                    .rules
+                    .get("record")
+                    .and_then(Json::as_str)
+                    .map(crate::eval::tree::required_members);
+                if members
+                    .as_ref()
+                    .is_some_and(|members| !record_members(&self.ty(&p.value), members))
+                {
                     self.report(Code::PropType, &p.value, &p.name, Some(&signature));
                 }
                 if !matches_type(&self.ty(&p.value), expected)
@@ -147,15 +155,21 @@ impl Checker<'_> {
                     ) {
                         self.report(code, &p.value, &p.name, Some(&signature));
                     }
-                    if schema.rules.contains_key("record")
-                        && value.as_array().is_some_and(|items| {
+                    if members.as_ref().is_some_and(|members| {
+                        value.as_array().is_some_and(|items| {
                             items.iter().any(|item| {
                                 item.is_object()
-                                    && (!item.get("key").is_some_and(Json::is_string)
-                                        || !item.get("label").is_some_and(Json::is_string))
+                                    && !members.iter().all(|(name, kind)| {
+                                        item.get(*name).is_some_and(|field| match *kind {
+                                            "string" => field.is_string(),
+                                            "number" => field.is_number(),
+                                            k if k.starts_with("list<") => field.is_array(),
+                                            _ => true,
+                                        })
+                                    })
                             })
                         })
-                    {
+                    }) {
                         self.report(Code::PropType, &p.value, &p.name, Some(&signature));
                     }
                 }
@@ -655,13 +669,18 @@ fn matches_type(ty: &Type, t: &str) -> bool {
     })
 }
 
-fn column_records(ty: &Type) -> bool {
+fn record_members(ty: &Type, members: &[(&str, &str)]) -> bool {
     match ty {
-        Type::List(item) | Type::Enum(item, _) => column_records(item),
-        Type::Union(types) => types.iter().all(column_records),
-        Type::Record(_) | Type::OpenRecord(_) => {
-            matches_type(&ty.member("key"), "string") && matches_type(&ty.member("label"), "string")
-        }
+        Type::List(item) | Type::Enum(item, _) => record_members(item, members),
+        Type::Union(types) => types.iter().all(|ty| record_members(ty, members)),
+        Type::Record(_) | Type::OpenRecord(_) => members.iter().all(|(name, kind)| {
+            let field = ty.member(name);
+            match *kind {
+                "string" | "number" => matches_type(&field, kind),
+                k if k.starts_with("list<") => matches_type(&field, "list"),
+                _ => field != Type::Missing,
+            }
+        }),
         _ => true,
     }
 }
