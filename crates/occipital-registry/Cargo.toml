@@ -28,6 +28,7 @@ cortexkit-role-tool-display = "0.1.8"
 hmac-sha256 = { version = "1", default-features = false }
 # The language checker a view's templates must pass.
 occipital-lang = { package = "cortexkit-occipital-lang", version = "0.1.11", path = "../occipital-lang" }
+serde = "1"
 serde_json = "1"
 
 [[bin]]

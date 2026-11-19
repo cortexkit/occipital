@@ -322,6 +322,7 @@ dependencies = [
  "cortexkit-occipital-lang",
  "cortexkit-role-tool-display",
  "hmac-sha256",
+ "serde",
  "serde_json",
 ]
 

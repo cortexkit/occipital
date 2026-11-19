@@ -35,11 +35,24 @@ use std::process::ExitCode;
 
 use cortexkit_role_tool_display::RecordSchema;
 use occipital_lang::{DiagnosticSpan, Height, Severity};
-use occipital_registry::view::{check_view, row_heights};
+use occipital_registry::view::{check_view, row_heights, validate_sample};
 use serde_json::Value as Json;
 
+#[path = "check/unique.rs"]
+mod unique;
+
 fn main() -> ExitCode {
-    let files: Vec<String> = std::env::args().skip(1).collect();
+    let files: Result<Vec<String>, _> = std::env::args_os()
+        .skip(1)
+        .map(|arg| arg.into_string())
+        .collect();
+    let files = match files {
+        Ok(files) => files,
+        Err(path) => {
+            eprintln!("{path:?}: the file path is not valid UTF-8");
+            return ExitCode::from(2);
+        }
+    };
     if files == ["--catalog"] {
         println!(
             "{{\"version\":\"{}\",\"digest\":\"{}\"}}",
@@ -70,6 +83,7 @@ fn main() -> ExitCode {
 /// passes.
 fn check(file: &str) -> Result<bool, String> {
     let text = std::fs::read_to_string(file).map_err(|error| error.to_string())?;
+    unique::check(&text).map_err(|error| error.to_string())?;
     let document: Json = serde_json::from_str(&text).map_err(|error| error.to_string())?;
     let view = document.get("view").ok_or("the file has no view member")?;
     let input_schema = document
@@ -85,13 +99,12 @@ fn check(file: &str) -> Result<bool, String> {
         .validate()
         .map_err(|error| format!("the view's record_schema: {error}"))?;
     let mut passed = true;
-    if view
-        .get("reads")
-        .and_then(Json::as_array)
-        .is_some_and(|reads| !reads.is_empty())
-    {
-        println!("{file}: the view declares reads; views make no reads in this version");
-        passed = false;
+    if let Some(reads) = view.get("reads") {
+        let reads = reads.as_array().ok_or("the view's reads is not a list")?;
+        if !reads.is_empty() {
+            println!("{file}: the view declares reads; views make no reads in this version");
+            passed = false;
+        }
     }
     let template = view.get("template").ok_or("the view has no template")?;
     let reports = check_view(template, &record_schema, input_schema)?;
@@ -136,13 +149,25 @@ fn check(file: &str) -> Result<bool, String> {
         .any(|report| report.slot == "row" && report.passed());
     for (index, sample) in samples.iter().enumerate() {
         let n = index + 1;
-        let (Some(row), true) = (row, row_passed) else {
-            println!("{file}: sample {n}: not measured: the view has no row that passes");
-            continue;
-        };
         let input = sample
             .get("input")
             .ok_or(format!("sample {n} has no input"))?;
+        let (Some(row), true) = (row, row_passed) else {
+            match validate_sample(
+                &record_schema,
+                sample.get("record"),
+                sample.get("completion"),
+            ) {
+                Ok(()) => {
+                    println!("{file}: sample {n}: not measured: the view has no row that passes")
+                }
+                Err(error) => {
+                    println!("{file}: sample {n}: {error}");
+                    passed = false;
+                }
+            }
+            continue;
+        };
         let heights = row_heights(
             row,
             &record_schema,
