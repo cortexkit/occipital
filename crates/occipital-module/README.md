@@ -96,6 +96,14 @@ The apps reach these operations through Callosum, and the desktop app directly:
 | `commands.list`, `commands.preview` | read |
 | `commands.run` | send |
 
+`session.transcript_page` and `session.transcript_watch` take `view: "simple"`
+for the apps' Simple view: only the person's messages, the agent's `say`
+messages and the asks it files, and the person's answers to asks, each trimmed
+to what the view draws. Its pages and claims are their own stream, with a
+version ending `:simple:1`. A page reads back a bounded number of messages and
+says where it stopped, so it can hold fewer rows than asked. The sample set
+`phone-reader-simple-v1` shows every case.
+
 An uploaded file goes into the model's prompt or into the session's project. An
 app that asks for the prompt (`prompt: true` on `upload.begin`) gets it when the
 session's runner takes uploads and its model accepts the file's type; the send

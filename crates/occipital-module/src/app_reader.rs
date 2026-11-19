@@ -542,7 +542,32 @@ impl AppReader {
     /// Serve the tool display reads from `tool`. The display store opens
     /// after the reader is built, so this is set later, once.
     pub fn set_tool_display(&self, tool: Arc<crate::display::app::ToolDisplay>) {
+        self.forget_simple_rows_on_writes(&tool);
         let _ = self.tool_display.set(tool);
+    }
+
+    /// A record written for a call drops the kept Simple rows that draw it,
+    /// so a `say` whose record arrived after its row was kept is read again
+    /// with its reply, quote and media. Missed news drops every chat's rows.
+    fn forget_simple_rows_on_writes(&self, tool: &crate::display::app::ToolDisplay) {
+        use tokio::sync::broadcast::error::RecvError;
+        let Ok(runtime) = tokio::runtime::Handle::try_current() else {
+            return;
+        };
+        let mut hints = tool.hints().subscribe();
+        let tails = self.reader.simple_tails();
+        runtime.spawn(async move {
+            loop {
+                match hints.recv().await {
+                    Ok(crate::display::app::Hint::Write { call_key, .. }) => {
+                        tails.forget_call(&call_key);
+                    }
+                    Ok(_) => {}
+                    Err(RecvError::Lagged(_)) => tails.forget_all(),
+                    Err(RecvError::Closed) => return,
+                }
+            }
+        });
     }
 
     fn tool_display(&self) -> Result<&Arc<crate::display::app::ToolDisplay>, ReadError> {

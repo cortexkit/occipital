@@ -406,6 +406,12 @@ pub trait TranscriptSource: Send + Sync {
             .flatten()
             .is_some_and(|row| row.mid == mid && row.ordinal.is_some())
     }
+    /// Of `rows`, the ids of the wake rows whose record holds the person's
+    /// answer to an ask, which the Simple view shows. Only the module that
+    /// keeps wake records knows; a source without them answers none.
+    async fn answered_asks(&self, _rows: &[Row]) -> HashSet<String> {
+        HashSet::new()
+    }
     fn changes(&self) -> watch::Receiver<u64>;
     fn activity(&self) -> Option<(&'static str, i64)>;
     /// A disconnected feed cannot authorize an activity-token cache hit.
@@ -453,6 +459,8 @@ pub struct TranscriptReader {
     pub activity: ActivityTokens,
     claims: Mutex<TranscriptClaimState>,
     revisions: Mutex<HashMap<String, u64>>,
+    /// Each chat's Simple rows, kept between reads.
+    simple: std::sync::Arc<crate::simple::tails::Tails>,
 }
 
 impl TranscriptReader {
@@ -477,10 +485,31 @@ impl TranscriptReader {
         bounded(self.read_for_watch(source, params).await?)
     }
 
+    /// The kept Simple rows, for the module that learns when a `say` record
+    /// one of them draws is written ([`crate::simple::tails::Tails::forget_call`]).
+    pub fn simple_tails(&self) -> std::sync::Arc<crate::simple::tails::Tails> {
+        self.simple.clone()
+    }
+
     /// The same page body before the transport-size guard. A watch needs to
     /// inspect even very large deltas so it can replace them with a fitted
     /// resync; this result must never be sent directly as a transport reply.
+    /// Every reply to a Simple read says so (`view: "simple"`), so an app
+    /// that saves its copies can tell which one a reply belongs to.
     pub async fn read_for_watch(
+        &self,
+        source: Option<&dyn TranscriptSource>,
+        params: Value,
+    ) -> Result<Value, ReadError> {
+        let simple = params.get("view").and_then(Value::as_str) == Some(crate::simple::VIEW);
+        let mut reply = self.read_page(source, params).await?;
+        if simple && reply.is_object() {
+            reply["view"] = json!(crate::simple::VIEW);
+        }
+        Ok(reply)
+    }
+
+    async fn read_page(
         &self,
         source: Option<&dyn TranscriptSource>,
         params: Value,
@@ -607,7 +636,21 @@ impl TranscriptReader {
             .read_newest_transcript_page_stably(&request.session_id, || async {
                 let revision = *events.borrow();
                 let head = source.head().await?;
-                let page = if let Some(cursor) = request.before_cursor.as_deref() {
+                // A Simple page is found by reading the full history back and
+                // keeping what the view shows; where that read stopped is the
+                // page's own cursor, apart from its rows.
+                let mut simple_next = None;
+                let page = if request.simple {
+                    let found = self.simple_page(source, &request, &head).await?;
+                    simple_next = Some(found.next_before);
+                    HistoryPage {
+                        rows: found.rows,
+                        older: None,
+                        newer: None,
+                        history_version: head.history_version,
+                        incarnation: head.incarnation.clone(),
+                    }
+                } else if let Some(cursor) = request.before_cursor.as_deref() {
                     let cursor: HistoryCursor = serde_json::from_str(cursor).map_err(|_| {
                         ReadError::new("cursor_expired", "the history cursor is not recognized")
                     })?;
@@ -645,8 +688,16 @@ impl TranscriptReader {
                 } else {
                     None
                 };
+                // A Simple claim holds a Simple version.
+                let page_version = head.claim_version().map(|version| {
+                    if request.simple {
+                        crate::simple::version(&version)
+                    } else {
+                        version
+                    }
+                });
                 let numbered_anchor = if let Some(held) = request.claim.as_ref().filter(|held| {
-                    head.claim_version().as_deref() == Some(held.held_version.as_str())
+                    page_version.as_deref() == Some(held.held_version.as_str())
                         && !page
                             .rows
                             .iter()
@@ -665,23 +716,44 @@ impl TranscriptReader {
                 {
                     self.activity.note_transcript_activity(&request.session_id);
                 }
-                Ok::<_, ReadError>((head, page, boundary, numbered_anchor))
+                Ok::<_, ReadError>((head, page, boundary, numbered_anchor, simple_next))
             })
             .await?;
-        let (head, history, boundary, numbered_anchor) = stable.page;
-        let mut mapped = map_page(history, &head, request.before_cursor.is_some(), boundary)?;
+        let (head, history, boundary, numbered_anchor, simple_next) = stable.page;
+        let mut mapped = match simple_next {
+            Some(next_before) => map_simple_page(history, next_before)?,
+            None => map_page(history, &head, request.before_cursor.is_some(), boundary)?,
+        };
         // A newest page without rows that reached the start is a session with no
         // messages. Apps read a page without rows by its `emptyReason`, so it
-        // names that; a resync built from this page carries it too.
+        // names that; a resync built from this page carries it too. A Simple
+        // page can also reach the start with no rows in a chat that has
+        // messages, none of which the view shows.
         if newest_request
             && mapped["messages"].as_array().is_some_and(Vec::is_empty)
             && mapped["reachedStart"] == true
         {
-            mapped["emptyReason"] = json!("empty");
+            mapped["emptyReason"] = json!(if request.simple && head.last_ordinal.is_some() {
+                "nothing_visible"
+            } else {
+                "empty"
+            });
         }
         let version = head
             .claim_version()
             .unwrap_or_else(|| self.activity.ensure_transcript_version(&request.session_id));
+        let version = if request.simple {
+            crate::simple::version(&version)
+        } else {
+            version
+        };
+        // The Simple copies served are kept apart from the full ones: a claim
+        // is checked against the copy its claimant was served.
+        let claims_key = if request.simple {
+            crate::simple::claims_key(&request.session_id)
+        } else {
+            request.session_id.clone()
+        };
         let native = head.claim_version().is_some();
         let mut reply = if let Some(held_version) = request.empty_claim.as_deref() {
             if stable.activity_token.is_none() {
@@ -706,7 +778,7 @@ impl TranscriptReader {
                     Err(_) => return Ok(claim::identity_unsupported_reply()),
                 };
                 let resync = current.resync_page();
-                self.record(&request.session_id, current);
+                self.record(&claims_key, current);
                 if native {
                     claim::runner_claim_reply(
                         &version,
@@ -743,8 +815,8 @@ impl TranscriptReader {
             let changed = (native && held.held_version == version)
                 .then(|| {
                     let claims = self.claims.lock().expect("transcript claims poisoned");
-                    claims.share_unchanged(&request.session_id, &mut current);
-                    claims.held_snapshot(&request.session_id, held)
+                    claims.share_unchanged(&claims_key, &mut current);
+                    claims.held_snapshot(&claims_key, held)
                 })
                 .flatten()
                 .map(|previous| claim::evaluate_claim(held, Some(&previous), &current))
@@ -785,15 +857,15 @@ impl TranscriptReader {
                     let claims = self.claims.lock().expect("transcript claims poisoned");
                     // Rows unchanged since the last page keep their fingerprints, so the
                     // comparison below fingerprints only the new and changed rows.
-                    claims.share_unchanged(&request.session_id, &mut current);
-                    claims.held_snapshot(&request.session_id, held)
+                    claims.share_unchanged(&claims_key, &mut current);
+                    claims.held_snapshot(&claims_key, held)
                 };
                 claim::claim_reply(
                     &version,
                     claim::evaluate_claim(held, previous.as_ref(), &current),
                 )
             };
-            self.record(&request.session_id, current);
+            self.record(&claims_key, current);
             // Matched replies carry newTurns; diverged, cursor_expired and outside_window
             // carry resync messages. All repeat the session facts from the same head.
             head.describe_session(&mut reply);
@@ -813,7 +885,7 @@ impl TranscriptReader {
                     head.claim_version(),
                     mapped.clone(),
                 ) {
-                    self.record(&request.session_id, snapshot);
+                    self.record(&claims_key, snapshot);
                 }
             }
             // Only the newest page describes the session: an older history page
@@ -892,6 +964,51 @@ impl TranscriptReader {
         Ok(reply)
     }
 
+    /// The Simple rows a page of `request` serves: the newest, or those before
+    /// its `beforeOrdinal`. Only a runner that versions its history serves the
+    /// view, since its pages are told apart by that version. A full page's
+    /// cursor never continues a Simple page, which goes on by ordinal.
+    async fn simple_page(
+        &self,
+        source: &dyn TranscriptSource,
+        request: &PageRequest,
+        head: &Head,
+    ) -> Result<crate::simple::tails::Found, ReadError> {
+        let Some(full) = head.claim_version() else {
+            return Err(ReadError::new(
+                "unsupported",
+                "the Simple view needs a runner that versions its history",
+            ));
+        };
+        if request.before_cursor.is_some() {
+            return Err(ReadError::new(
+                "cursor_expired",
+                "a Simple page goes on with beforeOrdinal, never with another page's cursor",
+            ));
+        }
+        let version = crate::simple::version(&full);
+        let limit = request.limit as usize;
+        match request.before_ordinal {
+            Some(before) => {
+                self.simple
+                    .older(
+                        source,
+                        &request.session_id,
+                        head,
+                        &version,
+                        before as u64,
+                        limit,
+                    )
+                    .await
+            }
+            None => {
+                self.simple
+                    .newest(source, &request.session_id, head, &version, limit)
+                    .await
+            }
+        }
+    }
+
     fn record(&self, session: &str, snapshot: TranscriptPageSnapshot) {
         self.claims
             .lock()
@@ -912,9 +1029,16 @@ impl TranscriptReader {
             .map(|version| format!("history:{version}"));
         let snapshot = TranscriptPageSnapshot::from_page(version, lineage, newest.clone()).ok()?;
         let fit = snapshot.fit_newest(OlderPageCursor::BelowOldestRetained, fits);
+        // A Simple page's version names its view, and its copies are kept
+        // apart from the full ones.
+        let key = if crate::simple::is_version(version) {
+            crate::simple::claims_key(session)
+        } else {
+            session.to_owned()
+        };
         match &fit {
-            NewestPageFit::Whole => self.record(session, snapshot),
-            NewestPageFit::Trimmed(snapshot) => self.record(session, snapshot.clone()),
+            NewestPageFit::Whole => self.record(&key, snapshot),
+            NewestPageFit::Trimmed(snapshot) => self.record(&key, snapshot.clone()),
             NewestPageFit::NewestTooLarge => {}
         }
         Some(fit)
@@ -925,6 +1049,11 @@ impl TranscriptReader {
             .lock()
             .expect("transcript claims poisoned")
             .remove_session(session);
+        self.claims
+            .lock()
+            .expect("transcript claims poisoned")
+            .remove_session(&crate::simple::claims_key(session));
+        self.simple.forget(session);
         self.revisions
             .lock()
             .expect("transcript revisions poisoned")
@@ -1015,6 +1144,23 @@ fn map_page(
         }
     } else {
         reply["reachedStart"] = json!(true);
+    }
+    Ok(reply)
+}
+
+/// A Simple page's reply: its rows, then where an older page goes on, which
+/// is where the read stopped and can be older than its oldest row, or that
+/// it reached the start.
+fn map_simple_page(page: HistoryPage, next_before: Option<u64>) -> Result<Value, ReadError> {
+    let messages = page
+        .rows
+        .iter()
+        .map(Row::value)
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut reply = json!({ "messages": messages });
+    match next_before {
+        Some(ordinal) => reply["nextBeforeOrdinal"] = json!(ordinal),
+        None => reply["reachedStart"] = json!(true),
     }
     Ok(reply)
 }
