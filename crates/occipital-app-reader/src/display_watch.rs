@@ -8,10 +8,7 @@ use serde_json::Value;
 use tokio::sync::watch;
 use tokio::time::Instant;
 
-use crate::display::{
-    DisplayProjection, DisplayReadError, DisplayReadReply, DisplayWindowExpired,
-    SequencedDisplayFrame,
-};
+use crate::display::{DisplayProjection, DisplayReadError, DisplayReadReply, DisplayWindowExpired};
 
 pub const NOTICE_BOUND: usize = 196_608;
 pub const DISPLAY_WINDOW: Duration = Duration::from_millis(300);
@@ -37,6 +34,10 @@ pub trait DisplayWatchHost: Send + Sync {
 }
 
 pub fn display_body(reply: &DisplayReadReply) -> Vec<u8> {
+    #[cfg(test)]
+    if let DisplayReadReply::Incremental { frames, .. } = reply {
+        FRAMES_SIZED.with(|count| count.set(count.get() + frames.len()));
+    }
     serde_json::to_vec(&serde_json::to_value(reply).expect("a display reply always serializes"))
         .expect("a display notice always serializes")
 }
@@ -62,24 +63,37 @@ pub fn next_display_notice(reply: DisplayReadReply) -> Option<(DisplayReadReply,
         }
         // The caller handles an expired window by reading a fresh Baseline.
         DisplayReadReply::Expired { .. } => None,
-        DisplayReadReply::Incremental { frames, .. } => {
-            let first: &SequencedDisplayFrame = frames.first()?;
-            let incremental = |taken: &[SequencedDisplayFrame]| DisplayReadReply::Incremental {
-                seq: taken.last().map_or(0, |frame| frame.seq),
-                frames: taken.to_vec(),
-            };
-            if display_body(&incremental(std::slice::from_ref(first))).len() > NOTICE_BOUND {
-                return Some((display_expired(first.seq), Some(first.seq)));
-            }
-            // Split at whole frames; each notice's seq is its last frame's seq.
-            let mut taken = 1;
-            while taken < frames.len()
-                && display_body(&incremental(&frames[..=taken])).len() <= NOTICE_BOUND
-            {
+        DisplayReadReply::Incremental { mut frames, .. } => {
+            let first = frames.first()?.seq;
+            // Compact JSON adds one comma between frames. The envelope has the
+            // same size as an empty one except for its changing sequence digits.
+            let mut bytes = display_body(&DisplayReadReply::Incremental {
+                seq: 0,
+                frames: Vec::new(),
+            })
+            .len()
+                - 1;
+            let mut taken = 0;
+            let mut last = first;
+            for frame in &frames {
+                bytes = bytes
+                    .saturating_add(usize::from(taken != 0))
+                    .saturating_add(serde_json::to_vec(frame).ok()?.len());
+                let digits = frame.seq.checked_ilog10().unwrap_or(0) as usize + 1;
+                if bytes.saturating_add(digits) > NOTICE_BOUND {
+                    break;
+                }
                 taken += 1;
+                last = frame.seq;
             }
-            let last = frames[taken - 1].seq;
-            Some((incremental(&frames[..taken]), Some(last)))
+            if taken == 0 {
+                return Some((display_expired(first), Some(first)));
+            }
+            frames.truncate(taken);
+            Some((
+                DisplayReadReply::Incremental { seq: last, frames },
+                Some(last),
+            ))
         }
     }
 }
@@ -561,4 +575,24 @@ mod tests {
             "small"
         );
     }
+}
+
+#[cfg(test)]
+thread_local! { static FRAMES_SIZED: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
+
+#[cfg(test)]
+#[test]
+fn selecting_one_incremental_notice_does_not_encode_every_prefix() {
+    FRAMES_SIZED.with(|count| count.set(0));
+    let frames = (1..=256)
+        .map(|seq| crate::display::SequencedDisplayFrame {
+            seq,
+            frame: crate::display::DisplayStreamFrame::DisplayEnd,
+        })
+        .collect();
+    let (notice, to) =
+        next_display_notice(DisplayReadReply::Incremental { seq: 256, frames }).unwrap();
+    assert_eq!(to, Some(256));
+    assert!(display_body(&notice).len() <= NOTICE_BOUND);
+    assert!(FRAMES_SIZED.with(|count| count.get()) <= 512);
 }

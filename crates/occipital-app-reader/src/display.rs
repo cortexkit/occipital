@@ -370,37 +370,30 @@ impl DisplayRing {
     }
 
     fn update_current(&mut self, frame: &DisplayStreamFrame) {
-        self.current = Some(match (&mut self.current, frame) {
-            (
-                Some(DisplayStreamFrame::Display {
-                    session_id,
-                    message_id,
-                    chunk,
-                    part_type,
-                    ..
-                }),
-                DisplayStreamFrame::Display {
-                    session_id: next_session_id,
-                    message_id: next_message_id,
-                    chunk: next_chunk,
-                    part_type: next_part_type,
-                    rich_ui: next_rich_ui,
-                },
-            ) if session_id == next_session_id
-                && message_id == next_message_id
-                && part_type == next_part_type =>
-            {
-                chunk.push_str(next_chunk);
-                DisplayStreamFrame::Display {
-                    session_id: session_id.clone(),
-                    message_id: message_id.clone(),
-                    chunk: chunk.clone(),
-                    part_type: *part_type,
-                    rich_ui: next_rich_ui.clone(),
-                }
+        if let (
+            Some(DisplayStreamFrame::Display {
+                session_id,
+                message_id,
+                chunk,
+                part_type,
+                rich_ui,
+            }),
+            DisplayStreamFrame::Display {
+                session_id: next_session,
+                message_id: next_message,
+                chunk: next,
+                part_type: next_type,
+                rich_ui: stamp,
+            },
+        ) = (&mut self.current, frame)
+        {
+            if session_id == next_session && message_id == next_message && part_type == next_type {
+                chunk.push_str(next);
+                rich_ui.clone_from(stamp);
+                return;
             }
-            _ => frame.clone(),
-        });
+        }
+        self.current = Some(frame.clone());
     }
 
     pub fn read(&self, since_seq: Option<u64>) -> DisplayReadReply {
@@ -1583,4 +1576,34 @@ mod tests {
         );
         assert!(DisplayProjection::new(0).is_err());
     }
+}
+
+#[cfg(test)]
+#[test]
+fn appending_a_display_batch_reuses_the_reserved_baseline_buffer() {
+    let mut ring = DisplayRing::new(2);
+    let frame = |chunk: &str| {
+        DisplayStreamFrame::from(DisplayChunk {
+            session_id: "s".into(),
+            message_id: "m".into(),
+            chunk: chunk.into(),
+            part_type: DisplayPartType::Text,
+        })
+    };
+    ring.push(frame("hello"));
+    let Some(DisplayStreamFrame::Display { chunk, .. }) = ring.current.as_mut() else {
+        panic!("no live text")
+    };
+    chunk.reserve(1024);
+    let ptr = chunk.as_ptr();
+    ring.push(frame(" world"));
+    let Some(DisplayStreamFrame::Display { chunk, .. }) = &ring.current else {
+        panic!("no live text")
+    };
+    assert_eq!(chunk, "hello world");
+    assert_eq!(
+        ptr,
+        chunk.as_ptr(),
+        "reallocated the prefix despite spare capacity"
+    );
 }
