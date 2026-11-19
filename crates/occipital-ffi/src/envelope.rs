@@ -17,9 +17,51 @@ use serde::{Deserialize, Serialize};
 use crate::boundary::Failure;
 use crate::{base64, decimal};
 
+// Serde's struct decoder also accepts positional arrays. Enter it through
+// MapAccess so only named members reach it, without buffering the object or
+// losing duplicate members. `remote = "Self"` supplies the field decoder.
+macro_rules! object_only {
+    ($ty:ty) => {
+        impl<'de> serde::Deserialize<'de> for $ty {
+            fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+                struct Fields;
+                impl<'de> serde::de::Visitor<'de> for Fields {
+                    type Value = $ty;
+                    fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                        f.write_str("an object with named members")
+                    }
+                    fn visit_map<A: serde::de::MapAccess<'de>>(
+                        self,
+                        map: A,
+                    ) -> Result<$ty, A::Error> {
+                        <$ty>::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+                    }
+                }
+                d.deserialize_map(Fields)
+            }
+        }
+    };
+}
+pub(crate) use object_only;
+
+object_only!(LayoutEnvelope);
+object_only!(StampEnvelope);
+object_only!(RecordsEnvelope);
+object_only!(EventEnvelope);
+object_only!(CheckEnvelope);
+object_only!(ContextEnvelope);
+object_only!(HostEnvelope);
+object_only!(DataEnvelope);
+
+impl Serialize for LayoutEnvelope {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        LayoutEnvelope::serialize(self, serializer)
+    }
+}
+
 /// `layout_json`: a [`LayoutContext`].
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(deny_unknown_fields)]
+#[serde(remote = "Self", deny_unknown_fields)]
 pub(crate) struct LayoutEnvelope {
     /// The available width, as a canonical decimal string.
     pub(crate) width: String,
@@ -90,7 +132,7 @@ impl LayoutEnvelope {
 /// `stamp_json`: the dialect the reply was taught, as `reply::Session::new`
 /// takes it.
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(remote = "Self", deny_unknown_fields)]
 pub(crate) struct StampEnvelope {
     /// The execution dialect, such as `1.0`.
     pub(crate) dialect: String,
@@ -99,7 +141,7 @@ pub(crate) struct StampEnvelope {
 /// `records_json`: the records stamped at store time that
 /// `reply::Session::finish` binds. Both members are required.
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(remote = "Self", deny_unknown_fields)]
 pub(crate) struct RecordsEnvelope {
     /// Reference records by N in `$$tc(N)`. Keys are canonical decimal
     /// integers (`"7"`, not `"07"`) and appear once each.
@@ -165,7 +207,7 @@ fn canonical_index(text: &str) -> Option<u64> {
 /// and buffered numbers do not decode under serde_json's
 /// `arbitrary_precision` feature, which occipital-lang enables.
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(remote = "Self", deny_unknown_fields)]
 pub(crate) struct EventEnvelope {
     kind: EventKind,
     #[serde(default, deserialize_with = "present")]
@@ -251,7 +293,7 @@ impl EventEnvelope {
 /// left out, and then [`HostValues::default`] is used; an explicit `null`
 /// is an error.
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(remote = "Self", deny_unknown_fields)]
 pub(crate) struct CheckEnvelope {
     context: ContextEnvelope,
     #[serde(default, deserialize_with = "present")]
@@ -262,7 +304,7 @@ pub(crate) struct CheckEnvelope {
 /// required except `catalog`, which is absent for catalog 1.0; `tool` may be
 /// `null`.
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(remote = "Self", deny_unknown_fields)]
 struct ContextEnvelope {
     /// `reply`, `show_ui`, `tool_row` or `tool_page`.
     profile: Profile,
@@ -281,7 +323,7 @@ struct ContextEnvelope {
 /// The `host` member: a [`HostValues`] field for field. Every member is
 /// required; `data` may be `null`.
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(remote = "Self", deny_unknown_fields)]
 struct HostEnvelope {
     network: bool,
     /// Milliseconds since the Unix epoch, as a canonical decimal string.
@@ -296,7 +338,7 @@ struct HostEnvelope {
 /// A [`DataSnapshot`]: `bytes` is base64 or `null` when not fetched, and is
 /// required like every other member.
 #[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(remote = "Self", deny_unknown_fields)]
 struct DataEnvelope {
     record_id: String,
     record: ReferenceRecord,
@@ -370,6 +412,15 @@ mod tests {
         serde_json::from_str::<LayoutEnvelope>(json)
             .map_err(|_| Failure::invalid())
             .and_then(LayoutEnvelope::into_context)
+    }
+
+    #[test]
+    fn envelopes_require_named_members_including_nested_layouts() {
+        assert!(serde_json::from_str::<StampEnvelope>(r#"["1.0"]"#).is_err());
+        assert!(serde_json::from_str::<LayoutEnvelope>(r#"["320","large","no","row"]"#).is_err());
+        assert!(serde_json::from_str::<RecordsEnvelope>("[{},[]]").is_err());
+        assert!(event(r#"["account_release"]"#).is_err());
+        assert!(event(r#"{"kind":"layout","layout":["320","large","no","row"]}"#).is_err());
     }
 
     #[test]

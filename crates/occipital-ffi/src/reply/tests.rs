@@ -461,6 +461,7 @@ fn reply_new_refuses_bad_arguments_with_out_null() {
     let bad_utf8 = std::ffi::CString::new(&b"{\"dialect\":\"1.\xFF\"}"[..]).unwrap();
     let bad_stamps = [
         bad_utf8,
+        c(r#"["1.0"]"#),
         c("{\"dialect\":"),
         c("{\"dialect\":\"1.0\",\"extra\":1}"),
         c("{}"),
@@ -477,6 +478,7 @@ fn reply_new_refuses_bad_arguments_with_out_null() {
         c(&LAYOUT.replace('}', ",\"extra\":true}")),
         c(&LAYOUT.replace("\"320\"", "320")),
         c("[]"),
+        c(r#"["320","large","unknown","row"]"#),
     ];
     for layout in &bad_layouts {
         assert_eq!(

@@ -14,12 +14,17 @@ use crate::output::to_json;
 /// to the rules; every other member, today's or a later one, is ignored, so
 /// an app can pass the record exactly as it arrived.
 #[derive(Deserialize)]
+#[serde(remote = "Self")]
 struct ProjectJson {
     #[serde(default)]
     repository: Option<RepositoryJson>,
 }
 
+crate::envelope::object_only!(ProjectJson);
+crate::envelope::object_only!(RepositoryJson);
+
 #[derive(Deserialize)]
+#[serde(remote = "Self")]
 struct RepositoryJson {
     host: String,
     owner: String,
@@ -141,6 +146,16 @@ mod tests {
             json.unwrap(),
             r#"{"rules":2,"references":[{"start":9,"end":16,"kind":"issue","target":"https://github.com/cortexkit/occipital/issues/499"}]}"#
         );
+    }
+
+    #[test]
+    fn project_and_repository_are_objects_not_positional_arrays() {
+        for project in [
+            "[null]",
+            r#"{"repository":["github.com","cortexkit","occipital"]}"#,
+        ] {
+            assert_eq!(call(b"PR 1", Some(project)), (OCC_INVALID_ARGUMENT, None));
+        }
     }
 
     /// JSON `null` is text with no project: only `owner/repo#N` links, and
