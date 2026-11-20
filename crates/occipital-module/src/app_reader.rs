@@ -555,6 +555,17 @@ impl AppReader {
         let _ = self.notices.set(notices);
     }
 
+    /// Whether a module serves a notice view, from the views kept beside the
+    /// tool views: what a notice record joins on. None before the display
+    /// files are open, so no notice record joins until then and its row draws
+    /// the folded notice.
+    fn notice_views(&self) -> Option<crate::notices::notice_records::ServesView> {
+        let display = self.tool_display.get()?.clone();
+        Some(Arc::new(move |writer: &str, key: &str| {
+            display.serves_notice_view(writer, key)
+        }))
+    }
+
     pub(crate) fn notices(&self) -> Result<&Arc<crate::notices::Notices>, ReadError> {
         self.notices.get().ok_or_else(|| {
             ReadError::new(
@@ -749,14 +760,24 @@ impl AppReader {
             let notices = self.notices()?;
             let reference = self.session_reference(&params).await?;
             return notices
-                .read(&reference.runner, &reference.session, &params)
+                .read(
+                    &reference.runner,
+                    &reference.session,
+                    &params,
+                    self.notice_views(),
+                )
                 .await;
         }
         if method == crate::notices::wakes::READ {
             let notices = self.notices()?;
             let reference = self.session_reference(&params).await?;
             return notices
-                .wake_records(&reference.runner, &reference.session, &params)
+                .wake_records(
+                    &reference.runner,
+                    &reference.session,
+                    &params,
+                    self.notice_views(),
+                )
                 .await;
         }
         if method == STOP {

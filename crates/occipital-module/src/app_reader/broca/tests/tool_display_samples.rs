@@ -42,7 +42,7 @@ pub(super) fn reserved(module: &str) -> Principal {
 const SAMPLE_TOOL_CATALOG: &str =
     "sha256:6e3239281ade150b0935a2ca239ead0f7f922ab0fdeeffc470a19fc0fbf3ddb0";
 
-fn template(profile: &str, source: &str) -> Value {
+pub(super) fn template(profile: &str, source: &str) -> Value {
     assert_eq!(
         SAMPLE_TOOL_CATALOG.strip_prefix("sha256:"),
         Some(occipital_lang::Catalog::tool_templates_digest())

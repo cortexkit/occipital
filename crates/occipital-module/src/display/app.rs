@@ -15,8 +15,8 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
 
-use cortexkit_role_tool_display::DisplayKind;
-use cortexkit_role_tool_provider::views::ViewManifest;
+use cortexkit_role_tool_display::{DisplayKind, RecordSchema};
+use cortexkit_role_tool_provider::views::{NoticeView, ViewManifest};
 use occipital_app_reader::source::ReadError;
 use serde_json::{json, Map, Value};
 use subc_protocol::Principal;
@@ -132,6 +132,9 @@ impl ToolDisplay {
     }
 
     fn answer(&self, pin: &str, kept: &[(String, KeptView)], held: Option<u64>) -> Option<Value> {
+        if let Some((writer, ..)) = cortexkit_role_tool_display::parse_notice_view_key(pin) {
+            return self.notice_answer(pin, writer, kept, held);
+        }
         let views: Vec<(&String, &Vec<u8>, &Vec<u8>)> = kept
             .iter()
             .filter_map(|(writer, kept)| match &kept.state {
@@ -151,7 +154,8 @@ impl ToolDisplay {
                 if held.is_some_and(|held| held >= view.template_revision) {
                     return None;
                 }
-                let verdict = self.verdict(manifest, input_schema, &view);
+                let verdict =
+                    self.verdict(manifest, input_schema, &view.template, &view.record_schema);
                 let mut answer = json!({
                     "provider": writer,
                     "recordSchema": view.record_schema,
@@ -193,19 +197,92 @@ impl ToolDisplay {
         }
     }
 
+    /// A notice view's answer (tool-display §10.2): only from the writer its
+    /// key names, since a module draws only its own notices. Its templates
+    /// are checked with the record's `data` as `input` and the fixed view of
+    /// a notice, which has no call and no record.
+    fn notice_answer(
+        &self,
+        pin: &str,
+        writer: &str,
+        kept: &[(String, KeptView)],
+        held: Option<u64>,
+    ) -> Option<Value> {
+        let own = kept
+            .iter()
+            .find(|(kept_by, _)| kept_by == writer)
+            .map(|(_, kept)| &kept.state);
+        match own {
+            Some(ViewState::View {
+                manifest,
+                input_schema,
+            }) => {
+                let Ok(view) = serde_json::from_slice::<NoticeView>(manifest) else {
+                    tracing::warn!(%pin, %writer, "a kept notice view no longer decodes");
+                    return Some(json!("unavailable"));
+                };
+                if held.is_some_and(|held| held >= view.template_revision) {
+                    return None;
+                }
+                let template = serde_json::to_value(&view.template).unwrap_or(Value::Null);
+                let verdict = self.verdict(manifest, input_schema, &template, &notice_records());
+                let mut answer = json!({
+                    "provider": writer,
+                    "templateRevision": view.template_revision,
+                });
+                if let Some(row) = verdict.row {
+                    answer["row"] = json!(row);
+                }
+                if let Some(page) = verdict.page {
+                    answer["page"] = json!(page);
+                }
+                Some(answer)
+            }
+            Some(_) => Some(json!("unknown")),
+            None => {
+                if let Some(views) = &self.views {
+                    views.want(writer, pin);
+                }
+                Some(json!("unavailable"))
+            }
+        }
+    }
+
+    /// Whether `writer` serves the notice view `key` names, as kept: the
+    /// condition a notice record joins on (tool-display §10.2). A view not
+    /// kept yet is asked for, so a later read can join it.
+    pub fn serves_notice_view(&self, writer: &str, key: &str) -> bool {
+        match self.store.view(writer, key) {
+            Ok(Some(ViewState::View { manifest, .. })) => {
+                serde_json::from_slice::<NoticeView>(&manifest).is_ok()
+            }
+            Ok(None) => {
+                if let Some(views) = &self.views {
+                    views.want(writer, key);
+                }
+                false
+            }
+            _ => false,
+        }
+    }
+
     /// Check a kept view's templates once, keeping each passing one by digest.
-    fn verdict(&self, manifest: &[u8], input_schema: &[u8], view: &ViewManifest) -> Verdict {
+    /// `template` is the view's `{row?, page?}`, checked against
+    /// `record_schema` and the input schema kept with it.
+    fn verdict(
+        &self,
+        manifest: &[u8],
+        input_schema: &[u8],
+        template: &Value,
+        record_schema: &RecordSchema,
+    ) -> Verdict {
         let key = [manifest, b"\0", input_schema].concat();
         if let Some(verdict) = self.verdicts.lock().ok().and_then(|v| v.get(&key).cloned()) {
             return verdict;
         }
         let mut verdict = Verdict::default();
         let input_schema: Value = serde_json::from_slice(input_schema).unwrap_or(Value::Null);
-        match occipital_registry::view::check_view(
-            &view.template,
-            &view.record_schema,
-            &input_schema,
-        ) {
+        match occipital_registry::view::check_view(template, record_schema, &input_schema) {
             Ok(reports) => {
                 for report in reports {
                     let Some(digest) = report.digest.clone() else {
@@ -221,7 +298,7 @@ impl ToolDisplay {
                         );
                         continue;
                     }
-                    if let Some(document) = canonical_document(&view.template[report.slot]) {
+                    if let Some(document) = canonical_document(&template[report.slot]) {
                         if let Ok(mut templates) = self.templates.lock() {
                             templates.insert(digest.clone(), document);
                         }
@@ -261,7 +338,15 @@ impl ToolDisplay {
                     continue;
                 };
                 if let Ok(view) = serde_json::from_slice::<ViewManifest>(&manifest) {
-                    this.verdict(&manifest, &input_schema, &view);
+                    this.verdict(
+                        &manifest,
+                        &input_schema,
+                        &view.template,
+                        &view.record_schema,
+                    );
+                } else if let Ok(view) = serde_json::from_slice::<NoticeView>(&manifest) {
+                    let template = serde_json::to_value(&view.template).unwrap_or(Value::Null);
+                    this.verdict(&manifest, &input_schema, &template, &notice_records());
                 }
             }
             this.kept_template(&digest)
@@ -441,6 +526,12 @@ impl ToolDisplay {
 }
 
 /// A template document in its canonical form, as its digest covers it.
+/// The record schema a notice view's templates are checked with: one with no
+/// fields, since a notice has no call, so its `view.record` is always null.
+fn notice_records() -> RecordSchema {
+    RecordSchema::new("notice", 1, BTreeMap::new())
+}
+
 fn canonical_document(document: &Value) -> Option<Value> {
     let bytes = serde_json::to_vec(document).ok()?;
     let canonical = occipital_registry::Template::parse(&bytes)

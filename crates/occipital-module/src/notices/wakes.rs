@@ -123,25 +123,15 @@ impl NoticeStore {
         body: &[u8],
         now_ms: i64,
     ) -> Result<Result<WriteReply, ErrorBody>, StoreError> {
-        self.file.with_conn_fenced(|tx| {
-            let previous: Option<Vec<u8>> = tx
-                .query_row(
-                    "SELECT body FROM wake_records
-                     WHERE session = ?1 AND sender = ?2 AND send_id = ?3",
-                    rusqlite::params![session, sender, send_id],
-                    |row| row.get(0),
-                )
-                .optional()?;
-            let decided = write_outcome(previous.as_deref(), body);
-            if matches!(decided, Ok(WriteReply::Stored)) {
-                tx.execute(
-                    "INSERT INTO wake_records (session, sender, send_id, runner, body, written_at_ms)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                    rusqlite::params![session, sender, send_id, runner, body, now_ms],
-                )?;
-            }
-            Ok(decided)
-        })
+        self.write_once(
+            SendTable::Wakes,
+            session,
+            sender,
+            send_id,
+            runner,
+            body,
+            now_ms,
+        )
     }
 
     /// The record for `sender`'s send `send_id`, as the row in `session`
@@ -153,10 +143,67 @@ impl NoticeStore {
         sender: &str,
         send_id: &str,
     ) -> Result<Option<Value>, StoreError> {
-        let found: Vec<(String, Vec<u8>)> = self.file.with_conn(|conn| {
-            let mut statement = conn.prepare(
-                "SELECT session, body FROM wake_records WHERE sender = ?1 AND send_id = ?2",
-            )?;
+        let body = self.kept_for_send(SendTable::Wakes, session, sender, send_id)?;
+        // The body was stored as checked canonical JSON, so it parses.
+        Ok(body.and_then(|body| serde_json::from_slice(&body).ok()))
+    }
+
+    /// Keep `body` in `table` for `sender`'s send `send_id` to `session`,
+    /// unless it's already kept: the same bytes again are `already_stored`,
+    /// different bytes a conflict.
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn write_once(
+        &self,
+        table: SendTable,
+        session: &str,
+        sender: &str,
+        send_id: &str,
+        runner: &str,
+        body: &[u8],
+        now_ms: i64,
+    ) -> Result<Result<WriteReply, ErrorBody>, StoreError> {
+        let name = table.name();
+        self.file.with_conn_fenced(|tx| {
+            let previous: Option<Vec<u8>> = tx
+                .query_row(
+                    &format!(
+                        "SELECT body FROM {name}
+                         WHERE session = ?1 AND sender = ?2 AND send_id = ?3"
+                    ),
+                    rusqlite::params![session, sender, send_id],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            let decided = write_outcome(previous.as_deref(), body);
+            if matches!(decided, Ok(WriteReply::Stored)) {
+                tx.execute(
+                    &format!(
+                        "INSERT INTO {name} (session, sender, send_id, runner, body, written_at_ms)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6)"
+                    ),
+                    rusqlite::params![session, sender, send_id, runner, body, now_ms],
+                )?;
+            }
+            Ok(decided)
+        })
+    }
+
+    /// The body `table` keeps for `sender`'s send `send_id`, as a row in
+    /// `session` finds it: the one kept for that session, else the only one
+    /// kept for any session, since a row whose history moved here from another
+    /// session keeps its send. Two in other sessions name no single send.
+    pub(super) fn kept_for_send(
+        &self,
+        table: SendTable,
+        session: &str,
+        sender: &str,
+        send_id: &str,
+    ) -> Result<Option<Vec<u8>>, StoreError> {
+        let name = table.name();
+        let mut found: Vec<(String, Vec<u8>)> = self.file.with_conn(|conn| {
+            let mut statement = conn.prepare(&format!(
+                "SELECT session, body FROM {name} WHERE sender = ?1 AND send_id = ?2"
+            ))?;
             let found = statement
                 .query_map(rusqlite::params![sender, send_id], |row| {
                     Ok((row.get(0)?, row.get(1)?))
@@ -164,15 +211,12 @@ impl NoticeStore {
                 .collect::<rusqlite::Result<_>>()?;
             Ok(found)
         })?;
-        let body = match found.iter().find(|(kept, _)| kept == session) {
-            Some((_, body)) => Some(body),
-            None => match found.as_slice() {
-                [(_, body)] => Some(body),
-                _ => None,
-            },
+        let position = match found.iter().position(|(kept, _)| kept == session) {
+            Some(position) => Some(position),
+            None if found.len() == 1 => Some(0),
+            None => None,
         };
-        // The body was stored as checked canonical JSON, so it parses.
-        Ok(body.and_then(|body| serde_json::from_slice(body).ok()))
+        Ok(position.map(|position| found.swap_remove(position).1))
     }
 
     /// Keep which send each of `sends` came from. A message's send never
@@ -217,30 +261,60 @@ impl NoticeStore {
         })
     }
 
-    /// Drop the records written and the sends seen before `cutoff_ms`.
+    /// Drop the wake and notice records written and the sends seen before
+    /// `cutoff_ms`.
     pub(super) fn prune_wakes(&self, cutoff_ms: i64) -> Result<usize, StoreError> {
         self.file.with_conn_fenced(|tx| {
-            let records = tx.execute(
-                "DELETE FROM wake_records WHERE written_at_ms < ?1",
-                [cutoff_ms],
-            )?;
+            let mut records = 0;
+            for table in [SendTable::Wakes, SendTable::Notices] {
+                records += tx.execute(
+                    &format!("DELETE FROM {} WHERE written_at_ms < ?1", table.name()),
+                    [cutoff_ms],
+                )?;
+            }
             let sends = tx.execute("DELETE FROM sends WHERE seen_at_ms < ?1", [cutoff_ms])?;
             Ok(records + sends)
         })
     }
 }
 
+/// The two tables that keep a module's record for one of its sends, each row
+/// keyed by session, sender and send id.
+#[derive(Debug, Clone, Copy)]
+pub(super) enum SendTable {
+    /// What a wake held.
+    Wakes,
+    /// A module's own notice, as its notice view draws it
+    /// (`super::notice_records`).
+    Notices,
+}
+
+impl SendTable {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Wakes => "wake_records",
+            Self::Notices => "notice_records",
+        }
+    }
+}
+
 impl Notices {
     /// `session.wake_records {messageIds}`: for each message of `runner`'s
     /// `session` whose send has a record, the record as its writer wrote it.
-    /// A message with none is left out.
+    /// A message with none is left out. A read that asks for notice records
+    /// (`acceptNoticeRecords`) also gets `notices`: for each message whose send
+    /// has a notice record its writer's view serves, as `serves` tells, the
+    /// record as the apps read it.
     pub async fn wake_records(
         &self,
         runner: &str,
         session: &str,
         params: &Value,
+        serves: Option<super::notice_records::ServesView>,
     ) -> Result<Value, occipital_app_reader::source::ReadError> {
         let mids = crate::display::app::ids(params, "messageIds", MAX_MESSAGES)?;
+        let asked = super::notice_records::asked(params);
+        let serves = serves.filter(|_| asked);
         let remembered: HashMap<String, SentBy> = {
             let sends = self
                 .sends
@@ -257,6 +331,7 @@ impl Notices {
         let (store, runner, session) = (self.store.clone(), runner.to_owned(), session.to_owned());
         let read = tokio::task::spawn_blocking(move || {
             let mut messages = serde_json::Map::new();
+            let mut notices = serde_json::Map::new();
             for mid in mids {
                 let send = match remembered.get(&mid) {
                     Some(send) => Some(send.clone()),
@@ -267,6 +342,14 @@ impl Notices {
                 let Some((sender, send_id)) = send else {
                     continue;
                 };
+                if let Some(serves) = &serves {
+                    if let Some(record) = store
+                        .notice_record_of(&session, &sender, &send_id, serves)
+                        .map_err(super::unavailable)?
+                    {
+                        notices.insert(mid.clone(), record);
+                    }
+                }
                 if let Some(record) = store
                     .wake_of(&session, &sender, &send_id)
                     .map_err(super::unavailable)?
@@ -274,7 +357,13 @@ impl Notices {
                     messages.insert(mid, record);
                 }
             }
-            Ok(serde_json::json!({ "messages": messages }))
+            let mut reply = serde_json::json!({ "messages": messages });
+            // Asked for, the member is there even when empty, so an app can
+            // tell a build that reads notice records from one that doesn't.
+            if asked {
+                reply["notices"] = Value::Object(notices);
+            }
+            Ok(reply)
         });
         read.await.map_err(|error| {
             occipital_app_reader::source::ReadError::new(
@@ -320,7 +409,7 @@ pub(crate) async fn store(
     };
     let writer = writer.unwrap_or(Principal::Unverified);
     let sender = sender_of(&writer)?;
-    let write = wake_write(arguments)?;
+    let write: WakeWrite = decode_write(arguments)?;
     let body = write.check(&writer)?;
     let runner = serde_json::to_string(&write.runner).unwrap_or_default();
     let store = notices.store.clone();
@@ -347,7 +436,7 @@ pub(crate) async fn store(
 
 /// The module a write came from, as the route attests it, or the contract's
 /// refusal for any other opener.
-fn sender_of(writer: &Principal) -> Result<String, ErrorBody> {
+pub(super) fn sender_of(writer: &Principal) -> Result<String, ErrorBody> {
     cortexkit_role_tool_display::check_writer(writer)?;
     match writer {
         Principal::Reserved { module_id } => Ok(module_id.clone()),
@@ -355,17 +444,20 @@ fn sender_of(writer: &Principal) -> Result<String, ErrorBody> {
         // kind, that writer still names no module to key its record by.
         _ => Err(ErrorBody::new(
             cortexkit_role_tool_display::DISPLAY_WRITER_UNVERIFIED,
-            "a wake record's writer must be a module",
+            "a record's writer must be a module",
         )),
     }
 }
 
-/// Decode a wake write. The contract's type takes no other member, so a
-/// `sender` claimed in the payload is refused, as the sender comes only from
-/// the route. A refusal names the first member that's missing, unknown or
-/// malformed, as `invalid_params` requires.
-fn wake_write(arguments: &Value) -> Result<WakeWrite, ErrorBody> {
-    if let Ok(write) = serde_json::from_value::<WakeWrite>(arguments.clone()) {
+/// Decode a wake or notice write, whose envelopes share their members. The
+/// contract's types take no other member, so a `sender` claimed in the payload
+/// is refused, as the sender comes only from the route. A refusal names the
+/// first member that's missing, unknown or malformed, as `invalid_params`
+/// requires.
+pub(super) fn decode_write<T: serde::de::DeserializeOwned>(
+    arguments: &Value,
+) -> Result<T, ErrorBody> {
+    if let Ok(write) = serde_json::from_value::<T>(arguments.clone()) {
         return Ok(write);
     }
     const MEMBERS: [&str; 5] = ["kind", "runner", "session", "send_id", "body"];
@@ -683,7 +775,7 @@ mod tests {
         let params = json!({"messageIds": ["m1", "m2", "m3"]});
         let expected = json!({"messages": {"m1": write["body"]}});
         let read = notices
-            .wake_records("runner", "session-example", &params)
+            .wake_records("runner", "session-example", &params, None)
             .await
             .unwrap();
         assert_eq!(read, expected);
@@ -701,7 +793,7 @@ mod tests {
         task.abort();
         let (restarted, _task) = Notices::start(file);
         let read = restarted
-            .wake_records("runner", "session-example", &params)
+            .wake_records("runner", "session-example", &params, None)
             .await
             .unwrap();
         assert_eq!(read, expected);
@@ -738,7 +830,7 @@ mod tests {
             )
             .unwrap();
         let read = notices
-            .read("runner", session, &json!({"callKeys": ["ck_one"]}))
+            .read("runner", session, &json!({"callKeys": ["ck_one"]}), None)
             .await
             .unwrap();
         assert_eq!(read["calls"]["ck_one"][0]["wake"], write["body"]);

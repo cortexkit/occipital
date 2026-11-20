@@ -1,0 +1,1 @@
+{"result":{"template":{"catalog":{"digest":"sha256:6e3239281ade150b0935a2ca239ead0f7f922ab0fdeeffc470a19fc0fbf3ddb0","version":"1.1"},"executionDialect":"1.0","profile":"tool_row","reads":[],"schema":"occipital.template/1","source":"<ToolHeader icon=\"terminal\" title={input.title} failed={input.status == \"failed\"} />\n"}}}

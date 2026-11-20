@@ -127,6 +127,23 @@ pub(crate) const TABLES: &[Table] = &[
         key: &["session", "sender", "send_id"],
         belongs: Belongs::Session,
     },
+    // A computer whose Occipital predates this table refuses the stream as
+    // naming an unknown table, so the records are never dropped on the way.
+    Table {
+        name: "notice_records",
+        file: File::Notices,
+        sql_name: "notice_records",
+        columns: &[
+            "session",
+            "sender",
+            "send_id",
+            "runner",
+            "body",
+            "written_at_ms",
+        ],
+        key: &["session", "sender", "send_id"],
+        belongs: Belongs::Session,
+    },
     Table {
         name: "sends",
         file: File::Notices,
@@ -259,10 +276,11 @@ impl Files<'_> {
             } else {
                 let mut select =
                     format!("{select} WHERE session IN (SELECT value FROM json_each(?1))");
-                if table.name == "wake_records" {
-                    // An exact-session wake is selected above. A row carried
+                if matches!(table.name, "wake_records" | "notice_records") {
+                    // An exact-session record is selected above. A row carried
                     // from another session resolves only a unique sender/send.
-                    select.push_str(" OR ((sender,send_id) IN (SELECT sender,send_id FROM sends WHERE session IN (SELECT value FROM json_each(?1)) UNION SELECT sender,send_id FROM notices WHERE session IN (SELECT value FROM json_each(?1))) AND NOT EXISTS (SELECT 1 FROM wake_records other WHERE other.sender=wake_records.sender AND other.send_id=wake_records.send_id AND other.session!=wake_records.session))");
+                    let name = table.sql_name;
+                    select.push_str(&format!(" OR ((sender,send_id) IN (SELECT sender,send_id FROM sends WHERE session IN (SELECT value FROM json_each(?1)) UNION SELECT sender,send_id FROM notices WHERE session IN (SELECT value FROM json_each(?1))) AND NOT EXISTS (SELECT 1 FROM {name} other WHERE other.sender={name}.sender AND other.send_id={name}.send_id AND other.session!={name}.session))"));
                 }
                 self.file(table.file)
                     .with_conn(|conn| {

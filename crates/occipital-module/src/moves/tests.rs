@@ -638,7 +638,7 @@ impl Computer {
     }
 }
 
-/// The participant's samples, `test-vectors/agent-data-v1/`: one move of an
+/// The participant's samples, `test-vectors/agent-data-v2/`: one move of an
 /// agent with display rows, as Entorhinal's driver sees it on each computer,
 /// plus the refusals a driver must place. Run with
 /// `OCCIPITAL_BLESS_VECTORS=1` to rewrite them; without it this fails when a
@@ -749,7 +749,7 @@ async fn the_participant_samples_are_what_it_serves() {
     ));
 
     let folder =
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test-vectors/agent-data-v1");
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test-vectors/agent-data-v2");
     let bless = std::env::var_os("OCCIPITAL_BLESS_VECTORS").is_some();
     let mut sums = String::new();
     for (name, cases) in &files {

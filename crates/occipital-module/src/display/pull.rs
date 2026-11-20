@@ -9,7 +9,8 @@
 //! it as daemon-verified, so a pulled record carries the same proof of its
 //! writer as a pushed one (`check_writer`). A record pushed and pulled is
 //! stored once. A pulled write goes where the same write pushed would: a
-//! wake record to the notices file, every other kind to the display store.
+//! wake or notice record to the notices file, every other kind to the display
+//! store.
 
 use std::collections::BTreeSet;
 use std::future::Future;
@@ -49,7 +50,7 @@ pub trait Providers: Send + Sync {
 
 /// Where a pulled record is stored, as a pushed one would be: the display
 /// store, with the views to fetch and the hints to send once it's stored, or
-/// the notices file for a wake record.
+/// the notices file for a wake or notice record.
 #[derive(Clone)]
 pub struct Sink {
     pub state: Option<State>,
@@ -97,17 +98,29 @@ pub async fn pull(providers: &dyn Providers, sink: &Sink, module: &str, record_i
     let writer = Principal::Reserved {
         module_id: module.to_owned(),
     };
-    let stored = if reply.get("kind").and_then(Value::as_str) == Some("wake") {
-        crate::notices::wakes::store(sink.notices.as_ref(), Some(writer), &reply).await
-    } else {
-        super::store_write(
-            sink.state.as_ref(),
-            sink.views.as_ref(),
-            sink.hints.as_ref(),
-            Some(writer),
-            &reply,
-        )
-        .await
+    let stored = match reply.get("kind").and_then(Value::as_str) {
+        Some("wake") => {
+            crate::notices::wakes::store(sink.notices.as_ref(), Some(writer), &reply).await
+        }
+        Some("notice") => {
+            crate::notices::notice_records::store(
+                sink.notices.as_ref(),
+                sink.views.as_ref(),
+                Some(writer),
+                &reply,
+            )
+            .await
+        }
+        _ => {
+            super::store_write(
+                sink.state.as_ref(),
+                sink.views.as_ref(),
+                sink.hints.as_ref(),
+                Some(writer),
+                &reply,
+            )
+            .await
+        }
     };
     match stored {
         Ok(WriteReply::Stored | WriteReply::AlreadyStored) => Pulled::Stored,

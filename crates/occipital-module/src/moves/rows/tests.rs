@@ -85,6 +85,11 @@ pub(crate) fn seed(files: &Files<'_>, session: &str, runner: &str, call: &str) {
     );
     write(
         files.notices,
+        "INSERT INTO notice_records (session, sender, send_id, runner, body, written_at_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        vec![text(session), text("aft"), text(&format!("{session}-notice")), text(runner), Sql::Blob(b"{}".to_vec()), Sql::Integer(4)],
+    );
+    write(
+        files.notices,
         "INSERT INTO sends (runner, session, mid, sender, send_id, seen_at_ms) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         vec![text(runner), text(session), text(&format!("{session}-mid")), text("prefrontal"), text(&format!("{session}-wake")), Sql::Integer(5)],
     );
@@ -206,6 +211,7 @@ fn a_session_s_rows_export_and_import_whole() {
             "details",
             "notices",
             "wake_records",
+            "notice_records",
             "sends"
         ]
     );

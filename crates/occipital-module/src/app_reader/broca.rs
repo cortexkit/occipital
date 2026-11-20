@@ -2482,6 +2482,7 @@ impl TranscriptSource for BrocaSource {
                 &reference.runner,
                 &reference.session,
                 &json!({ "messageIds": wakes }),
+                None,
             )
             .await;
         let Ok(records) = records else {

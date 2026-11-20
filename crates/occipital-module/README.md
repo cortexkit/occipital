@@ -284,11 +284,27 @@ read facts. The apps read records by message id with `session.wake_records`,
 and a riding notice carries its send's record as `wake` in `session.notices`.
 The wire is pinned by `phone-reader-wake-records-v1`.
 
+A notice record is the data a module writes for one of its own notices, such
+as a background command that finished, so the apps draw the notice as a card
+from the module's own notice view. The module writes it before the send, with
+`display.write` and `kind: "notice"`, or announces it on the bus for
+`display.read`, keyed by its own send id. Occipital declares
+`notice-record-display/v1` and keeps each record in `notices.db` as it keeps a
+wake record. A record joins its row, or its riding notice, through the send
+the runner named, and only when its writer serves the view the record names:
+the notice view key `nv1:<writer>:<name>:<version>`, which Occipital keeps
+beside the tool views and serves only from the writer the key names. The apps
+ask for records with `acceptNoticeRecords: true`: `session.wake_records` then
+adds `notices` by message id, and `session.notices` adds `noticeRecord` to
+each notice. Without it both replies are unchanged. The apps fold notices that
+share a sender and `key`; Occipital doesn't. The wire is pinned by
+`phone-reader-notice-records-v1`.
+
 ## Agent moves
 
 When Entorhinal moves an agent to another computer, Occipital carries its
 chats' display data with it: call pins, tool records, completions and details,
-riding notices, wake records, the map from message to send, and queued and
+riding notices, wake and notice records, the map from message to send, and queued and
 unsent sends, for the sessions the move carries. It serves the agent-data
 contract (`cortexkit-role-agent-data`) on the `agent-data` internal service, to
 `reserved:entorhinal` only (anyone else is refused `caller_forbidden`), with

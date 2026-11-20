@@ -171,6 +171,11 @@ pub fn manifest() -> Result<ModuleManifest, String> {
                 // (`display.write` with `kind: "wake"`, see
                 // `crate::notices::wakes`).
                 //
+                // `notice-record-display/v1` tells a module that sends agents
+                // notices that it may write each notice's record here, for its
+                // notice view to draw (`display.write` with `kind: "notice"`,
+                // see `crate::notices::notice_records`).
+                //
                 // `agent-data/v1` makes this a participant in agent moves, so a
                 // moved agent's chats keep their display data on the new
                 // computer. It describes itself optional: a computer without
@@ -183,6 +188,7 @@ pub fn manifest() -> Result<ModuleManifest, String> {
                     subc_protocol::peer::OPERATOR_APP_CAPABILITY.into(),
                     cortexkit_role_tool_display::TOOL_DISPLAY_CAPABILITY.into(),
                     cortexkit_role_tool_display::WAKE_RECORD_DISPLAY_CAPABILITY.into(),
+                    cortexkit_role_tool_display::NOTICE_RECORD_DISPLAY_CAPABILITY.into(),
                     cortexkit_role_agent_data::PROVIDES.into(),
                 ],
                 requires: vec![],
@@ -347,6 +353,7 @@ mod tests {
                 "operator-app/v1",
                 "tool-display/v1",
                 "wake-record-display/v1",
+                "notice-record-display/v1",
                 "agent-data/v1"
             ])
         );

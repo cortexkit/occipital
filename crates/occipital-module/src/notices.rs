@@ -24,8 +24,10 @@
 //! notices are kept the next time a page listing them is read.
 //!
 //! The same file keeps wake records, which say what a wake held
-//! ([`wakes`]).
+//! ([`wakes`]), and notice records, the data a module's notice view draws its
+//! notice from ([`notice_records`]).
 
+pub mod notice_records;
 pub mod wakes;
 
 use std::collections::HashMap;
@@ -96,10 +98,11 @@ CREATE INDEX notices_age ON notices (seen_at_ms);";
 const BY_SESSION: &str = "CREATE INDEX notices_session ON notices (session, call_key);";
 
 // Version 5 adds the wake records and the sends page reads named
-// ([`wakes::TABLES`]).
+// ([`wakes::TABLES`]), and version 6 the notice records
+// ([`notice_records::TABLES`]).
 
-/// How long a notice, a wake record and a message's send are kept: as long as
-/// a tool display record.
+/// How long a notice, a wake or notice record and a message's send are kept:
+/// as long as a tool display record.
 const KEEP_MS: i64 = crate::display::store::Retention::DEFAULT.record_age_ms;
 
 /// How often old notices are dropped. The first run is at startup.
@@ -224,6 +227,7 @@ impl NoticeStore {
                 &[BY_SENDER],
                 &[BY_SESSION],
                 &[wakes::TABLES],
+                &[notice_records::TABLES],
             ],
         )?;
         Ok(Self { file })
@@ -381,8 +385,8 @@ impl NoticeStore {
             .collect())
     }
 
-    /// Drop the notices first seen, and the wake records written, before
-    /// `cutoff_ms`. Returns how many went.
+    /// Drop the notices first seen, and the wake and notice records written,
+    /// before `cutoff_ms`. Returns how many went.
     pub fn prune(&self, cutoff_ms: i64) -> Result<usize, StoreError> {
         let notices = self.file.with_conn_fenced(|tx| {
             tx.execute("DELETE FROM notices WHERE seen_at_ms < ?1", [cutoff_ms])
@@ -619,15 +623,19 @@ impl Notices {
     /// `session.notices {callKeys}`: for each call of `runner`'s `session`
     /// that a notice rode, its notices as `{sender, text, deliveredAs}`, in
     /// order, with `speaksFor: {agentId}` on one that carries another agent's
-    /// words and `wake` on one whose send has a wake record. A call no notice
-    /// rode is left out.
+    /// words and `wake` on one whose send has a wake record. A read that asks
+    /// for notice records (`acceptNoticeRecords`) also gets `noticeRecord` on
+    /// one whose send has a record its writer's view serves, as `serves`
+    /// tells. A call no notice rode is left out.
     pub async fn read(
         &self,
         runner: &str,
         session: &str,
         params: &Value,
+        serves: Option<notice_records::ServesView>,
     ) -> Result<Value, ReadError> {
         let call_keys = crate::display::app::ids(params, "callKeys", MAX_CALLS)?;
+        let serves = serves.filter(|_| notice_records::asked(params));
         let (store, runner, session) = (self.store.clone(), runner.to_owned(), session.to_owned());
         let read = tokio::task::spawn_blocking(move || {
             let mut calls = Map::new();
@@ -643,6 +651,12 @@ impl Notices {
                     let wake = store
                         .wake_of(&session, &kept.sender, &kept.send_id)
                         .map_err(unavailable)?;
+                    let record = match &serves {
+                        Some(serves) => store
+                            .notice_record_of(&session, &kept.sender, &kept.send_id, serves)
+                            .map_err(unavailable)?,
+                        None => None,
+                    };
                     let mut notice = json!({
                         "sender": kept.sender,
                         "text": kept.text,
@@ -653,6 +667,9 @@ impl Notices {
                     }
                     if let Some(wake) = wake {
                         notice["wake"] = wake;
+                    }
+                    if let Some(record) = record {
+                        notice["noticeRecord"] = record;
                     }
                     notices.push(notice);
                 }

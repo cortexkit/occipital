@@ -43,7 +43,7 @@ use async_trait::async_trait;
 use cortexkit_role_tool_provider::call::SchemaPin;
 use cortexkit_role_tool_provider::catalog::{CatalogAnswer, CatalogTool};
 use cortexkit_role_tool_provider::views::{
-    ViewChange, ViewEntry, ViewManifest, ViewsReply, ViewsRequest, MAX_PINS,
+    NoticeView, ViewChange, ViewEntry, ViewManifest, ViewsReply, ViewsRequest, MAX_PINS,
 };
 use serde_json::{json, Value};
 use subc_protocol::RouteTarget;
@@ -398,8 +398,13 @@ async fn fetch(
         .collect();
     let now = now_ms();
     let take = |pin: &String, kept: Option<&ViewState>, answer: &ViewEntry| -> Result<(), String> {
-        let (view, input_schema) = resolve(pin, answer, schemas.get(pin).copied());
-        let decision = decide(kept, view, input_schema)?;
+        let decision = match answer {
+            ViewEntry::Notice(view) => decide_notice(kept, writer, pin, view)?,
+            _ => {
+                let (view, input_schema) = resolve(pin, answer, schemas.get(pin).copied());
+                decide(kept, view, input_schema)?
+            }
+        };
         if let Decision::Stamp(Some(reason)) = &decision {
             tracing::warn!(%writer, %pin, %reason, "kept the display view");
         }
@@ -549,6 +554,52 @@ fn decide(
             }),
             None => Decision::Stamp(None),
         },
+    })
+}
+
+/// Decide on `fetched`, `writer`'s notice view for `pin`, an `nv1:` key
+/// (tool-provider §2.1). It is kept like a tool view, its `data_schema` as the
+/// input schema its templates are checked with, but only when the key names
+/// `writer`: a module serves views for its own notices only. A higher template
+/// revision replaces the kept view; the same revision with another view, or a
+/// changed data schema, breaks the contract, as a changed shape needs a new
+/// key, and the kept one stays.
+fn decide_notice(
+    kept: Option<&ViewState>,
+    writer: &str,
+    pin: &str,
+    fetched: &NoticeView,
+) -> Result<Decision, String> {
+    if let Err(refusal) = fetched.check_pin(writer, pin) {
+        // A notice view this writer can't serve for this key reads as
+        // `unknown`, as a tool view whose tool isn't the pin's does.
+        tracing::warn!(%writer, %pin, reason = %refusal.message, "left out a served notice view");
+        return decide(kept, None, None);
+    }
+    let state = ViewState::View {
+        manifest: canonical(fetched)?,
+        input_schema: canonical(&fetched.notice.data_schema)?,
+    };
+    Ok(match kept {
+        None => Decision::Keep(state),
+        Some(ViewState::Unknown | ViewState::NotInCatalog) => Decision::Replace(state),
+        Some(kept @ ViewState::View { manifest, .. }) => {
+            let Ok(kept_view) = serde_json::from_slice::<NoticeView>(manifest) else {
+                return Ok(Decision::Replace(state));
+            };
+            if *kept == state || fetched.template_revision < kept_view.template_revision {
+                Decision::Stamp(None)
+            } else if fetched.notice != kept_view.notice
+                || fetched.template_revision == kept_view.template_revision
+            {
+                Decision::Stamp(Some(
+                    "its data schema changed, or its template changed without a higher revision"
+                        .into(),
+                ))
+            } else {
+                Decision::Replace(state)
+            }
+        }
     })
 }
 
@@ -1239,5 +1290,62 @@ mod tests {
         until(|| matches!(store.view("aft", &pin("bash")), Ok(Some(_)))).await;
         assert_eq!(store.view("broca", &pin("bash")).unwrap(), None);
         assert_eq!(*aft.calls.lock().unwrap(), ["aft catalog", "aft views 1"]);
+    }
+
+    fn notice_view(revision: u64, title: &str) -> NoticeView {
+        use cortexkit_role_tool_provider::views::{NoticeViewDefinition, NoticeViewTemplates};
+        NoticeView::new(
+            NoticeViewDefinition::new(
+                "finished",
+                1,
+                json!({"type": "object", "properties": {"title": {"type": "string"}}}),
+            ),
+            NoticeViewTemplates::new(json!({"source": title}), json!({"source": title})),
+            revision,
+        )
+    }
+
+    /// A notice view is kept like a tool view, with its data schema as the
+    /// schema its templates are checked against, only for the writer its key
+    /// names. Another writer's key reads as `unknown`. A higher revision
+    /// replaces the kept view; the same revision with other templates, or a
+    /// changed data schema, keeps it and says the writer broke its contract.
+    #[test]
+    fn a_notice_view_is_kept_only_for_its_own_writer_s_key() {
+        let key = "nv1:aft:finished:1";
+        let first = notice_view(1, "a");
+        let kept = match decide_notice(None, "aft", key, &first).unwrap() {
+            Decision::Keep(state) => state,
+            other => panic!("{other:?}"),
+        };
+        assert_eq!(
+            kept,
+            ViewState::View {
+                manifest: serde_jcs::to_vec(&first).unwrap(),
+                input_schema: serde_jcs::to_vec(&first.notice.data_schema).unwrap(),
+            }
+        );
+        assert_eq!(
+            decide_notice(None, "cerebellum", key, &first).unwrap(),
+            Decision::Keep(ViewState::Unknown)
+        );
+        assert_eq!(
+            decide_notice(Some(&kept), "aft", key, &first).unwrap(),
+            Decision::Stamp(None)
+        );
+        assert!(matches!(
+            decide_notice(Some(&kept), "aft", key, &notice_view(2, "b")).unwrap(),
+            Decision::Replace(_)
+        ));
+        assert!(matches!(
+            decide_notice(Some(&kept), "aft", key, &notice_view(1, "b")).unwrap(),
+            Decision::Stamp(Some(_))
+        ));
+        let mut reshaped = notice_view(2, "a");
+        reshaped.notice.data_schema = json!({"type": "object"});
+        assert!(matches!(
+            decide_notice(Some(&kept), "aft", key, &reshaped).unwrap(),
+            Decision::Stamp(Some(_))
+        ));
     }
 }
