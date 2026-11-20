@@ -293,7 +293,7 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-occipital-lang"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "allocation-counter",
  "cortexkit-rich-ui-syntax",
@@ -304,14 +304,14 @@ dependencies = [
 
 [[package]]
 name = "cortexkit-occipital-refs"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "hmac-sha256",
 ]
 
 [[package]]
 name = "cortexkit-occipital-registry"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "cortexkit-occipital-lang",
  "cortexkit-role-tool-display",
