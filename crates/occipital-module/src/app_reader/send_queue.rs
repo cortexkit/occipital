@@ -222,8 +222,8 @@ impl SendQueue {
 
     /// Queued sends after `after`, in key order. A worker send that came here
     /// when its agent moved from another computer has only its queue row, since
-    /// a move carries no receipts; a worker send made here is followed from its
-    /// receipt's run binding instead, even before its recovery batch is read.
+    /// a move carries no receipts; a worker send made here is followed through the
+    /// run its receipt names, even before its recovery batch is read.
     pub(super) fn queued_after(
         &self,
         limit: usize,
