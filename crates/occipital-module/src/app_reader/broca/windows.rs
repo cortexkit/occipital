@@ -24,8 +24,8 @@ impl BrocaSource {
         self.size_images(&mut rows).await;
         self.settle_say(&mut rows).await?;
         // The apps draw every system row as a prompt card that opens on tap, so
-        // one with nothing in it, such as the entry Pi writes when a session
-        // starts, is left out of pages. So is the user entry a runner wrote for a
+        // one with nothing in it, such as the entry the Pi runner writes when a
+        // session starts, is left out of pages. So is the user entry a runner wrote for a
         // send it delivered with a tool result: the model read that text inside
         // the tool's result, never as a message, and the apps would draw it as
         // the person's own. The rows kept keep their ordinals, and whether the
@@ -129,8 +129,9 @@ impl BrocaSource {
                     .as_u64()
                     .is_some_and(|ordinal| ordinal >= next && ordinal >= from && ordinal < read_end)
             });
-            // With display facts the read already carries the client ids, so no
-            // display-history read is needed.
+            // With display facts the read already carries each message's client
+            // id; without them a separate runner read fetches the ids, but only
+            // for the entries this page serves, not the look-ahead ones.
             if !display_facts {
                 let served = page
                     .messages

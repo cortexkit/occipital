@@ -220,8 +220,10 @@ impl SendQueue {
         self.queued_after(limit, &Default::default())
     }
 
-    /// A moved worker has only its queue row. A local worker instead uses the
-    /// receipt's run binding, even when its recovery batch hasn't been read yet.
+    /// Queued sends after `after`, in key order. A worker send that came here
+    /// when its agent moved from another computer has only its queue row, since
+    /// a move carries no receipts; a worker send made here is followed from its
+    /// receipt's run binding instead, even before its recovery batch is read.
     pub(super) fn queued_after(
         &self,
         limit: usize,

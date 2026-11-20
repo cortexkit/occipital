@@ -1,6 +1,8 @@
-//! A JSON value keeps only the last occurrence of a key. Check the fixture
-//! before converting it to values. Unlike numbers in a canonical template,
-//! numbers in tool schemas and sample calls need not be integers.
+//! A parsed JSON value keeps only the last occurrence of a repeated key, so a
+//! fixture with one would be checked against a row its author didn't write.
+//! Check the fixture text for repeated keys before parsing it into values.
+//! This walk accepts any JSON number, since tool schemas and sample calls
+//! hold decimals that the template parser's integer-only reader refuses.
 
 use serde::de::{DeserializeSeed, Deserializer, Error, MapAccess, SeqAccess, Visitor};
 use std::{collections::HashSet, fmt};

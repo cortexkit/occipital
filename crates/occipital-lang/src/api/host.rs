@@ -91,8 +91,10 @@ impl From<Refused> for HostError {
     }
 }
 
-/// Convert a host projection in key order, independent of the embedding
-/// app's choice of JSON map representation.
+/// Convert a tool call's `input` or `view` JSON into the language's values,
+/// with object members sorted by key and numbers read as [`crate::host::host_number`]
+/// reads them, so the result doesn't depend on which `serde_json` features the
+/// embedding app's build turns on (map order, number precision).
 pub(crate) fn json_value(json: &Json) -> Result<Value, HostError> {
     let invalid = |_| HostError::InvalidHostValue("input or view");
     Ok(match json {

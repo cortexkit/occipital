@@ -727,8 +727,9 @@ impl Sender {
                 },
             });
             tokio::task::spawn_blocking(move || {
-                // A cancelled handler doesn't cancel this write. The move
-                // must wait for the rows, not just the handler future.
+                // A cancelled handler doesn't cancel this write. Hold the move
+                // admission guard until the receipt and queue rows are written,
+                // so a move that starts meanwhile waits for them and carries them.
                 let _admitted = admitted;
                 receipts.record_send(
                     &session,
@@ -1307,7 +1308,9 @@ impl Sender {
                 },
             );
         }
-        // A queue row can outlive its receipt or arrive without one in a move.
+        // A queue row can outlive its receipt, and one that came with an agent
+        // moving here from another computer has none, since a move carries no
+        // receipts.
         let Some(receipts) = self.receipts.clone() else {
             return;
         };
