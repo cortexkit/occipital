@@ -336,6 +336,14 @@ async fn watch_views(bus: &BusClient, owner: &'static str, fetcher: &Fetcher, st
                             // A provider keeps serving every pin it ever offered, so a
                             // deleted key changes nothing kept here.
                             Ok(_) => {}
+                            // The bucket was deleted and made again, by a manual
+                            // repair. The same watch goes on to deliver every entry
+                            // the new bucket holds. Nothing kept is dropped: each
+                            // kept view is still its writer's answer for its pin,
+                            // and the entries put again replace any that changed.
+                            Err(cortexkit_bus_client::Error::BucketReset { .. }) => {
+                                tracing::info!(%owner, "message bus views bucket was reset; reading it again");
+                            }
                             Err(error) => break error.to_string(),
                         }
                     }
