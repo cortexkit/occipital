@@ -655,7 +655,7 @@ impl TranscriptWatchHost for Watch {
         version: &str,
         newest: &Value,
         fits: &mut (dyn FnMut(&Value) -> bool + Send),
-    ) -> Option<NewestPageFit> {
+    ) -> Option<(NewestPageFit, Option<String>)> {
         self.app
             .reader
             .trimmed_newest(session, version, newest, fits)

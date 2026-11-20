@@ -676,6 +676,108 @@ async fn late_record_after_full_reads(refreshed: bool) {
     );
 }
 
+/// The sample set `phone-reader-held-copy-v1`: claims that name the copy they
+/// hold (`heldCopy`). The phone reads the Simple view's newest three rows and
+/// pages back; prefrontal's record for the `say` in `m1307` then lands, which
+/// changes that row in place; the desktop reads a wider page. Both copies end
+/// at the same message and the desktop's holds the phone's floor, so a claim
+/// naming no copy would be checked against the desktop's and answered
+/// `matched`, and the phone would keep the row without its record.
+#[tokio::test]
+async fn a_claim_naming_its_copy_is_checked_against_that_copy() {
+    let c = chat(true, entries()).await;
+    let mut served = Sample {
+        served: Served::new("phone-reader-held-copy-v1", c.app.clone()),
+        corr: 0,
+    };
+    let held = |extra: Value| {
+        let mut request = page(extra);
+        request["params"]["acceptHeldCopy"] = json!(true);
+        request
+    };
+    let phone = served
+        .read("01-newest-page", held(json!({"limit": 3})))
+        .await;
+    assert_eq!(ids(&phone), ["m1307", "m1309", "m1311"]);
+    let phone = &phone["result"];
+    let named = phone["heldCopy"].as_str().unwrap().to_owned();
+    let back = served
+        .read(
+            "02-page-back",
+            held(json!({"limit": 2, "beforeOrdinal": phone["nextBeforeOrdinal"]})),
+        )
+        .await;
+    assert_eq!(ids(&back), ["m1304", "m1306"]);
+    assert!(back["result"].get("heldCopy").is_none(), "{back}");
+
+    let record = DisplayWrite::new(
+        reserved("broca"),
+        "ck_say",
+        DisplayKind::Message,
+        pin("say", 's'),
+        json!({"v": 1, "reply_to": "m1304", "media": [], "level": "chat"})
+            .as_object()
+            .unwrap()
+            .clone(),
+    );
+    c.store.write(&reserved("prefrontal"), &record, 1).unwrap();
+    let _ = c.hints.send(crate::display::app::Hint::Write {
+        runner: "broca".into(),
+        call_key: "ck_say".into(),
+    });
+    for _ in 0..20 {
+        tokio::task::yield_now().await;
+    }
+    let desktop = served
+        .read("03-wider-page", held(json!({"limit": 10})))
+        .await;
+    assert_eq!(ids(&desktop).last().unwrap(), "m1311");
+    assert!(ids(&desktop).contains(&"m1304".to_owned()));
+    let desktop = &desktop["result"];
+    assert_eq!(desktop["version"], phone["version"]);
+    assert_ne!(desktop["heldCopy"], phone["heldCopy"]);
+
+    let named_claim = |copy: &str| {
+        let mut claim = claim(&phone["version"], "m1311", "m1304");
+        claim["heldCopy"] = json!(copy);
+        held(json!({"limit": 10, "claim": claim}))
+    };
+    let diverged = served.read("04-claim-named", named_claim(&named)).await;
+    assert_eq!(diverged["result"]["claim"], "diverged", "{diverged}");
+    assert_eq!(ids(&diverged)[0], "m1307", "{diverged}");
+    // The phone now holds the desktop's rows, so the two copies share a name.
+    assert_eq!(diverged["result"]["heldCopy"], desktop["heldCopy"]);
+
+    let caught_up = served
+        .read(
+            "05-claim-caught-up",
+            named_claim(diverged["result"]["heldCopy"].as_str().unwrap()),
+        )
+        .await;
+    assert_eq!(caught_up["result"]["claim"], "matched", "{caught_up}");
+    assert_eq!(caught_up["result"]["newTurns"], json!([]));
+
+    // A name no longer kept, as after eviction, is checked by the rules for a
+    // claim that names none.
+    let unknown = format!("c{}", "0".repeat(32));
+    let fallback = served
+        .read("06-claim-unknown-copy", named_claim(&unknown))
+        .await;
+    assert_eq!(fallback["result"]["claim"], "matched", "{fallback}");
+
+    // The full view's copies have names of their own.
+    let mut full = held(json!({"limit": 3}));
+    full["params"].as_object_mut().unwrap().remove("view");
+    let full = served.read("07-full-newest-page", full).await;
+    assert!(full["result"]["heldCopy"].is_string(), "{full}");
+    assert_ne!(full["result"]["heldCopy"], desktop["heldCopy"]);
+
+    // An app that doesn't ask is served no name, as before.
+    let plain = served.quiet(page(json!({"limit": 3}))).await;
+    assert!(plain["result"].get("heldCopy").is_none(), "{plain}");
+    served.served.check();
+}
+
 #[tokio::test]
 async fn answered_say_crossing_a_page_boundary_is_kept_in_either_view() {
     let mut entries: Vec<_> = (1..=201).map(prose).collect();

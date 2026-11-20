@@ -23,7 +23,14 @@ pub struct TranscriptClaim {
     pub held_floor_message_id: String,
     pub since_message_id: String,
     pub held_version: String,
+    /// The `heldCopy` of the reply that last set the claimant's newest end,
+    /// naming the kept copy it holds ([`KeptVersion::copy`]). Absent from an
+    /// app that doesn't send it, or a copy saved before it was served.
+    pub held_copy: Option<String>,
 }
+
+/// The longest `heldCopy` a claim may carry; a served one is 33 bytes.
+const MAX_HELD_COPY: usize = 64;
 
 /// What a request's `claim` holds.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -97,10 +104,29 @@ pub fn parse_claim(params: &Value) -> Result<Option<Claim>, ClaimRefusal> {
             held_version: required_claim_string(claim, "heldVersion")?,
         }));
     }
+    let held_copy = match claim.get("heldCopy") {
+        None => None,
+        Some(Value::String(copy))
+            if !copy.is_empty()
+                && copy.len() <= MAX_HELD_COPY
+                && copy.bytes().all(|byte| byte.is_ascii_graphic()) =>
+        {
+            Some(copy.clone())
+        }
+        Some(_) => {
+            return Err(ClaimRefusal {
+                code: "invalid_claim",
+                message: format!(
+                    "claim.heldCopy must be a string of 1 to {MAX_HELD_COPY} printable ASCII bytes"
+                ),
+            })
+        }
+    };
     Ok(Some(Claim::Held(TranscriptClaim {
         held_floor_message_id: required_claim_string(claim, "heldFloorMessageId")?,
         since_message_id: required_claim_string(claim, "sinceMessageId")?,
         held_version: required_claim_string(claim, "heldVersion")?,
+        held_copy,
     })))
 }
 
@@ -367,9 +393,59 @@ pub struct KeptVersion {
     rows: Vec<Arc<KeptRow>>,
     /// As [`TranscriptPageSnapshot`]'s `trimmed`.
     trimmed: bool,
+    /// [`Self::copy`], worked out from the fields above when the copy is made.
+    copy: String,
+}
+
+/// A kept copy's name: `c` and the first 16 bytes of a SHA-256, in hex, over its
+/// version, lineage and each row's id and fingerprint. So a new version, a
+/// changed row, or another view's copy (whose version names its view) gets a
+/// new name, and two copies holding the same rows share one: either compares a
+/// claim the same way. Nothing in it depends on the process, so a name an app
+/// saved before a restart still names the same rows after it.
+fn copy_name(version: &str, lineage_id: Option<&str>, rows: &[Arc<KeptRow>]) -> String {
+    let mut hash = Sha256::new();
+    for part in [version, lineage_id.unwrap_or_default()] {
+        hash.update(part.as_bytes());
+        hash.update([0]);
+    }
+    for row in rows {
+        hash.update(row.message_id.as_bytes());
+        hash.update([0]);
+        hash.update(row.fingerprint);
+    }
+    let digest = hash.finalize();
+    let mut name = String::with_capacity(33);
+    name.push('c');
+    for byte in &digest[..16] {
+        name.push_str(&format!("{byte:02x}"));
+    }
+    name
 }
 
 impl KeptVersion {
+    fn new(
+        version: String,
+        lineage_id: Option<String>,
+        rows: Vec<Arc<KeptRow>>,
+        trimmed: bool,
+    ) -> Self {
+        let copy = copy_name(&version, lineage_id.as_deref(), &rows);
+        Self {
+            version,
+            lineage_id,
+            rows,
+            trimmed,
+            copy,
+        }
+    }
+
+    /// The name a reply serves as `heldCopy`, which a claim sends back so it is
+    /// compared with exactly the copy its claimant holds.
+    pub fn copy(&self) -> &str {
+        &self.copy
+    }
+
     pub fn contains(&self, message_id: &str) -> bool {
         self.rows.iter().any(|row| row.message_id == message_id)
     }
@@ -447,16 +523,15 @@ impl TranscriptPageSnapshot {
 
     /// This page as the claim cache keeps it, every row fingerprinted.
     pub fn kept(&self) -> KeptVersion {
-        KeptVersion {
-            version: self.version.clone(),
-            lineage_id: self.lineage_id.clone(),
-            rows: self
-                .rows
+        KeptVersion::new(
+            self.version.clone(),
+            self.lineage_id.clone(),
+            self.rows
                 .iter()
                 .map(|row| Arc::new(KeptRow::of(row)))
                 .collect(),
-            trimmed: self.trimmed,
-        }
+            self.trimmed,
+        )
     }
 
     pub fn is_trimmed(&self) -> bool {
@@ -685,9 +760,23 @@ impl TranscriptClaimState {
     /// [`Self::snapshot`]'s choice among untrimmed versions. A trimmed version therefore
     /// serves only claimants whose floor it holds, and a claimant whose floor lies below every
     /// version (history paged with beforeOrdinal) is compared against a full page.
+    ///
+    /// A claim that names its copy (`heldCopy`) skips all of that and is compared with
+    /// that copy while it is kept at the claimed version. The rules above can't tell
+    /// two claimants apart when they hold different copies with the same newest row,
+    /// such as an app that paged back and another that read a wider page; then a
+    /// row that changed between their reads could be answered `matched`.
     pub fn held_snapshot(&self, session_id: &str, claim: &TranscriptClaim) -> Option<KeptVersion> {
         let kept = &self.sessions.get(session_id)?.kept;
         let at_version = |kept: &&KeptVersion| kept.version == claim.held_version;
+        if let Some(named) = claim.held_copy.as_deref().and_then(|copy| {
+            kept.iter()
+                .rev()
+                .filter(at_version)
+                .find(|kept| kept.copy == copy)
+        }) {
+            return Some(named.clone());
+        }
         let served_last = || {
             kept.iter().filter(at_version).filter(|kept| {
                 kept.rows
@@ -728,7 +817,9 @@ impl TranscriptClaimState {
         }
     }
 
-    pub fn record(&mut self, session_id: &str, mut snapshot: TranscriptPageSnapshot) {
+    /// Keep `snapshot` as a copy later claims may name, and return its name
+    /// ([`KeptVersion::copy`]).
+    pub fn record(&mut self, session_id: &str, mut snapshot: TranscriptPageSnapshot) -> String {
         self.records = self.records.wrapping_add(1);
         if !self.sessions.contains_key(session_id) && self.sessions.len() >= MAX_SESSIONS {
             let oldest = self
@@ -759,12 +850,13 @@ impl TranscriptClaimState {
                 .map(|row| Arc::new(KeptRow::of(row)))
                 .collect(),
         };
-        let kept = KeptVersion {
-            version: snapshot.version.clone(),
-            lineage_id: snapshot.lineage_id.clone(),
+        let kept = KeptVersion::new(
+            snapshot.version.clone(),
+            snapshot.lineage_id.clone(),
             rows,
-            trimmed: snapshot.trimmed,
-        };
+            snapshot.trimmed,
+        );
+        let copy = kept.copy.clone();
         // The same version, lineage, and row material make this version redundant, unless only
         // a trimmed copy is kept: lookup without a floor match needs the untrimmed copy.
         let redundant = session.kept.iter().any(|existing| {
@@ -782,6 +874,7 @@ impl TranscriptClaimState {
             full: snapshot,
             kept,
         });
+        copy
     }
 
     pub fn remove_session(&mut self, session_id: &str) {
@@ -1062,6 +1155,90 @@ mod tests {
             held_floor_message_id: floor.to_string(),
             since_message_id: since.to_string(),
             held_version: version.to_string(),
+            held_copy: None,
+        }
+    }
+
+    /// A claim naming the copy it holds is compared with that copy, even when
+    /// another reader recorded a copy that ends at the same message and holds
+    /// the claim's floor; one naming an unknown copy falls back to the rules
+    /// for claims that name none. Same rows at the same version share a name,
+    /// and a new version or a changed row gets a new one.
+    #[test]
+    fn a_named_copy_is_the_one_compared() {
+        let session = "s";
+        let running = vec![message(1, "a", "one"), message(2, "b", "running")];
+        let mut finished = running.clone();
+        finished[1]["text"] = json!("finished");
+        let mut state = TranscriptClaimState::default();
+        let phone = state.record(session, snapshot("v1", 1, running.clone()));
+        let desktop = state.record(session, snapshot("v1", 1, finished.clone()));
+        assert_ne!(phone, desktop);
+        assert_eq!(phone.len(), 33);
+        assert_eq!(
+            state.record(session, snapshot("v1", 1, running.clone())),
+            phone
+        );
+        assert_ne!(snapshot("v2", 1, running).kept().copy(), phone);
+
+        // Without a name the oldest copy ending at `b` that holds `a` is chosen,
+        // which is the phone's here; the desktop names its own.
+        let mut named = claim("a", "b", "v1");
+        named.held_copy = Some(desktop.clone());
+        let held = state.held_snapshot(session, &named).unwrap();
+        assert_eq!(held.copy(), desktop);
+        let current = snapshot("v1", 1, finished);
+        assert!(matches!(
+            evaluate_claim(&named, Some(&held), &current),
+            ClaimEvaluation::Matched { .. }
+        ));
+        named.held_copy = Some(phone.clone());
+        assert!(matches!(
+            evaluate_claim(
+                &named,
+                state.held_snapshot(session, &named).as_ref(),
+                &current
+            ),
+            ClaimEvaluation::Diverged { .. }
+        ));
+        named.held_copy = Some("c-unknown".into());
+        assert_eq!(
+            state.held_snapshot(session, &named).unwrap().copy(),
+            state
+                .held_snapshot(session, &claim("a", "b", "v1"))
+                .unwrap()
+                .copy()
+        );
+        // A name is never matched across versions.
+        named.held_copy = Some(phone);
+        named.held_version = "v2".into();
+        assert!(state.held_snapshot(session, &named).is_none());
+    }
+
+    #[test]
+    fn a_claims_held_copy_is_a_short_printable_string() {
+        let parse = |copy: Value| {
+            parse_claim(
+                &json!({"claim": {"heldFloorMessageId": "a", "sinceMessageId": "b",
+                "heldVersion": "v", "heldCopy": copy}}),
+            )
+        };
+        let Ok(Some(Claim::Held(held))) = parse(json!("c0123")) else {
+            panic!("a valid heldCopy");
+        };
+        assert_eq!(held.held_copy.as_deref(), Some("c0123"));
+        for bad in [
+            json!(""),
+            json!(7),
+            json!("a b"),
+            json!("x".repeat(65)),
+            json!("é"),
+        ] {
+            assert_eq!(
+                parse(bad.clone()).unwrap_err().code,
+                "invalid_claim",
+                "{bad}"
+            );
         }
     }
 

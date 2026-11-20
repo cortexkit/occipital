@@ -76,13 +76,15 @@ pub trait TranscriptWatchHost: Send + Sync {
 
     async fn read(&self, params: Value) -> Result<Value, ReadError>;
 
+    /// As [`crate::source::TranscriptReader::trimmed_newest`]: the fit, and the
+    /// `heldCopy` of the copy kept for it.
     fn trimmed_newest(
         &self,
         session: &str,
         version: &str,
         newest: &Value,
         fits: &mut (dyn FnMut(&Value) -> bool + Send),
-    ) -> Option<NewestPageFit>;
+    ) -> Option<(NewestPageFit, Option<String>)>;
 
     fn subscribe_changes(&self, session: &str) -> tokio::sync::watch::Receiver<u64>;
 
@@ -282,8 +284,15 @@ async fn oversize_transcript<H: TranscriptWatchHost>(
     let fit = host.trimmed_newest(session, &version, &newest, &mut |page| {
         encode(&reply_with(Some(page))).len() <= NOTICE_BOUND
     });
+    let accepts_held_copy = params.get("acceptHeldCopy") == Some(&Value::Bool(true));
+    let with_copy = |mut reply: Value, copy: Option<String>| {
+        if let Some(copy) = copy.filter(|_| accepts_held_copy) {
+            reply["heldCopy"] = json!(copy);
+        }
+        reply
+    };
     match fit {
-        Some(NewestPageFit::Whole) => {
+        Some((NewestPageFit::Whole, copy)) => {
             let Ok(snapshot) =
                 TranscriptPageSnapshot::from_page(version.clone(), None, newest.clone())
             else {
@@ -293,17 +302,17 @@ async fn oversize_transcript<H: TranscriptWatchHost>(
                 );
             };
             TranscriptStep::Reply {
-                reply: reply_with(Some(&snapshot.resync_page())),
+                reply: with_copy(reply_with(Some(&snapshot.resync_page())), copy),
                 end_after: false,
             }
         }
-        Some(NewestPageFit::Trimmed(snapshot)) => TranscriptStep::Reply {
-            reply: reply_with(Some(&snapshot.resync_page())),
+        Some((NewestPageFit::Trimmed(snapshot), copy)) => TranscriptStep::Reply {
+            reply: with_copy(reply_with(Some(&snapshot.resync_page())), copy),
             end_after: false,
         },
         // Even the newest message alone does not fit: the phone reads
         // session.transcript_page itself and subscribes again.
-        Some(NewestPageFit::NewestTooLarge) => TranscriptStep::Reply {
+        Some((NewestPageFit::NewestTooLarge, _)) => TranscriptStep::Reply {
             reply: reply_with(None),
             end_after: true,
         },
@@ -356,6 +365,18 @@ async fn evaluate_transcript<H: TranscriptWatchHost>(
 pub fn advance_claim(claim: &mut Map<String, Value>, reply: &Value) {
     if let Some(version) = reply.get("version").and_then(Value::as_str) {
         claim.insert("heldVersion".into(), json!(version));
+    }
+    // A verdict names the copy the watch holds once it applies the reply. One
+    // without a name drops the old one, which no longer names what is held.
+    if reply.get("claim").is_some() {
+        match reply.get("heldCopy").and_then(Value::as_str) {
+            Some(copy) => {
+                claim.insert("heldCopy".into(), json!(copy));
+            }
+            None => {
+                claim.remove("heldCopy");
+            }
+        }
     }
     match reply.get("claim").and_then(Value::as_str) {
         Some("matched") => {

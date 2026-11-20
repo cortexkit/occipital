@@ -261,9 +261,15 @@ impl TranscriptSource for FakeSource {
     }
 }
 
+/// The claim an app sends for `page`, naming the copy it was served when the
+/// page carries one, as both apps do.
 fn claim_for(page: &Value) -> Value {
     let ids = message_ids(page);
-    json!({"heldFloorMessageId": ids.first().unwrap(), "sinceMessageId": ids.last().unwrap(), "heldVersion": page["version"]})
+    let mut claim = json!({"heldFloorMessageId": ids.first().unwrap(), "sinceMessageId": ids.last().unwrap(), "heldVersion": page["version"]});
+    if let Some(copy) = page.get("heldCopy") {
+        claim["heldCopy"] = copy.clone();
+    }
+    claim
 }
 
 async fn read(reader: &TranscriptReader, source: &FakeSource, params: Value) -> Value {
@@ -302,7 +308,7 @@ impl TranscriptWatchHost for Host {
         version: &str,
         newest: &Value,
         fits: &mut (dyn FnMut(&Value) -> bool + Send),
-    ) -> Option<NewestPageFit> {
+    ) -> Option<(NewestPageFit, Option<String>)> {
         self.reader.trimmed_newest(session, version, newest, fits)
     }
     fn subscribe_changes(&self, _: &str) -> watch::Receiver<u64> {
@@ -1358,26 +1364,39 @@ async fn a_native_claim_does_not_vouch_for_a_changed_call_below_its_window() {
 /// TE-02: Paging back changes the phone's floor. A desktop's wider page with
 /// that floor isn't evidence that the phone has received the same material.
 #[tokio::test]
-#[ignore = "TE-02: a claim naming its held copy distinguishes overlapping readers"]
 async fn a_wider_read_by_another_app_cannot_hide_a_held_message_change() {
     let source = FakeSource::new("broca", 5, 0, true);
     let reader = TranscriptReader::default();
     source.state.lock().unwrap().rows[3].display["parts"] =
         json!([{"type":"message", "callKey":"k", "text":"ok"}]);
-    let newest = read(&reader, &source, json!({"session":"s", "limit":2})).await;
-    let older = read(&reader, &source, json!({"session":"s", "beforeOrdinal":3})).await;
+    let newest = read(
+        &reader,
+        &source,
+        json!({"session":"s", "limit":2, "acceptHeldCopy":true}),
+    )
+    .await;
+    let older = read(
+        &reader,
+        &source,
+        json!({"session":"s", "beforeOrdinal":3, "acceptHeldCopy":true}),
+    )
+    .await;
+    // Only a newest page names a copy: a page back never sets the newest end.
+    assert!(newest.get("heldCopy").is_some(), "{newest}");
+    assert!(older.get("heldCopy").is_none(), "{older}");
     let mut claim = claim_for(&newest);
     claim["heldFloorMessageId"] = older["messages"][0]["messageId"].clone();
     source.state.lock().unwrap().rows[3].display["parts"][0]["replyTo"] = json!({"messageId":"m0"});
     let _desktop = read(&reader, &source, json!({"session":"s"})).await;
-    let reply = read(&reader, &source, json!({"session":"s", "claim":claim})).await;
-    assert_ne!(reply["claim"], "matched", "{reply}");
+    let params = json!({"session":"s", "claim":claim, "acceptHeldCopy":true});
+    let reply = read(&reader, &source, params).await;
+    assert_eq!(reply["claim"], "diverged", "{reply}");
+    assert_eq!(reply["resync"]["messages"][0]["messageId"], "m3", "{reply}");
 }
 
 /// TE-02: Once a reader has applied a resync, its unchanged next claim must
 /// not keep comparing against the copy from before that resync.
 #[tokio::test]
-#[ignore = "TE-02: a claim naming its held copy identifies the recipient of this resync"]
 async fn a_claim_after_applying_its_diverged_resync_matches() {
     assert_claim_after_resync_matches(false).await;
 }
@@ -1390,8 +1409,13 @@ async fn a_claim_after_a_resync_that_advances_since_matches() {
 async fn assert_claim_after_resync_matches(appended: bool) {
     let source = FakeSource::new("broca", 3, 0, true);
     let reader = TranscriptReader::default();
-    let page = read(&reader, &source, json!({"session":"s"})).await;
-    let mut params = json!({"session":"s", "claim":claim_for(&page)});
+    let page = read(
+        &reader,
+        &source,
+        json!({"session":"s", "acceptHeldCopy":true}),
+    )
+    .await;
+    let mut params = json!({"session":"s", "claim":claim_for(&page), "acceptHeldCopy":true});
     source.state.lock().unwrap().rows[1].display["parts"] =
         json!([{"type":"message", "text":"landed"}]);
     if appended {

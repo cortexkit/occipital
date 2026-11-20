@@ -21,6 +21,10 @@ pub struct PageRequest {
     /// ([`Claim::Empty`]). Never set together with `claim`.
     pub empty_claim: Option<String>,
     pub accepts_outside_window: bool,
+    /// The app keeps a `heldCopy` (`acceptHeldCopy: true`): newest pages and claim
+    /// answers name the kept copy they served ([`crate::claim::KeptVersion::copy`]),
+    /// which the app sends back in its claims. Off, replies carry none, as before.
+    pub accepts_held_copy: bool,
     /// A page around this message: it and up to `limit` numbered messages before and
     /// after it.
     pub around_message_id: Option<String>,
@@ -40,6 +44,11 @@ impl PageRequest {
         };
         let claimed = claim.is_some() || empty_claim.is_some();
         let accepts_outside_window = crate::claim::accepts_outside_window(params)?;
+        let accepts_held_copy = match params.get("acceptHeldCopy") {
+            None => false,
+            Some(Value::Bool(accepts)) => *accepts,
+            Some(_) => return Err(invalid("acceptHeldCopy must be a boolean when present")),
+        };
         let requested_harness = optional_transcript_harness(params)?;
         let session_id = required_session(params)?;
         if session_id.trim().is_empty() {
@@ -186,6 +195,7 @@ impl PageRequest {
             claim,
             empty_claim,
             accepts_outside_window,
+            accepts_held_copy,
             around_message_id,
             after_ordinal,
             simple,

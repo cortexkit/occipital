@@ -365,7 +365,10 @@ impl Row {
 pub struct HistoryPage {
     pub rows: Vec<Row>,
     pub older: Option<String>,
-    /// The raw range's exclusive backward cursor when every row was hidden.
+    /// Where an older page goes on when every runner entry this read covered
+    /// was left out of the page (a tool-result delivery or an empty system
+    /// entry): the oldest entry's ordinal, exclusive, so paging never stalls
+    /// on a stretch with nothing to draw.
     pub empty_before: Option<u64>,
     pub newer: Option<String>,
     pub history_version: Option<u64>,
@@ -800,8 +803,8 @@ impl TranscriptReader {
                     Err(_) => return Ok(claim::identity_unsupported_reply()),
                 };
                 let resync = current.resync_page();
-                self.record(&claims_key, current);
-                if native {
+                let copy = self.record(&claims_key, current);
+                let mut reply = if native {
                     claim::runner_claim_reply(
                         &version,
                         true,
@@ -809,7 +812,11 @@ impl TranscriptReader {
                     )
                 } else {
                     claim::claim_reply(&version, claim::ClaimEvaluation::CursorExpired { resync })
+                };
+                if request.accepts_held_copy {
+                    reply["heldCopy"] = json!(copy);
                 }
+                reply
             };
             head.describe_session(&mut reply);
             reply
@@ -899,7 +906,12 @@ impl TranscriptReader {
                     claim::evaluate_claim(held, previous.as_ref(), &current),
                 )
             };
-            self.record(&claims_key, current);
+            // The claimant's copy is now this page: its held rows that matched, or
+            // the resync it applies, and the new turns after them.
+            let copy = self.record(&claims_key, current);
+            if request.accepts_held_copy {
+                reply["heldCopy"] = json!(copy);
+            }
             // Matched replies carry newTurns; diverged, cursor_expired and outside_window
             // carry resync messages. All repeat the session facts from the same head.
             head.describe_session(&mut reply);
@@ -919,7 +931,10 @@ impl TranscriptReader {
                     head.claim_version(),
                     mapped.clone(),
                 ) {
-                    self.record(&claims_key, snapshot);
+                    let copy = self.record(&claims_key, snapshot);
+                    if request.accepts_held_copy {
+                        mapped["heldCopy"] = json!(copy);
+                    }
                 }
             }
             // Only the newest page describes the session: an older history page
@@ -1041,20 +1056,25 @@ impl TranscriptReader {
         }
     }
 
-    fn record(&self, session: &str, snapshot: TranscriptPageSnapshot) {
+    /// Keep `snapshot` for later claims, and return the name its reply serves as
+    /// `heldCopy`. Only a newest page and a claim's answer are kept, since only
+    /// they set the newest end of what an app holds; a page back never does.
+    fn record(&self, session: &str, snapshot: TranscriptPageSnapshot) -> String {
         self.claims
             .lock()
             .expect("transcript claims poisoned")
-            .record(session, snapshot);
+            .record(session, snapshot)
     }
 
+    /// How much of a watch's newest page fits `fits`, and the `heldCopy` of the
+    /// copy kept for it, when one was kept.
     pub fn trimmed_newest(
         &self,
         session: &str,
         version: &str,
         newest: &Value,
         fits: &mut (dyn FnMut(&Value) -> bool + Send),
-    ) -> Option<NewestPageFit> {
+    ) -> Option<(NewestPageFit, Option<String>)> {
         let lineage = newest
             .get("historyVersion")
             .and_then(Value::as_u64)
@@ -1068,12 +1088,12 @@ impl TranscriptReader {
         } else {
             session.to_owned()
         };
-        match &fit {
-            NewestPageFit::Whole => self.record(&key, snapshot),
-            NewestPageFit::Trimmed(snapshot) => self.record(&key, snapshot.clone()),
-            NewestPageFit::NewestTooLarge => {}
-        }
-        Some(fit)
+        let copy = match &fit {
+            NewestPageFit::Whole => Some(self.record(&key, snapshot)),
+            NewestPageFit::Trimmed(snapshot) => Some(self.record(&key, snapshot.clone())),
+            NewestPageFit::NewestTooLarge => None,
+        };
+        Some((fit, copy))
     }
 
     pub fn remove_session(&self, session: &str) {
@@ -1094,9 +1114,13 @@ impl TranscriptReader {
     }
 }
 
-/// Locally joined message records can change without moving the runner's head.
-/// Qualify only pages that draw them, so ordinary pages retain their cheap
-/// head-only probe. Recomputing this digest also works after a daemon restart.
+/// A `say` message part takes its reply, quote and media from prefrontal's
+/// record, which Occipital joins in while building the row. That record can
+/// arrive after the row is stored, which changes the page but not the runner's
+/// history counter, so an activity token taken from that counter alone would
+/// answer `unchanged`. A page that draws message parts gets a token that also
+/// digests them; other pages keep the cheaper counter-only token. The digest
+/// is worked out from the page, so it holds across a module restart.
 fn message_activity_token(base: &str, page: &Value) -> Result<String, ReadError> {
     use sha2::{Digest, Sha256};
     let mut digest = None;
