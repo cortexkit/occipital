@@ -158,10 +158,12 @@ impl<M: Metrics> Engine<'_, M> {
                 )?
             }
             "Diff" => {
-                let hunks = list(p, "hunks");
+                // Gaps sit only between the hunks drawn: an entry that isn't a
+                // hunk, or one past the line cap, takes none.
+                let drawn = diff_hunks(list(p, "hunks"));
                 let pad = k("codePad")?.checked_mul(d(2))?;
-                let mut h = k("gap.m")?.checked_mul(d(hunks.len().saturating_sub(1) as i128))?;
-                for (hunk, lines) in diff_hunks(hunks) {
+                let mut h = k("gap.m")?.checked_mul(d(drawn.len().saturating_sub(1) as i128))?;
+                for (hunk, lines) in drawn {
                     h = h.checked_add(pad)?;
                     if hunk_title(hunk).is_some() {
                         h = h
@@ -515,6 +517,12 @@ impl<M: Metrics> Engine<'_, M> {
                 .checked_add(k("gap.s")?)?
                 .checked_add(self.tw(&"0".repeat(16), Body)?)?,
             "Model" => self.tw(&"0".repeat(24), Body)?,
+            // A natural ToolText takes its own width in a row, so a one-word
+            // label doesn't fill a box made for longer text.
+            "ToolText" if text(p, "width") == Some("natural") => self.tw(
+                &work::clip(text(p, "text").unwrap_or(""), 256),
+                tool_text_style(p),
+            )?,
             "Slot" => match self.slot_width(p, w)? {
                 Some(width) => width,
                 None => return Ok(None),

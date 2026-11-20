@@ -3,7 +3,7 @@
     "id": "occipital.tool.catalog",
     "version": "1.1",
     "status": "accepted by the apps; not yet shipped",
-    "date": "2026-11-18",
+    "date": "2026-11-20",
     "owner": "occipital",
     "companion": "2026-10-31-tool-templates.md"
   },
@@ -90,7 +90,7 @@
       "work": {"visits": "1"}
     },
     "OpenItem": {
-      "sum": "A link in a tool page to an ask, an artifact, a work item or the thread with another agent, which opens the app's own card or screen for it.",
+      "sum": "A link in a tool page to an ask, an artifact, a work item, the thread with another agent or a shell the agent ran, which opens the app's own card or screen for it.",
       "in": ["tool_page"],
       "flow": "inline",
       "kids": {"kind": "none"},
@@ -102,13 +102,13 @@
         "kind": "text",
         "h": "T(label, body, W)",
         "hIn": ["metrics", "W"],
-        "note": "The label is body text in the page's prose, measured by the app. It is a link when the id starts with ask_, art_ or wi_, or is peer: and an agent_ id, and the app can read the item on the computer that ran the call, and plain text otherwise, never a disabled control."
+        "note": "The label is body text in the page's prose, measured by the app. It is a link when the id starts with ask_, art_ or wi_, or is peer: and an agent_ id, or is shell: and a task id the agent's Shells view still lists, and the app can read the item on the computer that ran the call, and plain text otherwise, never a disabled control. An app with no Shells view draws a shell: id as plain text."
       },
       "states": {"text": "{label}"},
       "work": {"visits": "1"}
     },
     "ToolHeader": {
-      "sum": "A tool row's first line: an icon, a title, a muted secondary text and the trailing status, its one Slot child. Each app draws it in its own type.",
+      "sum": "A tool row's first line: an icon, a title, a muted secondary text and the trailing status, its one Slot child, with an optional failure mark on the icon. Each app draws it in its own type.",
       "in": ["tool_row", "tool_page"],
       "flow": "block",
       "kids": {"kind": "block", "only": ["Slot"], "items": [0, 1]},
@@ -116,13 +116,14 @@
         "icon": {"t": "enum", "enum": ["edit", "terminal", "file", "search", "message", "room", "question", "globe", "window", "agent", "task", "tool"], "req": true, "lit": true, "d": "each app maps the name to its own symbol"},
         "title": {"t": "string", "req": true, "clip": "title"},
         "subtitle": {"t": "string", "clip": "title"},
-        "truncate": {"t": "enum", "enum": ["end", "middle"], "def": "end", "lit": true, "d": "how the title is cut; middle for paths"}
+        "truncate": {"t": "enum", "enum": ["end", "middle"], "def": "end", "lit": true, "d": "how the title is cut; middle for paths"},
+        "failed": {"t": "boolean", "def": false, "paint": true, "d": "the call failed: each app draws the icon in its danger tone and says failed, taking no width; null or absent draws no mark. It has no geometry, so a tool row may read view or the time in it outside a Slot"}
       },
       "geo": {
         "kind": "fixed",
         "h": "max(L(headline), H(slot))",
         "hIn": ["metrics", "children"],
-        "note": "One line. Its width is laid out in this order: the Slot takes its own width, the icon an L(body) square and k.gap.s, the subtitle min(TW(subtitle, footnote), 0.4 * rest) in footnote, and the title the rest in headline, cut as truncate says. The subtitle is cut at its end within its share."
+        "note": "One line. Its width is laid out in this order: the Slot takes its own width, the icon an L(body) square and k.gap.s, the subtitle min(TW(subtitle, footnote), 0.4 * rest) in footnote, and the title the rest in headline, cut as truncate says. The subtitle is cut at its end within its share. failed changes only the icon's colour, never a width."
       },
       "states": {"text": "{title} {subtitle}"},
       "work": {"visits": "1"}
@@ -138,14 +139,16 @@
         "maxLines": {"t": "number", "int": true, "range": [1, 100], "def": 24},
         "font": {"t": "enum", "enum": ["body", "mono", "serif"], "def": "body", "lit": true, "d": "mono takes size small or default; serif takes default or large"},
         "tone": {"t": "toneText", "d": "colours the whole block; absent or neutral draws the default text colour"},
-        "markdown": {"t": "boolean", "def": false, "lit": true, "d": "inline Markdown only: code spans, emphasis, strong, strikethrough, and links drawn as their label; everything else stays literal"}
+        "markdown": {"t": "boolean", "def": false, "lit": true, "d": "inline Markdown only: code spans, emphasis, strong, strikethrough, and links drawn as their label; everything else stays literal"},
+        "width": {"t": "enum", "enum": ["fill", "natural"], "def": "fill", "lit": true, "with": {"markdown": false}, "d": "natural: in a row, the text's own width, so a one-word label takes only its width; fill takes what the row leaves"}
       },
       "geo": {
         "kind": "text",
         "h": "markdown ? prose : T(text, style, W, maxLines)",
+        "w": "natural: min(TW(clip(text, 256), style), W); fill: W",
         "style": "body: small footnote, default body, large title3; mono: small monoFootnote, default mono; serif: default serif, large serifTitle3",
         "hIn": ["W", "metrics", "tree:text", "props:size", "props:font", "props:maxLines", "props:markdown"],
-        "note": "With markdown the text is prose the app measures with the text system it draws with, as Styled is. A ToolText read outside a Slot may read only input, so even then its height can't change when a record lands."
+        "note": "With markdown the text is prose the app measures with the text system it draws with, as Styled is. A ToolText read outside a Slot may read only input, so even then its height can't change when a record lands. A natural ToolText in a row is placed with the row's fixed children, after its Slots, and is cut to what they leave."
       },
       "states": {"text": "{text}"},
       "work": {"visits": "1 + ceil(scalars(text) / 256)"}
@@ -160,9 +163,9 @@
       },
       "geo": {
         "kind": "text",
-        "h": "sum over hunks of (2*k.codePad + has(title)*(L(caption1) + k.gap.xs) + count(lines)*L(mono)) + (hunks - 1) * k.gap.m",
+        "h": "sum over drawn hunks of (2*k.codePad + has(title)*(L(caption1) + k.gap.xs) + count(lines)*L(mono)) + (drawn - 1) * k.gap.m",
         "hIn": ["metrics", "tree:hunks"],
-        "note": "Lines never wrap; a long line scrolls sideways inside its hunk. With oldStart and newStart a line shows its numbers: context counts both, delete the old, add the new. At most 2,000 lines show in all; past that the last hunk ends with a line saying how many more. A line whose kind isn't known draws as plain, and an entry that isn't a line is skipped."
+        "note": "Lines never wrap; a long line scrolls sideways inside its hunk. With oldStart and newStart a line shows its numbers: context counts both, delete the old, add the new. At most 2,000 lines show in all; past that the last hunk ends with a line saying how many more. A line whose kind isn't known draws as plain, and an entry that isn't a line is skipped. The drawn hunks are the hunk records up to the cap: an entry that isn't a hunk, or a hunk past the cap, takes no gap."
       },
       "states": {"text": "each line with its marker: two spaces, + or -"},
       "work": {"visits": "1 + ceil(lines / 64)"}

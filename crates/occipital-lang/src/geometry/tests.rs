@@ -1608,6 +1608,52 @@ fn tool_text_measures_in_its_font_and_leaves_markdown_to_the_app() {
     assert_eq!(run(markdown, Placement::Row).height, Height::ProseDeferred);
 }
 
+/// A natural ToolText in a row takes its own width, and the rest of the row
+/// goes to its other parts; without it the two texts share the row.
+#[test]
+fn a_natural_tool_text_takes_its_own_width_in_a_row() {
+    let row = |label: Vec<(&str, TreeValue)>| {
+        node(
+            "Card",
+            vec![("appearance", s("clear")), ("direction", s("row"))],
+            vec![
+                node("ToolText", label, vec![]),
+                node(
+                    "ToolText",
+                    vec![("text", s("Sources/App/Chat.swift"))],
+                    vec![],
+                ),
+            ],
+        )
+    };
+    let widths = |measured: &Measurement| {
+        ["/0/0", "/0/1"].map(|path| {
+            measured
+                .boxes
+                .iter()
+                .find(|b| b.path == path)
+                .unwrap()
+                .width
+        })
+    };
+    let natural = run(
+        row(vec![("text", s("edit")), ("width", s("natural"))]),
+        Placement::Row,
+    );
+    let [label, rest] = widths(&natural);
+    assert_eq!(label, d(24), "four characters, 6 wide each");
+    let shared = run(row(vec![("text", s("edit"))]), Placement::Row);
+    let [label_shared, rest_shared] = widths(&shared);
+    assert_eq!(
+        label_shared, rest_shared,
+        "two flexible texts share the row"
+    );
+    assert!(
+        rest > rest_shared,
+        "{rest} beside a natural label, {rest_shared} shared"
+    );
+}
+
 fn diff_line(kind: &str) -> TreeValue {
     TreeValue::Record(vec![
         (DisplayText::new("kind"), s(kind)),
@@ -1646,9 +1692,9 @@ fn a_diff_is_its_hunks_lines_and_stops_at_its_cap() {
         )],
         vec![],
     );
-    // (20 + 12 + 2 + 3 * 20) + (20 + 2 * 20), and 8 between them. The gap counts
-    // every entry of hunks, as the catalog formula does.
-    assert_eq!(run(diff, Placement::Page).height, Height::Known(d(170)));
+    // (20 + 12 + 2 + 3 * 20) + (20 + 2 * 20), and one 8 between the two hunks
+    // drawn: the entry that isn't a hunk takes no gap, as the apps draw it.
+    assert_eq!(run(diff, Placement::Page).height, Height::Known(d(162)));
     let capped = node(
         "Diff",
         vec![(
@@ -1660,10 +1706,11 @@ fn a_diff_is_its_hunks_lines_and_stops_at_its_cap() {
         )],
         vec![],
     );
-    // 20 + 2,001 * 20 for the first hunk, the second draws nothing, + one gap.
+    // 20 + 2,001 * 20 for the first hunk. The second is past the cap, so it
+    // draws nothing and takes no gap.
     assert_eq!(
         run(capped, Placement::Page).height,
-        Height::Known(d(20 + 2_001 * 20 + 8))
+        Height::Known(d(20 + 2_001 * 20))
     );
 }
 

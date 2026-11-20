@@ -60,7 +60,7 @@ pub(crate) fn check_parsed(mut parsed: crate::prepare::Parsed, context: &CheckCo
         sites: [0; 3],
         slots: tool_catalog && context.profile == Profile::ToolRow,
         changing: if tool_catalog && context.profile == Profile::ToolRow {
-            changing_declarations(&resolved)
+            changing_declarations(&resolved, catalog)
         } else {
             Default::default()
         },
@@ -361,19 +361,37 @@ impl Checker<'_> {
 
 /// The declarations whose values read `view` or `now` outside a `Slot`,
 /// directly or through other such declarations. A Slot inside a declaration
-/// keeps what it reads in its own box, so it doesn't count.
-fn changing_declarations(resolved: &Resolved) -> std::collections::BTreeSet<String> {
-    fn reads(node: &Node, changing: &std::collections::BTreeSet<String>) -> bool {
+/// keeps what it reads in its own box, and a prop that only colours (such as
+/// ToolHeader's `failed`) changes no size, so neither counts.
+fn changing_declarations(
+    resolved: &Resolved,
+    catalog: &Catalog,
+) -> std::collections::BTreeSet<String> {
+    fn reads(
+        node: &Node,
+        changing: &std::collections::BTreeSet<String>,
+        catalog: &Catalog,
+    ) -> bool {
         match &node.kind {
             Kind::Tag { name, .. } if name == "Slot" => false,
-            Kind::Tag { props, .. } => {
-                props.iter().any(|p| reads(&p.value, changing))
-                    || node.children.iter().any(|c| reads(c, changing))
+            Kind::Tag { name, props, .. } => {
+                let painted = |prop: &str| {
+                    catalog
+                        .components
+                        .get(name.as_str())
+                        .and_then(|component| component.props.get(prop))
+                        .is_some_and(catalog::paint)
+                };
+                props
+                    .iter()
+                    .filter(|p| !painted(&p.name))
+                    .any(|p| reads(&p.value, changing, catalog))
+                    || node.children.iter().any(|c| reads(c, changing, catalog))
             }
             Kind::Expression(E::Name(name)) => {
                 matches!(name.as_str(), "view" | "now") || changing.contains(name)
             }
-            _ => node.children.iter().any(|c| reads(c, changing)),
+            _ => node.children.iter().any(|c| reads(c, changing, catalog)),
         }
     }
     let mut changing = std::collections::BTreeSet::new();
@@ -384,7 +402,7 @@ fn changing_declarations(resolved: &Resolved) -> std::collections::BTreeSet<Stri
         for declaration in &resolved.declarations {
             if !declaration.state
                 && !changing.contains(&declaration.name)
-                && reads(&declaration.expression, &changing)
+                && reads(&declaration.expression, &changing, catalog)
             {
                 changing.insert(declaration.name.clone());
             }

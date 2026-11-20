@@ -96,32 +96,42 @@ each time they open, so they have no such rule.
   Each has a fixed box and cuts what doesn't fit, and an id the app doesn't
   know shows as the raw id.
 - **Also in rows and pages:**
-  - `ToolHeader {icon, title, subtitle?, truncate?}`: the row's first line, with
-    at most one `Slot` child for the trailing status. `icon` is one of `edit`,
-    `terminal`, `file`, `search`, `message`, `room`, `question`, `globe`,
-    `window`, `agent`, `task` and `tool`, which each app draws as its own
-    symbol. The Slot takes its width first, then the icon, then the subtitle
-    (at most 40% of what's left), and the title gets the rest, cut at its end,
-    or in the middle with `truncate="middle"` for paths.
-  - `ToolText {text, size?, maxLines?, font?, tone?, markdown?}`:
+  - `ToolHeader {icon, title, subtitle?, truncate?, failed?}`: the row's first
+    line, with at most one `Slot` child for the trailing status. `icon` is one
+    of `edit`, `terminal`, `file`, `search`, `message`, `room`, `question`,
+    `globe`, `window`, `agent`, `task` and `tool`, which each app draws as its
+    own symbol. The Slot takes its width first, then the icon, then the
+    subtitle (at most 40% of what's left), and the title gets the rest, cut at
+    its end, or in the middle with `truncate="middle"` for paths.
+    `failed={true}` marks the call as failed: each app draws the icon in its
+    danger tone, using no width. It only colours, so a row may read the view in
+    it outside a Slot, such as `failed={(view.record.exitCode ?? 0) != 0}`.
+    Null draws no mark. Write the expression so it is false while the record
+    is still to come, as `?? 0` does here.
+  - `ToolText {text, size?, maxLines?, font?, tone?, markdown?, width?}`:
     `TextContent` with a font (`body`, `mono` at small or default size, or
     `serif` at default or large), a `tone` for the whole block, and
     `markdown={true}` for inline Markdown: code spans, emphasis, strong,
     strikethrough, and links drawn as their label. Everything else stays
     literal. The app measures Markdown text, so `occipital-check` says "measured
-    by the app" for a row that has it.
+    by the app" for a row that has it. In a row, `width="natural"` gives the
+    text its own width instead of a share of the row, so a one-word label
+    doesn't take a box made for longer text. It is placed after the row's
+    Slots and cut to what they leave, and it can't be Markdown.
 - **Pages:** the row components, plus `Callout`, `Table`, `CodeBlock`,
   `CardHeader`, `List`, `ListItem` and the other `tool_page` components, and:
   - `OpenItem {id, label}`: a link to an ask (`ask_`), an artifact (`art_`), a
-    work item (`wi_`) or the thread with another agent (`peer:` and its
-    `agent_` id) that opens the app's own card or screen for it. Where the app
-    can't open the item, the label shows as plain text.
+    work item (`wi_`), the thread with another agent (`peer:` and its `agent_`
+    id) or a shell the agent ran (`shell:` and the task id, while the agent's
+    Shells view still lists it) that opens the app's own card or screen for
+    it. Where the app can't open the item, the label shows as plain text.
   - `Diff {hunks}`: changes to a file. Each hunk is
     `{title?, oldStart?, newStart?, lines}`, and each line
     `{kind, text, marks?}` with `kind` one of `context`, `add`, `delete` and
     `plain`, and `marks` the highlighted ranges as `{start, end}` in Unicode
     scalar values. With both starts, each line shows its line numbers. Lines
-    never wrap and scroll sideways, and at most 2,000 lines show.
+    never wrap and scroll sideways, and at most 2,000 lines show. A gap
+    separates the hunks drawn; an entry that isn't a hunk takes none.
   - `AppPage {id}`: the page is the app's own screen for the id, which
     `OpenItem` takes too. It must be the page's only node. When the app can't
     open the id, it draws the default page with the call's input and output.

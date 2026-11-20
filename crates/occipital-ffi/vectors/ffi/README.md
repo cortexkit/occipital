@@ -63,6 +63,13 @@ a narrow Slot, the command as monospace `ToolText` on at most 2 lines, and a
 each a monospace `ToolText` with its own tone. Each row measures the same
 waiting and filled.
 
+The `template-bash-row-one-line-*` case is a bash row of one `ToolHeader`
+line whose `failed` prop reads the record outside a Slot: it is false while
+the record is to come and true once its exit code is 1, and both trees
+measure the same. The `template-edit-row-natural-*` case is a row with a
+`ToolText` at `width="natural"`: the one-word label takes its own width,
+and the path beside it takes the rest.
+
 The `template-edit-page-diff` case evaluates an edit page's `Diff` whose
 hunks hold only the members the catalog documents (`title`, `oldStart` and
 `newStart` optional, `lines` required): a titled hunk with line numbers and

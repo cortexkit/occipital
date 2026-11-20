@@ -2,5 +2,5 @@
   "entry": "occ_version",
   "request": {},
   "status": 0,
-  "response": "{\"executionDialect\":\"1.0\",\"catalog\":{\"version\":\"1.0\",\"digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout\":\"1\"},\"toolCatalog\":{\"version\":\"1.1\",\"digest\":\"af4559652b832b8908f4dc39364874eea6950ab708567e70f17d304e8c0f9a32\",\"layout\":\"1\"}}"
+  "response": "{\"executionDialect\":\"1.0\",\"catalog\":{\"version\":\"1.0\",\"digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout\":\"1\"},\"toolCatalog\":{\"version\":\"1.1\",\"digest\":\"6e3239281ade150b0935a2ca239ead0f7f922ab0fdeeffc470a19fc0fbf3ddb0\",\"layout\":\"1\"}}"
 }

@@ -1,0 +1,9 @@
+{
+  "entry": "occ_template_evaluate",
+  "request": {
+    "ctx_json": "{\"context\":{\"catalog\":\"1.1\",\"execution_dialect\":\"1.0\",\"handles\":[],\"profile\":\"tool_row\",\"references\":{},\"registry\":{},\"show_ui\":{\"data_columns\":{},\"data_format\":null,\"summary\":\"\",\"title\":\"\"},\"tool\":{\"input\":{\"schema\":{},\"value\":{\"path\":\"Sources/App/Chat/SendProblem.swift\"}},\"truncated\":false,\"truncated_fields\":[],\"view\":{\"schema\":{},\"value\":{\"record\":null}}}}}",
+    "src": "PENhcmQgYXBwZWFyYW5jZT0iY2xlYXIiIGRpcmVjdGlvbj0icm93IiBnYXA9InMiPgo8VG9vbFRleHQgd2lkdGg9Im5hdHVyYWwiIHRleHQ9ImVkaXQiIC8+CjxUb29sVGV4dCB0ZXh0PXtpbnB1dC5wYXRofSAvPgo8L0NhcmQ+Cg=="
+  },
+  "status": 0,
+  "response": "{\"tree\":{\"m\":\"root\",\"k\":[{\"c\":\"Card\",\"p\":{\"appearance\":\"clear\",\"direction\":\"row\",\"gap\":\"s\"},\"k\":[{\"c\":\"ToolText\",\"p\":{\"width\":\"natural\",\"text\":\"edit\"},\"k\":[]},{\"c\":\"ToolText\",\"p\":{\"text\":\"Sources/App/Chat/SendProblem.swift\"},\"k\":[]}]}]},\"diagnostics\":[],\"outcome\":\"ok\"}"
+}

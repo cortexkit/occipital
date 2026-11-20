@@ -207,6 +207,10 @@ impl Checker<'_> {
                 Place {
                     parent: Some(&parent),
                     action: schema.t == "action",
+                    // A prop that only colours, such as ToolHeader's `failed`,
+                    // never changes a size, so like a Slot it may show data
+                    // that arrives after the row is measured.
+                    slot: inherited.slot || paint(schema),
                     ..inherited
                 },
             );
@@ -618,6 +622,12 @@ fn split(t: &str) -> Vec<&str> {
     }
     parts.push(&t[start..]);
     parts
+}
+
+/// Whether a prop only colours what it is on (`paint` in the catalog), so a
+/// value that changes after the row is measured can't change its size.
+pub(super) fn paint(schema: &CatalogProp) -> bool {
+    schema.rules.get("paint") == Some(&Json::Bool(true))
 }
 
 fn matches_type(ty: &Type, t: &str) -> bool {

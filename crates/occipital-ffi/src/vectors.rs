@@ -139,6 +139,13 @@ a narrow Slot, the command as monospace `ToolText` on at most 2 lines, and a
 each a monospace `ToolText` with its own tone. Each row measures the same
 waiting and filled.
 
+The `template-bash-row-one-line-*` case is a bash row of one `ToolHeader`
+line whose `failed` prop reads the record outside a Slot: it is false while
+the record is to come and true once its exit code is 1, and both trees
+measure the same. The `template-edit-row-natural-*` case is a row with a
+`ToolText` at `width="natural"`: the one-word label takes its own width,
+and the path beside it takes the rest.
+
 The `template-edit-page-diff` case evaluates an edit page's `Diff` whose
 hunks hold only the members the catalog documents (`title`, `oldStart` and
 `newStart` optional, `lines` required): a titled hunk with line numbers and
@@ -822,6 +829,13 @@ const EDIT_ROW: &str = "<ToolHeader icon=\"edit\" title={FileName(input.path)} s
 /// last output lines from the record.
 const BASH_ROW_PREVIEW: &str = "<ToolHeader icon=\"terminal\" title={input.description ?? input.command}>\n<Slot width=\"narrow\" needs={view.record}>\n<ToolText tone={view.record.exitCode == 0 ? \"muted\" : \"danger\"} text={\"Exit \" + Text(view.record.exitCode)} />\n</Slot>\n</ToolHeader>\n\n<ToolText font=\"mono\" maxLines={2} text={input.command} />\n\n<Slot width=\"fill\" lines={3} box=\"code\" needs={view.record}>\n{Each(view.record.tail, \"line\", <ToolText font=\"mono\" size=\"small\" maxLines={1} tone={line.tone ?? \"neutral\"} text={line.text} />)}\n</Slot>\n";
 
+/// A one-line bash row whose failure marks the header's icon: `failed` reads
+/// the record outside a Slot, since it only colours the icon.
+const BASH_ROW_ONE_LINE: &str = "<ToolHeader icon=\"terminal\" title={input.description ?? input.command} failed={(view.record.exitCode ?? 0) != 0} />\n";
+
+/// A row with a one-word label at its own width beside the path.
+const EDIT_ROW_NATURAL: &str = "<Card appearance=\"clear\" direction=\"row\" gap=\"s\">\n<ToolText width=\"natural\" text=\"edit\" />\n<ToolText text={input.path} />\n</Card>\n";
+
 /// A transcript row 200 wide: narrow enough that the fixed metrics' longest
 /// code (256 characters plus padding) is wider than the row.
 const ROW_LAYOUT: &str =
@@ -867,6 +881,25 @@ fn tool_rows(files: &mut Vec<(String, Vector)>) {
             {"text": "** TEST FAILED **", "stream": "stdout", "tone": "danger"}
         ]}),
         &[("/0/0", "8"), ("/2", "200")],
+    );
+    // No width for the mark: the header has no Slot, and `failed` is false
+    // while the record is to come and true once its exit code is 1.
+    tool_row(
+        files,
+        "bash-row-one-line",
+        BASH_ROW_ONE_LINE,
+        json!({"description": "Run the moved-send tests", "command": "xcodebuild test"}),
+        json!({"exitCode": 1}),
+        &[],
+    );
+    // The label takes its 4 characters; the path the rest, less the gap.
+    tool_row(
+        files,
+        "edit-row-natural",
+        EDIT_ROW_NATURAL,
+        json!({"path": "Sources/App/Chat/SendProblem.swift"}),
+        json!({}),
+        &[("/0/0", "4"), ("/0/1", "192")],
     );
 }
 

@@ -1,0 +1,9 @@
+{
+  "entry": "occ_template_evaluate",
+  "request": {
+    "ctx_json": "{\"context\":{\"catalog\":\"1.1\",\"execution_dialect\":\"1.0\",\"handles\":[],\"profile\":\"tool_row\",\"references\":{},\"registry\":{},\"show_ui\":{\"data_columns\":{},\"data_format\":null,\"summary\":\"\",\"title\":\"\"},\"tool\":{\"input\":{\"schema\":{},\"value\":{\"command\":\"xcodebuild test\",\"description\":\"Run the moved-send tests\"}},\"truncated\":false,\"truncated_fields\":[],\"view\":{\"schema\":{},\"value\":{\"record\":null}}}}}",
+    "src": "PFRvb2xIZWFkZXIgaWNvbj0idGVybWluYWwiIHRpdGxlPXtpbnB1dC5kZXNjcmlwdGlvbiA/PyBpbnB1dC5jb21tYW5kfSBmYWlsZWQ9eyh2aWV3LnJlY29yZC5leGl0Q29kZSA/PyAwKSAhPSAwfSAvPgo="
+  },
+  "status": 0,
+  "response": "{\"tree\":{\"m\":\"root\",\"k\":[{\"c\":\"ToolHeader\",\"p\":{\"icon\":\"terminal\",\"title\":\"Run the moved-send tests\",\"failed\":false},\"k\":[]}]},\"diagnostics\":[],\"outcome\":\"ok\"}"
+}

@@ -120,6 +120,55 @@ fn a_tool_row_reads_the_view_and_the_time_only_inside_a_slot() {
     clean("<Badge text={view.call.phase} />", Profile::ToolRow);
 }
 
+/// ToolHeader's `failed` only colours the icon, so it may read the view outside
+/// a Slot, directly or through a declaration, while its other props may not.
+#[test]
+fn a_failure_mark_reads_the_view_outside_a_slot() {
+    let row = tool(Profile::ToolRow);
+    clean_in(
+        "<ToolHeader icon=\"terminal\" title={input.command} failed={(view.record.exitCode ?? 0) != 0} />",
+        &row,
+    );
+    clean_in(
+        "export const failed = view.call.isError == true\nexport const header = <ToolHeader icon=\"terminal\" title={input.command} failed={failed} />\n\n<Card>\n{header}\n</Card>",
+        &row,
+    );
+    let title = codes(
+        "<ToolHeader icon=\"terminal\" title={view.call.phase} failed={view.call.isError == true} />",
+        &row,
+    );
+    assert_eq!(
+        title
+            .iter()
+            .filter(|code| **code == Code::UnslottedRead)
+            .count(),
+        1,
+        "the title still sets what the row shows: {title:?}"
+    );
+    assert!(codes(
+        "<ToolHeader icon=\"terminal\" title=\"x\" failed=\"yes\" />",
+        &row
+    )
+    .contains(&Code::PropType));
+}
+
+/// A natural ToolText takes its own width in a row; inline Markdown is drawn
+/// and measured by the app, so it can't be natural.
+#[test]
+fn a_natural_tool_text_is_plain() {
+    let row = tool(Profile::ToolRow);
+    clean_in(
+        "<Card direction=\"row\" gap=\"s\">\n<ToolText width=\"natural\" text=\"edit\" />\n<ToolText text={input.path} />\n</Card>",
+        &row,
+    );
+    assert!(codes(
+        "<ToolText width=\"natural\" markdown={true} text=\"x\" />",
+        &row
+    )
+    .contains(&Code::PropType));
+    assert!(codes("<ToolText width=\"wide\" text=\"x\" />", &row).contains(&Code::Enum));
+}
+
 /// Slot belongs to the tool catalog only: replies and show_ui programs are
 /// checked against catalog 1.0, which has no Slot.
 #[test]
