@@ -1,0 +1,60 @@
+{
+  "run_result": {
+    "final_message": {
+      "mid": "8c60a9ca",
+      "ordinal": 5,
+      "text": "ordinary reply"
+    },
+    "finish": "stop",
+    "run_id": "run_68a8c2aa9ab9e89eda1b4449",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "errors": [
+        "#: the final text is not a JSON value: expected value at line 1 column 1"
+      ],
+      "mode": "final_text",
+      "reason": "host_unsupported",
+      "validation": "failed"
+    },
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 1,
+          "unreported_steps": 1
+        }
+      ],
+      "steps": 1,
+      "unreported_steps": 1
+    }
+  },
+  "run_status": {
+    "final_step_finish_reason": "stop",
+    "finish": "stop",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "errors": [
+        "#: the final text is not a JSON value: expected value at line 1 column 1"
+      ],
+      "mode": "final_text",
+      "reason": "host_unsupported",
+      "validation": "failed"
+    },
+    "undelivered_steers": [],
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 1,
+          "unreported_steps": 1
+        }
+      ],
+      "steps": 1,
+      "unreported_steps": 1
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "run_result": {
+    "final_message": {
+      "mid": "bdc19c8f",
+      "ordinal": 11,
+      "text": ""
+    },
+    "finish": "other",
+    "run_id": "run_c01792b65b21e5d9fc3f2e19",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "mode": "submit_tool",
+      "reason": "host_unsupported",
+      "skipped_siblings": [],
+      "validation": "passed",
+      "value": {
+        "answer": "corrected"
+      }
+    },
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 3,
+          "unreported_steps": 3
+        }
+      ],
+      "steps": 3,
+      "unreported_steps": 3
+    }
+  },
+  "run_status": {
+    "final_step_finish_reason": "aborted",
+    "finish": "other",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "mode": "submit_tool",
+      "reason": "host_unsupported",
+      "skipped_siblings": [],
+      "validation": "passed",
+      "value": {
+        "answer": "corrected"
+      }
+    },
+    "undelivered_steers": [],
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 3,
+          "unreported_steps": 3
+        }
+      ],
+      "steps": 3,
+      "unreported_steps": 3
+    }
+  }
+}

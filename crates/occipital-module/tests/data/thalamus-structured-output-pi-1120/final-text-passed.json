@@ -1,0 +1,60 @@
+{
+  "run_result": {
+    "final_message": {
+      "mid": "764950ec",
+      "ordinal": 3,
+      "text": "{\"answer\":\"final\"}"
+    },
+    "finish": "stop",
+    "run_id": "run_5e7c5a5946c6a15503aa02ce",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "mode": "final_text",
+      "reason": "host_unsupported",
+      "validation": "passed",
+      "value": {
+        "answer": "final"
+      }
+    },
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 1,
+          "unreported_steps": 1
+        }
+      ],
+      "steps": 1,
+      "unreported_steps": 1
+    }
+  },
+  "run_status": {
+    "final_step_finish_reason": "stop",
+    "finish": "stop",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "mode": "final_text",
+      "reason": "host_unsupported",
+      "validation": "passed",
+      "value": {
+        "answer": "final"
+      }
+    },
+    "undelivered_steers": [],
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 1,
+          "unreported_steps": 1
+        }
+      ],
+      "steps": 1,
+      "unreported_steps": 1
+    }
+  }
+}

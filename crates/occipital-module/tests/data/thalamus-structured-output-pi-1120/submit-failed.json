@@ -1,0 +1,78 @@
+{
+  "run_result": {
+    "final_message": {
+      "mid": "80930b69",
+      "ordinal": 6,
+      "text": "ordinary reply"
+    },
+    "finish": "stop",
+    "run_id": "run_b85b7c4ed6e8cafa7c7fff96",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "errors": [
+        "#/answer: 42 is not of type \"string\""
+      ],
+      "mode": "submit_tool",
+      "reason": "host_unsupported",
+      "skipped_siblings": [
+        {
+          "tool": "bash",
+          "tool_call_id": "after_invalid"
+        }
+      ],
+      "validation": "failed",
+      "value": {
+        "answer": 42
+      }
+    },
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 2,
+          "unreported_steps": 2
+        }
+      ],
+      "steps": 2,
+      "unreported_steps": 2
+    }
+  },
+  "run_status": {
+    "final_step_finish_reason": "stop",
+    "finish": "stop",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "errors": [
+        "#/answer: 42 is not of type \"string\""
+      ],
+      "mode": "submit_tool",
+      "reason": "host_unsupported",
+      "skipped_siblings": [
+        {
+          "tool": "bash",
+          "tool_call_id": "after_invalid"
+        }
+      ],
+      "validation": "failed",
+      "value": {
+        "answer": 42
+      }
+    },
+    "undelivered_steers": [],
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 2,
+          "unreported_steps": 2
+        }
+      ],
+      "steps": 2,
+      "unreported_steps": 2
+    }
+  }
+}

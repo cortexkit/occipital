@@ -14,6 +14,7 @@ mod promote_queued_1116;
 mod promote_samples;
 mod prompt;
 mod stop_all_samples;
+mod structured_output_pi_1120;
 use std::{
     collections::{HashMap, VecDeque},
     sync::atomic::{AtomicBool, AtomicI64, Ordering},

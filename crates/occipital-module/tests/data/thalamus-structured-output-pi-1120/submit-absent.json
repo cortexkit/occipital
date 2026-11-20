@@ -1,0 +1,56 @@
+{
+  "run_result": {
+    "final_message": {
+      "mid": "ff8020e6",
+      "ordinal": 15,
+      "text": "ordinary reply"
+    },
+    "finish": "stop",
+    "run_id": "run_f5afd6b9ab88807c161e341d",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "mode": "submit_tool",
+      "reason": "host_unsupported",
+      "skipped_siblings": [],
+      "validation": "absent"
+    },
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 1,
+          "unreported_steps": 1
+        }
+      ],
+      "steps": 1,
+      "unreported_steps": 1
+    }
+  },
+  "run_status": {
+    "final_step_finish_reason": "stop",
+    "finish": "stop",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "mode": "submit_tool",
+      "reason": "host_unsupported",
+      "skipped_siblings": [],
+      "validation": "absent"
+    },
+    "undelivered_steers": [],
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 1,
+          "unreported_steps": 1
+        }
+      ],
+      "steps": 1,
+      "unreported_steps": 1
+    }
+  }
+}

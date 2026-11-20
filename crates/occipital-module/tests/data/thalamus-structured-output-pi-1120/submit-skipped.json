@@ -1,0 +1,80 @@
+{
+  "run_result": {
+    "final_message": {
+      "mid": "0d0cc315",
+      "ordinal": 3,
+      "text": ""
+    },
+    "finish": "other",
+    "run_id": "run_459fbcca02a2800f341e068a",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "mode": "submit_tool",
+      "reason": "host_unsupported",
+      "skipped_siblings": [
+        {
+          "tool": "bash",
+          "tool_call_id": "third"
+        },
+        {
+          "tool": "bash",
+          "tool_call_id": "ill_typed"
+        }
+      ],
+      "validation": "passed",
+      "value": {
+        "answer": "accepted"
+      }
+    },
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 2,
+          "unreported_steps": 2
+        }
+      ],
+      "steps": 2,
+      "unreported_steps": 2
+    }
+  },
+  "run_status": {
+    "final_step_finish_reason": "aborted",
+    "finish": "other",
+    "state": "completed",
+    "structured_output": {
+      "enforcement": "best_effort",
+      "mode": "submit_tool",
+      "reason": "host_unsupported",
+      "skipped_siblings": [
+        {
+          "tool": "bash",
+          "tool_call_id": "third"
+        },
+        {
+          "tool": "bash",
+          "tool_call_id": "ill_typed"
+        }
+      ],
+      "validation": "passed",
+      "value": {
+        "answer": "accepted"
+      }
+    },
+    "undelivered_steers": [],
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 2,
+          "unreported_steps": 2
+        }
+      ],
+      "steps": 2,
+      "unreported_steps": 2
+    }
+  }
+}
