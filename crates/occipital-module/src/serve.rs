@@ -768,6 +768,7 @@ impl OccipitalHandler {
             state: self.display.get().cloned(),
             views: self.display_views.get().cloned(),
             hints: self.tool_display.get().map(|tool| tool.hints().clone()),
+            notices: self.notices.get().cloned(),
         };
         let task = crate::bus::start(
             calls.clone(),

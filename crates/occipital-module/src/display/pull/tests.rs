@@ -66,6 +66,7 @@ fn open(
             state: Some(State::Open(store.clone())),
             views: None,
             hints: None,
+            notices: None,
         },
         store,
     )
@@ -155,6 +156,7 @@ async fn a_malformed_reply_is_final_and_a_closed_store_waits() {
         state: None,
         views: None,
         hints: None,
+        notices: None,
     };
     let fake = Fake::new(Ok(true), Ok(write()));
     assert!(matches!(

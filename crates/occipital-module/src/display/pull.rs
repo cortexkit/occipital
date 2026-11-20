@@ -8,7 +8,8 @@
 //! is the module this module called, and only when the daemon's catalog lists
 //! it as daemon-verified, so a pulled record carries the same proof of its
 //! writer as a pushed one (`check_writer`). A record pushed and pulled is
-//! stored once.
+//! stored once. A pulled write goes where the same write pushed would: a
+//! wake record to the notices file, every other kind to the display store.
 
 use std::collections::BTreeSet;
 use std::future::Future;
@@ -46,13 +47,15 @@ pub trait Providers: Send + Sync {
     async fn read(&self, module: &str, record_id: &str) -> Result<Value, CallFailure>;
 }
 
-/// Where a pulled record is stored: the display store and what a stored
-/// write tells, as for a pushed one.
+/// Where a pulled record is stored, as a pushed one would be: the display
+/// store, with the views to fetch and the hints to send once it's stored, or
+/// the notices file for a wake record.
 #[derive(Clone)]
 pub struct Sink {
     pub state: Option<State>,
     pub views: Option<views::Fetcher>,
     pub hints: Option<tokio::sync::broadcast::Sender<app::Hint>>,
+    pub notices: Option<Arc<crate::notices::Notices>>,
 }
 
 /// Route-open and call failures that may clear on their own. Every other
@@ -94,15 +97,19 @@ pub async fn pull(providers: &dyn Providers, sink: &Sink, module: &str, record_i
     let writer = Principal::Reserved {
         module_id: module.to_owned(),
     };
-    match super::store_write(
-        sink.state.as_ref(),
-        sink.views.as_ref(),
-        sink.hints.as_ref(),
-        Some(writer),
-        &reply,
-    )
-    .await
-    {
+    let stored = if reply.get("kind").and_then(Value::as_str) == Some("wake") {
+        crate::notices::wakes::store(sink.notices.as_ref(), Some(writer), &reply).await
+    } else {
+        super::store_write(
+            sink.state.as_ref(),
+            sink.views.as_ref(),
+            sink.hints.as_ref(),
+            Some(writer),
+            &reply,
+        )
+        .await
+    };
+    match stored {
         Ok(WriteReply::Stored | WriteReply::AlreadyStored) => Pulled::Stored,
         Ok(other) => Pulled::Final(format!("{module}: the store answered {other:?}")),
         Err(ErrorBody { code, message, .. }) => {

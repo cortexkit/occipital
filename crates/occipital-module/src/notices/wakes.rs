@@ -295,25 +295,33 @@ pub async fn write(
     writer: Option<Principal>,
     arguments: &Value,
 ) -> HandlerOutcome {
+    match store(notices, writer, arguments).await {
+        Ok(reply) => match serde_json::to_vec(&reply) {
+            Ok(bytes) => HandlerOutcome::Response(bytes),
+            Err(error) => crate::display::refused(ErrorBody::new("internal", error.to_string())),
+        },
+        Err(refusal) => crate::display::refused(refusal),
+    }
+}
+
+/// Store one wake write's `arguments` as `writer`'s, whichever way they
+/// arrived: pushed with `display.write`, or read back from the writer with
+/// `display.read` after its bus event (`crate::display::pull`).
+pub(crate) async fn store(
+    notices: Option<&std::sync::Arc<Notices>>,
+    writer: Option<Principal>,
+    arguments: &Value,
+) -> Result<WriteReply, ErrorBody> {
     // Before the notices file is open, or when it couldn't be: the contract's
     // retryable refusal for a server that isn't ready. The writer sends its
     // wake anyway, and the row draws its plain card.
     let Some(notices) = notices else {
-        return crate::display::refused(cortexkit_role_tool_display::not_ready());
+        return Err(cortexkit_role_tool_display::not_ready());
     };
     let writer = writer.unwrap_or(Principal::Unverified);
-    let sender = match sender_of(&writer) {
-        Ok(sender) => sender,
-        Err(refusal) => return crate::display::refused(refusal),
-    };
-    let write = match wake_write(arguments) {
-        Ok(write) => write,
-        Err(refusal) => return crate::display::refused(refusal),
-    };
-    let body = match write.check(&writer) {
-        Ok(body) => body,
-        Err(refusal) => return crate::display::refused(refusal),
-    };
+    let sender = sender_of(&writer)?;
+    let write = wake_write(arguments)?;
+    let body = write.check(&writer)?;
     let runner = serde_json::to_string(&write.runner).unwrap_or_default();
     let store = notices.store.clone();
     let stored = tokio::task::spawn_blocking(move || {
@@ -328,16 +336,12 @@ pub async fn write(
     })
     .await;
     match stored {
-        Ok(Ok(Ok(reply))) => match serde_json::to_vec(&reply) {
-            Ok(bytes) => HandlerOutcome::Response(bytes),
-            Err(error) => crate::display::refused(ErrorBody::new("internal", error.to_string())),
-        },
-        Ok(Ok(Err(refusal))) => crate::display::refused(refusal),
-        Ok(Err(error)) => crate::display::refused(ErrorBody::new(
+        Ok(Ok(result)) => result,
+        Ok(Err(error)) => Err(ErrorBody::new(
             "provider_unavailable",
             format!("notices file unavailable: {error}"),
         )),
-        Err(error) => crate::display::refused(ErrorBody::new("internal", error.to_string())),
+        Err(error) => Err(ErrorBody::new("internal", error.to_string())),
     }
 }
 
@@ -458,6 +462,57 @@ mod tests {
 
     async fn write_one(notices: &Arc<Notices>, sender: &str, write: &Value) -> HandlerOutcome {
         super::write(Some(notices), writer(sender), write).await
+    }
+
+    /// A wake record a module announces on the bus and serves with
+    /// `display.read` is kept with the notices, as the same write pushed is,
+    /// under the module the read went to.
+    #[tokio::test]
+    async fn a_pulled_wake_write_is_kept_with_the_notices() {
+        use crate::display::pull::{pull, Providers, Pulled, Sink};
+        struct Serves(Value);
+        #[async_trait::async_trait]
+        impl Providers for Serves {
+            async fn verified(&self, _: &str) -> Result<bool, String> {
+                Ok(true)
+            }
+            async fn read(
+                &self,
+                _: &str,
+                _: &str,
+            ) -> Result<Value, crate::display::daemon::CallFailure> {
+                Ok(self.0.clone())
+            }
+        }
+        let dir = ScratchDir::new("occipital-pulled-wake");
+        let (_main, notices) = started(&dir);
+        let write = vectors()["writes"][0]["write"].clone();
+        assert_eq!(write["kind"], "wake");
+        // No display store: a wake must not need one.
+        let sink = Sink {
+            state: None,
+            views: None,
+            hints: None,
+            notices: Some(notices.clone()),
+        };
+        let provider = Serves(write.clone());
+        assert_eq!(
+            pull(&provider, &sink, "wake-writer", "rec-1").await,
+            Pulled::Stored
+        );
+        assert_eq!(
+            pull(&provider, &sink, "wake-writer", "rec-1").await,
+            Pulled::Stored
+        );
+        let kept = notices
+            .store
+            .wake_of(
+                write["session"].as_str().unwrap(),
+                "wake-writer",
+                write["send_id"].as_str().unwrap(),
+            )
+            .unwrap();
+        assert_eq!(kept.as_ref(), Some(&write["body"]));
     }
 
     /// Each of the contract's refusals is refused with its code, and nothing
