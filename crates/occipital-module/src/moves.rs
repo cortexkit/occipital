@@ -852,15 +852,17 @@ fn invalid_state(step: Step) -> Refusal {
 /// computer hasn't imported the stream yet (`cut_import_pending`). A refusal
 /// with no code is a call that failed on the way, retried as unavailable. Any
 /// other code is final, among them a cut nobody published, a takeover that
-/// closed for good, and a range this computer no longer holds.
+/// closed for good, and a range this computer no longer holds; its
+/// `detail.reason` names the door's code for the move's log.
 fn read_refused(error: CallFailure) -> Refusal {
     match error.code.as_deref() {
         Some("unavailable" | "cut_import_pending") => refuse("cut_not_ready", error.message),
         None => unavailable(error),
-        Some(_) => refuse(
-            "participant_failed",
-            format!("the door refused the cut: {error}"),
-        ),
+        Some(code) => Refusal {
+            code: "participant_failed",
+            detail: Some(json!({ "reason": code })),
+            message: format!("the door refused the cut: {error}"),
+        },
     }
 }
 

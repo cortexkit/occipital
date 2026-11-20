@@ -894,7 +894,11 @@ fn a_refused_door_read_is_retried_only_while_the_cut_may_still_arrive() {
         ("cut_range_not_local", "participant_failed"),
         ("not_found", "participant_failed"),
     ] {
-        assert_eq!(super::read_refused(failure(code)).code, expected, "{code}");
+        let refused = super::read_refused(failure(code));
+        assert_eq!(refused.code, expected, "{code}");
+        if expected == "participant_failed" {
+            assert_eq!(refused.detail, Some(json!({"reason": code})), "{code}");
+        }
     }
     let lost = CallFailure {
         code: None,
