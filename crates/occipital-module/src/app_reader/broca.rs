@@ -297,6 +297,8 @@ pub const SUBSCRIPTION_LINGER: Duration = Duration::from_secs(60);
 const SOURCE_PAGE_LIMIT: u32 = 100;
 /// A runner numbers a session's entries from 1, and every entry stays readable.
 const FIRST_ORDINAL: u64 = 1;
+/// The log identity Broca gives a session it has never written, and no other.
+const UNWRITTEN: &str = "unwritten";
 
 /// Only observation operations can cross this adapter's route boundary. In
 /// particular, attaching a reader never opens a session or acquires its owner.
@@ -1658,6 +1660,20 @@ impl BrocaSource {
     async fn read_head(&self) -> Result<Head, ReadError> {
         let value = self.remote_read(ReadOp::Head, json!({})).await?;
         let meta = head_meta(&value)?;
+        // Broca answers a session it never wrote as an empty one, with log
+        // identity `unwritten`, so a head can be read before its first send. A
+        // session Entorhinal records may be such a head; one it doesn't record
+        // and Broca never wrote is no session at all, such as an id the app
+        // named under the wrong harness, and is refused rather than drawn as an
+        // empty chat.
+        if meta.incarnation == UNWRITTEN && !self.recorded.load(Ordering::Acquire) {
+            let session = self.resolved.guard().reference.session.clone();
+            return Err(ReadError::new(
+                "session_unknown",
+                format!("no session {session} on runner broca"),
+            )
+            .with_detail(json!({"runner": null})));
+        }
         // Only a written session has a durable transcript update time.
         let at = meta.updated_at.and_then(|at| i64::try_from(at).ok());
         *self.activity.guard() = at.and_then(|at| {

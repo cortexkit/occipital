@@ -795,6 +795,35 @@ impl Entorhinal for Unrecorded {
     }
 }
 
+/// A session neither Entorhinal records nor Broca ever wrote, such as another
+/// runner's session id named under the wrong harness, is refused as unknown,
+/// not drawn as an empty chat. A recorded one Broca hasn't written yet, a head
+/// before its first send, still reads as an empty chat.
+#[tokio::test]
+async fn a_session_broca_never_wrote_is_unknown_unless_recorded() {
+    for recorded in [false, true] {
+        let route = FakeRoute::new();
+        route.entries.lock().unwrap().clear();
+        *route.incarnation.lock().unwrap() = "unwritten".into();
+        let lookup = Arc::new(Unrecorded::default());
+        lookup.0.store(recorded, Ordering::SeqCst);
+        let app = app(Arc::new(SendingRoutes(route.clone())), lookup);
+        let request = json!({"session": "ses_other_runner", "harness": "broca"});
+        let read = app.read(TRANSCRIPT_PAGE, request).await;
+        if recorded {
+            let page = read.unwrap();
+            assert_eq!(page["messages"], json!([]), "{page}");
+            assert_eq!(page["emptyReason"], "empty", "{page}");
+        } else {
+            let refused = read.unwrap_err();
+            assert_eq!(
+                (refused.code, refused.detail),
+                ("session_unknown", Some(json!({"runner": null})))
+            );
+        }
+    }
+}
+
 /// A Broca session Entorhinal has no record of is read straight from Broca,
 /// read only: its replies carry no `sender` (so the apps offer no composer or
 /// Stop) and no command subject, and the send path and uploads refuse it. Once
