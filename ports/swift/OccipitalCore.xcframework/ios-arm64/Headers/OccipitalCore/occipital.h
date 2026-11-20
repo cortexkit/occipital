@@ -356,6 +356,16 @@ int32_t occ_measure_block(const char *tree_json, const char *path_json,
                           const char *layout_json, const OccMetrics *metrics,
                           char **out);
 
+/* Measures several components after decoding the tree once. `paths_json`
+ * is an array of non-empty child-index arrays, as for occ_measure_block.
+ * *out is an array in request order (duplicates included, [] gives []):
+ * each entry is {"measurement": <single-block measurement>} or
+ * {"status": <single-block error code>}. A malformed tree, paths list,
+ * layout or metrics table fails the whole call and leaves *out NULL. */
+int32_t occ_measure_blocks(const char *tree_json, const char *paths_json,
+                           const char *layout_json, const OccMetrics *metrics,
+                           char **out);
+
 /* Measures a whole tree (tree JSON), as occ_measure_block measures one
  * block. *out is the measurement JSON. */
 int32_t occ_measure_tree(const char *tree_json, const char *layout_json,
@@ -429,7 +439,7 @@ int32_t occ_template_evaluate(const uint8_t *src, size_t len,
  * passed as it arrived (members other than "repository" are ignored), or
  * JSON null for text with no project, such as a room post by the person.
  *
- * *out is {"rules": 2, "references": [{"start", "end", "kind", "target"}]},
+ * *out is {"rules": 3, "references": [{"start", "end", "kind", "target"}]},
  * in text order, none overlapping. "start" and "end" are UTF-8 byte offsets
  * into `text`. "kind" is "issue" or "repository_issue", whose "target" is
  * the URL, or "mention", whose "target" is the name after the "@" as typed:
