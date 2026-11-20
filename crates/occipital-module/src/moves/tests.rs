@@ -880,4 +880,27 @@ async fn a_slow_prepare_does_not_block_status_or_other_agents() {
     same.await.unwrap();
 }
 
+/// A door read refused by the hub path's codes (Engram's session writer
+/// contract): only a stream the receiver hasn't imported yet is retried, as
+/// the door being down is; a cut nobody published, a takeover that closed for
+/// good, or a range this computer no longer holds ends the import.
+#[test]
+fn a_refused_door_read_is_retried_only_while_the_cut_may_still_arrive() {
+    for (code, expected) in [
+        ("unavailable", "cut_not_ready"),
+        ("cut_import_pending", "cut_not_ready"),
+        ("cut_not_published", "participant_failed"),
+        ("cut_takeover_closed", "participant_failed"),
+        ("cut_range_not_local", "participant_failed"),
+        ("not_found", "participant_failed"),
+    ] {
+        assert_eq!(super::read_refused(failure(code)).code, expected, "{code}");
+    }
+    let lost = CallFailure {
+        code: None,
+        message: "route closed".into(),
+    };
+    assert_eq!(super::read_refused(lost).code, "unavailable");
+}
+
 mod admitted;

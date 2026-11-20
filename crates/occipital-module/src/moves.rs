@@ -759,16 +759,7 @@ impl Moves {
                     let _ = std::fs::remove_file(path);
                     return Ok(None);
                 }
-                Err(error) if error.code.as_deref() == Some("unavailable") => {
-                    return Err(refuse("cut_not_ready", error.message));
-                }
-                Err(error) if error.code.is_none() => return Err(unavailable(error)),
-                Err(error) => {
-                    return Err(refuse(
-                        "participant_failed",
-                        format!("the door refused the cut: {error}"),
-                    ))
-                }
+                Err(error) => return Err(read_refused(error)),
             };
             let (Some(stream_end), Some(digest)) =
                 (reply["streamEnd"].as_u64(), reply["digest"].as_str())
@@ -852,6 +843,24 @@ fn invalid_state(step: Step) -> Refusal {
         code: "invalid_state",
         message: format!("the cut is {} here", step.name()),
         detail: Some(json!({ "step": step.name() })),
+    }
+}
+
+/// What a refused door read makes of this import (Engram's session writer
+/// contract, `session.read`). A cut the door can't serve yet is retried within
+/// the step: the door is down (`unavailable`), or on a move through the hub this
+/// computer hasn't imported the stream yet (`cut_import_pending`). A refusal
+/// with no code is a call that failed on the way, retried as unavailable. Any
+/// other code is final, among them a cut nobody published, a takeover that
+/// closed for good, and a range this computer no longer holds.
+fn read_refused(error: CallFailure) -> Refusal {
+    match error.code.as_deref() {
+        Some("unavailable" | "cut_import_pending") => refuse("cut_not_ready", error.message),
+        None => unavailable(error),
+        Some(_) => refuse(
+            "participant_failed",
+            format!("the door refused the cut: {error}"),
+        ),
     }
 }
 
