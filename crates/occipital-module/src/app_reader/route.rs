@@ -613,7 +613,11 @@ pub(super) async fn serve(
     drop(slot);
     // One line per watch that ran: when the app's view of a chat opened (its
     // duration back from now), how it ended, and how many notices reached it,
-    // so a missed update can be told apart from one never sent.
+    // so a missed update can be told apart from one never sent. It also names
+    // what the app opted in to (frames, and `heldCopy`, the id naming which
+    // copy of the chat this app holds, with whether its claim named one) and
+    // which view it read, since a client that never asks for one
+    // looks the same as one whose request was dropped.
     if opened.load(std::sync::atomic::Ordering::Relaxed) {
         let session = host.params["session"].as_str().unwrap_or_default();
         let asked = |member: &str| host.params[member] == Value::Bool(true);
@@ -628,6 +632,9 @@ pub(super) async fn serve(
             queue_lists = load(&host.queue_lists),
             accept_tool_frames = asked("acceptToolFrames"),
             accept_message_frames = asked("acceptMessageFrames"),
+            accept_held_copy = asked("acceptHeldCopy"),
+            held_copy_claim = host.params["claim"]["heldCopy"].is_string(),
+            view = host.params["view"].as_str().unwrap_or("full"),
             tool_frames = load(&host.tool_frames),
             message_frames = load(&host.message_frames),
             end, "app watch ended");

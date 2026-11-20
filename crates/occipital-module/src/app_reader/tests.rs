@@ -1438,6 +1438,41 @@ async fn a_display_watch_logs_what_it_asked_for_and_a_refused_opening() {
     h.finish().await;
 }
 
+/// A transcript watch's end names whether the app asked for `heldCopy` (the id
+/// naming which copy of the chat it holds), whether its claim named one, and
+/// which view it read, so the log shows whether an app build sends them.
+#[tokio::test(start_paused = true)]
+async fn a_transcript_watch_logs_its_copy_id_and_view() {
+    let log = crate::test_tracing::Lines::default();
+    let _guard = crate::test_tracing::enter(log.clone());
+    let mut h = Harness::new();
+    h.bind(7, 1, binding("fed-phone:fp")).await;
+    let mut asked = params(TRANSCRIPT_WATCH, "s");
+    asked["acceptHeldCopy"] = json!(true);
+    h.request(TRANSCRIPT_WATCH, 1, asked).await;
+    assert_eq!(h.next().await.header.ty, FrameType::StreamData);
+    h.barrier().await;
+    h.cancel(7, 1, 1);
+    let ended = h.next().await;
+    assert_eq!(
+        (ended.header.corr, ended.header.ty),
+        (1, FrameType::StreamEnd)
+    );
+    h.barrier().await;
+    let end = log
+        .find("app watch ended", "method=session.transcript_watch")
+        .expect("the watch's end is logged");
+    for field in [
+        "caller=phone:fp",
+        "accept_held_copy=true",
+        "held_copy_claim=false",
+        "view=\"full\"",
+    ] {
+        assert!(end.contains(field), "missing {field}: {end}");
+    }
+    h.finish().await;
+}
+
 /// A watch's log lines name the device it served by class and the start of its
 /// pairing fingerprint, and the signed desktop as `desktop`.
 #[test]
