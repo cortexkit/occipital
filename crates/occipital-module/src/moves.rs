@@ -851,8 +851,9 @@ fn invalid_state(step: Step) -> Refusal {
 /// the step: the door is down (`unavailable`), or on a move through the hub this
 /// computer hasn't imported the stream yet (`cut_import_pending`). A refusal
 /// with no code is a call that failed on the way, retried as unavailable. Any
-/// other code is final, among them a cut nobody published, a takeover that
-/// closed for good, and a range this computer no longer holds; its
+/// other code is final, among them a cut nobody published, a hub move whose
+/// receiving computer gave up taking the agent over before importing the
+/// stream, and a range this computer no longer holds; its
 /// `detail.reason` names the door's code for the move's log.
 fn read_refused(error: CallFailure) -> Refusal {
     match error.code.as_deref() {
