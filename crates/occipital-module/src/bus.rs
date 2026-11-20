@@ -354,7 +354,7 @@ async fn watch_views(bus: &BusClient, owner: &'static str, fetcher: &Fetcher, st
 /// The pin and `tool.views` answer of one views-bucket entry. The key is the
 /// lowercase hex of the pin's UTF-8 bytes, since a bucket key can't hold the
 /// pin's colons; the value is the writer's `tool.views` reply for that pin.
-fn served_view(key: &str, value: &[u8]) -> Result<(String, ViewsReply), String> {
+pub(crate) fn served_view(key: &str, value: &[u8]) -> Result<(String, ViewsReply), String> {
     let digit = |byte: u8| match byte {
         b'0'..=b'9' => Some(byte - b'0'),
         b'a'..=b'f' => Some(byte - b'a' + 10),

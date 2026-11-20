@@ -2073,6 +2073,7 @@ fn a_runner_listing_a_newer_delivery_mode_is_still_described() {
     }
 }
 
+mod aft_notice_1120;
 mod app_readers_1112;
 mod bounded_reads;
 mod cache_write_split_1113;
