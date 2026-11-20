@@ -1,4 +1,4 @@
-//! The notice records samples the apps pin, `phone-reader-notice-records-v1`:
+//! The notice records samples the apps pin, `phone-reader-notice-records-v1.1`:
 //! the data a module writes for its own notices, which the apps draw as a card
 //! from that module's notice view instead of the folded notice text
 //! (`crate::notices::notice_records`, tool-display §10). Its README says what
@@ -296,7 +296,7 @@ async fn the_notice_records_samples_are_what_the_reader_serves() {
     app.set_notices(notices);
     let hints = tokio::sync::broadcast::channel(16).0;
     app.set_tool_display(Arc::new(ToolDisplay::new(store, None, hints)));
-    let mut served = Served::new("phone-reader-notice-records-v1", app);
+    let mut served = Served::new("phone-reader-notice-records-v1.1", app);
     let request = |method: &str, members: Value| {
         let mut params = json!({"session": SESSION, "harness": "opencode2"});
         for (name, value) in members.as_object().unwrap() {
@@ -389,15 +389,32 @@ async fn the_notice_records_samples_are_what_the_reader_serves() {
     assert_eq!(answers["nv1:cerebellum:finished:1"], "unavailable");
     served.keep("05-notice-views", &views_request, views);
 
-    // 06: a notice view's row template by digest, unchanged.
-    let digest = answers["nv1:aft:finished:1"]["row"].clone();
-    let template_request = json!({"method": TEMPLATE, "params": {"digest": digest}});
-    let document = served.read(1_002, &template_request).await;
-    assert_eq!(
-        decoded(&document)["result"]["template"]["source"],
-        FINISHED_ROW
-    );
-    served.keep("06-notice-template", &template_request, document);
+    // 06 to 11: each notice view's row and page templates by digest,
+    // unchanged, so an app can draw and measure every card.
+    let views = [
+        ("finished", FINISHED_ROW, FINISHED_PAGE),
+        ("still_running", RUNNING_ROW, RUNNING_PAGE),
+        ("watch", WATCH_ROW, WATCH_PAGE),
+    ];
+    let mut n = 6;
+    for (name, row, page) in views {
+        for (slot, source) in [("row", row), ("page", page)] {
+            let digest = answers[format!("nv1:aft:{name}:1")][slot].clone();
+            let request = json!({"method": TEMPLATE, "params": {"digest": digest}});
+            let document = served.read(1_000 + n, &request).await;
+            assert_eq!(
+                decoded(&document)["result"]["template"]["source"],
+                source,
+                "{name} {slot}"
+            );
+            served.keep(
+                &format!("{n:02}-template-{name}-{slot}"),
+                &request,
+                document,
+            );
+            n += 1;
+        }
+    }
 
     served.check();
 }
