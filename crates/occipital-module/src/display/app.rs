@@ -465,7 +465,9 @@ impl ToolDisplay {
         let mut authorized = Vec::new();
         for (writer, writes) in by_writer {
             match self.store.view(&writer, &pin).map_err(unavailable)? {
-                Some(ViewState::View { .. }) => authorized.push((writer, writes)),
+                Some(ViewState::View { manifest, .. }) => {
+                    authorized.push((writer, writes, manifest))
+                }
                 // Not fetched yet: ask now, and the next read may join it.
                 None => {
                     if let Some(views) = &self.views {
@@ -475,13 +477,13 @@ impl ToolDisplay {
                 Some(_) => {}
             }
         }
-        let (writer, writes) = match authorized.as_slice() {
+        let (writer, writes, manifest) = match authorized.as_slice() {
             [entry] => entry,
             [] => return Ok(None),
             _ => {
                 let writers: Vec<&str> = authorized
                     .iter()
-                    .map(|(writer, _)| writer.as_str())
+                    .map(|(writer, _, _)| writer.as_str())
                     .collect();
                 tracing::warn!(runner = %minted_by, %call_key, ?writers, "several writers may join one call; showing none");
                 return Ok(None);
@@ -491,11 +493,26 @@ impl ToolDisplay {
             has_detail: detail_writers.contains(writer),
             ..Default::default()
         };
+        // A kept view that no longer decodes has no schema to check against,
+        // so its records and completions are left out with it.
+        let schema = serde_json::from_slice::<ViewManifest>(manifest)
+            .ok()
+            .map(|view| view.record_schema);
         for stored in writes {
             let body = serde_json::from_slice::<Value>(&stored.body).ok();
+            let checked = |completion: bool| {
+                let schema = schema.as_ref()?;
+                match checked_body(body.clone()?, schema, completion) {
+                    Ok(body) => Some(body),
+                    Err(error) => {
+                        tracing::warn!(%writer, %pin, %call_key, %error, "left out a display body that breaks its record schema");
+                        None
+                    }
+                }
+            };
             match stored.kind {
-                DisplayKind::Record => joined.record = body,
-                DisplayKind::Completion => joined.completion = body,
+                DisplayKind::Record => joined.record = checked(false),
+                DisplayKind::Completion => joined.completion = checked(true),
                 DisplayKind::Detail => joined.detail = body,
                 // A kind this build doesn't know is never stored (the write
                 // is refused), so nothing else can be read back.
@@ -525,13 +542,52 @@ impl ToolDisplay {
     }
 }
 
-/// A template document in its canonical form, as its digest covers it.
+/// The fields every record and completion may carry, which the contract
+/// checks by their fixed rules rather than by the view's declarations
+/// (tool-display §3.1).
+const STANDARD_FIELDS: [&str; 6] = [
+    "durationMs",
+    "outcome",
+    "reason",
+    "queuedMs",
+    "heldMs",
+    "location",
+];
+
+/// A record or completion as the apps may read it, checked against its view's
+/// record schema (tool-display §3.1). A field the schema doesn't declare is
+/// dropped, not failed: a provider may write a field before the view that
+/// declares it is kept, and the apps should never see a field their held
+/// schema doesn't name. A standard or declared field that breaks its rule
+/// leaves the whole body out, so the call draws without it.
+fn checked_body(
+    body: Value,
+    schema: &RecordSchema,
+    completion: bool,
+) -> Result<Value, cortexkit_role_tool_display::InvalidParams> {
+    let Value::Object(mut body) = body else {
+        return Err(cortexkit_role_tool_display::InvalidParams::new("body"));
+    };
+    body.retain(|field, _| {
+        STANDARD_FIELDS.contains(&field.as_str())
+            || schema.fields.contains_key(field)
+            || completion && schema.completion_fields.contains_key(field)
+    });
+    if completion {
+        cortexkit_role_tool_display::schema::validate_completion(&body, schema)?;
+    } else {
+        cortexkit_role_tool_display::schema::validate_record(&body, schema)?;
+    }
+    Ok(Value::Object(body))
+}
+
 /// The record schema a notice view's templates are checked with: one with no
 /// fields, since a notice has no call, so its `view.record` is always null.
 fn notice_records() -> RecordSchema {
     RecordSchema::new("notice", 1, BTreeMap::new())
 }
 
+/// A template document in its canonical form, as its digest covers it.
 fn canonical_document(document: &Value) -> Option<Value> {
     let bytes = serde_json::to_vec(document).ok()?;
     let canonical = occipital_registry::Template::parse(&bytes)

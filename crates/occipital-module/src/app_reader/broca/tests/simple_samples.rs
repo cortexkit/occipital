@@ -1,4 +1,4 @@
-//! The sample set `phone-reader-simple-v2`: the Simple view of a busy chat as
+//! The sample set `phone-reader-simple-v3`: the Simple view of a busy chat as
 //! the apps read it with `view: "simple"` (`occipital_app_reader::simple`).
 //! Its README says what each file shows. The chat is a Broca head whose plan
 //! gives the agent prefrontal's `say` and `ask`: the person's messages and
@@ -14,8 +14,9 @@ use cortexkit_test_support::ScratchDir;
 use subc_client_rs::HandlerOutcome;
 use subc_protocol::Principal;
 
-// The frozen v1 replies include hidden tool summaries; v2 checks the current handler.
-const SET: &str = "phone-reader-simple-v2";
+// The frozen v1 replies include hidden tool summaries, and v2's ask records
+// lack the `outcome` every record carries, so Occipital no longer serves them.
+const SET: &str = "phone-reader-simple-v3";
 const SESSION: &str = "alfonso:head";
 /// The agent's own prose between the messages the view shows.
 const FILLER: u64 = 1_300;
@@ -572,7 +573,7 @@ async fn the_simple_view_samples_are_what_the_reader_serves() {
             call_key,
             DisplayKind::Record,
             pin("ask", 'a'),
-            json!({"action": "create", "askId": ask})
+            json!({"durationMs": 40, "outcome": "success", "action": "create", "askId": ask})
                 .as_object()
                 .unwrap()
                 .clone(),

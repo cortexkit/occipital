@@ -981,6 +981,96 @@ mod tests {
         assert_eq!(result["calls"]["call"], json!({"detail":true}));
     }
 
+    /// The apps read a call's record and completion only as its view's record
+    /// schema allows (tool-display §3.1): an undeclared field is dropped, a
+    /// field that breaks its kind or a missing required one leaves the body out.
+    #[tokio::test]
+    async fn served_bodies_follow_the_views_record_schema() {
+        use crate::display::app::ToolDisplay;
+        use cortexkit_role_tool_provider::views::ViewManifest;
+        use std::sync::Arc;
+        let dir = ScratchDir::new("display-record-schema");
+        let (_main, store) = opened(&dir);
+        let store = Arc::new(store);
+        let pin = "tp1:bash:0123:1";
+        let schema = serde_json::from_value(json!({
+            "name": "aft.bash",
+            "revision": 1,
+            "fields": {"exitCode": "integer", "phase": "code"},
+            "completion_fields": {"tail": "text_lines"},
+        }))
+        .unwrap();
+        let manifest = ViewManifest::new(schema, vec![], json!({"row": {"source": "x"}}));
+        store
+            .keep_view(
+                "aft",
+                pin,
+                &ViewState::View {
+                    manifest: serde_json::to_vec(&manifest).unwrap(),
+                    input_schema: b"{}".to_vec(),
+                },
+                "v",
+                1,
+            )
+            .unwrap();
+        let calls = [
+            (
+                "undeclared",
+                DisplayKind::Record,
+                json!({"durationMs": 5, "outcome": "success", "exitCode": 0, "tail": [], "later": "x"}),
+            ),
+            (
+                "wrong-kind",
+                DisplayKind::Record,
+                json!({"durationMs": 5, "outcome": "success", "exitCode": "0"}),
+            ),
+            (
+                "no-outcome",
+                DisplayKind::Record,
+                json!({"durationMs": 5, "phase": "running"}),
+            ),
+            (
+                "completion",
+                DisplayKind::Completion,
+                json!({"outcome": "error", "exitCode": 1, "tail": [{"text": "boom", "tone": "danger"}]}),
+            ),
+        ];
+        let mut pins = Vec::new();
+        for (call, kind, value) in &calls {
+            let write = DisplayWrite::new(
+                reserved("broca"),
+                *call,
+                kind.clone(),
+                pin,
+                body(value.clone()),
+            );
+            store.write(&reserved("aft"), &write, 1).unwrap();
+            pins.push(("broca".into(), (*call).into(), "chat".into(), pin.into()));
+        }
+        store.keep_call_pins(&pins, 1).unwrap();
+        let display = Arc::new(ToolDisplay::new(
+            store,
+            None,
+            tokio::sync::broadcast::channel(4).0,
+        ));
+        let result = display
+            .records(
+                "broca",
+                "chat",
+                &json!({"callKeys": ["undeclared", "wrong-kind", "no-outcome", "completion"]}),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            result["calls"],
+            json!({
+                // `tail` is declared only for completions, and `later` not at all.
+                "undeclared": {"detail": false, "record": {"durationMs": 5, "outcome": "success", "exitCode": 0}},
+                "completion": {"detail": false, "completion": {"outcome": "error", "exitCode": 1, "tail": [{"text": "boom", "tone": "danger"}]}},
+            }),
+        );
+    }
+
     #[test]
     fn refused_writes_store_nothing() {
         let dir = ScratchDir::new("occipital-display-refused");
