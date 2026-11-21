@@ -2174,6 +2174,7 @@ mod simple_samples;
 mod tag_rows;
 mod tool_display_samples;
 mod tool_times_samples;
+mod tool_versions_samples;
 
 #[tokio::test]
 async fn losing_one_runner_does_not_remove_another_runners_local_session() {

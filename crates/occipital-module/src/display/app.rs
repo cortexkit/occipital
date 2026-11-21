@@ -542,21 +542,9 @@ impl ToolDisplay {
     }
 }
 
-/// The fields every record and completion may carry, which the contract
-/// checks by their fixed rules rather than by the view's declarations
-/// (tool-display §3.1).
-const STANDARD_FIELDS: [&str; 6] = [
-    "durationMs",
-    "outcome",
-    "reason",
-    "queuedMs",
-    "heldMs",
-    "location",
-];
-
-/// A record or completion as the apps may read it, checked against its view's
-/// record schema (tool-display §3.1). A field the schema doesn't declare is
-/// dropped, not failed: a provider may write a field before the view that
+/// A record or completion as the apps may read it, through the contract's own
+/// join rule (tool-display §3.1): a field its view's record schema doesn't
+/// declare is dropped, since a provider may write a field before the view that
 /// declares it is kept, and the apps should never see a field their held
 /// schema doesn't name. A standard or declared field that breaks its rule
 /// leaves the whole body out, so the call draws without it.
@@ -565,20 +553,16 @@ fn checked_body(
     schema: &RecordSchema,
     completion: bool,
 ) -> Result<Value, cortexkit_role_tool_display::InvalidParams> {
-    let Value::Object(mut body) = body else {
+    use cortexkit_role_tool_display::schema::{join_completion, join_record};
+    let Value::Object(body) = body else {
         return Err(cortexkit_role_tool_display::InvalidParams::new("body"));
     };
-    body.retain(|field, _| {
-        STANDARD_FIELDS.contains(&field.as_str())
-            || schema.fields.contains_key(field)
-            || completion && schema.completion_fields.contains_key(field)
-    });
-    if completion {
-        cortexkit_role_tool_display::schema::validate_completion(&body, schema)?;
+    let joined = if completion {
+        join_completion(body, schema)?
     } else {
-        cortexkit_role_tool_display::schema::validate_record(&body, schema)?;
-    }
-    Ok(Value::Object(body))
+        join_record(body, schema)?
+    };
+    Ok(Value::Object(joined))
 }
 
 /// The record schema a notice view's templates are checked with: one with no

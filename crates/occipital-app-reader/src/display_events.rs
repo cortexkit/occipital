@@ -165,6 +165,13 @@ const EVENT_NAMES: &[(&str, &str, Effect)] = &[
     ("control", "run_started", Effect::RunStart),
     ("control", "run_finished", Effect::End),
     ("control", "run_paused", Effect::End),
+    // Notices for the session's owner: a call refused because its tool's
+    // major version changed (llm-runner 0.9.0), and a refresh that failed.
+    // The refused call's error result arrives as a stored message, and
+    // neither event says anything about the live words, so as unknown types
+    // they would clear the step in flight for nothing.
+    ("control", "tool_changed", Effect::Ignore),
+    ("control", "session_refresh_failed", Effect::Ignore),
 ];
 
 /// The run an event names, when it names one.
@@ -641,6 +648,8 @@ mod tests {
             "message_finished",
             "tool_started",
             "tool_finished",
+            "tool_changed",
+            "session_refresh_failed",
         ] {
             let lane = if name == "tool_input_delta" {
                 "display"

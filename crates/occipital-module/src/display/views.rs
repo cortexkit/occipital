@@ -515,7 +515,7 @@ fn decide(
         (
             Some(ViewState::View {
                 manifest,
-                input_schema,
+                input_schema: kept_input,
             }),
             fetched,
         ) => {
@@ -529,16 +529,24 @@ fn decide(
                 // the writer serves now, with the input schema it was kept with.
                 return Ok(Decision::Replace(ViewState::View {
                     manifest: canonical(view)?,
-                    input_schema: input_schema.clone(),
+                    input_schema: kept_input.clone(),
                 }));
             };
             match view.compare_with_kept(&kept_view) {
+                // A newer revision, its record schema unchanged or grown under
+                // the pin. The pin's definition may have moved to a newer
+                // version of the same major too (a clearer description, say),
+                // so its templates are checked with the input schema the
+                // writer serves now, when it names one.
                 ViewChange::NewerTemplate => Decision::Replace(ViewState::View {
                     manifest: canonical(view)?,
-                    input_schema: input_schema.clone(),
+                    input_schema: match input_schema {
+                        Some(schema) => canonical(schema)?,
+                        None => kept_input.clone(),
+                    },
                 }),
                 ViewChange::Conflict => Decision::Stamp(Some(
-                    "its record schema or reads changed, or its template changed without a higher revision"
+                    "its reads or tool changed, its record schema changed without growing, or its template changed without a higher revision"
                         .into(),
                 )),
                 // Same, or an older revision than the one kept.
@@ -1221,6 +1229,88 @@ mod tests {
         assert!(stamped(&ViewState::Unknown, Some(manifest()), None));
         assert!(!stamped(&ViewState::Unknown, None, Some(&schema)));
         assert!(!stamped(&ViewState::NotInCatalog, Some(manifest()), None));
+    }
+
+    /// Under one `tp2` pin, a view grows: a higher template revision whose
+    /// record schema keeps every field and adds some, at a higher revision,
+    /// replaces the kept view. Its templates are then checked with the input
+    /// schema the writer serves now, which a newer version of the same major
+    /// may have changed (a clearer description, say). A higher revision that
+    /// drops a field is not growth, and the kept view stays.
+    #[test]
+    fn a_view_grows_under_its_tp2_pin() {
+        use cortexkit_role_tool_provider::catalog::ToolVersion;
+        use cortexkit_role_tool_provider::views::ViewTool;
+        let versioned = |description: &str, minor: u64| {
+            ViewTool::new_versioned(
+                "bash",
+                json!({"type": "object", "description": description,
+                    "properties": {"command": {"type": "string"}}}),
+                ToolVersion::new(2, minor, 0),
+            )
+        };
+        let view = |revision: u64, fields: Value, tool: ViewTool| {
+            let schema: RecordSchema = serde_json::from_value(
+                json!({"name": "aft.bash", "revision": revision, "fields": fields}),
+            )
+            .unwrap();
+            ViewManifest::new(schema, vec![], json!({"row": {"source": "x"}}))
+                .with_template_revision(revision)
+                .with_tool(tool)
+        };
+        let held = view(
+            1,
+            json!({"exitCode": "integer"}),
+            versioned("Run a command", 0),
+        );
+        let pin = held.tool.as_ref().unwrap().schema_pin().unwrap();
+        assert!(pin.starts_with("tp2:bash:"), "{pin}");
+        assert!(pin.ends_with(":2"), "{pin}");
+        let fetch = |kept: &ViewState, fetched: &ViewManifest| {
+            let entry = ViewEntry::Manifest(fetched.clone());
+            let (view, input) = resolve(&pin, &entry, None);
+            decide(Some(kept), view, input).unwrap()
+        };
+        let kept = match decide(
+            None,
+            Some(&held),
+            Some(&held.tool.as_ref().unwrap().input_schema),
+        )
+        .unwrap()
+        {
+            Decision::Keep(state) => state,
+            other => panic!("a first tp2 view with its tool is kept, got {other:?}"),
+        };
+
+        // A clearer description keeps the structural digest, so the pin.
+        let grown = view(
+            2,
+            json!({"exitCode": "integer", "tail": "code"}),
+            versioned("Run a shell command", 1),
+        );
+        assert_eq!(grown.tool.as_ref().unwrap().schema_pin().unwrap(), pin);
+        match fetch(&kept, &grown) {
+            Decision::Replace(ViewState::View { input_schema, .. }) => assert_eq!(
+                input_schema,
+                canonical(&grown.tool.as_ref().unwrap().input_schema).unwrap()
+            ),
+            other => panic!("a grown view replaces the kept one, got {other:?}"),
+        }
+
+        let shrunk = view(
+            2,
+            json!({"tail": "code"}),
+            versioned("Run a shell command", 1),
+        );
+        assert!(matches!(fetch(&kept, &shrunk), Decision::Stamp(Some(_))));
+
+        // A tp2 view must name its tool, or it can't be checked for its pin.
+        let toolless = ViewEntry::Manifest(ViewManifest::new(
+            held.record_schema.clone(),
+            vec![],
+            json!({"row": {"source": "x"}}),
+        ));
+        assert_eq!(resolve(&pin, &toolless, None), (None, None));
     }
 
     /// A failed fetch keeps nothing, and the writer isn't asked again until
