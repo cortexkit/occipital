@@ -78,8 +78,11 @@ and `now`, is read only inside a `Slot`, a box of fixed size:
   not kept once the call is long done.
 
 Content that doesn't fit is clipped, and text ends with "…". Content shorter
-than the box follows the row's `align`: in a `Card` row with `align="center"`
-it is centred in the box, so it lines up with the row's other parts. A read of `view`
+than the box follows the row's `align` across the row: in a `Card` row with
+`align="center"` it is centred in the box, so it lines up with the row's other
+parts. Along the row, short content starts at the box's leading edge, except in
+`ToolHeader`'s status Slot, where it ends at the trailing edge, so the status
+sits at the row's end. A read of `view`
 or `now` outside a Slot, directly or through a named value, is refused with
 `E_UNSLOTTED_READ`. `input` and `zone` may be read anywhere. Pages are measured
 each time they open, so they have no such rule.
