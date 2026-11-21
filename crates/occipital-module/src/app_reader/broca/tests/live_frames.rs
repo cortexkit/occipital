@@ -181,11 +181,16 @@ async fn replay_bytes(
         let event = frame["event"]["type"].as_str().unwrap_or_default();
         if matches!(
             event,
-            "message_started" | "message_finished" | "tool_started" | "tool_finished"
+            "message_started"
+                | "message_finished"
+                | "tool_started"
+                | "tool_finished"
+                | "tool_changed"
         ) {
             // A finished message or a call sends the words still held for batching,
             // and a finished message may end them with `display_end`; no lifecycle
-            // event ever drops or replaces what is on the live display.
+            // event, nor a notice for the session's owner such as `tool_changed`,
+            // ever drops or replaces what is on the live display.
             let now = ring(&app);
             let before = previous["frames"].as_array().cloned().unwrap_or_default();
             let after = now["frames"].as_array().cloned().unwrap_or_default();
@@ -317,6 +322,40 @@ async fn broca_control_units_without_an_event_drop_no_live_words() {
             assert!(old.is_some() && old == new, "{name}: {old:?} {new:?}");
         }
     }
+}
+
+/// A call refused because its tool's major version changed, as Broca's serve loop
+/// writes it (`tests/data/broca-tool-changed-1121`): the call's `tool_finished` under
+/// the `tp2` pin it carried (the tool's schema digest and major version), then
+/// `tool_changed` on a `message_boundary` unit. Both are durable
+/// control frames that wake the transcript, and neither touches the live words of a
+/// reply still streaming: `tool_changed` is a notice for the session's owner.
+#[tokio::test(start_paused = true)]
+async fn a_tool_changed_frame_keeps_the_live_words() {
+    let folder =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/broca-tool-changed-1121");
+    let sample = |name: &str| {
+        String::from_utf8(std::fs::read(folder.join(name)).unwrap())
+            .unwrap()
+            .trim_end()
+            .to_owned()
+    };
+    let frames = [
+        r#"{"kind":"control","seq":7,"event":{"type":"run_started","run_id":"r1"}}"#.to_owned(),
+        r#"{"kind":"control","seq":8,"event":{"type":"message_started","mid":"m1"}}"#.to_owned(),
+        r#"{"kind":"display","event":{"type":"text_delta","mid":"m1","part":"0","message_id":"m","delta":"still writing"},"seq":9}"#.to_owned(),
+        sample("tool_finished.tp2.frame.json"),
+        sample("tool_changed.frame.json"),
+    ];
+    assert!(frames[4].contains(r#""type":"tool_changed""#));
+    replay_bytes(
+        "broca-tool-changed",
+        frames.join("\n").as_bytes(),
+        &[("text", "still writing")],
+        &[4, 5],
+        7,
+    )
+    .await;
 }
 
 /// The OpenCode runner also streams control frames that carry only a `runner_event`
