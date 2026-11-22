@@ -147,20 +147,25 @@ impl Stats {
         let count = |counter: &AtomicU64| counter.load(Ordering::Relaxed);
         // `null` when there is no client yet, or the slot is being replaced:
         // the report never waits on a lock.
-        let connected = self
-            .client
-            .try_read()
-            .ok()
-            .and_then(|client| client.as_ref().map(|client| client.connection()))
-            .map(|connection| {
-                matches!(
-                    connection.client().connection_state(),
-                    async_nats::connection::State::Connected
-                )
-            });
+        let client = self.client.try_read().ok();
+        let client = client.as_ref().and_then(|client| client.as_ref());
+        let connected = client.map(|client| {
+            matches!(
+                client.connection().client().connection_state(),
+                async_nats::connection::State::Connected
+            )
+        });
+        // Deliveries the client dropped unread because they didn't come from
+        // this module's own event reader (`DURABLE`) or views-bucket watches,
+        // or from the subjects those subscribed to. The server delivers nothing else, so anything above
+        // zero means another consumer's messages reached this connection.
+        // Counted per client, so it starts again when the connection is made
+        // again.
+        let foreign = client.map(|client| client.forged_deliveries_dropped());
         serde_json::json!({
             "readerAttached": self.attached.load(Ordering::Relaxed),
             "connected": connected,
+            "foreignDropped": foreign,
             "sendStates": count(&self.send_states),
             "catalogChanges": count(&self.catalog_changes),
             "recordsStored": count(&self.records_stored),
@@ -633,7 +638,7 @@ mod tests {
     }
 
     /// The health report carries every count under its own name, and no
-    /// connection state before a client exists.
+    /// connection state or dropped count before a client exists.
     #[test]
     fn the_counts_reach_the_health_report() {
         let stats = Stats::default();
@@ -644,7 +649,7 @@ mod tests {
         assert_eq!(
             stats.metrics(),
             serde_json::json!({"readerAttached": true, "connected": null,
-                "sendStates": 1, "catalogChanges": 0,
+                "foreignDropped": null, "sendStates": 1, "catalogChanges": 0,
                 "recordsStored": 2, "recordsRefused": 0, "recordsRetried": 0,
                 "viewsServed": 0, "unreadable": 0})
         );
