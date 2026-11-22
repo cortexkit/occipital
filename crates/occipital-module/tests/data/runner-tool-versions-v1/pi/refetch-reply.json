@@ -1,0 +1,9 @@
+{
+  "accepted_generation": 1,
+  "applies_from_next_run": true,
+  "pending": {
+    "generation": 1,
+    "policy": "immediately"
+  },
+  "run_in_progress": true
+}

@@ -1,0 +1,16 @@
+{
+  "cursor": {
+    "session": "f086f7421bcd42b1",
+    "sub_index": 2,
+    "wal_seq": 40
+  },
+  "event": {
+    "current": "tp2:bash:cb86288c0c22ac7b224e3412aba3a5b96e86497aba31d981d6b54d04c9b816ef:3",
+    "expected": "tp2:bash:e405c119c9558e545024ba9ab540209742c84cc8d9368c5492782635101bb24b:2",
+    "provider": "aft",
+    "tool": "bash",
+    "type": "tool_changed"
+  },
+  "kind": "control",
+  "seq": 4
+}

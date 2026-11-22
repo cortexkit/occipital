@@ -358,6 +358,43 @@ async fn a_tool_changed_frame_keeps_the_live_words() {
     .await;
 }
 
+/// Agent Runner's `tool_changed` frame on each host it runs (OpenCode 2, Pi, Claude
+/// Code), as recorded in `tests/data/runner-tool-versions-v1`: a control frame with a
+/// cursor but no stored entry (`unit`) beside its event, after a reply that is still
+/// streaming. It wakes the transcript and leaves the live words alone, as Broca's
+/// frame does. The samples' `session.refresh` request and reply are prefrontal's,
+/// sent for the session it runs; Occipital never refreshes a session.
+#[tokio::test(start_paused = true)]
+async fn agent_runner_tool_changed_frames_keep_the_live_words() {
+    let folder =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/runner-tool-versions-v1");
+    for host in ["opencode2", "pi", "claude-code"] {
+        let bytes = std::fs::read(folder.join(host).join("tool-changed.json")).unwrap();
+        let sample: Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(sample["event"]["type"], "tool_changed", "{host}");
+        let seq = sample["seq"].as_u64().unwrap();
+        // The frames before it end on the seq just below the sample's own.
+        let first = usize::try_from(seq - 3).unwrap();
+        let frames = [
+            json!({"kind": "control", "seq": seq - 3, "event": {"type": "run_started", "run_id": "r1"}}),
+            json!({"kind": "control", "seq": seq - 2, "event": {"type": "message_started", "mid": "m1"}}),
+            json!({"kind": "display", "seq": seq - 1, "event": {"type": "text_delta", "mid": "m1",
+                "part": "0", "message_id": "m", "delta": "still writing"}}),
+            sample,
+        ]
+        .map(|frame| frame.to_string())
+        .join("\n");
+        replay_bytes(
+            host,
+            frames.as_bytes(),
+            &[("text", "still writing")],
+            &[],
+            first,
+        )
+        .await;
+    }
+}
+
 /// The OpenCode runner also streams control frames that carry only a `runner_event`
 /// string, such as a send's `send_accepted`, with no `event` the display maps. One of
 /// those arriving as a run starts must not end the live feed: the reply's text that

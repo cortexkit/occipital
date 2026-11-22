@@ -1,0 +1,16 @@
+{
+  "cursor": {
+    "session": "1f14cac7c898b663",
+    "sub_index": 2,
+    "wal_seq": 29
+  },
+  "event": {
+    "current": "tp2:echo:cb86288c0c22ac7b224e3412aba3a5b96e86497aba31d981d6b54d04c9b816ef:3",
+    "expected": "tp2:echo:d9739ca4ed6db78963126100fbd41a691f600a77a74ae18239af1e8fa5841f5c:2",
+    "provider": "prefrontal-core",
+    "tool": "echo",
+    "type": "tool_changed"
+  },
+  "kind": "control",
+  "seq": 6
+}
