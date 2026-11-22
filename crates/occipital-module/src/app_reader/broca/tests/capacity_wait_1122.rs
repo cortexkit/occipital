@@ -13,6 +13,33 @@ use super::run_awaits_1112::expected_error;
 use super::session_facts::{assert_last_run_phone_bytes, expected_last_run};
 use super::*;
 
+/// The app-facing sample set these cases write; its sends are in
+/// `send::tests::capacity_wait`.
+const SET: &str = "phone-reader-capacity-wait-v1";
+
+/// Write `last_run` to the set as `name`, as the apps read it beside a page,
+/// or compare it with the published file.
+fn keep(name: &str, last_run: &Value) {
+    let value = json!({"lastRun": last_run});
+    if let Some(folder) = std::env::var_os("OCCIPITAL_WRITE_SAMPLES") {
+        let folder = std::path::PathBuf::from(folder).join(SET);
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(folder.join(name), serde_json::to_vec(&value).unwrap()).unwrap();
+        return;
+    }
+    let published: Value = serde_json::from_slice(
+        &std::fs::read(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../occipital-app-reader/test-vectors")
+                .join(SET)
+                .join(name),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(value, published, "{name}");
+}
+
 fn paused_status() -> Value {
     let bytes = std::fs::read(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -40,11 +67,13 @@ async fn a_capacity_wait_reaches_the_apps_as_the_runs_wait() {
             "sinceMs": 1_795_342_184_183_u64, "nextMs": 1_795_342_190_183_u64})
     );
     assert_last_run_phone_bytes(state.clone(), None, &expected.to_string()).await;
+    keep("01-paused.json", &expected);
 
     state["awaits"].as_object_mut().unwrap().remove("next_ms");
     let expected = expected_last_run(&state);
     assert!(expected["awaits"].get("nextMs").is_none(), "{expected}");
     assert_last_run_phone_bytes(state, None, &expected.to_string()).await;
+    keep("02-paused-past-reset.json", &expected);
 }
 
 /// A run that ends in an error while it waits keeps the wait's code and its
@@ -62,4 +91,5 @@ async fn a_run_that_ends_while_it_waits_names_the_wait() {
             "resetsAtMs": 1_795_342_190_183_u64})
     );
     assert_last_run_phone_bytes(state, Some(error), &expected.to_string()).await;
+    keep("03-run-end.json", &expected);
 }

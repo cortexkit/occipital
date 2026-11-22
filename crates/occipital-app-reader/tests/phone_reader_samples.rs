@@ -551,6 +551,11 @@ fn the_account_wait_v2_samples_are_complete_and_their_checksums_verify() {
     verify_published_set("test-vectors/phone-reader-account-wait-v2", 17);
 }
 
+#[test]
+fn the_capacity_wait_samples_are_complete_and_their_checksums_verify() {
+    verify_published_set("test-vectors/phone-reader-capacity-wait-v1", 6);
+}
+
 /// A run that ended because its key's account is out of credit
 /// (`billing_exhausted`), then a permanent error naming no code. The sample
 /// set's README lists what each case shows; the module's session-fact tests
