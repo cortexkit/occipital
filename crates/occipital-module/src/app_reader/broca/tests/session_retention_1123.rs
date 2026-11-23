@@ -23,11 +23,9 @@ fn body(name: &str) -> Value {
     serde_json::from_slice(&std::fs::read(root().join(name)).unwrap()).unwrap()
 }
 
-/// A head sample's own head: the serve-loop ones wrap it in `result`, the
-/// serializer one doesn't.
+/// A head sample's own head, from inside the reply's `result`.
 fn head(name: &str) -> Value {
-    let body = body(name);
-    body.get("result").cloned().unwrap_or(body)
+    body(name)["result"].clone()
 }
 
 const HEADS: [&str; 3] = [
@@ -41,10 +39,10 @@ const MEMBERS: [&str; 3] = ["retention_policy", "retention_state", "released"];
 #[test]
 fn the_session_retention_samples_keep_their_checksums() {
     let sums = std::fs::read(root().join("SHA256SUMS")).unwrap();
-    assert!(format!("{:x}", Sha256::digest(&sums)).starts_with("487bb02c"));
+    assert!(format!("{:x}", Sha256::digest(&sums)).starts_with("a6a1bb32"));
     let sums = String::from_utf8(sums).unwrap();
-    // Six bodies and the README.
-    assert_eq!(sums.lines().count(), 7);
+    // Nine bodies and the README.
+    assert_eq!(sums.lines().count(), 10);
     for line in sums.lines() {
         let (expected, name) = line.split_once("  ").unwrap();
         let bytes = std::fs::read(root().join(name)).unwrap();
@@ -146,10 +144,12 @@ fn the_new_send_refusals_reach_the_apps_with_their_class() {
         refused.detail,
         Some(json!({"class": "final", "runnerCode": "retention_conflict"}))
     );
+    let released = body("retention.released.send.json");
+    assert!(released["detail"]["delete_after_ms"].is_u64());
     let released = crate::app_reader::send::refused(
-        "session_released",
-        "the session is released",
-        Some(&json!({"delete_after_ms": 1_790_000_000_500_u64})),
+        released["code"].as_str().unwrap(),
+        released["message"].as_str().unwrap(),
+        released.get("detail"),
     );
     assert_eq!(released.code, "runner_refused");
     assert_eq!(
