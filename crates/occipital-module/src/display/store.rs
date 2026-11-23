@@ -76,11 +76,37 @@ CREATE INDEX display_call_pins_age ON display_call_pins (seen_at_ms);";
 const CALL_PINS_BY_SESSION: &str =
     "CREATE INDEX display_call_pins_session ON display_call_pins (session, call_key);";
 
+/// Version 4: writes stored under `prefrontal-core` become `prefrontal`'s.
+/// The module was renamed on 19 Nov 2026 and serves views only under its new
+/// name, while a write joins a call only through a view its own writer serves
+/// (`crate::display::app`), so the writes stored before the rename joined
+/// nothing. Prefrontal owns everything it wrote under the old name. A write's
+/// key starts with its writer, the contract's `idempotency_key`, so the key is
+/// rewritten with it. A `say` message's key already names `prefrontal`, since
+/// the contract normalizes that kind's key, so only its writer changes. An old
+/// write whose rewritten key prefrontal already holds is dropped, keeping
+/// prefrontal's own write.
+const PREFRONTAL_RENAME: &str = r#"
+DELETE FROM display_writes
+ WHERE writer = '{"kind":"reserved","module_id":"prefrontal-core"}'
+   AND substr(CAST(key AS TEXT), 1, 51) = '[{"kind":"reserved","module_id":"prefrontal-core"},'
+   AND CAST('[{"kind":"reserved","module_id":"prefrontal"},' || substr(CAST(key AS TEXT), 52) AS BLOB)
+       IN (SELECT key FROM display_writes);
+UPDATE display_writes
+   SET key = CASE
+         WHEN substr(CAST(key AS TEXT), 1, 51) = '[{"kind":"reserved","module_id":"prefrontal-core"},'
+         THEN CAST('[{"kind":"reserved","module_id":"prefrontal"},' || substr(CAST(key AS TEXT), 52) AS BLOB)
+         ELSE key END,
+       writer = '{"kind":"reserved","module_id":"prefrontal"}'
+ WHERE writer = '{"kind":"reserved","module_id":"prefrontal-core"}';
+"#;
+
 /// One schema version for both files: the number of steps each opens with.
 /// Version 2 adds the records file's call pins and version 3 their session
-/// index; the details file has nothing new at either.
+/// index; the details file has nothing new at either. Version 4 renames
+/// `prefrontal-core`'s writes in both files.
 #[cfg(test)]
-const SCHEMA_VERSION: i64 = 3;
+const SCHEMA_VERSION: i64 = 4;
 
 /// The limits this server serves in `role.describe.tool_display`: the
 /// contract's ceilings for now. They come down only once a measured week of
@@ -189,14 +215,19 @@ impl DisplayStore {
             data_root,
             NAMESPACE,
             FILE,
-            &[&[WRITES, VIEWS], &[CALL_PINS], &[CALL_PINS_BY_SESSION]],
+            &[
+                &[WRITES, VIEWS],
+                &[CALL_PINS],
+                &[CALL_PINS_BY_SESSION],
+                &[PREFRONTAL_RENAME],
+            ],
         )?;
         let details = open_file(
             main,
             data_root,
             DETAILS_NAMESPACE,
             DETAILS_FILE,
-            &[&[WRITES], &[], &[]],
+            &[&[WRITES], &[], &[], &[PREFRONTAL_RENAME]],
         )?;
         Ok(Self {
             records: Arc::new(records),
@@ -1314,5 +1345,97 @@ mod tests {
             let conn = rusqlite::Connection::open(main.data_root().join(file)).unwrap();
             assert_eq!(user_version(&conn).unwrap(), SCHEMA_VERSION, "{file}");
         }
+    }
+
+    /// A version 3 store's writes under `prefrontal-core` become `prefrontal`'s,
+    /// each with the key the contract gives a write from `prefrontal`, so the
+    /// write path still finds it. An old write whose new key prefrontal already
+    /// holds gives way to prefrontal's. Other writers are untouched.
+    #[test]
+    fn a_version_3_store_files_prefrontal_core_writes_under_prefrontal() {
+        let dir = ScratchDir::new("occipital-display-rename");
+        let descriptor = crate::store::tests::descriptor(&dir);
+        let main = crate::store::open(&descriptor).unwrap();
+        let old = reserved("prefrontal-core");
+        let new = reserved("prefrontal");
+        let only_old = record("call-1", json!({"outcome": "success"}));
+        let both_old = record("call-2", json!({"outcome": "error"}));
+        let both_new = record("call-2", json!({"outcome": "success"}));
+        let detail = DisplayWrite::new(
+            reserved("broca"),
+            "call-1",
+            DisplayKind::Detail,
+            "tp1:bash:0123:1",
+            body(json!({"text": "out"})),
+        );
+        let aft = record("call-3", json!({"outcome": "success"}));
+        let rows = [
+            (FILE, &old, &only_old),
+            (FILE, &old, &both_old),
+            (FILE, &new, &both_new),
+            (FILE, &reserved("aft"), &aft),
+            (DETAILS_FILE, &old, &detail),
+        ];
+        for file in [FILE, DETAILS_FILE] {
+            let conn = rusqlite::Connection::open(main.data_root().join(file)).unwrap();
+            conn.execute_batch(WRITES).unwrap();
+            if file == FILE {
+                conn.execute_batch(VIEWS).unwrap();
+                conn.execute_batch(CALL_PINS).unwrap();
+                conn.execute_batch(CALL_PINS_BY_SESSION).unwrap();
+            }
+            for (into, writer, write) in rows {
+                if into != file {
+                    continue;
+                }
+                conn.execute(
+                    "INSERT INTO display_writes VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1)",
+                    rusqlite::params![
+                        idempotency_key(writer, write).unwrap(),
+                        principal_json(writer).unwrap(),
+                        principal_json(&write.runner).unwrap(),
+                        write.call_key,
+                        write.kind.as_str(),
+                        write.schema_pin,
+                        validate_write(write, &served_limits()).unwrap(),
+                    ],
+                )
+                .unwrap();
+            }
+            conn.pragma_update(None, "user_version", 3).unwrap();
+        }
+        let store = DisplayStore::open(&descriptor, main.data_root()).unwrap();
+        let writes = |call: &str, kind: DisplayKind| -> Vec<(Principal, Vec<u8>)> {
+            store
+                .writes(&reserved("broca"), call)
+                .unwrap()
+                .into_iter()
+                .filter(|stored| stored.kind == kind)
+                .map(|stored| (stored.writer, stored.body))
+                .collect()
+        };
+        let success = br#"{"outcome":"success"}"#.to_vec();
+        assert_eq!(
+            writes("call-1", DisplayKind::Record),
+            [(new.clone(), success.clone())]
+        );
+        assert_eq!(
+            writes("call-1", DisplayKind::Detail),
+            [(new.clone(), br#"{"text":"out"}"#.to_vec())]
+        );
+        assert_eq!(
+            writes("call-2", DisplayKind::Record),
+            [(new.clone(), success.clone())]
+        );
+        assert_eq!(
+            writes("call-3", DisplayKind::Record),
+            [(reserved("aft"), success)]
+        );
+        // The write path finds each renamed write under prefrontal's key.
+        assert_eq!(
+            store.write(&new, &only_old, 2),
+            Ok(WriteReply::AlreadyStored)
+        );
+        assert_eq!(store.write(&new, &detail, 2), Ok(WriteReply::AlreadyStored));
     }
 }
