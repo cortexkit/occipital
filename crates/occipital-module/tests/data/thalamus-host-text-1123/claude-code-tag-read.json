@@ -1,0 +1,28 @@
+{
+  "entry": {
+    "host_parts": [
+      {
+        "host_code": "safety_stop_note",
+        "part": "0"
+      }
+    ],
+    "message": {
+      "content": "Your response above was stopped by a safety classifier — this is not a tool or API error. The rest of it was withheld, and tool calls in it that had not finished did not run. Do not produce that content again, even reworded.",
+      "role": "user"
+    },
+    "mid": "830ab18aac956e8bc4a89306eb06bc1af790773157270afb6e113f05c65e7ffa",
+    "ordinal": 5,
+    "role": "user",
+    "run": {
+      "episode": "1",
+      "final": false,
+      "run_id": "run_e6884e99611cc5650de08c66"
+    },
+    "time": null,
+    "tool_calls": [],
+    "written_at": 1795449756424
+  },
+  "host": true,
+  "host_code": "safety_stop_note",
+  "part": 0
+}

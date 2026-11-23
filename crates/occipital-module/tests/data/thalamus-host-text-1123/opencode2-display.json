@@ -1,0 +1,12 @@
+{
+  "parts": [
+    {
+      "host": true,
+      "part": "0",
+      "text": "SYNTHETIC_NOTE to cite.",
+      "type": "text"
+    }
+  ],
+  "role": "synthetic",
+  "text": "SYNTHETIC_NOTE to cite."
+}

@@ -1,0 +1,29 @@
+{
+  "entry": {
+    "created_at": 1795449758890,
+    "host_parts": [
+      {
+        "part": "0"
+      }
+    ],
+    "message": {
+      "description": "A client's notice",
+      "id": "msg_20925248f001aisftk6kADeYS2",
+      "text": "SYNTHETIC_NOTE to cite.",
+      "time": {
+        "created": 1795449758890
+      },
+      "type": "synthetic"
+    },
+    "mid": "msg_20925248f001aisftk6kADeYS2",
+    "ordinal": 3,
+    "role": "user",
+    "time": {
+      "created": 1795449758890
+    },
+    "tool_calls": [],
+    "written_at": 1795449758890
+  },
+  "host": true,
+  "part": 0
+}
