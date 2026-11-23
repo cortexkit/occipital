@@ -103,6 +103,10 @@ pub const TOO_MANY_FILES: &str = "too_many_files";
 /// The runner lost a file this module copied to it before the send named it.
 /// Nothing was sent; a resend copies the file again.
 pub const UPLOAD_GONE: &str = "upload_gone";
+/// The chat's owner released it, and the runner deletes it soon (`detail`:
+/// `deleteAfterMs`, the earliest deletion time, when the runner names it).
+/// Nothing was sent, and sending again can't reach this chat.
+pub const SESSION_RELEASED: &str = "session_released";
 
 /// Rows resumed per recovery sweep, oldest deadline first.
 pub const RECOVERY_BATCH: usize = 64;
@@ -1826,6 +1830,19 @@ pub(super) fn refused(code: &str, message: &str, detail: Option<&Value>) -> Send
             let holder = crate::moves::runner_holder(detail);
             crate::moves::refusal(&crate::moves::state::Hold::Elsewhere { holder })
         }
+        // The chat's owner released it, and the runner deletes it at
+        // `delete_after_ms` at the earliest. The contract counts the code as
+        // retryable because a send after the deletion starts the session
+        // afresh, which is the owner's to do on purpose. For a person's send
+        // it's final: the app keeps the words as a draft and says the chat is
+        // ending, with the deletion time when the runner names it, and never
+        // resends into an empty new chat under the old name.
+        "session_released" => SendRefusal {
+            detail: detail
+                .and_then(|detail| detail["delete_after_ms"].as_u64())
+                .map(|at| json!({"deleteAfterMs": at})),
+            ..SendRefusal::new(SESSION_RELEASED, said)
+        },
         // The model can't take a file's type. The app places the file in the
         // project instead (`upload.place`) and sends its path.
         "media_unsupported" => SendRefusal {

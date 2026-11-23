@@ -126,11 +126,12 @@ async fn a_deleted_session_reads_as_unknown() {
     assert_eq!(error.code, "session_unknown");
 }
 
-/// The two new send refusals pass on with the runner's code: a conflict is
-/// final, and a release is transient because the contract lets a send succeed
-/// once the session is deleted. Neither carries `retryAfterMs`: a release
-/// names when deletion happens (`delete_after_ms`), not a time to wait before
-/// sending again, so the app gets no wait time for it.
+/// A send naming a storage policy other than the session's frozen one
+/// (`retention_conflict`) passes on as a final `runner_refused` with the
+/// runner's code. A
+/// release reaches the apps as its own final `session_released`, with the
+/// deletion time as `deleteAfterMs`: the app keeps the words as a draft and
+/// never resends, since a send after the deletion would start an empty chat.
 #[test]
 fn the_new_send_refusals_reach_the_apps_with_their_class() {
     let conflict = body("retention.conflict.send.json");
@@ -151,9 +152,9 @@ fn the_new_send_refusals_reach_the_apps_with_their_class() {
         released["message"].as_str().unwrap(),
         released.get("detail"),
     );
-    assert_eq!(released.code, "runner_refused");
+    assert_eq!(released.code, "session_released");
     assert_eq!(
         released.detail,
-        Some(json!({"class": "transient", "runnerCode": "session_released"}))
+        Some(json!({"deleteAfterMs": 1_795_394_242_735_u64}))
     );
 }
