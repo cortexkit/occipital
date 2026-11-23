@@ -1,0 +1,1 @@
+{"code":"retention_conflict","message":"the session keeps another retention policy, which a send can't change","detail":{"frozen":{"archive_after_days":0,"backup":false,"keep":{"days":7},"request_dumps":true}}}

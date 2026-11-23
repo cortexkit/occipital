@@ -294,15 +294,15 @@ fn sending(route: &Arc<FakeRoute>) -> Arc<AppReader> {
 
 /// The module's own routes in these tests have no send path, so this module refuses
 /// the app's sends to the session.
-fn read_only(route: &Arc<FakeRoute>) -> Arc<AppReader> {
+pub(super) fn read_only(route: &Arc<FakeRoute>) -> Arc<AppReader> {
     app(Arc::new(Routes(route.clone())), Arc::new(Lookup))
 }
 
-async fn page(app: &AppReader, params: Value) -> Value {
+pub(super) async fn page(app: &AppReader, params: Value) -> Value {
     app.read(TRANSCRIPT_PAGE, params).await.unwrap()
 }
 
-async fn details(app: &AppReader) -> Value {
+pub(super) async fn details(app: &AppReader) -> Value {
     app.read(DETAILS, json!({"session":"alfonso:s1", "harness":"broca"}))
         .await
         .unwrap()
