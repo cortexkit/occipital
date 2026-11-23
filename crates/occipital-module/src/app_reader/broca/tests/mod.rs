@@ -2150,6 +2150,7 @@ fn activity_follows_the_contracts_run_states() {
 }
 mod capacity_wait_1122;
 mod history_intake_samples;
+mod host_parity_wave1;
 mod host_parts;
 mod host_text_1123;
 mod host_unknown_samples;
