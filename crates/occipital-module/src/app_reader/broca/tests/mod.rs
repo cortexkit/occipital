@@ -2160,6 +2160,7 @@ mod opencode2_pages;
 mod outside_window;
 mod part_keys;
 mod pi_display;
+mod pi_live_steps_samples;
 mod pi_pages;
 mod pi_photo_1118;
 mod pi_samples;

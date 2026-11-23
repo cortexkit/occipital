@@ -603,6 +603,22 @@ struct DisplayProjectionState {
     /// The message whose words are the live footer: the last one text was shown for
     /// and not yet ended.
     live: Option<LiveMessage>,
+    /// Each `mid` of this run whose words were shown under a `live_id`, with that
+    /// `live_id`. A message's calls start only after its host stores it, so their
+    /// events name the `mid`; their frames carry the `live_id` instead, and an
+    /// app gets the whole step under the one key it showed the words under.
+    shown_as: HashMap<String, String>,
+}
+
+impl DisplayProjectionState {
+    /// The key frames about `mid`'s message carry: the `live_id` its words were
+    /// shown under in this run, or `mid` itself.
+    fn key_for(&self, mid: &str) -> String {
+        self.shown_as
+            .get(mid)
+            .cloned()
+            .unwrap_or_else(|| mid.to_owned())
+    }
 }
 
 /// A call of the message tool whose text is shown as it's written.
@@ -666,6 +682,7 @@ impl DisplayProjection {
                 rich_ui: None,
                 run_id: None,
                 live: None,
+                shown_as: HashMap::new(),
             }),
             display_changed: watch::channel(0).0,
         }
@@ -756,8 +773,9 @@ impl DisplayProjection {
     /// replaces the first.
     pub fn start_tool(&self, session_id: &str, start: crate::display_events::ToolStart) {
         let message = start.message;
-        let frame = ToolFrame::running(session_id, start);
+        let mut frame = ToolFrame::running(session_id, start);
         let mut state = self.state.lock().expect("display projection poisoned");
+        frame.message_id = state.key_for(&frame.message_id);
         if message && !state.message_calls.contains(&frame.call_id) {
             state.message_calls.push(frame.call_id.clone());
         }
@@ -848,9 +866,10 @@ impl DisplayProjection {
                 if !state.message_calls.contains(&input.call_id) {
                     state.message_calls.push(input.call_id.clone());
                 }
+                let message_id = state.key_for(&input.mid);
                 state.messages.push(LiveSay {
                     call_id: input.call_id.clone(),
-                    message_id: input.mid.clone(),
+                    message_id,
                     part_key: input.part.clone(),
                     call_key: None,
                     reader: crate::say_text::SayText::new(),
@@ -914,7 +933,7 @@ impl DisplayProjection {
     /// that message's words are the live footer, `mid` becomes another name for
     /// it: [`DisplayProjection::message_key`] turns later words under `mid` back
     /// into the `live_id`, and [`DisplayProjection::end_message`] ends it by
-    /// either. Returns whether it did; when no words were shown under the
+    /// either name, the `live_id` or `mid`. Returns whether it did; when no words were shown under the
     /// `live_id`, the event is the message's start, as a reader that didn't ask
     /// for `live_id`s sees it, and the caller treats it as one.
     pub fn store_message(&self, mid: &str, live_id: &str) -> bool {
@@ -925,21 +944,21 @@ impl DisplayProjection {
         match state.live.as_mut().filter(|live| live.key == live_id) {
             Some(live) => {
                 live.stored_as = Some(mid.to_owned());
+                state.shown_as.insert(mid.to_owned(), live_id.to_owned());
                 true
             }
             None => false,
         }
     }
 
-    /// The key words under `mid` are shown with: the live message's `live_id`
-    /// when it was stored as `mid`, so its frames keep one key to its end;
-    /// otherwise `mid` itself.
+    /// The key words under `mid` are shown with: the `live_id` its words were
+    /// shown under in this run, so a message's frames keep one key; otherwise
+    /// `mid` itself.
     pub fn message_key(&self, mid: &str) -> String {
-        let state = self.state.lock().expect("display projection poisoned");
-        match &state.live {
-            Some(live) if live.stored_as.as_deref() == Some(mid) => live.key.clone(),
-            _ => mid.to_owned(),
-        }
+        self.state
+            .lock()
+            .expect("display projection poisoned")
+            .key_for(mid)
     }
 
     /// The run ended or paused. A call still running gets an `unanswered`
@@ -951,6 +970,7 @@ impl DisplayProjection {
     fn end_locked(&self, mut state: std::sync::MutexGuard<'_, DisplayProjectionState>) {
         state.rich_ui = None;
         state.run_id = None;
+        state.shown_as.clear();
         let interrupted = crate::display_events::ToolEnd {
             call_id: String::new(),
             outcome: "interrupted".to_owned(),
@@ -996,6 +1016,8 @@ impl DisplayProjection {
         state.display_turn_open = true;
         state.display_end_emitted = false;
         state.live = None;
+        // The words are gone, so later frames go back to the stored `mid`.
+        state.shown_as.clear();
         state.push_gap();
         state.withdraw_messages();
         drop(state);
@@ -1010,6 +1032,7 @@ impl DisplayProjection {
         state.display_turn_open = true;
         state.display_end_emitted = false;
         state.live = None;
+        state.shown_as.clear();
         state.running.clear();
         state.message_calls.clear();
         state.push_all(DisplayStreamFrame::DisplayGap);
