@@ -1,6 +1,7 @@
-//! The sample set `phone-reader-live-ids-v2`: a Pi agent's steps with tool
+//! The sample set `phone-reader-live-ids-v3`: a Pi agent's steps with tool
 //! calls, as an app's display watch and page reads see them. Its README says
-//! what each file shows.
+//! what each file shows. Its stored entries carry the display facts a live Pi
+//! runner serves (each call's key, tool version and times), which v2 lacked.
 //!
 //! Pi's runner streams a step's words under a `live_id` until its host stores
 //! the step, then names it by its `mid`. Its calls run only after that, so
@@ -17,7 +18,7 @@ use super::*;
 use subc_protocol::FrameType;
 
 const SESSION: &str = "ses_head";
-const SET: &str = "phone-reader-live-ids-v2";
+const SET: &str = "phone-reader-live-ids-v3";
 const PIN: &str = "tp1:read:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1";
 
 /// Routes to the test session, which must be the Pi one.
@@ -43,6 +44,19 @@ fn display(event: Value) -> Value {
 fn entry(ordinal: u64, message: Value) -> Value {
     json!({"mid": message["id"], "ordinal": ordinal, "written_at": 1_794_400_000_000_u64 + ordinal,
         "message": message})
+}
+
+/// `entry` with the display facts the runner serves for its call: the call's
+/// key and tool version, when it started, and when it finished once answered.
+fn with_call(mut entry: Value, call: &str, started: u64, finished: Option<u64>) -> Value {
+    let mid = entry["mid"].as_str().unwrap().to_owned();
+    let mut times = json!({"tool_call_id": call, "started_at": started,
+        "call_key": format!("run-session/{mid}/{call}"), "schema_pin": PIN});
+    if let Some(finished) = finished {
+        times["finished_at"] = json!(finished);
+    }
+    entry["tool_times"] = json!([times]);
+    entry
 }
 
 fn user(id: &str, text: &str) -> Value {
@@ -183,15 +197,20 @@ async fn the_pi_live_step_samples_are_what_the_reader_serves() {
     // taken while the call runs.
     {
         let mut entries = route.entries.lock().unwrap();
-        entries.push(entry(
-            2,
-            step(
-                "a1",
-                json!({"type": "thinking", "thinking": "Reading the plan first."}),
-                "call_read",
-                "read",
-                read_args.clone(),
+        entries.push(with_call(
+            entry(
+                2,
+                step(
+                    "a1",
+                    json!({"type": "thinking", "thinking": "Reading the plan first."}),
+                    "call_read",
+                    "read",
+                    read_args.clone(),
+                ),
             ),
+            "call_read",
+            1_794_400_001_000,
+            None,
         ));
     }
     route.history.store(2, Ordering::Relaxed);
@@ -219,15 +238,15 @@ async fn the_pi_live_step_samples_are_what_the_reader_serves() {
 
     // The call is answered and its result stored.
     route
-        .emit(finished("a1", "call_read", 12, 1_794_400_001_400))
+        .emit(finished("a1", "call_read", 13, 1_794_400_001_400))
         .await;
     let answered = notices(&mut served).await;
     keep_notices(&mut served, answered, &mut next);
-    route
-        .entries
-        .lock()
-        .unwrap()
-        .push(entry(3, result("t1", "call_read", "read", "Plan: 3 steps")));
+    {
+        let mut entries = route.entries.lock().unwrap();
+        entries[1]["tool_times"][0]["finished_at"] = json!(1_794_400_001_400_u64);
+        entries.push(entry(3, result("t1", "call_read", "read", "Plan: 3 steps")));
+    }
     route.history.store(3, Ordering::Relaxed);
     let answered_page = served.read(4, &page).await;
     served.keep(
@@ -246,14 +265,14 @@ async fn the_pi_live_step_samples_are_what_the_reader_serves() {
         control(json!({"type": "message_started", "mid": "a3", "live_id": "live-step-2"})),
         control(json!({"type": "message_finished", "mid": "a3"})),
         started("a3", "call_test", "bash", &test_args, 1_794_400_002_000),
-        finished("a3", "call_test", 40, 1_794_400_002_500),
+        finished("a3", "call_test", 15, 1_794_400_002_500),
         display(json!({"type": "tool_input_delta", "live_id": "live-step-3",
             "tool_call_id": "call_status", "tool_name": "bash", "part": "0",
             "delta": bash_args.to_string()})),
         control(json!({"type": "message_started", "mid": "a5", "live_id": "live-step-3"})),
         control(json!({"type": "message_finished", "mid": "a5"})),
         started("a5", "call_status", "bash", &bash_args, 1_794_400_003_000),
-        finished("a5", "call_status", 9, 1_794_400_003_200),
+        finished("a5", "call_status", 5, 1_794_400_003_200),
     ] {
         route.emit(event).await;
     }
@@ -265,25 +284,36 @@ async fn the_pi_live_step_samples_are_what_the_reader_serves() {
     keep_notices(&mut served, rest, &mut next);
     {
         let mut entries = route.entries.lock().unwrap();
-        entries.push(entry(
-            4,
-            step(
-                "a3",
-                json!({"type": "text", "text": "Now the tests."}),
-                "call_test",
-                "bash",
-                test_args,
+        entries.push(with_call(
+            entry(
+                4,
+                step(
+                    "a3",
+                    json!({"type": "text", "text": "Now the tests."}),
+                    "call_test",
+                    "bash",
+                    test_args,
+                ),
             ),
+            "call_test",
+            1_794_400_002_000,
+            Some(1_794_400_002_500),
         ));
         entries.push(entry(
             5,
             result("t3", "call_test", "bash", "test result: ok"),
         ));
-        entries.push(entry(6, call_only("a5", "call_status", "bash", bash_args)));
+        entries.push(with_call(
+            entry(6, call_only("a5", "call_status", "bash", bash_args)),
+            "call_status",
+            1_794_400_003_000,
+            Some(1_794_400_003_200),
+        ));
         entries.push(entry(7, result("t5", "call_status", "bash", "clean")));
     }
     route.history.store(7, Ordering::Relaxed);
     let final_page = served.read(5, &page).await;
+    let served_page_09 = final_page.clone();
     served.keep(&format!("{next:02}-page-run-ended"), &page, final_page);
 
     // Every watched frame about a step carries one key: a step whose words
@@ -323,5 +353,26 @@ async fn the_pi_live_step_samples_are_what_the_reader_serves() {
         6,
         "{keys:?}"
     );
+    // Each stored call carries what its frames carry: its key, and once
+    // answered its finish time, and its result's size equals the answered
+    // frame's `outputBytes`.
+    let stored: Vec<Value> = decoded(&served_page_09)["result"]["messages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .flat_map(|row| row["parts"].as_array().unwrap().clone())
+        .filter(|part| part["type"] == "tool")
+        .collect();
+    assert_eq!(stored.len(), 3, "{stored:?}");
+    for part in &stored {
+        let call = part["callId"].as_str().unwrap();
+        let answered = frames
+            .iter()
+            .find(|frame| frame["callId"] == call && frame["phase"] == "answered")
+            .unwrap();
+        assert_eq!(part["callKey"], answered["callKey"], "{part}");
+        assert_eq!(part["outputBytes"], answered["outputBytes"], "{part}");
+        assert!(part["finishedAtMs"].is_u64(), "{part}");
+    }
     served.check();
 }
