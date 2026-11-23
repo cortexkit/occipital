@@ -7,7 +7,8 @@
 //! assistant entry of its own (`thalamus-final-…`, no content, marked as the
 //! runner's). Occipital builds rows from the `session.read` pages; the run
 //! results, step bodies and display history are kept so the checksums verify
-//! whole.
+//! whole. A Pi reply that really was empty (`pi-native-empty-answer`) sits
+//! beside them, to compare.
 
 use super::*;
 use std::path::{Path, PathBuf};
@@ -33,7 +34,7 @@ fn rows(name: &str, profile: broca_entries::DisplayProfile) -> Vec<Value> {
 #[test]
 fn the_wave1_samples_keep_their_checksums() {
     let sums = std::fs::read(root().join("SHA256SUMS")).unwrap();
-    assert!(format!("{:x}", Sha256::digest(&sums)).starts_with("f05953b7"));
+    assert!(format!("{:x}", Sha256::digest(&sums)).starts_with("19af7847"));
     let sums = String::from_utf8(sums).unwrap();
     for line in sums.lines() {
         let (expected, name) = line.split_once("  ").unwrap();
@@ -78,13 +79,31 @@ fn the_runners_empty_final_entry_is_an_empty_assistant_row() {
     }
 }
 
-/// Pi's classified provider error names `rate_limit`, which the runner
-/// contract doesn't name. A send whose run ended on it is listed unsent with
-/// its reason alone, never with a code the apps can't word.
+/// Pi's classified provider error names the contract's `provider_error`, with
+/// the provider's own code in `provider_detail_code`, so a send whose run
+/// ended on it is listed with a code the apps can word.
 #[test]
-fn pis_provider_error_code_is_left_out_unless_the_contract_names_it() {
+fn pis_provider_error_names_a_contract_code() {
     let status = read("pi-run-status-provider-error.json");
     let code = status["error"]["provider_code"].as_str().unwrap();
-    assert_eq!(code, "rate_limit");
-    assert!(!cortexkit_role_llm_runner::errors::provider_codes::CODES.contains(&code));
+    assert_eq!(code, "provider_error");
+    assert!(cortexkit_role_llm_runner::errors::provider_codes::CODES.contains(&code));
+}
+
+/// A Pi reply that really was empty reads exactly like the runner's own empty
+/// entry: an assistant row with no parts and no text. Nothing on the row tells
+/// the two apart yet.
+#[test]
+fn a_real_empty_pi_reply_reads_like_the_runners_entry() {
+    let rows = rows(
+        "pi-session-read-display-empty-native.json",
+        broca_entries::DisplayProfile::Pi,
+    );
+    let last = rows.last().unwrap();
+    assert_eq!(last["mid"], "pi-native-empty-answer");
+    let display = &last["display"];
+    assert_eq!(
+        (&display["role"], &display["parts"], &display["text"]),
+        (&json!("assistant"), &json!([]), &json!(""))
+    );
 }

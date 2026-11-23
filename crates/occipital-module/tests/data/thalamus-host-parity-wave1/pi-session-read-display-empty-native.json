@@ -1,0 +1,65 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_cd55005e7e8c4b6e8cfa36dcfe14a086",
+  "messages": [
+    {
+      "created_at": 1793440801000,
+      "message": {
+        "id": "pi-native-empty-prompt",
+        "message": {
+          "content": [
+            {
+              "text": "pi-native-empty-prompt",
+              "type": "text"
+            }
+          ],
+          "role": "user"
+        },
+        "parentId": null,
+        "timestamp": "2026-10-31T10:00:01.000Z",
+        "type": "message"
+      },
+      "mid": "pi-native-empty-prompt",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "pi-native-empty-reply"
+      },
+      "time": {
+        "created": 1793440801000
+      },
+      "tool_calls": [],
+      "written_at": 1793440801000
+    },
+    {
+      "completed_at": 1793440802000,
+      "created_at": 1793440802000,
+      "message": {
+        "id": "pi-native-empty-answer",
+        "message": {
+          "content": [],
+          "role": "assistant",
+          "stopReason": "stop"
+        },
+        "parentId": null,
+        "timestamp": "2026-10-31T10:00:02.000Z",
+        "type": "message"
+      },
+      "mid": "pi-native-empty-answer",
+      "ordinal": 2,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "pi-native-empty-reply"
+      },
+      "time": {
+        "created": 1793440802000
+      },
+      "tool_calls": [],
+      "written_at": 1793440802000
+    }
+  ]
+}

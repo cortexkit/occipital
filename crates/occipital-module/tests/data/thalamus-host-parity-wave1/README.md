@@ -1,10 +1,11 @@
 # Host parity wave 1 reader samples
 
-Recorded from commit `bf0307711cdfa389ab01a5699e4161b2d1f80a82` with focused
+Recorded from commit `81b6d1f76c751aad2283106a65a5c7b70c3c31e8` with focused
 `thalamus-harness-module` tests on Linux. These are deterministic runner fixtures, not live
 accounts or provider captures. The six original recording tests passed (6/6); the two tests
-used to capture the read/history pages passed (2/2). The page capture used a scratch-only
-recorder, leaving the committed sources unchanged.
+used to capture the read/history pages passed (2/2), and the provider-error/native-Pi
+recording pair passed (2/2). The page capture used a scratch-only recorder, leaving the
+committed sources unchanged.
 
 ## Run results
 
@@ -50,12 +51,20 @@ read surfaces expose that only through `cortexkit_runner_entry` in the raw messa
 marker. OpenCode’s raw message puts the runner mark under `metadata`; Claude’s puts it at
 the message’s top level.
 
+For contrast, `pi-session-read-display-empty-native.json` is a genuine Pi model reply with
+no text parts. It also has `role: "assistant"` and `message.content: []`, but its mid is the
+native `pi-native-empty-answer`, its stored origin is `host`, and there is no
+`cortexkit_runner_entry` member. Its `stopReason: "stop"`, native timestamps, and real
+unreported model step distinguish it from a `thalamus-final-…` stand-in.
+
 ## Pi evidence
 
 - `pi-step-finished-zero.json`: a decoded `step.finished.v1` body with
   `cache_write_tokens: 0` and `reasoning_tokens: 0` preserved.
 - `pi-run-status-provider-error.json`: a `run.status` whose 429 is
-  `transient` / `rate_limit`, with `rate_limit_error` retained as the detail code.
+  `transient` / `provider_error`, with `rate_limit_error` retained as the provider’s own
+  detail code. `provider_error` is in `provider_codes::CODES`; `rate_limit_error` is detail,
+  not a runner provider code.
 
 Pinned `@earendil-works/pi-ai@1.6.0` keeps HTTP status in the two
 `formatProviderError` prefixes of `message.errorMessage` (`429: <body>` or
@@ -64,6 +73,6 @@ Pinned `@earendil-works/pi-ai@1.6.0` keeps HTTP status in the two
 as `Server requested Ns retry delay`; ordinary consumed Retry-After headers are not
 journaled.
 
-All ten JSON bodies were read after recording. They contain synthetic prompts, model names,
+All eleven JSON bodies were read after recording. They contain synthetic prompts, model names,
 opaque fixture identifiers, and no personal names, paths, credentials, account details, or
 other personal data. `SHA256SUMS` covers every JSON file and this README.
