@@ -330,6 +330,10 @@ pub(super) fn render_limits(tree: &Tree, diagnostics: &mut Vec<crate::Diagnostic
 /// its readable text: the same export with
 /// a table as its rows and a badge as its bare label, for an app that draws
 /// the reply without its catalog.
+/// The readable text of a retired `<Table>` whose rows the reply doesn't hold
+/// (see `retired_table` in [`plain_text`]).
+pub(super) const UNSHOWN_TABLE: &str = "A table from a tool result is not shown.";
+
 pub(super) fn plain_text(
     program: &Resolved,
     source: &[u8],
@@ -484,12 +488,16 @@ pub(super) fn plain_text(
             _ => 0,
         }
     }
-    /// The rows of a `<Table>` the check left as its source text, for the
+    /// What a `<Table>` the check left as its source text reads as, for the
     /// readable text only. Replies held tables until the catalog took them out
     /// of the reply profile, and the apps draw a reply stamped with an older
-    /// catalog from its readable text, so such a table still reads as its
-    /// rows. Only written rows qualify, which is the only form models were
-    /// taught: data read from a tool's output was never drawn without it.
+    /// catalog from its readable text, so such a table must never show its
+    /// tag source to the person. Written rows read as the rows. Rows a tool's
+    /// output supplied can't: a retired tag's references are never asked
+    /// for, so the output isn't here, and such a table reads as one line
+    /// saying so. The reply value grammar allows no other source of rows; a
+    /// tag outside that grammar fails to parse and keeps its source, as any
+    /// tag does.
     fn retired_table(source: &str) -> Option<String> {
         let document = cortexkit_rich_ui_syntax::parse_bytes(
             source.as_bytes(),
@@ -511,12 +519,15 @@ pub(super) fn plain_text(
             return None;
         }
         let prop = |wanted: &str| props.iter().find(|p| p.name == wanted).map(|p| &p.value);
-        let data = literal(prop("data")?)?;
-        let columns = match prop("columns") {
-            Some(columns) => table_columns(&literal(columns)?),
-            None => vec![],
+        let written = || {
+            let data = literal(prop("data")?)?;
+            let columns = match prop("columns") {
+                Some(columns) => table_columns(&literal(columns)?),
+                None => vec![],
+            };
+            Some(table_rows(Some(&data), columns))
         };
-        Some(table_rows(Some(&data), columns))
+        Some(written().unwrap_or_else(|| UNSHOWN_TABLE.to_owned()))
     }
     /// A written value: strings, numbers, booleans, null, and lists and
     /// records of those. Anything computed gives `None`.

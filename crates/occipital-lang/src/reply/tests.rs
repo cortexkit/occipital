@@ -703,14 +703,20 @@ fn readable_text_gives_a_retired_table_its_rows_and_a_badge_its_label() {
 /// Only written rows read as rows: a retired table whose data came from a
 /// tool, or that computes a value, keeps its source.
 #[test]
-fn a_retired_table_without_written_rows_keeps_its_source() {
+fn a_retired_table_without_written_rows_reads_as_one_line() {
     for table in [
         "<Table data={Parse($$tc(1), \"json\")} />",
-        "<Table data={[{n: 1 + 2}]} />",
-        "<Table data={[{n: 1}]} columns={keys} />",
+        "<Table data={Parse($$tc(22), \"json\", {columns: {path: \"text\"}})} columns={[\"path\"]} displayRows={6} />",
+        "<Table data={$$tc(3)} />",
     ] {
-        let done = finish(table.as_bytes());
-        assert_eq!(done.readable_text.as_str(), table);
+        let source = format!("Sizes:\n\n{table}\n");
+        let done = finish(source.as_bytes());
+        assert_eq!(
+            done.readable_text.as_str(),
+            format!("Sizes:\n\n{}\n", super::render::UNSHOWN_TABLE),
+            "{table}"
+        );
+        assert!(!done.readable_text.as_str().contains('<'), "{table}");
     }
 }
 
