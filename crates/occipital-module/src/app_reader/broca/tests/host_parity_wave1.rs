@@ -79,7 +79,8 @@ fn the_runners_empty_final_entry_is_an_empty_assistant_row() {
     }
 }
 
-/// Pi's classified provider error names the contract's `provider_error`, with
+/// A Pi session's run status (Pi is one of the hosts Agent Runner runs) names
+/// its provider error with the contract's `provider_error`, with
 /// the provider's own code in `provider_detail_code`, so a send whose run
 /// ended on it is listed with a code the apps can word.
 #[test]

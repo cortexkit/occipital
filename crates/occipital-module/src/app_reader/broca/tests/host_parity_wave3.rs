@@ -160,7 +160,9 @@ fn claude_code_reads_name_each_senders_send_id() {
 }
 
 /// The late result of a handed-back call arrives as AFT's own notice message,
-/// not a ride, so the row is marked as AFT's notice.
+/// a chat entry of its own rather than a notice appended to a tool result
+/// (which `session.notices` would list under the call), so the row is marked
+/// as AFT's notice.
 #[test]
 fn a_handed_back_calls_late_result_is_aft_notice_row() {
     for name in [
