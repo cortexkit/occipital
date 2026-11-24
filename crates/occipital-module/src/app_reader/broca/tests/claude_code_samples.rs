@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 use subc_protocol::FrameType;
 
 /// Routes to the test session whatever its harness: here, Claude Code.
-struct AnyHarness(Arc<FakeRoute>);
+pub(super) struct AnyHarness(pub(super) Arc<FakeRoute>);
 
 #[async_trait]
 impl BrocaRoutes for AnyHarness {
@@ -27,7 +27,7 @@ impl BrocaRoutes for AnyHarness {
 
 /// Entorhinal's answer for the test session: a Claude Code head hosted by
 /// Thalamus's runner.
-struct ClaudeCodeHead;
+pub(super) struct ClaudeCodeHead;
 
 #[async_trait]
 impl Entorhinal for ClaudeCodeHead {

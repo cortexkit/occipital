@@ -34,13 +34,21 @@
 //! exact header for that module. Then the header is cut from the row, and the
 //! row's `origin` names the module, so the apps don't draw the message as the
 //! person's own.
+//!
+//! A message the person sends while a Claude Code turn runs is stored by
+//! Claude Code inside two fixed sentences of its own, as a `system` message
+//! (llm-runner §9.7.1.1). The read names the wrapper in a `host_frame` fact,
+//! trusted only when the stored text is exactly those sentences around the
+//! words. Then the row is the person's, with their words as its text and the
+//! two sentences as host parts, so the apps draw the words as the person's
+//! and the sentences as the host's.
 
 use std::collections::{HashMap, VecDeque};
 
 use cortexkit_role_llm_runner::archive_prunes_reasoning::{kinds, PrunedReasoning};
-use cortexkit_role_llm_runner::attribution::{self, Attribution};
+use cortexkit_role_llm_runner::attribution::{self, Attribution, HostFrame};
 use cortexkit_role_llm_runner::display::{
-    self, DisplayPart, DisplayRow, ModelFallback, ProjectionError,
+    self, DisplayPart, DisplayRow, ModelFallback, ProjectionError, ProjectionFacts, RunnerEntry,
 };
 use cortexkit_role_llm_runner::read::HostPart;
 use cortexkit_role_llm_runner::serializer_profile;
@@ -111,6 +119,11 @@ struct Entry {
     /// itself.
     #[serde(default, deserialize_with = "lenient_fallback")]
     model_fallback: Option<ModelFallback>,
+    /// Set when the runner wrote this entry itself, as it recorded doing
+    /// (llm-runner §4.7): the model and the person wrote none of it. A
+    /// malformed fact drops only itself.
+    #[serde(default, deserialize_with = "lenient")]
+    runner_entry: Option<RunnerEntry>,
     /// The module that relayed this message, once its header is verified and
     /// cut. Never read from the entry itself.
     #[serde(skip)]
@@ -367,17 +380,27 @@ impl DisplayProfile {
     /// apply when the row is built, as for Broca, and an exact read keeps all.
     /// The contract itself cuts a relayed message's header, and only when the
     /// stored text carries it exactly.
+    /// The contract also splits a host's wrapper from the person's words when
+    /// the stored text carries it exactly. An entry never has both facts; if a
+    /// runner sent both, the relay header wins and the wrapper stays in the
+    /// text, as before either fact existed.
     fn project(
         self,
         body: &Value,
         relay: Option<&Attribution>,
+        frame: Option<&HostFrame>,
     ) -> Result<DisplayRow, ProjectionError> {
         let profile = match self {
             Self::OpenCode2 => serializer_profile::OPENCODE_V2,
             Self::ClaudeCode => serializer_profile::ANTHROPIC_MESSAGES,
             Self::Pi => serializer_profile::PI,
         };
-        display::project_with_attribution(profile, body, None, relay)
+        let facts = match (relay, frame) {
+            (Some(relay), _) => ProjectionFacts::default().with_attribution(relay),
+            (None, Some(frame)) => ProjectionFacts::default().with_host_frame(frame),
+            (None, None) => ProjectionFacts::default(),
+        };
+        display::project_with_facts(profile, body, None, &facts)
     }
 
     /// Pi writes a message to its journal once, when the message ends, so an
@@ -415,6 +438,8 @@ struct EntryFacts {
     host_parts: Vec<HostPart>,
     #[serde(default, deserialize_with = "lenient_fallback")]
     model_fallback: Option<ModelFallback>,
+    #[serde(default, deserialize_with = "lenient")]
+    runner_entry: Option<RunnerEntry>,
 }
 
 /// A `model_fallback` fact the contract's type refuses (an empty or repeated
@@ -422,6 +447,16 @@ struct EntryFacts {
 fn lenient_fallback<'de, D>(deserializer: D) -> Result<Option<ModelFallback>, D::Error>
 where
     D: serde::Deserializer<'de>,
+{
+    lenient(deserializer)
+}
+
+/// A fact the contract's type refuses reads as absent, so it costs only
+/// itself, never the message.
+fn lenient<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: serde::de::DeserializeOwned,
 {
     let value = Option::<Value>::deserialize(deserializer)?;
     Ok(value.and_then(|value| serde_json::from_value(value).ok()))
@@ -465,7 +500,10 @@ pub fn display_rows(
         let relay = raw
             .get("attribution")
             .and_then(|fact| serde_json::from_value::<Attribution>(fact.clone()).ok());
-        let projected = profile.project(&raw["message"], relay.as_ref());
+        let frame = raw
+            .get("host_frame")
+            .and_then(|fact| serde_json::from_value::<HostFrame>(fact.clone()).ok());
+        let projected = profile.project(&raw["message"], relay.as_ref(), frame.as_ref());
         let facts = serde_json::from_value::<EntryFacts>(raw.clone());
         let mid = raw["mid"].as_str().filter(|mid| !mid.is_empty());
         let (mut row, facts, mid) = match (projected, facts, mid) {
@@ -484,6 +522,9 @@ pub fn display_rows(
         let (_, ordinal) = identity(raw, profile.name())?;
         // Set only when the contract verified the header and cut it.
         let relayed = row.attribution.take();
+        // Set only when the contract verified the wrapper and split it off:
+        // the row is then the person's, with the wrapper as host parts.
+        let framed = row.host_frame.take().map(|fact| fact.part.to_string());
         let tool_times = facts.tool_times.or_else(|| projected_tool_times(&row));
         let only_results = !row.parts.is_empty()
             && row
@@ -523,6 +564,7 @@ pub fn display_rows(
             // The contract's projection already shows each reasoning summary as
             // a reasoning part of the display row.
             reasoning_summaries: Vec::new(),
+            runner_entry: facts.runner_entry.or(row.runner_entry),
             origin: relayed.as_ref().map(|fact| fact.module.clone()),
         };
         let header_part = relayed.as_ref().map(|fact| fact.part.to_string());
@@ -541,6 +583,12 @@ pub fn display_rows(
                 }
                 _ => {}
             }
+            // A split wrapper's two edges are host text parts of the framed
+            // part, keyed `<stored key>#host_frame:head` and `…:tail`.
+            let edge = match (&framed, &part) {
+                (Some(_), DisplayPart::Text(text)) if text.host => Some(text.host_code.clone()),
+                _ => None,
+            };
             let Some((key, part, call_id)) = display_part(part) else {
                 continue;
             };
@@ -550,7 +598,28 @@ pub fn display_rows(
             {
                 continue;
             }
-            let stored = key.parse::<usize>().unwrap_or(position);
+            let slot = key
+                .split_once("#host_frame:")
+                .map_or(key.as_str(), |(stored, _)| stored);
+            let stored = slot.parse::<usize>().unwrap_or(position);
+            // The wrapper's edges and the words between them are what the
+            // frame says they are; a `host_parts` fact never applies to them.
+            if framed.as_deref() == Some(slot) {
+                let part = match (part, edge) {
+                    (Part::Text(text) | Part::Injected(text), Some(code)) => {
+                        Part::Host { text, code }
+                    }
+                    (part, _) => part,
+                };
+                parts.push(Decoded {
+                    stored,
+                    key,
+                    call_id,
+                    part,
+                    folded: false,
+                });
+                continue;
+            }
             if matches!(part, Part::Reasoning(_)) && pruned(&entry, stored, pruned_reasoning) {
                 continue;
             }
@@ -1273,8 +1342,24 @@ fn project(
         .as_ref()
         .filter(|fallback| fallback.check(&message.entry.message.role).is_ok())
     {
-        display["modelFallback"] =
-            json!({"requested": fallback.requested, "answered": fallback.answered});
+        let mut note = json!({"requested": fallback.requested, "answered": fallback.answered});
+        // Why the model asked for didn't answer, when the runner recorded it.
+        for (member, value) in [
+            ("by", &fallback.by),
+            ("category", &fallback.category),
+            ("cause", &fallback.cause),
+        ] {
+            if let Some(value) = value {
+                note[member] = json!(value);
+            }
+        }
+        display["modelFallback"] = note;
+    }
+    // An entry the runner wrote itself, such as the empty reply it records
+    // when the host saved none for a finished step. The apps never draw it as
+    // the model's failure to answer.
+    if let Some(entry) = &message.entry.runner_entry {
+        display["runnerEntry"] = json!({"code": entry.code});
     }
     if let Some(id) = message
         .entry
