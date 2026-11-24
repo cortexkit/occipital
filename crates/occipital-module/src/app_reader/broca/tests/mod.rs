@@ -2085,6 +2085,7 @@ mod contract_0085_samples;
 mod contract_0748_samples;
 mod contract_0811_samples;
 mod contract_0821_writer_samples;
+mod contract_096_samples;
 mod contract_goldens;
 mod contract_heads;
 mod credit_window_1111;
