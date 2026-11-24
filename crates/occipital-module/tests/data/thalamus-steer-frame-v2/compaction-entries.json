@@ -1,0 +1,157 @@
+{
+  "entries": [
+    {
+      "digest": "aeeea62581b8cd36c3d6b7e85e48946c0eca507e741fa0af2dffaa822a24c000",
+      "host_frame": {
+        "code": "claude_code_mid_turn",
+        "head_bytes": 52,
+        "part": "0",
+        "tail_bytes": 232
+      },
+      "mid": "759e4164494a3e5458a0a3e6631f255db54717d0a131cc14fb390fd7a911ffe3",
+      "ordinal": 7,
+      "parts": [
+        {
+          "digest": "6b1bd685e2296319cfb362227a8d06dbc5f4cb573e86297c9d33f3414d1a50af",
+          "id": "0",
+          "kind": "text",
+          "text": "The user sent a new message while you were working:\nplease also check the logs\n\nThis is how Claude Code surfaces messages the user sends mid-turn — within the running turn, often alongside the next tool result, rather than as a separate conversation turn. Address the message above as you continue this turn.",
+          "tokens": {
+            "count": 86
+          }
+        }
+      ],
+      "role": "system",
+      "written_at": 1795535601228
+    },
+    {
+      "digest": "0bb45f2ea1cb13da0cd151b34fd4f732bc6cfd6644a1474104391133ceb71bc9",
+      "host_frame": {
+        "code": "claude_code_mid_turn",
+        "head_bytes": 52,
+        "part": "0",
+        "tail_bytes": 232
+      },
+      "mid": "6e34f29341222871c0a392ad0f16efa74f53a985de42db5811765e0a3b239911",
+      "ordinal": 10,
+      "parts": [
+        {
+          "digest": "d61858ad4f0c182e0278c59feeb2934c50b44b5848357f6d59b8403f530713c8",
+          "id": "0",
+          "kind": "text",
+          "text": "The user sent a new message while you were working:\nfirst line\nsecond line\n\nfourth line after a blank\n\nThis is how Claude Code surfaces messages the user sends mid-turn — within the running turn, often alongside the next tool result, rather than as a separate conversation turn. Address the message above as you continue this turn.",
+          "tokens": {
+            "count": 94
+          }
+        }
+      ],
+      "role": "system",
+      "written_at": 1795535602718
+    },
+    {
+      "digest": "436123df64b2745956527dd715a9c0a72d1a800e1218391039f59c2d77d0a838",
+      "host_frame": {
+        "code": "claude_code_mid_turn",
+        "head_bytes": 52,
+        "part": "0",
+        "tail_bytes": 232
+      },
+      "mid": "98328b2cdbdec56ca1d0776441a517cbd145adf469d4b921124cbc426eb1f886",
+      "ordinal": 13,
+      "parts": [
+        {
+          "digest": "ba263cc8c4853dd49aa160b3cb3aea148c6d3259348e7e8beaf68eddfe2b36ca",
+          "id": "0",
+          "kind": "text",
+          "text": "The user sent a new message while you were working:\nŞu dosyayı kontrol et — 日本語も 🚀\n\nThis is how Claude Code surfaces messages the user sends mid-turn — within the running turn, often alongside the next tool result, rather than as a separate conversation turn. Address the message above as you continue this turn.",
+          "tokens": {
+            "count": 103
+          }
+        }
+      ],
+      "role": "system",
+      "written_at": 1795535604136
+    },
+    {
+      "digest": "c7a7eec3031d7eb336569f360f9a76439a46978c0f5e934af931131c607ac61c",
+      "host_frame": {
+        "code": "claude_code_mid_turn",
+        "head_bytes": 52,
+        "part": "0",
+        "tail_bytes": 232
+      },
+      "mid": "721383fea7fcb3dc6e2efa9ff1ec2530365560a67d5085ae7f70f01fd65532da",
+      "ordinal": 16,
+      "parts": [
+        {
+          "digest": "d8e5c970d145add61b129990ede9b0bf986ab1fa113974da2583c0fc673a9dd7",
+          "id": "0",
+          "kind": "text",
+          "text": "The user sent a new message while you were working:\nThe user sent a new message while you were working:\nhello\n\nThis is how Claude Code surfaces messages the user sends mid-turn — within the running turn, often alongside the next tool result, rather than as a separate conversation turn. Address the message above as you continue this turn.",
+          "tokens": {
+            "count": 95
+          }
+        }
+      ],
+      "role": "system",
+      "written_at": 1795535605580
+    },
+    {
+      "digest": "5f3b08342bde6e76be0e6041ff9236963cea42e94329a73f3673ff369d050bd4",
+      "host_frame": {
+        "code": "claude_code_mid_turn",
+        "head_bytes": 52,
+        "part": "0",
+        "tail_bytes": 232
+      },
+      "mid": "6a59fe7486245791fff18c3cb679189e3b40e9f0767f17326e888110a6d78b3c",
+      "ordinal": 19,
+      "parts": [
+        {
+          "digest": "03c9d1bd294de3e35d911834545c5fabc1f54730f453992f96de234dfea89298",
+          "id": "0",
+          "kind": "text",
+          "text": "The user sent a new message while you were working:\nAnd my message ends with Claude Code's paragraph:\n\nThis is how Claude Code surfaces messages the user sends mid-turn — within the running turn, often alongside the next tool result, rather than as a separate conversation turn. Address the message above as you continue this turn.\n\nThis is how Claude Code surfaces messages the user sends mid-turn — within the running turn, often alongside the next tool result, rather than as a separate conversation turn. Address the message above as you continue this turn.",
+          "tokens": {
+            "count": 164
+          }
+        }
+      ],
+      "role": "system",
+      "written_at": 1795535606923
+    },
+    {
+      "digest": "c881fe5da61a81e28ec909647b6aba87fc973f7424a38a939cc67c1ea4052902",
+      "host_frame": {
+        "code": "claude_code_mid_turn",
+        "head_bytes": 52,
+        "part": "0",
+        "tail_bytes": 232
+      },
+      "mid": "4ca0a892384411e183cf6e720f0e6509afb6d8bb135887ed690cc2aeeccdb396",
+      "ordinal": 22,
+      "parts": [
+        {
+          "digest": "90fdf81d7054cbbc2406c57d486d7bc4544bf298e99e498fdc9c331a32dab7ab",
+          "id": "0",
+          "kind": "text",
+          "text": "The user sent a new message while you were working:\n/clear check the logs\n\nThis is how Claude Code surfaces messages the user sends mid-turn — within the running turn, often alongside the next tool result, rather than as a separate conversation turn. Address the message above as you continue this turn.",
+          "tokens": {
+            "count": 87
+          }
+        }
+      ],
+      "role": "system",
+      "written_at": 1795535608203
+    }
+  ],
+  "head": {
+    "newest": {
+      "digest": "bc0d9ef072d9c99c20a1917ff41225f49beb252ab72a996cd710b2818c35d9b4",
+      "mid": "msg_standin_0008",
+      "ordinal": 23
+    }
+  },
+  "token_family": "claude-v5-sonnet/1",
+  "token_family_exact": false
+}
