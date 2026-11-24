@@ -22,13 +22,16 @@ Broca session identities.
 | `for-session.json` | `dd41914934a9b85b35670a815bef17de84752d8da7d05a1bf8833f3edbd1996b` |
 | `session-for-ref.json` | `3e9e99950c167a2b2c5b3315fca35d353f50bc29e8ad93afe616c15e7cb703f6` |
 
-The following files are byte-for-byte copies from Entorhinal commit `54c22cc`
-(0.1.44). They publish held-session placement and open-session pagination.
+The following files are byte-for-byte copies from Entorhinal's tag
+`agent-sessions-v1.13` (0.1.84). They publish held-session placement and
+open-session pagination. Since the first copy (`54c22cc`, 0.1.44) a moved
+session's machine reads `source-machine`, an ended one's liveness `gone`, and
+the module is `prefrontal`.
 `resolve::tests::published_placement_samples_keep_their_checksums` pins their
 hashes; app-reader tests adapt the listed session bindings to the resolver's
 runner and legacy reference reply envelopes.
 
 | File | SHA-256 |
 | --- | --- |
-| `sessions-held-on.json` | `17df474000ecbd7c148a30c358b101cb947919073159f7f2941fff369b19e174` |
-| `sessions-open.json` | `01d785e934526b457d9f958ac94d8a0829526729e0f418e114ea8faab3a86af7` |
+| `sessions-held-on.json` | `12d112208ca459bd80dab2f1956a8ad1a4661e7d8f4210a64c6733199b8c5329` |
+| `sessions-open.json` | `a92b2ff10aa68854acc39e883e2ba080a84db5cfc28fa1b51d2fe9df5a8661c0` |

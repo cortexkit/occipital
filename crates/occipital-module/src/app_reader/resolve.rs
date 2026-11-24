@@ -658,13 +658,13 @@ mod tests {
                 include_str!(
                     "../../tests/fixtures/entorhinal-agent-sessions-v1/sessions-held-on.json"
                 ),
-                "17df474000ecbd7c148a30c358b101cb947919073159f7f2941fff369b19e174",
+                "12d112208ca459bd80dab2f1956a8ad1a4661e7d8f4210a64c6733199b8c5329",
             ),
             (
                 include_str!(
                     "../../tests/fixtures/entorhinal-agent-sessions-v1/sessions-open.json"
                 ),
-                "01d785e934526b457d9f958ac94d8a0829526729e0f418e114ea8faab3a86af7",
+                "a92b2ff10aa68854acc39e883e2ba080a84db5cfc28fa1b51d2fe9df5a8661c0",
             ),
         ] {
             assert_eq!(format!("{:x}", Sha256::digest(bytes.as_bytes())), checksum);
