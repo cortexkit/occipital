@@ -2168,6 +2168,7 @@ mod pi_live_steps_samples;
 mod pi_pages;
 mod pi_photo_1118;
 mod pi_samples;
+mod plan_notes_1124;
 mod relayed_samples;
 mod reply_tags_1112;
 mod run_endings_samples;
