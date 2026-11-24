@@ -95,3 +95,52 @@ async fn a_runner_without_the_group_is_never_asked_for_stamps() {
         assert!(params.get("include_rich_ui").is_none(), "{params}");
     }
 }
+
+/// The sample set `phone-reader-head-rich-v3`: a reply stamped with the reply
+/// catalog's current digest that holds a `Badge`, a `Styled`, a `Callout` and a
+/// `LinkCard`, the tags a reply may still hold without references or handles.
+/// The chat is invented, in the shape Broca serves it, and is served
+/// through Occipital's own handlers as a phone's route reaches them. The digest
+/// is the library's own, so a catalog change that moves it fails this test and
+/// needs the next set.
+#[tokio::test]
+async fn the_head_rich_v3_samples_are_what_the_reader_serves() {
+    let digest = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../occipital-lang/catalog/catalog-v1.digest"
+    ))
+    .unwrap();
+    let digest = digest.trim();
+    assert!(digest.starts_with("a6ea6f5d"), "{digest}");
+    let reply = "The nightly backup finished. <Badge tone=\"success\">3 of 3 copied</Badge>\n\n\
+        <Styled>Sizes come from the copy run two minutes ago.</Styled>\n\n\
+        <Callout title=\"One folder was slow\" tone=\"warning\">\n\
+        The photos folder took 14 minutes, twice as long as last week.\n\
+        </Callout>\n\n\
+        <LinkCard href=\"https://example.com/backups/nightly\" title=\"Nightly backup report\" />";
+    let route = FakeRoute::new();
+    *route.describe.lock().unwrap() = Some(describe_with(&["rich_ui_stamp"]));
+    *route.run_state.lock().unwrap() = Value::Null;
+    *route.entries.lock().unwrap() = vec![
+        json!({"mid": "m1", "ordinal": 1, "written_at": 1_795_600_000_000_u64,
+            "message": {"role": "user",
+                "content": [{"type": "text", "text": "How did last night's backup go?"}]}}),
+        json!({"mid": "m2", "ordinal": 2, "written_at": 1_795_600_004_000_u64,
+            "rich_ui": {"dialect": "1.0", "catalog_digest": digest},
+            "message": {"role": "assistant", "content": [{"type": "text", "text": reply}]}}),
+    ];
+    let (_, app) = serving(route);
+    let mut served = super::served_samples::Served::new("phone-reader-head-rich-v3", app);
+    let page = json!({"method": TRANSCRIPT_PAGE,
+        "params": {"session": "alfonso:s1", "harness": "broca", "limit": 6}});
+    let bytes = served.read(1, &page).await;
+    let rows = super::served_samples::decoded(&bytes)["result"]["messages"].clone();
+    assert_eq!(rows[0]["richUi"], Value::Null);
+    assert_eq!(
+        rows[1]["richUi"],
+        json!({"dialect": "1.0", "catalogDigest": digest})
+    );
+    assert_eq!(rows[1]["text"], json!(reply));
+    served.keep("01-newest-page", &page, bytes);
+    served.check();
+}
