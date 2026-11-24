@@ -1,0 +1,56 @@
+{
+  "method": "session.refresh",
+  "params": {
+    "generation": 1,
+    "plan": {
+      "composition": {
+        "providers": [
+          {
+            "provider": "prefrontal-core",
+            "tools": [
+              {
+                "capabilities": [
+                  "prefrontal-core:knowhow.read/v1"
+                ],
+                "name": "echo"
+              },
+              {
+                "capabilities": [
+                  "prefrontal-core:knowhow.read/v1"
+                ],
+                "name": "shout"
+              }
+            ]
+          }
+        ],
+        "step_transform_items": []
+      },
+      "composition_digest": "bfe683c95ed2e9521670f9db16680b0d122891ba039b17cfc0fefc2ea33fab6e",
+      "step_transform_items": [],
+      "system_text_items": [
+        {
+          "params": {
+            "role": "changed"
+          },
+          "preset": "worker",
+          "provider": "prefrontal-core"
+        }
+      ],
+      "tool_items": [
+        {
+          "params": {
+            "exclude": [
+              "web_search"
+            ]
+          },
+          "preset": "worker",
+          "provider": "prefrontal-core"
+        }
+      ]
+    },
+    "policy": "immediately",
+    "refetch": [
+      "prefrontal-core"
+    ]
+  }
+}
