@@ -1,0 +1,32 @@
+{
+  "final_message": {
+    "mid": "87b1441a",
+    "ordinal": 5,
+    "text": "PROBE_DONE"
+  },
+  "finish": "stop",
+  "run_id": "run_805cfe4943e53f064515f78c",
+  "state": "completed",
+  "usage": {
+    "by_model": [
+      {
+        "cache_write_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 22,
+        "model": "probe",
+        "output_tokens": 4,
+        "provider": "probe",
+        "reasoning_tokens": 0,
+        "steps": 2,
+        "unreported_steps": 0
+      }
+    ],
+    "cache_write_tokens": 0,
+    "cached_input_tokens": 0,
+    "input_tokens": 22,
+    "output_tokens": 4,
+    "reasoning_tokens": 0,
+    "steps": 2,
+    "unreported_steps": 0
+  }
+}

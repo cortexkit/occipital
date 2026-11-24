@@ -1,0 +1,140 @@
+{
+  "pending_send_status": {
+    "run_id": "run_84d9a173e92e91c218c01478",
+    "state": "pending",
+    "submission_id": "[\"stopper\",\"interrupt\"]"
+  },
+  "retract_while_waiting": "already_started",
+  "send_reply": {
+    "run_id": "run_84d9a173e92e91c218c01478",
+    "state": "active"
+  },
+  "sender_head": {
+    "first_ordinal": 1,
+    "head": {
+      "session": "2ee26082d07b278c",
+      "sub_index": 0,
+      "wal_seq": 2
+    },
+    "history_version": 0,
+    "incarnation": "inc_bd7f5a1cd6c64057adc427f517b6f1ff",
+    "input": {
+      "attachments": "no",
+      "mime_types": [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/gif",
+        "image/webp"
+      ],
+      "modalities": [
+        "text"
+      ]
+    },
+    "last_ordinal": 3,
+    "model": {
+      "model": "probe",
+      "provider": "probe"
+    },
+    "sender": {
+      "interrupt": true,
+      "modes": [
+        "tool_result",
+        "turn_system_cleared",
+        "steer"
+      ]
+    },
+    "updated_at": 1795479339314
+  },
+  "stopped_run_result": {
+    "finish": "other",
+    "run_id": "run_a761feefc517c4358fe13085",
+    "state": "cancelled",
+    "usage": {
+      "by_model": [
+        {
+          "cache_write_tokens": 0,
+          "cached_input_tokens": 0,
+          "input_tokens": 11,
+          "model": "probe",
+          "output_tokens": 2,
+          "provider": "probe",
+          "reasoning_tokens": 0,
+          "steps": 2,
+          "unreported_steps": 1
+        }
+      ],
+      "cache_write_tokens": 0,
+      "cached_input_tokens": 0,
+      "input_tokens": 11,
+      "output_tokens": 2,
+      "reasoning_tokens": 0,
+      "steps": 2,
+      "unreported_steps": 1
+    }
+  },
+  "stopped_run_status": {
+    "final_step_finish_reason": "aborted",
+    "finish": "other",
+    "state": "cancelled",
+    "undelivered_steers": [],
+    "usage": {
+      "by_model": [
+        {
+          "cache_write_tokens": 0,
+          "cached_input_tokens": 0,
+          "input_tokens": 11,
+          "model": "probe",
+          "output_tokens": 2,
+          "provider": "probe",
+          "reasoning_tokens": 0,
+          "steps": 2,
+          "unreported_steps": 1
+        }
+      ],
+      "cache_write_tokens": 0,
+      "cached_input_tokens": 0,
+      "input_tokens": 11,
+      "output_tokens": 2,
+      "reasoning_tokens": 0,
+      "steps": 2,
+      "unreported_steps": 1
+    }
+  },
+  "successor_run_status": {
+    "final_step_finish_reason": "stop",
+    "finish": "stop",
+    "state": "completed",
+    "undelivered_steers": [],
+    "usage": {
+      "by_model": [
+        {
+          "cache_write_tokens": 0,
+          "cached_input_tokens": 0,
+          "input_tokens": 11,
+          "model": "probe",
+          "output_tokens": 2,
+          "provider": "probe",
+          "reasoning_tokens": 0,
+          "steps": 1,
+          "unreported_steps": 0
+        }
+      ],
+      "cache_write_tokens": 0,
+      "cached_input_tokens": 0,
+      "input_tokens": 11,
+      "output_tokens": 2,
+      "reasoning_tokens": 0,
+      "steps": 1,
+      "unreported_steps": 0
+    }
+  },
+  "successor_send_status": {
+    "delivered": {
+      "as": "turn",
+      "ref": "run_84d9a173e92e91c218c01478"
+    },
+    "run_id": "run_84d9a173e92e91c218c01478",
+    "state": "active"
+  }
+}

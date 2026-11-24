@@ -1,0 +1,66 @@
+{
+  "first_ordinal": 1,
+  "head": {
+    "session": "882992e09f589168",
+    "sub_index": 0,
+    "wal_seq": 12
+  },
+  "history_version": 0,
+  "incarnation": "inc_66ef54aab7aa40c2a3346e0f14423b9f",
+  "input": {
+    "attachments": "no",
+    "mime_types": [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/gif",
+      "image/webp"
+    ],
+    "modalities": [
+      "text"
+    ]
+  },
+  "last_ordinal": 8,
+  "last_run_state": {
+    "run_id": "run_d69c092d2f512e453f1a551e",
+    "state": "completed"
+  },
+  "model": {
+    "model": "probe",
+    "provider": "probe"
+  },
+  "sender": {
+    "interrupt": true,
+    "modes": [
+      "tool_result",
+      "turn_system_cleared",
+      "steer",
+      "idle_start"
+    ],
+    "owner": true
+  },
+  "updated_at": 1795476943029,
+  "usage": {
+    "by_model": [
+      {
+        "cache_write_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 22,
+        "model": "probe",
+        "output_tokens": 4,
+        "provider": "probe",
+        "reasoning_tokens": 0,
+        "steps": 2,
+        "unreported_steps": 0
+      }
+    ],
+    "cache_write_tokens": 0,
+    "cached_input_tokens": 0,
+    "input_tokens": 22,
+    "output_tokens": 4,
+    "reasoning_tokens": 0,
+    "since": "run_55e2a860b84cdd926ff30ef4",
+    "steps": 2,
+    "unreported_steps": 0
+  }
+}

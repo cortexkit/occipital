@@ -1,0 +1,78 @@
+{
+  "baseline": {
+    "baseline": {
+      "accepted_generation": 0,
+      "applied_generation": 0,
+      "composition_digest": "ae5f5d0a9238f443ea4676e31000c9233381a4c07ee962bd941c3d51fe933fb4",
+      "items": [
+        {
+          "item": "tools",
+          "item_digest": "catalog-aft",
+          "provider": "aft"
+        },
+        {
+          "item": "tools",
+          "item_digest": "catalog-prefrontal-core",
+          "provider": "prefrontal-core"
+        },
+        {
+          "item": "system_text",
+          "item_digest": "c00b4aef0d28836a6f37d7bac317b62aa25a39d16779946cca35dbab6a2cb9f2",
+          "preflight_digest": "preflight-prefrontal-core",
+          "provider": "prefrontal-core"
+        },
+        {
+          "item": "system_text",
+          "item_digest": "5d1d13f1e34242905e0795099840b130de7fc6d8c2cd7378fe68d6dcdad9627a",
+          "preflight_digest": "preflight-aft",
+          "provider": "aft"
+        }
+      ],
+      "rungs": {
+        "system_text": [
+          "on_prefix_rebuild",
+          "on_system_rebuild",
+          "on_history_rebuild",
+          "immediately"
+        ],
+        "tools": [
+          "on_prefix_rebuild",
+          "on_system_rebuild",
+          "on_history_rebuild",
+          "immediately"
+        ]
+      },
+      "tool_names": [
+        "bash",
+        "edit",
+        "read",
+        "ask",
+        "browser_use",
+        "computer_use",
+        "knowhow",
+        "sidekick"
+      ],
+      "user_commands": [
+        {
+          "argument_hint": "words",
+          "description": "Show private status",
+          "name": "probe-status",
+          "provider": "aft"
+        }
+      ]
+    },
+    "state": "ready"
+  },
+  "invocation_reply": {
+    "call_key": "uc_7787f1b04d1745758e577ae1484a5873",
+    "reply": {
+      "state": "done",
+      "text": "PI_PRIVATE_COMMAND_REPLY"
+    }
+  },
+  "status": {
+    "progress": [],
+    "state": "done",
+    "text": "PI_PRIVATE_COMMAND_REPLY"
+  }
+}

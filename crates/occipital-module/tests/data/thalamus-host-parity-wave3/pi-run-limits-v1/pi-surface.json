@@ -1,0 +1,122 @@
+{
+  "cache": null,
+  "generation": 0,
+  "limits": {
+    "final_step": false,
+    "max_output_tokens": 19
+  },
+  "protocol_version": 4,
+  "request_id": "0c9fdda7-2e87-49ce-b2b4-4a7e3eac5aff",
+  "run_start": {
+    "asks": "limit"
+  },
+  "system_text": "Frozen Pi system",
+  "tools": [
+    {
+      "capabilities": [
+        "shell.exec/v1"
+      ],
+      "description": "bash from aft",
+      "input_schema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "bash",
+      "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "semantics": 1
+    },
+    {
+      "capabilities": [
+        "code.edit/v1"
+      ],
+      "description": "edit from aft",
+      "input_schema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "edit",
+      "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "semantics": 1
+    },
+    {
+      "capabilities": [
+        "code.read/v1"
+      ],
+      "description": "read from aft",
+      "input_schema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "read",
+      "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "semantics": 1
+    },
+    {
+      "capabilities": [
+        "prefrontal-core:parent.ask/v1"
+      ],
+      "description": "ask from prefrontal-core",
+      "input_schema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "ask",
+      "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "semantics": 1
+    },
+    {
+      "capabilities": [
+        "browser.use/v1",
+        "cerebellum:browser.use/v1"
+      ],
+      "description": "browser_use from prefrontal-core",
+      "input_schema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "browser_use",
+      "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "semantics": 1
+    },
+    {
+      "capabilities": [
+        "cerebellum:computer.use/v1",
+        "computer.use/v1"
+      ],
+      "description": "computer_use from prefrontal-core",
+      "input_schema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "computer_use",
+      "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "semantics": 1
+    },
+    {
+      "capabilities": [
+        "prefrontal-core:knowhow.read/v1"
+      ],
+      "description": "knowhow from prefrontal-core",
+      "input_schema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "knowhow",
+      "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "semantics": 1
+    },
+    {
+      "capabilities": [
+        "prefrontal-core:sidekick.research/v1"
+      ],
+      "description": "sidekick from prefrontal-core",
+      "input_schema": {
+        "properties": {},
+        "type": "object"
+      },
+      "name": "sidekick",
+      "schema_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "semantics": 1
+    }
+  ]
+}

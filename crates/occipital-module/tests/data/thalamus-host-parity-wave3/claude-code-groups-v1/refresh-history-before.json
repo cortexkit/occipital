@@ -1,0 +1,64 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_84de7fc9c30240a5883ae2bf6124f98a",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "keep this turn",
+        "role": "user"
+      },
+      "mid": "e96a2d9ff9f56383765b737753f3071b2f8730d86e2bb8e15a25e7cea40ec32a",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_3e5a141a55882c4880d7ed61"
+      },
+      "send_id": "first",
+      "sender": "prefrontal-core",
+      "written_at": 1795478883609
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_3e5a141a55882c4880d7ed61"
+      },
+      "written_at": 1795478883609
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "stand-in reply (no plan named)",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_standin_0001",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_3e5a141a55882c4880d7ed61"
+      },
+      "written_at": 1795478883672
+    }
+  ]
+}

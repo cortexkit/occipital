@@ -1,0 +1,150 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_70c21ffc8e0c4ec5b3582bbf30934ae8",
+  "messages": [
+    {
+      "mid": "72e01245",
+      "ordinal": 1,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "",
+            "type": "text"
+          }
+        ],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1795476938424
+    },
+    {
+      "mid": "4fe8d290",
+      "ordinal": 2,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "FIRST_CONTACT",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "text": "FIRST_CONTACT"
+      },
+      "written_at": 1795476938424
+    },
+    {
+      "mid": "55f90aff",
+      "ordinal": 3,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "PROBE_DONE",
+            "type": "text"
+          }
+        ],
+        "role": "assistant",
+        "text": "PROBE_DONE"
+      },
+      "written_at": 1795476938466
+    },
+    {
+      "mid": "7aa401ec",
+      "ordinal": 4,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "",
+            "type": "text"
+          }
+        ],
+        "role": "system",
+        "text": ""
+      },
+      "written_at": 1795476942762
+    },
+    {
+      "mid": "837112be",
+      "ordinal": 5,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "TOOL_TURN under rich UI teaching",
+            "type": "text"
+          }
+        ],
+        "role": "user",
+        "sender": "prefrontal-core",
+        "text": "TOOL_TURN under rich UI teaching"
+      },
+      "written_at": 1795476942765
+    },
+    {
+      "mid": "7328017c",
+      "ordinal": 6,
+      "row": {
+        "parts": [
+          {
+            "arguments": "{\"command\":\"printf PROBE_TOOL\"}",
+            "call_key": "01a20ac3-de6f-7351-9ca3-b1c1ea1370aa/7328017c/call_probe_2",
+            "finished_at": 1795476942851,
+            "name": "bash",
+            "part": "0",
+            "schema_pin": "tp1:bash:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+            "started_at": 1795476942850,
+            "tool_call_id": "call_probe_2",
+            "type": "tool_call"
+          }
+        ],
+        "rich_ui": {
+          "catalog_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dialect": "1.0"
+        },
+        "role": "assistant",
+        "text": ""
+      },
+      "written_at": 1795476942839
+    },
+    {
+      "mid": "9bb87fab",
+      "ordinal": 7,
+      "row": {
+        "parts": [
+          {
+            "content": "{\"catalog_digest\":\"catalog-aft\",\"generation\":\"fake\",\"tools\":[{\"capabilities\":[\"shell.exec/v1\"],\"description\":\"bash from aft\",\"input_schema\":{\"properties\":{},\"type\":\"object\"},\"name\":\"bash\",\"schema_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"semantics\":1},{\"capabilities\":[\"code.edit/v1\"],\"description\":\"edit from aft\",\"input_schema\":{\"properties\":{},\"type\":\"object\"},\"name\":\"edit\",\"schema_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"semantics\":1},{\"capabilities\":[\"code.read/v1\"],\"description\":\"read from aft\",\"input_schema\":{\"properties\":{},\"type\":\"object\"},\"name\":\"read\",\"schema_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"semantics\":1}]}",
+            "part": "0",
+            "tool_call_id": "call_probe_2",
+            "type": "tool_result"
+          }
+        ],
+        "role": "toolResult",
+        "text": ""
+      },
+      "written_at": 1795476942855
+    },
+    {
+      "mid": "d272c513",
+      "ordinal": 8,
+      "row": {
+        "parts": [
+          {
+            "part": "0",
+            "text": "PROBE_DONE",
+            "type": "text"
+          }
+        ],
+        "rich_ui": {
+          "catalog_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dialect": "1.0"
+        },
+        "role": "assistant",
+        "text": "PROBE_DONE"
+      },
+      "written_at": 1795476942890
+    }
+  ]
+}

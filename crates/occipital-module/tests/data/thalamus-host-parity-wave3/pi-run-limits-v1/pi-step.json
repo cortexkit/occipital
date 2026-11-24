@@ -1,0 +1,21 @@
+{
+  "asks": {
+    "act": true,
+    "every_step": true
+  },
+  "cache": null,
+  "generation": 0,
+  "limits": {
+    "final_step": false,
+    "max_output_tokens": 19
+  },
+  "per_request": false,
+  "plan_notes": [],
+  "protocol_version": 4,
+  "report": {
+    "run_id": "run_96ecc89d5c2a25a051ce19f0"
+  },
+  "request_id": "8d6c14a8-1970-4b58-8155-3525ddcf8dd5",
+  "store_epoch": "none",
+  "turn_notes": []
+}

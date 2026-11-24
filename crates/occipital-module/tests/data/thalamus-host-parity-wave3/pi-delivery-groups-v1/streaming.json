@@ -1,0 +1,1076 @@
+{
+  "control_frames": [
+    {
+      "cursor": {
+        "session": "6ece995517bab017",
+        "sub_index": 0,
+        "wal_seq": 9
+      },
+      "delivery": "",
+      "kind": "control",
+      "run_id": "run_d1cfac2c561dd2a0358dbf23",
+      "runner_event": "send_accepted",
+      "send_id": "[\"prefrontal-core\",\"after-cursor\"]",
+      "seq": 1
+    },
+    {
+      "as": "turn",
+      "cursor": {
+        "session": "6ece995517bab017",
+        "sub_index": 0,
+        "wal_seq": 10
+      },
+      "kind": "control",
+      "ref": "run_d1cfac2c561dd2a0358dbf23",
+      "runner_event": "delivered",
+      "send_id": "[\"prefrontal-core\",\"after-cursor\"]",
+      "seq": 2
+    },
+    {
+      "cursor": {
+        "session": "6ece995517bab017",
+        "sub_index": 1,
+        "wal_seq": 10
+      },
+      "event": {
+        "run_id": "run_d1cfac2c561dd2a0358dbf23",
+        "type": "run_started"
+      },
+      "kind": "control",
+      "run_id": "run_d1cfac2c561dd2a0358dbf23",
+      "runner_event": "run_started",
+      "seq": 3
+    },
+    {
+      "cursor": {
+        "session": "6ece995517bab017",
+        "sub_index": 0,
+        "wal_seq": 11
+      },
+      "event": {
+        "mid": "ab6594f2",
+        "type": "message_started"
+      },
+      "kind": "control",
+      "seq": 4
+    },
+    {
+      "cursor": {
+        "session": "6ece995517bab017",
+        "sub_index": 1,
+        "wal_seq": 11
+      },
+      "event": {
+        "mid": "ab6594f2",
+        "type": "message_finished"
+      },
+      "kind": "control",
+      "mid": "ab6594f2",
+      "ordinal": 7,
+      "runner_event": "message",
+      "seq": 5
+    },
+    {
+      "cursor": {
+        "session": "6ece995517bab017",
+        "sub_index": 0,
+        "wal_seq": 12
+      },
+      "event": {
+        "mid": "2face423",
+        "type": "message_started"
+      },
+      "kind": "control",
+      "seq": 6
+    },
+    {
+      "cursor": {
+        "session": "6ece995517bab017",
+        "sub_index": 1,
+        "wal_seq": 12
+      },
+      "event": {
+        "mid": "2face423",
+        "type": "message_finished"
+      },
+      "kind": "control",
+      "mid": "2face423",
+      "ordinal": 8,
+      "runner_event": "message",
+      "seq": 7
+    },
+    {
+      "cursor": {
+        "session": "6ece995517bab017",
+        "sub_index": 0,
+        "wal_seq": 13
+      },
+      "event": {
+        "reason": "completed",
+        "run_id": "run_d1cfac2c561dd2a0358dbf23",
+        "type": "run_finished"
+      },
+      "kind": "control",
+      "run_id": "run_d1cfac2c561dd2a0358dbf23",
+      "runner_event": "run_ended",
+      "seq": 8,
+      "state": "completed"
+    }
+  ],
+  "page": {
+    "head": {
+      "session": "6ece995517bab017",
+      "sub_index": 0,
+      "wal_seq": 8
+    },
+    "history_version": 0,
+    "incarnation": "inc_41a99d120eed4b0699371ead84e33f16",
+    "messages": [
+      {
+        "message": {
+          "id": "312664dc",
+          "message": {
+            "content": "",
+            "role": "system",
+            "sections": {
+              "cwd": "<cwd>\n/motor-home/tmp/.tmpswGGfA/work\n</cwd>",
+              "docs": "<docs>\nPi documentation (read only when the user asks about the harness itself, its SDK, extensions, themes, skills, or TUI):\n- Main documentation: /w/acct-01KXJJHK4V6DB42W1YAN2XD9QN/cf59575c7ffe72b41e68483b7c1212c8980ece802c3dfe134d1c129146734713/thalamus/pi-extension/thalamus/node_modules/@earendil-works/pi-coding-agent/README.md\n- Additional docs: /w/acct-01KXJJHK4V6DB42W1YAN2XD9QN/cf59575c7ffe72b41e68483b7c1212c8980ece802c3dfe134d1c129146734713/thalamus/pi-extension/thalamus/node_modules/@earendil-works/pi-coding-agent/docs\n- Examples: /w/acct-01KXJJHK4V6DB42W1YAN2XD9QN/cf59575c7ffe72b41e68483b7c1212c8980ece802c3dfe134d1c129146734713/thalamus/pi-extension/thalamus/node_modules/@earendil-works/pi-coding-agent/examples (extensions, custom tools, SDK)\n- When reading pi docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory\n- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), packages (docs/packages.md), environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md), codemode scripts and non-LLM models such as classifiers and image models (docs/codemode.md)\n- Before implementing harness changes, read the relevant docs and examples in full, following related cross-references.\n</docs>",
+              "preamble": "You are a coding assistant running inside pi, a coding agent harness. Help users inspect files, run commands, and modify code.",
+              "rules": "<rules>\n- Use bash for file operations like ls, rg, find\n- Use read to examine files instead of cat or sed.\n- You can inspect PI_* environment variables for current model and session details.\n- Use edit for targeted changes. Batch changes to one file in a single call.\n- Each edits[].oldText must exactly and uniquely match the original file. Keep matches short and non-overlapping; merge nearby changes without including large unchanged regions.\n- Use write only for new files or complete rewrites.\n- Be concise in your responses\n- Show file paths clearly when working with files\n</rules>",
+              "tools": "<tools>\n- read: Read file contents\n- bash: Execute bash commands (ls, grep, find, etc.)\n- edit: Make precise file edits with exact text replacement, including multiple disjoint edits in one call\n- write: Create or overwrite files\n\nAdditional tools may be available.\n</tools>"
+            },
+            "timestamp": 1795479333931,
+            "toolsAdded": [
+              {
+                "constrainedSampling": {
+                  "strict": "prefer",
+                  "type": "json_schema"
+                },
+                "description": "Read the contents of a file. Supports text files and images (jpg, png, gif, webp, bmp). Images are sent as attachments. For text files, output is truncated to 2000 lines or 50KB (whichever is hit first). Use offset/limit for large files. When you need the full file, continue with offset until complete.",
+                "name": "read",
+                "parameters": {
+                  "properties": {
+                    "limit": {
+                      "description": "Maximum number of lines to read",
+                      "type": "number"
+                    },
+                    "offset": {
+                      "description": "Line number to start reading from (1-indexed)",
+                      "type": "number"
+                    },
+                    "path": {
+                      "description": "Path to the file to read (relative or absolute)",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ],
+                  "type": "object"
+                }
+              },
+              {
+                "constrainedSampling": {
+                  "strict": "prefer",
+                  "type": "json_schema"
+                },
+                "description": "Execute a bash command in the current working directory. Returns stdout and stderr. Output is truncated to last 2000 lines or 50KB (whichever is hit first). If truncated, full output is saved to a temp file. Optionally provide a timeout in seconds.",
+                "name": "bash",
+                "parameters": {
+                  "properties": {
+                    "command": {
+                      "description": "Shell command to execute",
+                      "type": "string"
+                    },
+                    "timeout": {
+                      "description": "Timeout in seconds (optional, no default timeout)",
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "command"
+                  ],
+                  "type": "object"
+                }
+              },
+              {
+                "constrainedSampling": {
+                  "strict": "prefer",
+                  "type": "json_schema"
+                },
+                "description": "Edit a single file using exact text replacement. Every edits[].oldText must match a unique, non-overlapping region of the original file. If two changes affect the same block or nearby lines, merge them into one edit instead of emitting overlapping edits. Do not include large unchanged regions just to connect distant changes.",
+                "name": "edit",
+                "parameters": {
+                  "properties": {
+                    "edits": {
+                      "description": "One or more targeted replacements. Each edit is matched against the original file, not incrementally. Do not include overlapping or nested edits. If two changes touch the same block or nearby lines, merge them into one edit instead.",
+                      "items": {
+                        "properties": {
+                          "newText": {
+                            "description": "Replacement text for this targeted edit.",
+                            "type": "string"
+                          },
+                          "oldText": {
+                            "description": "Exact text for one targeted replacement. It must be unique in the original file and must not overlap with any other edits[].oldText in the same call.",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "oldText",
+                          "newText"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "path": {
+                      "description": "Path to the file to edit (relative or absolute)",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "edits"
+                  ],
+                  "type": "object"
+                }
+              },
+              {
+                "constrainedSampling": {
+                  "strict": "prefer",
+                  "type": "json_schema"
+                },
+                "description": "Write content to a file. Creates the file if it doesn't exist, overwrites if it does. Automatically creates parent directories.",
+                "name": "write",
+                "parameters": {
+                  "properties": {
+                    "content": {
+                      "description": "Content to write to the file",
+                      "type": "string"
+                    },
+                    "path": {
+                      "description": "Path to the file to write (relative or absolute)",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "content"
+                  ],
+                  "type": "object"
+                }
+              }
+            ]
+          },
+          "parentId": "2b4640bc",
+          "timestamp": "2026-11-24T00:15:33.933Z",
+          "type": "message"
+        },
+        "mid": "312664dc",
+        "ordinal": 1,
+        "role": "system",
+        "time": {
+          "created": 1795479333933
+        },
+        "tool_calls": [],
+        "written_at": 1795479333933
+      },
+      {
+        "message": {
+          "id": "b7b3cfc3",
+          "message": {
+            "content": [
+              {
+                "text": "FIRST_CONTACT",
+                "type": "text"
+              }
+            ],
+            "role": "user",
+            "timestamp": 1795479333930
+          },
+          "parentId": "312664dc",
+          "timestamp": "2026-11-24T00:15:33.934Z",
+          "type": "message"
+        },
+        "mid": "b7b3cfc3",
+        "ordinal": 2,
+        "role": "user",
+        "time": {
+          "created": 1795479333934
+        },
+        "tool_calls": [],
+        "written_at": 1795479333934
+      },
+      {
+        "message": {
+          "id": "fc4fe20c",
+          "message": {
+            "api": "openai-completions",
+            "content": [
+              {
+                "text": "PROBE_DONE",
+                "type": "text"
+              }
+            ],
+            "durationMs": 41,
+            "model": "probe",
+            "provider": "probe",
+            "rawStopReason": "stop",
+            "responseId": "chatcmpl-probe",
+            "role": "assistant",
+            "stopReason": "stop",
+            "thinkingLevel": "off",
+            "timestamp": 1795479333988,
+            "usage": {
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "cost": {
+                "cacheRead": 0,
+                "cacheWrite": 0,
+                "input": 0,
+                "output": 0,
+                "total": 0,
+                "totalFromProvider": false
+              },
+              "input": 11,
+              "output": 2,
+              "reasoning": 0,
+              "totalTokens": 13
+            }
+          },
+          "parentId": "b7b3cfc3",
+          "timestamp": "2026-11-24T00:15:34.032Z",
+          "type": "message"
+        },
+        "mid": "fc4fe20c",
+        "ordinal": 3,
+        "role": "assistant",
+        "time": {
+          "created": 1795479334032
+        },
+        "tool_calls": [],
+        "written_at": 1795479334032
+      },
+      {
+        "message": {
+          "id": "a489ff8e",
+          "message": {
+            "content": "",
+            "role": "system",
+            "sections": {
+              "rules": "<rules>\n- Use bash for file operations like ls, rg, find\n- Be concise in your responses\n- Show file paths clearly when working with files\n</rules>",
+              "tools": "<tools>\n(none)\n\nAdditional tools may be available.\n</tools>"
+            },
+            "timestamp": 1795479340144,
+            "toolsAdded": [
+              {
+                "description": "read from aft",
+                "name": "read",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "bash from aft",
+                "name": "bash",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "edit from aft",
+                "name": "edit",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "ask from prefrontal-core",
+                "name": "ask",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "browser_use from prefrontal-core",
+                "name": "browser_use",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "computer_use from prefrontal-core",
+                "name": "computer_use",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "knowhow from prefrontal-core",
+                "name": "knowhow",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "sidekick from prefrontal-core",
+                "name": "sidekick",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              }
+            ],
+            "toolsRemoved": [
+              {
+                "name": "read"
+              },
+              {
+                "name": "bash"
+              },
+              {
+                "name": "edit"
+              },
+              {
+                "name": "write"
+              }
+            ]
+          },
+          "parentId": "896572bf",
+          "timestamp": "2026-11-24T00:15:40.147Z",
+          "type": "message"
+        },
+        "mid": "a489ff8e",
+        "ordinal": 4,
+        "role": "system",
+        "time": {
+          "created": 1795479340147
+        },
+        "tool_calls": [],
+        "written_at": 1795479340147
+      },
+      {
+        "delivered_as": {
+          "mode": "idle_start"
+        },
+        "message": {
+          "id": "6bf6dd96",
+          "message": {
+            "content": [
+              {
+                "text": "BEFORE_CURSOR",
+                "type": "text"
+              }
+            ],
+            "role": "user",
+            "timestamp": 1795479340143
+          },
+          "parentId": "a489ff8e",
+          "timestamp": "2026-11-24T00:15:40.148Z",
+          "type": "message"
+        },
+        "mid": "6bf6dd96",
+        "ordinal": 5,
+        "role": "user",
+        "run": {
+          "episode": "1",
+          "final": false,
+          "run_id": "run_9677e541c6027b301fe73955"
+        },
+        "time": {
+          "created": 1795479340148
+        },
+        "tool_calls": [],
+        "written_at": 1795479340148
+      },
+      {
+        "message": {
+          "id": "74712061",
+          "message": {
+            "api": "openai-completions",
+            "content": [
+              {
+                "text": "PROBE_DONE",
+                "type": "text"
+              }
+            ],
+            "durationMs": 45,
+            "model": "probe",
+            "provider": "probe",
+            "rawStopReason": "stop",
+            "responseId": "chatcmpl-probe",
+            "role": "assistant",
+            "stopReason": "stop",
+            "thinkingLevel": "off",
+            "timestamp": 1795479340206,
+            "usage": {
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "cost": {
+                "cacheRead": 0,
+                "cacheWrite": 0,
+                "input": 0,
+                "output": 0,
+                "total": 0,
+                "totalFromProvider": false
+              },
+              "input": 11,
+              "output": 2,
+              "reasoning": 0,
+              "totalTokens": 13
+            }
+          },
+          "parentId": "6bf6dd96",
+          "timestamp": "2026-11-24T00:15:40.252Z",
+          "type": "message"
+        },
+        "mid": "74712061",
+        "ordinal": 6,
+        "role": "assistant",
+        "run": {
+          "episode": "1",
+          "final": true,
+          "run_id": "run_9677e541c6027b301fe73955"
+        },
+        "time": {
+          "created": 1795479340252
+        },
+        "tool_calls": [],
+        "written_at": 1795479340252
+      }
+    ]
+  },
+  "page_after": {
+    "head": {
+      "session": "6ece995517bab017",
+      "sub_index": 0,
+      "wal_seq": 13
+    },
+    "history_version": 0,
+    "incarnation": "inc_41a99d120eed4b0699371ead84e33f16",
+    "messages": [
+      {
+        "message": {
+          "id": "312664dc",
+          "message": {
+            "content": "",
+            "role": "system",
+            "sections": {
+              "cwd": "<cwd>\n/motor-home/tmp/.tmpswGGfA/work\n</cwd>",
+              "docs": "<docs>\nPi documentation (read only when the user asks about the harness itself, its SDK, extensions, themes, skills, or TUI):\n- Main documentation: /w/acct-01KXJJHK4V6DB42W1YAN2XD9QN/cf59575c7ffe72b41e68483b7c1212c8980ece802c3dfe134d1c129146734713/thalamus/pi-extension/thalamus/node_modules/@earendil-works/pi-coding-agent/README.md\n- Additional docs: /w/acct-01KXJJHK4V6DB42W1YAN2XD9QN/cf59575c7ffe72b41e68483b7c1212c8980ece802c3dfe134d1c129146734713/thalamus/pi-extension/thalamus/node_modules/@earendil-works/pi-coding-agent/docs\n- Examples: /w/acct-01KXJJHK4V6DB42W1YAN2XD9QN/cf59575c7ffe72b41e68483b7c1212c8980ece802c3dfe134d1c129146734713/thalamus/pi-extension/thalamus/node_modules/@earendil-works/pi-coding-agent/examples (extensions, custom tools, SDK)\n- When reading pi docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory\n- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), packages (docs/packages.md), environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md), codemode scripts and non-LLM models such as classifiers and image models (docs/codemode.md)\n- Before implementing harness changes, read the relevant docs and examples in full, following related cross-references.\n</docs>",
+              "preamble": "You are a coding assistant running inside pi, a coding agent harness. Help users inspect files, run commands, and modify code.",
+              "rules": "<rules>\n- Use bash for file operations like ls, rg, find\n- Use read to examine files instead of cat or sed.\n- You can inspect PI_* environment variables for current model and session details.\n- Use edit for targeted changes. Batch changes to one file in a single call.\n- Each edits[].oldText must exactly and uniquely match the original file. Keep matches short and non-overlapping; merge nearby changes without including large unchanged regions.\n- Use write only for new files or complete rewrites.\n- Be concise in your responses\n- Show file paths clearly when working with files\n</rules>",
+              "tools": "<tools>\n- read: Read file contents\n- bash: Execute bash commands (ls, grep, find, etc.)\n- edit: Make precise file edits with exact text replacement, including multiple disjoint edits in one call\n- write: Create or overwrite files\n\nAdditional tools may be available.\n</tools>"
+            },
+            "timestamp": 1795479333931,
+            "toolsAdded": [
+              {
+                "constrainedSampling": {
+                  "strict": "prefer",
+                  "type": "json_schema"
+                },
+                "description": "Read the contents of a file. Supports text files and images (jpg, png, gif, webp, bmp). Images are sent as attachments. For text files, output is truncated to 2000 lines or 50KB (whichever is hit first). Use offset/limit for large files. When you need the full file, continue with offset until complete.",
+                "name": "read",
+                "parameters": {
+                  "properties": {
+                    "limit": {
+                      "description": "Maximum number of lines to read",
+                      "type": "number"
+                    },
+                    "offset": {
+                      "description": "Line number to start reading from (1-indexed)",
+                      "type": "number"
+                    },
+                    "path": {
+                      "description": "Path to the file to read (relative or absolute)",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ],
+                  "type": "object"
+                }
+              },
+              {
+                "constrainedSampling": {
+                  "strict": "prefer",
+                  "type": "json_schema"
+                },
+                "description": "Execute a bash command in the current working directory. Returns stdout and stderr. Output is truncated to last 2000 lines or 50KB (whichever is hit first). If truncated, full output is saved to a temp file. Optionally provide a timeout in seconds.",
+                "name": "bash",
+                "parameters": {
+                  "properties": {
+                    "command": {
+                      "description": "Shell command to execute",
+                      "type": "string"
+                    },
+                    "timeout": {
+                      "description": "Timeout in seconds (optional, no default timeout)",
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "command"
+                  ],
+                  "type": "object"
+                }
+              },
+              {
+                "constrainedSampling": {
+                  "strict": "prefer",
+                  "type": "json_schema"
+                },
+                "description": "Edit a single file using exact text replacement. Every edits[].oldText must match a unique, non-overlapping region of the original file. If two changes affect the same block or nearby lines, merge them into one edit instead of emitting overlapping edits. Do not include large unchanged regions just to connect distant changes.",
+                "name": "edit",
+                "parameters": {
+                  "properties": {
+                    "edits": {
+                      "description": "One or more targeted replacements. Each edit is matched against the original file, not incrementally. Do not include overlapping or nested edits. If two changes touch the same block or nearby lines, merge them into one edit instead.",
+                      "items": {
+                        "properties": {
+                          "newText": {
+                            "description": "Replacement text for this targeted edit.",
+                            "type": "string"
+                          },
+                          "oldText": {
+                            "description": "Exact text for one targeted replacement. It must be unique in the original file and must not overlap with any other edits[].oldText in the same call.",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "oldText",
+                          "newText"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "path": {
+                      "description": "Path to the file to edit (relative or absolute)",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "edits"
+                  ],
+                  "type": "object"
+                }
+              },
+              {
+                "constrainedSampling": {
+                  "strict": "prefer",
+                  "type": "json_schema"
+                },
+                "description": "Write content to a file. Creates the file if it doesn't exist, overwrites if it does. Automatically creates parent directories.",
+                "name": "write",
+                "parameters": {
+                  "properties": {
+                    "content": {
+                      "description": "Content to write to the file",
+                      "type": "string"
+                    },
+                    "path": {
+                      "description": "Path to the file to write (relative or absolute)",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "content"
+                  ],
+                  "type": "object"
+                }
+              }
+            ]
+          },
+          "parentId": "2b4640bc",
+          "timestamp": "2026-11-24T00:15:33.933Z",
+          "type": "message"
+        },
+        "mid": "312664dc",
+        "ordinal": 1,
+        "role": "system",
+        "time": {
+          "created": 1795479333933
+        },
+        "tool_calls": [],
+        "written_at": 1795479333933
+      },
+      {
+        "message": {
+          "id": "b7b3cfc3",
+          "message": {
+            "content": [
+              {
+                "text": "FIRST_CONTACT",
+                "type": "text"
+              }
+            ],
+            "role": "user",
+            "timestamp": 1795479333930
+          },
+          "parentId": "312664dc",
+          "timestamp": "2026-11-24T00:15:33.934Z",
+          "type": "message"
+        },
+        "mid": "b7b3cfc3",
+        "ordinal": 2,
+        "role": "user",
+        "time": {
+          "created": 1795479333934
+        },
+        "tool_calls": [],
+        "written_at": 1795479333934
+      },
+      {
+        "message": {
+          "id": "fc4fe20c",
+          "message": {
+            "api": "openai-completions",
+            "content": [
+              {
+                "text": "PROBE_DONE",
+                "type": "text"
+              }
+            ],
+            "durationMs": 41,
+            "model": "probe",
+            "provider": "probe",
+            "rawStopReason": "stop",
+            "responseId": "chatcmpl-probe",
+            "role": "assistant",
+            "stopReason": "stop",
+            "thinkingLevel": "off",
+            "timestamp": 1795479333988,
+            "usage": {
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "cost": {
+                "cacheRead": 0,
+                "cacheWrite": 0,
+                "input": 0,
+                "output": 0,
+                "total": 0,
+                "totalFromProvider": false
+              },
+              "input": 11,
+              "output": 2,
+              "reasoning": 0,
+              "totalTokens": 13
+            }
+          },
+          "parentId": "b7b3cfc3",
+          "timestamp": "2026-11-24T00:15:34.032Z",
+          "type": "message"
+        },
+        "mid": "fc4fe20c",
+        "ordinal": 3,
+        "role": "assistant",
+        "time": {
+          "created": 1795479334032
+        },
+        "tool_calls": [],
+        "written_at": 1795479334032
+      },
+      {
+        "message": {
+          "id": "a489ff8e",
+          "message": {
+            "content": "",
+            "role": "system",
+            "sections": {
+              "rules": "<rules>\n- Use bash for file operations like ls, rg, find\n- Be concise in your responses\n- Show file paths clearly when working with files\n</rules>",
+              "tools": "<tools>\n(none)\n\nAdditional tools may be available.\n</tools>"
+            },
+            "timestamp": 1795479340144,
+            "toolsAdded": [
+              {
+                "description": "read from aft",
+                "name": "read",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "bash from aft",
+                "name": "bash",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "edit from aft",
+                "name": "edit",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "ask from prefrontal-core",
+                "name": "ask",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "browser_use from prefrontal-core",
+                "name": "browser_use",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "computer_use from prefrontal-core",
+                "name": "computer_use",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "knowhow from prefrontal-core",
+                "name": "knowhow",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              },
+              {
+                "description": "sidekick from prefrontal-core",
+                "name": "sidekick",
+                "parameters": {
+                  "properties": {},
+                  "type": "object"
+                }
+              }
+            ],
+            "toolsRemoved": [
+              {
+                "name": "read"
+              },
+              {
+                "name": "bash"
+              },
+              {
+                "name": "edit"
+              },
+              {
+                "name": "write"
+              }
+            ]
+          },
+          "parentId": "896572bf",
+          "timestamp": "2026-11-24T00:15:40.147Z",
+          "type": "message"
+        },
+        "mid": "a489ff8e",
+        "ordinal": 4,
+        "role": "system",
+        "time": {
+          "created": 1795479340147
+        },
+        "tool_calls": [],
+        "written_at": 1795479340147
+      },
+      {
+        "delivered_as": {
+          "mode": "idle_start"
+        },
+        "message": {
+          "id": "6bf6dd96",
+          "message": {
+            "content": [
+              {
+                "text": "BEFORE_CURSOR",
+                "type": "text"
+              }
+            ],
+            "role": "user",
+            "timestamp": 1795479340143
+          },
+          "parentId": "a489ff8e",
+          "timestamp": "2026-11-24T00:15:40.148Z",
+          "type": "message"
+        },
+        "mid": "6bf6dd96",
+        "ordinal": 5,
+        "role": "user",
+        "run": {
+          "episode": "1",
+          "final": false,
+          "run_id": "run_9677e541c6027b301fe73955"
+        },
+        "time": {
+          "created": 1795479340148
+        },
+        "tool_calls": [],
+        "written_at": 1795479340148
+      },
+      {
+        "message": {
+          "id": "74712061",
+          "message": {
+            "api": "openai-completions",
+            "content": [
+              {
+                "text": "PROBE_DONE",
+                "type": "text"
+              }
+            ],
+            "durationMs": 45,
+            "model": "probe",
+            "provider": "probe",
+            "rawStopReason": "stop",
+            "responseId": "chatcmpl-probe",
+            "role": "assistant",
+            "stopReason": "stop",
+            "thinkingLevel": "off",
+            "timestamp": 1795479340206,
+            "usage": {
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "cost": {
+                "cacheRead": 0,
+                "cacheWrite": 0,
+                "input": 0,
+                "output": 0,
+                "total": 0,
+                "totalFromProvider": false
+              },
+              "input": 11,
+              "output": 2,
+              "reasoning": 0,
+              "totalTokens": 13
+            }
+          },
+          "parentId": "6bf6dd96",
+          "timestamp": "2026-11-24T00:15:40.252Z",
+          "type": "message"
+        },
+        "mid": "74712061",
+        "ordinal": 6,
+        "role": "assistant",
+        "run": {
+          "episode": "1",
+          "final": true,
+          "run_id": "run_9677e541c6027b301fe73955"
+        },
+        "time": {
+          "created": 1795479340252
+        },
+        "tool_calls": [],
+        "written_at": 1795479340252
+      },
+      {
+        "delivered_as": {
+          "mode": "idle_start"
+        },
+        "message": {
+          "id": "ab6594f2",
+          "message": {
+            "content": [
+              {
+                "text": "AFTER_CURSOR SLOW_TURN",
+                "type": "text"
+              }
+            ],
+            "role": "user",
+            "timestamp": 1795479340348
+          },
+          "parentId": "74712061",
+          "timestamp": "2026-11-24T00:15:40.350Z",
+          "type": "message"
+        },
+        "mid": "ab6594f2",
+        "ordinal": 7,
+        "role": "user",
+        "run": {
+          "episode": "1",
+          "final": false,
+          "run_id": "run_d1cfac2c561dd2a0358dbf23"
+        },
+        "time": {
+          "created": 1795479340350
+        },
+        "tool_calls": [],
+        "written_at": 1795479340350
+      },
+      {
+        "message": {
+          "id": "2face423",
+          "message": {
+            "api": "openai-completions",
+            "content": [
+              {
+                "text": "PROBE_DONE",
+                "type": "text"
+              }
+            ],
+            "durationMs": 813,
+            "model": "probe",
+            "provider": "probe",
+            "rawStopReason": "stop",
+            "responseId": "chatcmpl-probe",
+            "role": "assistant",
+            "stopReason": "stop",
+            "thinkingLevel": "off",
+            "timestamp": 1795479340392,
+            "usage": {
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "cost": {
+                "cacheRead": 0,
+                "cacheWrite": 0,
+                "input": 0,
+                "output": 0,
+                "total": 0,
+                "totalFromProvider": false
+              },
+              "input": 11,
+              "output": 2,
+              "reasoning": 0,
+              "totalTokens": 13
+            }
+          },
+          "parentId": "ab6594f2",
+          "timestamp": "2026-11-24T00:15:41.204Z",
+          "type": "message"
+        },
+        "mid": "2face423",
+        "ordinal": 8,
+        "role": "assistant",
+        "run": {
+          "episode": "1",
+          "final": true,
+          "run_id": "run_d1cfac2c561dd2a0358dbf23"
+        },
+        "time": {
+          "created": 1795479341204
+        },
+        "tool_calls": [],
+        "written_at": 1795479341204
+      }
+    ]
+  },
+  "resume": {
+    "from": {
+      "session": "6ece995517bab017",
+      "sub_index": 0,
+      "wal_seq": 8
+    }
+  }
+}

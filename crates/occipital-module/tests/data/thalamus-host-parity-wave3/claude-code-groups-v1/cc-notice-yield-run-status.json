@@ -1,0 +1,26 @@
+{
+  "final_step_finish_reason": "end_turn",
+  "finish": "stop",
+  "state": "completed",
+  "undelivered_steers": [],
+  "usage": {
+    "by_model": [
+      {
+        "cache_write_tokens": 0,
+        "cached_input_tokens": 0,
+        "input_tokens": 2000,
+        "model": "claude-haiku-5-5",
+        "output_tokens": 100,
+        "provider": "anthropic",
+        "steps": 2,
+        "unreported_steps": 0
+      }
+    ],
+    "cache_write_tokens": 0,
+    "cached_input_tokens": 0,
+    "input_tokens": 2000,
+    "output_tokens": 100,
+    "steps": 2,
+    "unreported_steps": 0
+  }
+}

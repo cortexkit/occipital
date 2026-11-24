@@ -1,0 +1,44 @@
+{
+  "baseline": {
+    "accepted_generation": 1,
+    "applied_generation": 1,
+    "composition_digest": "bfe683c95ed2e9521670f9db16680b0d122891ba039b17cfc0fefc2ea33fab6e",
+    "effective": {
+      "applied_by": "fold",
+      "generation": 1,
+      "manifest_digest": "48548dae04fd47e255a0e0f568401e798fae9e88f56b476b843c604afef35ad5"
+    },
+    "items": [
+      {
+        "item": "tools",
+        "item_digest": "catalog-prefrontal-core",
+        "provider": "prefrontal-core"
+      },
+      {
+        "item": "system_text",
+        "item_digest": "d6f2839040a220db9f05cb59744efe5c21a1fa1a0a12c630f506fd18a737907d",
+        "preflight_digest": "preflight-prefrontal-core",
+        "provider": "prefrontal-core"
+      }
+    ],
+    "rungs": {
+      "system_text": [
+        "on_prefix_rebuild",
+        "on_system_rebuild",
+        "on_history_rebuild",
+        "immediately"
+      ],
+      "tools": [
+        "on_prefix_rebuild",
+        "on_system_rebuild",
+        "on_history_rebuild",
+        "immediately"
+      ]
+    },
+    "tool_names": [
+      "echo",
+      "shout"
+    ]
+  },
+  "state": "ready"
+}

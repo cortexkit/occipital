@@ -1,0 +1,121 @@
+{
+  "head": {
+    "session": "b692e4cb8469f235",
+    "sub_index": 0,
+    "wal_seq": 10
+  },
+  "history_version": 0,
+  "incarnation": "inc_26809687c8ec4c379d71cb264c6c0c1d",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "HOOKED: first prompt",
+        "role": "user"
+      },
+      "mid": "81bbccc44ec27f00420b6289611b7ba542a3230d665602a1b082641641d40018",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_92af6b4fe18088b2500261da"
+      },
+      "send_id": "first",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478883584
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_92af6b4fe18088b2500261da"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478883584
+    },
+    {
+      "completed_at": 1795478883613,
+      "message": {
+        "content": [
+          {
+            "text": "stand-in reply (no plan named)",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_standin_0001",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_92af6b4fe18088b2500261da"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478883629
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "HOOKED: later prompt",
+        "role": "user"
+      },
+      "mid": "e97ba60d8e3d0a7e7c1ccb1785a06958b067495540579ee2c1a80c94f8528ae2",
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_c99a8f64ca16977983625457"
+      },
+      "send_id": "second",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478883872
+    },
+    {
+      "completed_at": 1795478883918,
+      "message": {
+        "content": [
+          {
+            "text": "stand-in reply (no plan named)",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_standin_0002",
+      "ordinal": 5,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_c99a8f64ca16977983625457"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478883932
+    }
+  ]
+}

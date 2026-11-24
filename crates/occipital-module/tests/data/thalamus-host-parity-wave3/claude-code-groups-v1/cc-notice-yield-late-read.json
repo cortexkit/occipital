@@ -1,0 +1,219 @@
+{
+  "head": {
+    "session": "9b224aa16b0d7be7",
+    "sub_index": 0,
+    "wal_seq": 13
+  },
+  "history_version": 0,
+  "incarnation": "inc_ce3aabf1505e47348069c6c00ed0c68e",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "[[script:cc-waiting-tool]] hand back this call",
+        "role": "user"
+      },
+      "mid": "cdebdc9b25663860b8ad21d5ec399a710ab13a950a7a31ed1d9710e72330affe",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e116cd1237bb18c44f8e2d14"
+      },
+      "send_id": "tool-turn",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478883597
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e116cd1237bb18c44f8e2d14"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478883597
+    },
+    {
+      "completed_at": 1795478883638,
+      "message": {
+        "content": [
+          {
+            "text": "Waiting for the tool.",
+            "type": "text"
+          },
+          {
+            "id": "toolu_standin_0001_0",
+            "input": {
+              "command": "true"
+            },
+            "name": "bash",
+            "type": "tool_use"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_standin_0001",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e116cd1237bb18c44f8e2d14"
+      },
+      "time": null,
+      "tool_calls": [
+        {
+          "call_key": "msg_standin_0001/toolu_standin_0001_0",
+          "indeterminate": false,
+          "tool_call_id": "toolu_standin_0001_0"
+        }
+      ],
+      "tool_times": [
+        {
+          "call_key": "msg_standin_0001/toolu_standin_0001_0",
+          "finished_at": 1795478883764,
+          "schema_pin": "tp1:bash:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+          "started_at": 1795478883677,
+          "tool_call_id": "toolu_standin_0001_0"
+        }
+      ],
+      "written_at": 1795478883778
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": "HANDED_BACK_INTERIM",
+                "type": "text"
+              }
+            ],
+            "tool_use_id": "toolu_standin_0001_0",
+            "type": "tool_result"
+          }
+        ],
+        "role": "user"
+      },
+      "mid": "97df423e6795486f31da7a2c431cd10afd0a54d42c35a78be095fb4f9e9c1f91",
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e116cd1237bb18c44f8e2d14"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478883813
+    },
+    {
+      "delivered_as": {
+        "mode": "steer"
+      },
+      "message": {
+        "content": "The user sent a new message while you were working:\nURGENT: use the new checkpoint\n\nThis is how Claude Code surfaces messages the user sends mid-turn — within the running turn, often alongside the next tool result, rather than as a separate conversation turn. Address the message above as you continue this turn.",
+        "role": "system"
+      },
+      "mid": "4f8bcc4ffd4f84582de35143c403382b6561cced83605bd19f33b490f02e18ea",
+      "notice": true,
+      "ordinal": 5,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_e116cd1237bb18c44f8e2d14"
+      },
+      "send_id": "steer",
+      "sender": "prefrontal-core",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478883813
+    },
+    {
+      "completed_at": 1795478883801,
+      "message": {
+        "content": [
+          {
+            "text": "The tool handed its work back.",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_standin_0002",
+      "ordinal": 6,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_e116cd1237bb18c44f8e2d14"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478883813
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "<system-reminder>\n[HANDED-BACK CALL FINISHED]\nThe `bash` call msg_standin_0001/toolu_standin_0001_0 was handed back early so a new message could go in. It kept running, and has now finished; this is its result:\n\nLATE_WORK_DONE\n</system-reminder>",
+        "role": "user"
+      },
+      "mid": "e0f26ee68ceb771acceaf3e983f89a2faa7c142473dba8138313e2ba623cdb70",
+      "notice": true,
+      "ordinal": 7,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_b4b6889e977db7e1f1058314"
+      },
+      "send_id": "call_yield:msg_standin_0001/toolu_standin_0001_0",
+      "sender": "aft",
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478884705
+    },
+    {
+      "completed_at": 1795478884725,
+      "message": {
+        "content": [
+          {
+            "text": "done: cc-waiting-tool",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_standin_0003",
+      "ordinal": 8,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_b4b6889e977db7e1f1058314"
+      },
+      "time": null,
+      "tool_calls": [],
+      "written_at": 1795478884733
+    }
+  ]
+}

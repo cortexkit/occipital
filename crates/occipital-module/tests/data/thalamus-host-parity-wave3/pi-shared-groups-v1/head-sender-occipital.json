@@ -1,0 +1,29 @@
+{
+  "first_ordinal": 1,
+  "head": {
+    "session": "6f328b019a96c40c",
+    "sub_index": 0,
+    "wal_seq": 2
+  },
+  "history_version": 0,
+  "incarnation": "inc_ff55d2cbdcd24515a6db45dc88db1878",
+  "input": {
+    "attachments": "no",
+    "mime_types": [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/gif",
+      "image/webp"
+    ],
+    "modalities": [
+      "text"
+    ]
+  },
+  "last_ordinal": 3,
+  "model": {
+    "model": "probe",
+    "provider": "probe"
+  },
+  "updated_at": 1795476942194
+}

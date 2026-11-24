@@ -1,0 +1,41 @@
+{
+  "interrupt_send_status": {
+    "delivered": {
+      "as": "turn",
+      "ref": "run_4094fd11e47f1e81f5831711"
+    },
+    "run_id": "run_4094fd11e47f1e81f5831711",
+    "state": "active"
+  },
+  "send_reply": {
+    "run_id": "run_4094fd11e47f1e81f5831711",
+    "state": "pending",
+    "submission_id": "[\"prefrontal-core\",\"interrupt\"]"
+  },
+  "steer_send_status": {
+    "delivered": {
+      "as": "turn",
+      "ref": "run_09432fe2820a16f3dc882b57"
+    },
+    "run_id": "run_09432fe2820a16f3dc882b57",
+    "state": "finished"
+  },
+  "stopped_run_status": {
+    "final_step_finish_reason": "aborted",
+    "finish": "other",
+    "state": "cancelled",
+    "undelivered_steers": [],
+    "usage": {
+      "by_model": [
+        {
+          "model": "probe",
+          "provider": "probe",
+          "steps": 1,
+          "unreported_steps": 1
+        }
+      ],
+      "steps": 1,
+      "unreported_steps": 1
+    }
+  }
+}

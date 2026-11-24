@@ -1,0 +1,61 @@
+{
+  "baseline": {
+    "accepted_generation": 0,
+    "applied_generation": 0,
+    "composition_digest": "ae5f5d0a9238f443ea4676e31000c9233381a4c07ee962bd941c3d51fe933fb4",
+    "items": [
+      {
+        "item": "tools",
+        "item_digest": "catalog-aft",
+        "provider": "aft"
+      },
+      {
+        "item": "tools",
+        "item_digest": "catalog-prefrontal-core",
+        "provider": "prefrontal-core"
+      },
+      {
+        "item": "system_text",
+        "item_digest": "14ac2e8e970542f48b2786abfc1f94f8e99f9b9b31331e1b7a4efbcec4a3329d",
+        "preflight_digest": "preflight-prefrontal-core",
+        "provider": "prefrontal-core"
+      },
+      {
+        "item": "system_text",
+        "item_digest": "5d1d13f1e34242905e0795099840b130de7fc6d8c2cd7378fe68d6dcdad9627a",
+        "preflight_digest": "preflight-aft",
+        "provider": "aft"
+      }
+    ],
+    "rungs": {
+      "system_text": [
+        "on_prefix_rebuild",
+        "on_system_rebuild",
+        "on_history_rebuild",
+        "immediately"
+      ],
+      "tools": [
+        "on_prefix_rebuild",
+        "on_system_rebuild",
+        "on_history_rebuild",
+        "immediately"
+      ]
+    },
+    "tool_names": [
+      "bash",
+      "edit",
+      "read",
+      "ask",
+      "browser_use",
+      "computer_use",
+      "knowhow",
+      "sidekick"
+    ]
+  },
+  "delivered": {
+    "as": "turn",
+    "ref": "run_65402218ada23589bf96e8ee"
+  },
+  "run_id": "run_65402218ada23589bf96e8ee",
+  "state": "active"
+}

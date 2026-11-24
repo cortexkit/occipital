@@ -1,0 +1,104 @@
+{
+  "history_version": 0,
+  "incarnation": "inc_fde11672074a452a852319aa842d7188",
+  "messages": [
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "core keyed send",
+        "role": "user"
+      },
+      "mid": "4bfe9f444f73e38ceca8c45bcbb03508c5ee666900e2b8cadbd0949d20b8b072",
+      "ordinal": 1,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_b4613f8e0c7a511c7a0b0a97"
+      },
+      "send_id": "shared-key",
+      "sender": "prefrontal-core",
+      "written_at": 1795478883572
+    },
+    {
+      "message": {
+        "content": [],
+        "output_config": {
+          "effort": "medium"
+        },
+        "role": "system"
+      },
+      "mid": "d43ab0e0b8ec9db790a6459cb2f4bc4ffce02825ca05063162023be60912ced9",
+      "ordinal": 2,
+      "role": "system",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_b4613f8e0c7a511c7a0b0a97"
+      },
+      "written_at": 1795478883572
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "stand-in reply (no plan named)",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_standin_0001",
+      "ordinal": 3,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_b4613f8e0c7a511c7a0b0a97"
+      },
+      "written_at": 1795478883624
+    },
+    {
+      "delivered_as": {
+        "mode": "idle_start"
+      },
+      "message": {
+        "content": "aft keyed send",
+        "role": "user"
+      },
+      "mid": "3cfb20609ba72139f4ae17759b860c28b17729a3454c9b4d4dd5e9702b994e92",
+      "ordinal": 4,
+      "role": "user",
+      "run": {
+        "episode": "1",
+        "final": false,
+        "run_id": "run_1145220c619f547c18775a00"
+      },
+      "send_id": "shared-key",
+      "sender": "aft",
+      "written_at": 1795478883825
+    },
+    {
+      "message": {
+        "content": [
+          {
+            "text": "stand-in reply (no plan named)",
+            "type": "text"
+          }
+        ],
+        "role": "assistant"
+      },
+      "mid": "msg_standin_0002",
+      "ordinal": 5,
+      "role": "assistant",
+      "run": {
+        "episode": "1",
+        "final": true,
+        "run_id": "run_1145220c619f547c18775a00"
+      },
+      "written_at": 1795478883923
+    }
+  ]
+}

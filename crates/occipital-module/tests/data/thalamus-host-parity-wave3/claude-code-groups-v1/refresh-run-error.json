@@ -1,0 +1,14 @@
+{
+  "error": {
+    "class": "host_relaunch_failed",
+    "message": "relaunch_failed: the test failed this start of Claude Code",
+    "provider_code": "host_relaunch_failed"
+  },
+  "state": "error",
+  "undelivered_steers": [],
+  "usage": {
+    "by_model": [],
+    "steps": 0,
+    "unreported_steps": 0
+  }
+}

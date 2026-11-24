@@ -1,0 +1,7 @@
+{
+  "code": "invalid_params",
+  "detail": {
+    "field": "directives"
+  },
+  "message": "invalid or unsupported parameter directives"
+}

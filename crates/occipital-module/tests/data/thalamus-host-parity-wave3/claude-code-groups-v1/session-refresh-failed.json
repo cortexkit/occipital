@@ -1,0 +1,6 @@
+{
+  "generation": 1,
+  "reason": "relaunch_failed: the test failed this start of Claude Code",
+  "session": "cc-tool-relaunch-fails",
+  "type": "session_refresh_failed"
+}

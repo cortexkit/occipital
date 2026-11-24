@@ -1,0 +1,10 @@
+{
+  "call_key": "msg_standin_0001/toolu_standin_0001_0",
+  "finished_at": 1795478883764,
+  "mid": "msg_standin_0001",
+  "outcome": "ok",
+  "output_bytes": 91,
+  "schema_pin": "tp1:bash:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:1",
+  "tool_call_id": "toolu_standin_0001_0",
+  "type": "tool_finished"
+}

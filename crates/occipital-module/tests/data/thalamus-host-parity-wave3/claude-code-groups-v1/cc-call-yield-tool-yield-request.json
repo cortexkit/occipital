@@ -1,0 +1,7 @@
+{
+  "arguments": {
+    "call_key": "msg_standin_0001/toolu_standin_0001_0",
+    "reason": "person_message"
+  },
+  "name": "tool.yield"
+}

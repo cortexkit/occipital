@@ -1,0 +1,7 @@
+{
+  "code": "system_text_preset_required",
+  "detail": {
+    "provider": "prefrontal-core"
+  },
+  "message": "system-text provider prefrontal-core names no preset and does not declare system-text-default/v1"
+}
