@@ -700,8 +700,8 @@ fn readable_text_gives_a_retired_table_its_rows_and_a_badge_its_label() {
     );
 }
 
-/// Only written rows read as rows: a retired table whose data came from a
-/// tool, or that computes a value, keeps its source.
+/// Only written rows read as rows: a retired table whose rows came from a
+/// tool reads as one plain line instead, and never as its tag source.
 #[test]
 fn a_retired_table_without_written_rows_reads_as_one_line() {
     for table in [
