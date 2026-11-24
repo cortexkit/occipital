@@ -58,8 +58,8 @@ impl Catalog {
     }
 
     /// The catalog digest by its `digestRule`: the SHA-256 of the catalog's
-    /// §14.3 canonical JSON with `catalog.digest` set to null, in lowercase
-    /// hex. It is not the file hash.
+    /// canonical JSON with `catalog.digest` set to null and without its
+    /// `teaching` section, in lowercase hex. It is not the file hash.
     ///
     /// `None` when the catalog has no canonical JSON, so no digest: a
     /// catalog deserialized from other JSON can hold a number outside the
@@ -189,8 +189,13 @@ impl Catalog {
     /// Used by layout keys and stored program/app catalog descriptors (§13).
     pub(crate) fn digest(&self) -> Result<String, serde_json::Error> {
         let mut document = serde_json::to_value(self)?;
-        // digestRule excludes the published digest itself, even after publication.
+        // digestRule excludes the published digest itself, even after
+        // publication, and the teaching: what models are told can be reworded
+        // without changing what a stamped reply means or how it draws.
         document["catalog"]["digest"] = Value::Null;
+        if let Some(members) = document.as_object_mut() {
+            members.remove("teaching");
+        }
         let bytes = canonical::json(&document)?;
         let digest = hmac_sha256::Hash::hash(bytes.as_bytes());
         Ok(digest.iter().map(|byte| format!("{byte:02x}")).collect())
@@ -342,7 +347,7 @@ mod tests {
         let hex_digest: String = digest.iter().map(|byte| format!("{byte:02x}")).collect();
         assert_eq!(
             hex_digest,
-            "f36ec15e7fc7ed69bbcedbddbdee057acb30d006cf2e0cac1c19011bdc07a3ea"
+            "892f6b172bad45e54d6c5fa66c77a7c89d2aa2b85832810493b9a5753b5eaab1"
         );
     }
 
@@ -360,6 +365,18 @@ mod tests {
         let unpublished = catalog.digest().unwrap();
         catalog.catalog.digest = Some("a previously published digest".into());
         assert_eq!(catalog.digest().unwrap(), unpublished);
+    }
+
+    /// Rewording what models are taught leaves every stamped reply's digest
+    /// as it was.
+    #[test]
+    fn catalog_digest_ignores_teaching() {
+        let mut catalog = Catalog::load().unwrap();
+        let original = catalog.digest().unwrap();
+        catalog
+            .teaching
+            .insert("reply".into(), serde_json::json!({"rules": []}));
+        assert_eq!(catalog.digest().unwrap(), original);
     }
 
     #[test]

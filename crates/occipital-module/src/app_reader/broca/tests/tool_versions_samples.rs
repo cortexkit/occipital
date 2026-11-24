@@ -1,4 +1,4 @@
-//! The sample set `phone-reader-tool-versions-v1`: a call whose tool carries a
+//! The sample set `phone-reader-tool-versions-v2`: a call whose tool carries a
 //! version (tool-provider 0.15.17), as the apps read it. Its README says what
 //! each file shows. The runner pins the call with a `tp2` pin, which names the
 //! tool's major version and never its minor or patch, so a compatible update
@@ -14,7 +14,7 @@ use cortexkit_role_tool_provider::catalog::ToolVersion;
 use cortexkit_role_tool_provider::views::{RecordSchema, ViewManifest, ViewTool};
 use cortexkit_test_support::ScratchDir;
 
-const SET: &str = "phone-reader-tool-versions-v1";
+const SET: &str = "phone-reader-tool-versions-v2";
 
 /// The command tool at `version`. A minor or patch update changes neither
 /// its arguments' structure nor its pin.

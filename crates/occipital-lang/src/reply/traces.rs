@@ -258,7 +258,7 @@ pub(crate) fn disk_use() -> String {
     );
     no_errors(&ready);
     let text = ready.plain_text.as_str();
-    assert!(text.contains("[table: 3 rows]"), "{text}");
+    assert!(text.contains("[chart: bar, 3 points]"), "{text}");
     // The inline badges in the Markdown table keep their cells.
     assert!(text.contains("[Yes]") && text.contains("[No]"), "{text}");
     trace

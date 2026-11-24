@@ -24,7 +24,7 @@
         "metrics": "fixed"
       },
       "status": 0,
-      "response": "{\"height\":\"prose_deferred\",\"key\":{\"instance_epoch\":0,\"revision\":1,\"state_hash\":\"b9cedb1d6b1233563e1684192367c9fa695724f34746b98123a9e3134adad694\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":23,\"reservation\":\"deferred\",\"boxes\":[],\"row_frame\":null}"
+      "response": "{\"height\":\"prose_deferred\",\"key\":{\"instance_epoch\":0,\"revision\":1,\"state_hash\":\"b9cedb1d6b1233563e1684192367c9fa695724f34746b98123a9e3134adad694\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"a6ea6f5d65a8e71f9794c1a19da76730fe3c83eb22387d3d2aeaa0d9fc440963\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":23,\"reservation\":\"deferred\",\"boxes\":[],\"row_frame\":null}"
     },
     {
       "entry": "occ_reply_event",
@@ -41,7 +41,7 @@
         "metrics": "fixed"
       },
       "status": 0,
-      "response": "{\"height\":\"prose_deferred\",\"key\":{\"instance_epoch\":0,\"revision\":2,\"state_hash\":\"195cedc28fe70049aba415ed82bc9b9062474425cb85500c4df08784643835c5\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"4e256f56bf6a6f69d85f0bd9a101fd53637784fd76f7e8c53447069fd1dd77f5\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":25,\"reservation\":\"deferred\",\"boxes\":[],\"row_frame\":null}"
+      "response": "{\"height\":\"prose_deferred\",\"key\":{\"instance_epoch\":0,\"revision\":2,\"state_hash\":\"195cedc28fe70049aba415ed82bc9b9062474425cb85500c4df08784643835c5\",\"width\":\"320\",\"content_size_category\":\"normal\",\"catalog_digest\":\"a6ea6f5d65a8e71f9794c1a19da76730fe3c83eb22387d3d2aeaa0d9fc440963\",\"layout_version\":\"1\",\"network\":\"yes\",\"placement\":\"page\"},\"known_work_visits\":25,\"reservation\":\"deferred\",\"boxes\":[],\"row_frame\":null}"
     }
   ]
 }

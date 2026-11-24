@@ -47,11 +47,11 @@ fn the_text_is_pinned_byte_for_byte() {
     // module serves with it; update this pin only together with a reviewed
     // text.
     assert_eq!(
-        digest, "e4fad0395f9c1ef22e475b10f3a278040dd833d441f96de79845f6316f15dc2b",
+        digest, "8ab32ec81f0fcd05521c5c3126627df9346d23e4bf94135fa260f5fe5aa6368b",
         "{text}"
     );
     // Every session pays for this text; growth should be a visible choice.
-    assert_eq!(text.len(), 1874);
+    assert_eq!(text.len(), 1460);
 }
 
 #[test]
@@ -114,8 +114,10 @@ fn it_names_no_reference_handle_or_map_tag() {
     ] {
         assert!(!text.contains(absent), "{absent} in:\n{text}");
     }
-    // Table is taught only in its written-rows form.
-    assert!(text.contains("<Table data: rows, columns?: list<string|record>"));
+    // Replies no longer hold tables, so nothing about one is taught.
+    for absent in ["<Table", "displayRows", "show_ui"] {
+        assert!(!text.contains(absent), "{absent} in:\n{text}");
+    }
 }
 
 #[test]

@@ -54,7 +54,9 @@ def canonical(value):
 
 
 def digest(document):
+    # The digest rule leaves out the published digest and the teaching section.
     document["catalog"]["digest"] = None
+    document.pop("teaching", None)
     return hashlib.sha256(canonical(document).encode("utf-8")).hexdigest()
 
 
@@ -114,6 +116,11 @@ class CanonicalTests(unittest.TestCase):
         unpublished = load('{"catalog":{"digest":null},"value":0.5625}')
         published = load('{"catalog":{"digest":"old"},"value":0.5625}')
         self.assertEqual(digest(unpublished), digest(published))
+
+    def test_digest_ignores_teaching(self):
+        bare = load('{"catalog":{"digest":null},"value":1}')
+        taught = load('{"catalog":{"digest":null},"value":1,"teaching":{"reply":"x"}}')
+        self.assertEqual(digest(bare), digest(taught))
 
 
 def main():

@@ -27,11 +27,12 @@ pub(crate) const TAGGED: &str = "The test run finished with one failure. <Badge 
 
 /// A tagged reply of block components only, so its whole height is
 /// measured through the metrics callbacks.
-pub(crate) const BLOCKS: &str = "<Callout tone=\"warning\" title=\"testPaging failed\" description=\"The second page came back empty after its cursor expired.\" />\n\n<Table data={Parse($$tc(22), \"json\", {columns: {path: \"text\", bytes: \"number\"}})} columns={[\"path\", \"bytes\"]} displayRows={6} />\n\n<Chart kind=\"bar\" data={Parse($$tc(7), \"csv\", {columns: {seconds: \"number\"}})} x=\"suite\" y=\"seconds\" aspect=\"16:9\" />";
+pub(crate) const BLOCKS: &str = "<Callout tone=\"warning\" title=\"testPaging failed\" description=\"The second page came back empty after its cursor expired.\" />\n\n<Chart kind=\"bar\" data={Parse($$tc(22), \"json\", {columns: {path: \"text\", bytes: \"number\"}})} x=\"path\" y=\"bytes\" yLabel=\"Bytes\" />\n\n<Chart kind=\"bar\" data={Parse($$tc(7), \"csv\", {columns: {seconds: \"number\"}})} x=\"suite\" y=\"seconds\" aspect=\"16:9\" />";
 
-/// A tagged reply with a Table component and a Markdown table holding
-/// Badges.
-pub(crate) const TABLE: &str = "Your three largest folders are below. <Styled tone=\"muted\">Sizes come from a scan two minutes ago.</Styled>\n\n<Table data={Parse($$tc(22), \"json\", {columns: {path: \"text\", bytes: \"number\"}})} columns={[\"path\", \"bytes\"]} displayRows={6} />\n\n| Folder | Safe to clear? |\n|---|---|\n| `~/Library/Caches` | <Badge tone=\"success\">Yes</Badge> |\n| `~/Work` | <Badge tone=\"danger\">No</Badge> |";
+/// The disk-use worked example
+/// (`occipital-lang/fixtures/section16/sources/16.10-reply-disk-use.md`): a
+/// Chart over reference 22 and a Markdown table holding Badges.
+pub(crate) const DISK_USE: &str = "Your three largest folders are below. <Styled tone=\"muted\">Sizes come from a scan two minutes ago.</Styled>\n\n<Chart kind=\"bar\" data={Parse($$tc(22), \"json\", {columns: {path: \"text\", bytes: \"number\"}})} x=\"path\" y=\"bytes\" yLabel=\"Bytes\" />\n\n| Folder | Safe to clear? |\n|---|---|\n| `~/Library/Caches` | <Badge tone=\"success\">Yes</Badge> |\n| `~/Work` | <Badge tone=\"danger\">No</Badge> |";
 
 /// A tagged reply whose text holds two- and four-byte UTF-8 sequences in
 /// props, Markdown and tag content. The first Callout is measured through

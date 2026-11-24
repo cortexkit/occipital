@@ -6,7 +6,7 @@ use crate::{Decimal, DiagnosticCode as Code};
 const EXAMPLES: [&str; 4] = [
     "The test run finished with one failure. <Badge tone=\"danger\">1 failed</Badge> <Badge tone=\"success\">17 passed</Badge>\n\n<Callout tone=\"warning\" title=\"testPaging failed\">\nThe second page came back empty after its cursor expired. The fix is in `PageLoader.swift`: the cursor is now refreshed before the request.\n</Callout>\n\nHow long each suite took:\n\n<Chart kind=\"bar\" data={Parse($$tc(7), \"csv\", {columns: {seconds: \"number\"}})} x=\"suite\" y=\"seconds\" aspect=\"16:9\" />",
     "## Two cafés near the station\n\n**Kahve Durağı** is the closest, two minutes on foot.<Citation source={$$tc(12)} /> It opens at 7 and has seats outside.\n\n<ImageGroup images={[Artifact(\"art_k1\"), Artifact(\"art_k2\")]} aspect=\"4:3\" caption=\"Kahve Durağı, inside and out\" />\n\n**Liman Kahvesi** is quieter, with a view of the ferry pier.<Citation source={$$tc(12)} />\n\n<Map places={Parse($$tc(14), \"json\")} aspect=\"16:9\" />\n\n<LinkCard href=\"https://limankahvesi.example/menu\" title=\"Liman Kahvesi menu\" />",
-    "Your three largest folders are below. <Styled tone=\"muted\">Sizes come from a scan two minutes ago.</Styled>\n\n<Table data={Parse($$tc(22), \"json\", {columns: {path: \"text\", bytes: \"number\"}})} columns={[\"path\", \"bytes\"]} displayRows={6} />\n\n| Folder | Safe to clear? |\n|---|---|\n| `~/Library/Caches` | <Badge tone=\"success\">Yes</Badge> |\n| `~/Work` | <Badge tone=\"danger\">No</Badge> |",
+    "Your three largest folders are below. <Styled tone=\"muted\">Sizes come from a scan two minutes ago.</Styled>\n\n<Chart kind=\"bar\" data={Parse($$tc(22), \"json\", {columns: {path: \"text\", bytes: \"number\"}})} x=\"path\" y=\"bytes\" yLabel=\"Bytes\" />\n\n| Folder | Safe to clear? |\n|---|---|\n| `~/Library/Caches` | <Badge tone=\"success\">Yes</Badge> |\n| `~/Work` | <Badge tone=\"danger\">No</Badge> |",
     "Here is the summary. <Badge tone=\"info\">Draft</Badge>\n\nexport const total = Sum(data.rows.sales)\n\nThe total is {total}. <Gauge value={0.4} /> <Badge tone=\"info\" text={total} />",
 ];
 
@@ -188,7 +188,8 @@ fn fetch_failure_is_unavailable_but_malformed_fetched_data_is_an_error() {
         ("json", "{", Code::JsonSyntax),
         ("csv", "a\n\"unterminated", Code::CsvSyntax),
     ] {
-        let source = format!("<Table data={{Parse($$tc(1), \"{format}\")}} displayRows={{6}} />");
+        let source =
+            format!("<Chart kind=\"bar\" data={{Parse($$tc(1), \"{format}\")}} x=\"a\" y=\"b\" />");
         let mut s = session();
         let initial = s
             .finish(source.as_bytes(), [(1, record())].into(), vec![])
@@ -336,7 +337,7 @@ fn provisional_pictures_at_every_prefix_do_not_depend_on_transport_chunking() {
 
 #[test]
 fn records_survive_replay_and_parse_preparation_is_cached_and_charged() {
-    let source = b"<Table data={Parse($$tc(1), \"json\")} />";
+    let source = b"<Chart kind=\"bar\" data={Parse($$tc(1), \"json\")} x=\"a\" y=\"b\" />";
     let mut s = session();
     let chat = s.accounts.chat_handle();
     let initial = s.finish(source, [(1, record())].into(), vec![]).unwrap();
@@ -359,7 +360,7 @@ fn records_survive_replay_and_parse_preparation_is_cached_and_charged() {
     let spent = chat.usage().spent_fuel;
     s.event(Event::AccountRelease).unwrap();
     assert_eq!(chat.usage().spent_fuel, spent);
-    assert_eq!(ready.plain_text.as_str(), "[table: 0 rows]");
+    assert_eq!(ready.plain_text.as_str(), "[chart: bar, 0 points]");
 }
 
 #[test]
@@ -536,13 +537,17 @@ fn reply_declarations_are_inert_text_not_inferred_types() {
 }
 
 #[test]
-fn table_with_too_large_source_measures_as_unavailable() {
+fn chart_with_too_large_source_measures_as_unavailable() {
     let rec = ReferenceRecord {
         state: ReferenceState::TooLarge,
         ..record()
     };
     let r = session()
-        .finish(b"<Table data={$$tc(1)} />", [(1, rec)].into(), vec![])
+        .finish(
+            b"<Chart kind=\"bar\" data={$$tc(1)} x=\"a\" y=\"b\" />",
+            [(1, rec)].into(),
+            vec![],
+        )
         .unwrap();
     assert_eq!(measure(&r).boxes[0].state, RenderState::Unavailable);
 }
@@ -607,7 +612,7 @@ fn unknown_snapshot_does_not_retain_or_revise_and_real_snapshot_still_applies() 
     let chat = s.accounts.chat_handle();
     let initial = s
         .finish(
-            b"<Table data={Parse($$tc(1), \"json\")} />",
+            b"<Chart kind=\"bar\" data={Parse($$tc(1), \"json\")} x=\"label\" y=\"value\" />",
             [(1, record())].into(),
             vec![],
         )
@@ -632,13 +637,13 @@ fn unknown_snapshot_does_not_retain_or_revise_and_real_snapshot_still_applies() 
     let ready = s
         .event(Event::Snapshot {
             reference: 1,
-            result: Ok(br#"[{"value":7}]"#.to_vec()),
+            result: Ok(br#"[{"label":"a","value":7}]"#.to_vec()),
         })
         .unwrap()
         .unwrap();
     assert_eq!(ready.id, initial.id + 1);
     assert!(ready.diagnostics.is_empty());
-    assert_eq!(ready.plain_text.as_str(), "[table: 1 rows]");
+    assert_eq!(ready.plain_text.as_str(), "[chart: bar, 1 points]");
     assert_eq!(measure(&ready).boxes[0].state, RenderState::Ready);
     assert!(s.accounts.local_usage_for_tests().retained > reply_retained);
 }
@@ -667,22 +672,46 @@ fn a_reply_session_accepts_an_equal_catalog_copy_and_refuses_a_modified_one() {
     assert!(matches!(open(&modified), Err(Error::Catalog)));
 }
 
-/// A reply drawn without its catalog reads as its readable text: a table as
-/// its rows (header first, cells tab-separated, in the named column order)
-/// and a badge as its bare label, where the plain text keeps the catalog's
-/// `[table: N rows]` and `[label]`.
+/// A reply drawn without its catalog reads as its readable text: a badge as
+/// its bare label, where the plain text keeps the catalog's `[label]`. A
+/// table, which replies held until the catalog took it out of them, keeps
+/// its source in the plain text and reads as its rows (header first, cells
+/// tab-separated, in the named column order), so a reply stamped with an
+/// older catalog still shows its table as lines.
 #[test]
-fn readable_text_gives_a_table_its_rows_and_a_badge_its_label() {
-    let source = "Tests finished. <Badge tone=\"success\">17 passed</Badge>\n\n<Table data={[{state: \"up\", service: \"api\"}, {state: \"down\", service: \"db\"}]} columns={[\"service\", {key: \"state\", label: \"State\"}]} />\n";
+fn readable_text_gives_a_retired_table_its_rows_and_a_badge_its_label() {
+    let table = "<Table data={[{state: \"up\", service: \"api\"}, {state: \"down\", service: \"db\"}]} columns={[\"service\", {key: \"state\", label: \"State\"}]} />";
+    let source = format!("Tests finished. <Badge tone=\"success\">17 passed</Badge>\n\n{table}\n");
     let done = finish(source.as_bytes());
     assert_eq!(
+        done.diagnostics
+            .iter()
+            .map(|d| d.code())
+            .collect::<Vec<_>>(),
+        [Code::ReplyForbidden]
+    );
+    assert_eq!(
         done.plain_text.as_str(),
-        "Tests finished. [17 passed]\n\n[table: 2 rows]\n"
+        format!("Tests finished. [17 passed]\n\n{table}\n")
     );
     assert_eq!(
         done.readable_text.as_str(),
         "Tests finished. 17 passed\n\nservice\tState\napi\tup\ndb\tdown\n"
     );
+}
+
+/// Only written rows read as rows: a retired table whose data came from a
+/// tool, or that computes a value, keeps its source.
+#[test]
+fn a_retired_table_without_written_rows_keeps_its_source() {
+    for table in [
+        "<Table data={Parse($$tc(1), \"json\")} />",
+        "<Table data={[{n: 1 + 2}]} />",
+        "<Table data={[{n: 1}]} columns={keys} />",
+    ] {
+        let done = finish(table.as_bytes());
+        assert_eq!(done.readable_text.as_str(), table);
+    }
 }
 
 /// With no columns named, the first row's keys are the columns; a cell's
@@ -718,40 +747,4 @@ fn a_provisional_revision_carries_the_words_so_far() {
         .readable_text
         .as_str()
         .starts_with("First paragraph.\nSecond one"));
-}
-
-#[test]
-fn table_export_does_not_copy_an_unselected_cell() {
-    let source = br#"<Table columns={["keep"]} data={[{keep: 1}]} />"#;
-    let context = CheckContext::new(Profile::Reply);
-    let program = crate::check::check(source, &context).unwrap();
-    let revision = finish(source);
-    let mut tree = (*revision.tree).clone();
-    use crate::{TreeNode, TreeValue};
-    let TreeNode::Component { props, .. } = &mut tree.blocks[0] else {
-        panic!("expected table")
-    };
-    let (_, TreeValue::List(rows)) = props
-        .iter_mut()
-        .find(|(k, _)| k.as_str() == "data")
-        .unwrap()
-    else {
-        panic!("expected rows")
-    };
-    let TreeValue::Record(fields) = &mut rows[0] else {
-        panic!("expected record")
-    };
-    fields.push((
-        DisplayText::new("unused"),
-        TreeValue::String(DisplayText::new(&"a".repeat(32_768))),
-    ));
-    let used = allocation_counter::measure(|| {
-        let (_, readable) = render::plain_text(&program, source, &tree, &context);
-        assert_eq!(readable.as_str(), "keep\n1");
-    });
-    assert!(
-        used.bytes_total < 32_768,
-        "allocated {} bytes",
-        used.bytes_total
-    );
 }

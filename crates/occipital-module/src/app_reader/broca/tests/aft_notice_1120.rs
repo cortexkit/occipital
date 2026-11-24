@@ -4,9 +4,14 @@
 //! view reaches Occipital as AFT's views bucket delivers it, through the
 //! bucket decoding and the fetcher's checks; each record as AFT announces it,
 //! read back with `display.read` and stored. The app sample set
-//! `phone-reader-notice-records-aft-v1` is what the apps then receive for a
+//! `phone-reader-notice-records-aft-v2` is what the apps then receive for a
 //! chat holding those notices, so they draw AFT's real cards. `served_samples`
 //! says how the set is checked and rewritten.
+//!
+//! AFT recorded its views against the tool catalog of the day. A catalog
+//! change makes AFT publish the same views naming the new catalog, so each
+//! view is read here with its catalog digest moved to the current one, the
+//! only change AFT's republished view carries.
 
 use super::served_samples::{decoded, Served};
 use super::tool_display_samples::AnyHarness;
@@ -43,6 +48,20 @@ fn data(path: &str) -> Vec<u8> {
 
 fn json_file(path: &str) -> Value {
     serde_json::from_slice(&data(path)).unwrap()
+}
+
+/// The tool catalog AFT's recorded views name.
+const RECORDED_CATALOG: &str = "6e3239281ade150b0935a2ca239ead0f7f922ab0fdeeffc470a19fc0fbf3ddb0";
+
+/// A recorded view's bytes as AFT publishes them for the current catalog.
+fn on_current_catalog(bytes: Vec<u8>) -> Vec<u8> {
+    let text = String::from_utf8(bytes).unwrap();
+    assert!(text.contains(RECORDED_CATALOG));
+    text.replace(
+        RECORDED_CATALOG,
+        occipital_lang::Catalog::tool_templates_digest(),
+    )
+    .into_bytes()
 }
 
 /// AFT's write for notice `kind`.
@@ -184,8 +203,11 @@ async fn aft_s_notices_reach_the_apps_with_aft_s_own_views() {
     entries.sort();
     for path in entries {
         let bucket_key = path.file_stem().unwrap().to_str().unwrap().to_owned();
-        let (key, reply) =
-            crate::bus::served_view(&bucket_key, &std::fs::read(&path).unwrap()).unwrap();
+        let (key, reply) = crate::bus::served_view(
+            &bucket_key,
+            &on_current_catalog(std::fs::read(&path).unwrap()),
+        )
+        .unwrap();
         fetcher.offer(AFT, &key, reply).await;
         keys.push(key);
     }
@@ -249,7 +271,7 @@ async fn aft_s_notices_reach_the_apps_with_aft_s_own_views() {
     app.set_notices(notices);
     let hints = tokio::sync::broadcast::channel(16).0;
     app.set_tool_display(Arc::new(ToolDisplay::new(store, None, hints)));
-    let mut served_set = Served::new("phone-reader-notice-records-aft-v1", app);
+    let mut served_set = Served::new("phone-reader-notice-records-aft-v2", app);
     let request = |method: &str, members: Value| {
         let mut params = json!({"session": SESSION, "harness": "opencode2"});
         for (name, value) in members.as_object().unwrap() {

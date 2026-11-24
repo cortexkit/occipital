@@ -1,0 +1,1 @@
+{"result":{"template":{"catalog":{"digest":"sha256:f144092fdccf4813f84f84f034356532bc6770e7ae63dce3bf0fc2f7600f20d3","version":"1.1"},"executionDialect":"1.0","profile":"tool_row","reads":[],"schema":"occipital.template/1","source":"<ToolHeader icon=\"terminal\" title={input.matched_text} />\n"}}}

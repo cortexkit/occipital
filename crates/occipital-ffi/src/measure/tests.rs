@@ -9,7 +9,7 @@ use crate::metrics::tests::{table, Script};
 use crate::output::MeasurementJson;
 use crate::reply::{occ_reply_finish, occ_reply_free, OccReply};
 use crate::status::{OCC_INVALID_ARGUMENT, OCC_OK};
-use crate::testing::{c, call, json, new_reply, BLOCKS, LAYOUT, RECORDS, TABLE, TAGGED};
+use crate::testing::{c, call, json, new_reply, BLOCKS, DISK_USE, LAYOUT, RECORDS, TAGGED};
 use crate::tree::TreeJson;
 
 /// The library-side twin of the stub callback table: 20 for `l` and `t`,
@@ -125,7 +125,7 @@ fn path_of(tree: &Tree, name: &str) -> Vec<usize> {
 
 #[test]
 fn a_tree_round_tripped_through_tree_json_measures_like_the_original() {
-    for source in [TAGGED, TABLE, BLOCKS] {
+    for source in [TAGGED, DISK_USE, BLOCKS] {
         let (tree_json, tree) = finished(source);
         // The tree JSON decodes to the very tree the session evaluated.
         assert_eq!(
@@ -149,12 +149,10 @@ fn a_tree_round_tripped_through_tree_json_measures_like_the_original() {
 fn a_block_measures_as_a_one_block_tree() {
     let (tagged_json, tagged) = finished(TAGGED);
     let (blocks_json, blocks) = finished(BLOCKS);
-    let (table_json, tables) = finished(TABLE);
     for (tree_json, tree, name) in [
         // An inline Badge inside a paragraph, and a Callout with props only.
         (&tagged_json, &tagged, "Badge"),
         (&blocks_json, &blocks, "Callout"),
-        (&table_json, &tables, "Table"),
     ] {
         let path = path_of(tree, name);
         let node = node_at(tree, &path).unwrap().clone();

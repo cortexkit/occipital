@@ -10,7 +10,7 @@
     "owner": "occipital",
     "companion": "2026-10-22-rich-ui-catalog-v1.md",
     "digest": null,
-    "digestRule": "SHA-256 of the canonical JSON (spec §14.3) of this document with catalog.digest set to null; filled in at publication and stored with every reply and program that names this catalog"
+    "digestRule": "SHA-256 of the canonical JSON (spec §14.3) of this document with catalog.digest set to null and the teaching section left out; filled in at publication and stored with every reply and program that names this catalog. Teaching words what models are told, not what a tag means or how it draws, so rewording it never changes the digest"
   },
 
   "vocabulary": {
@@ -191,12 +191,12 @@
         {"text": "It may also be $$tc(N), the output of tool call N, or Parse($$tc(N), \"json\" or \"csv\", {columns: {name: \"number\", other: \"text\"}}) to read it as rows. Declare number columns or charts can't plot them.", "needs": ["refs"]},
         {"text": "Pictures and files come by handle: Artifact(\"id\") or File(\"relative/path\").", "needs": ["handles"]},
         {"text": "Pictures and charts take data only by $$tc(N) or a handle, never by an address.", "needs": ["refs|handles"]},
-        {"text": "Replies have no state, variables, {expressions} in text, buttons or inputs; use show_ui for those.", "needs": []},
+        {"text": "Your text has no state, variables, {expressions}, buttons or inputs.", "needs": []},
         {"text": "tone is the color: neutral, info, success, warning or danger.", "needs": []},
         {"text": "A tag that breaks a rule shows as its plain text and is reported to you on your next turn.", "needs": []},
-        {"text": "Each tag's size is fixed before data arrives: choose aspect and displayRows up front; more rows open on their own page.", "needs": []}
+        {"text": "A picture's or chart's size is fixed before its data arrives: choose its aspect up front.", "needs": ["refs|handles"]}
       ],
-      "order": ["Badge", "Styled", "Callout", "Table", "LinkCard", "Citation", "Image", "ImageGroup", "Map", "Chart"],
+      "order": ["Badge", "Styled", "Callout", "LinkCard", "Citation", "Image", "ImageGroup", "Map", "Chart"],
       "perComponent": "signature line, then sum, then the examples whose needs the runner meets",
       "signature": "<Name req: type, opt?: type = default>children</Name>; an enum of a shared vocabulary prints its name (tone, aspect); props allowed only in other profiles are omitted",
       "filter": "Teach a reply component only if it is in the reply profile, the runner meets the component's own needs (Map needs maps) and at least one of its forms can be written with the runner's capabilities; drop props whose every allowed type needs a missing capability or is a tag (node<…>), since tags are not reply values; drop examples whose needs are not met. When the store-time network is known to be no, omit LinkCard and add: 'Links show as plain text in this session.'",
@@ -260,7 +260,7 @@
 
     "Table": {
       "sum": "Rows in a fixed viewport of displayRows rows; the person opens the rest.",
-      "in": ["reply", "show_ui", "tool_page"],
+      "in": ["show_ui", "tool_page"],
       "flow": "block",
       "kids": {"kind": "none"},
       "props": {
@@ -270,8 +270,8 @@
         "more": {"t": "paged", "in": ["show_ui", "tool_page"]}
       },
       "forms": [
-        {"id": "rows", "need": ["data"], "types": {"columns": "list<string|record>"}, "note": "the only form in replies; columns lists the record keys to show, in order, each as a key string or {key, label}; absent means the first row's keys, at most 8"},
-        {"id": "cols", "need": ["columns"], "types": {"columns": "list<node<Col>>"}, "deny": ["data"], "note": "program only: Col is a tag and tags are not reply values (spec §3.5)"}
+        {"id": "rows", "need": ["data"], "types": {"columns": "list<string|record>"}, "note": "columns lists the record keys to show, in order, each as a key string or {key, label}; absent means the first row's keys, at most 8"},
+        {"id": "cols", "need": ["columns"], "types": {"columns": "list<node<Col>>"}, "deny": ["data"]}
       ],
       "data": {
         "data": {"shape": "a list of records; a snapshot needs a format hint (Parse or show_ui data_format) and a list root", "caps": {"columns": 8, "visibleCellsRow": 80, "visibleCellsPage": 400, "cellScalars": 256}},
@@ -288,10 +288,7 @@
       },
       "openPage": "an app-owned page with every row (within the data caps), its own bounded lazy layout and measurement; it is never part of the row's height",
       "work": {"visits": "2 + columns*(rows + 1)", "caps": "accounts.perRevision; cells beyond the viewport are not laid out"},
-      "teach": {"ex": [
-        {"src": "<Table data={[{service: \"api\", state: \"up\"}, {service: \"db\", state: \"down\"}]} columns={[\"service\", \"state\"]} />", "needs": []},
-        {"src": "<Table data={Parse($$tc(22), \"json\", {columns: {path: \"text\", bytes: \"number\"}})} columns={[\"path\", {key: \"bytes\", label: \"Size in bytes\"}]} displayRows={6} />", "needs": ["refs"]}
-      ]}
+      "retired": "Replies may no longer hold a Table; a GFM table draws better there. A reply written before then keeps its rows as plain text lines (the reply's readable text)"
     },
 
     "Col": {
@@ -855,9 +852,9 @@
   },
 
   "profilesAllow": {
-    "reply": ["Badge", "Styled", "Callout", "Table", "LinkCard", "Citation", "Image", "ImageGroup", "Map", "Chart"],
-    "replyReduced": {"needs": "neither refs nor handles", "tags": ["Badge", "Styled", "Callout", "Table", "LinkCard"], "note": "Table only with written data; derived by teaching.reply.filter, listed here so a test can compare"},
-    "replyTaught": {"needs": "refs and handles, no maps (every v1 runner)", "tags": ["Badge", "Styled", "Callout", "Table", "LinkCard", "Citation", "Image", "ImageGroup", "Chart"], "note": "Map is valid in replies but taught to nobody until a provider produces map records"},
+    "reply": ["Badge", "Styled", "Callout", "LinkCard", "Citation", "Image", "ImageGroup", "Map", "Chart"],
+    "replyReduced": {"needs": "neither refs nor handles", "tags": ["Badge", "Styled", "Callout", "LinkCard"], "note": "derived by teaching.reply.filter, listed here so a test can compare"},
+    "replyTaught": {"needs": "refs and handles, no maps (every v1 runner)", "tags": ["Badge", "Styled", "Callout", "LinkCard", "Citation", "Image", "ImageGroup", "Chart"], "note": "Map is valid in replies but taught to nobody until a provider produces map records"},
     "show_ui": ["Badge", "Styled", "Callout", "Table", "Col", "LinkCard", "Citation", "Image", "ImageGroup", "Map", "Chart", "Series", "Card", "CardHeader", "TextContent", "InlineCode", "CodeBlock", "FormControl", "Input", "Select", "SelectItem", "Slider", "Toggle", "Button", "Buttons", "Tabs", "TabItem", "List", "ListItem", "LiveOutput", "Stat", "Progress", "Divider"],
     "tool_row": ["Badge", "Styled", "Card", "TextContent", "InlineCode", "Stat", "Progress", "Divider"],
     "tool_page": ["Badge", "Styled", "Callout", "Table", "Col", "LinkCard", "Chart", "Series", "Card", "CardHeader", "TextContent", "InlineCode", "CodeBlock", "FormControl", "Input", "Select", "SelectItem", "Slider", "Toggle", "Button", "Buttons", "Tabs", "TabItem", "List", "ListItem", "LiveOutput", "Stat", "Progress", "Divider"],

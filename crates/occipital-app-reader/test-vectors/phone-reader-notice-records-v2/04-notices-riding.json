@@ -1,0 +1,1 @@
+{"result":{"calls":{"ck_one":[{"deliveredAs":"tool_result","noticeRecord":{"data":{"elapsed_seconds":300,"title":"cargo build"},"key":"task-bg_2","sender":"aft","view":"nv1:aft:still_running:1"},"sender":"aft","text":"<system-reminder>\nBackground command still running: cargo build (5 min).\n</system-reminder>"}]}}}

@@ -417,25 +417,6 @@ pub(super) fn plain_text(
             })
             .collect()
     }
-    /// Columns given as `Col` children rather than a `columns` prop.
-    fn col_children(children: &[T]) -> Vec<(String, String)> {
-        children
-            .iter()
-            .filter_map(|child| match child {
-                T::Component { name, props, .. } if name.as_str() == "Col" => {
-                    let prop = |wanted: &str| {
-                        props
-                            .iter()
-                            .find(|(k, _)| k.as_str() == wanted)
-                            .map(|(_, v)| cell(v))
-                    };
-                    let key = prop("key")?;
-                    Some((key.clone(), prop("label").unwrap_or(key)))
-                }
-                _ => None,
-            })
-            .collect()
-    }
     /// A table's rows for reading without its catalog: the header, then one
     /// line per row, cells separated by tabs. With no columns named, the first
     /// row's keys are the columns. Long tables stop after [`READABLE_ROWS`]
@@ -503,6 +484,75 @@ pub(super) fn plain_text(
             _ => 0,
         }
     }
+    /// The rows of a `<Table>` the check left as its source text, for the
+    /// readable text only. Replies held tables until the catalog took them out
+    /// of the reply profile, and the apps draw a reply stamped with an older
+    /// catalog from its readable text, so such a table still reads as its
+    /// rows. Only written rows qualify, which is the only form models were
+    /// taught: data read from a tool's output was never drawn without it.
+    fn retired_table(source: &str) -> Option<String> {
+        let document = cortexkit_rich_ui_syntax::parse_bytes(
+            source.as_bytes(),
+            cortexkit_rich_ui_syntax::Mode::Reply,
+        );
+        // The source is one tag, which the parse may wrap in a paragraph.
+        let mut nodes = document.nodes.as_slice();
+        let tag = loop {
+            match nodes {
+                [node] if matches!(node.kind, Kind::Tag { .. }) => break node,
+                [node] => nodes = &node.children,
+                _ => return None,
+            }
+        };
+        let Kind::Tag { name, props, .. } = &tag.kind else {
+            return None;
+        };
+        if name != "Table" {
+            return None;
+        }
+        let prop = |wanted: &str| props.iter().find(|p| p.name == wanted).map(|p| &p.value);
+        let data = literal(prop("data")?)?;
+        let columns = match prop("columns") {
+            Some(columns) => table_columns(&literal(columns)?),
+            None => vec![],
+        };
+        Some(table_rows(Some(&data), columns))
+    }
+    /// A written value: strings, numbers, booleans, null, and lists and
+    /// records of those. Anything computed gives `None`.
+    fn literal(node: &Node) -> Option<V> {
+        let Kind::Expression(expression) = &node.kind else {
+            return None;
+        };
+        match expression {
+            Expression::String(s) => Some(V::String(DisplayText::new(s))),
+            Expression::Number(n) => crate::Decimal::from_literal(n).ok().map(V::Number),
+            Expression::Unary(op) if op == "-" => match node.children.as_slice() {
+                [Node {
+                    kind: Kind::Expression(Expression::Number(n)),
+                    ..
+                }] => crate::Decimal::from_literal(&format!("-{n}"))
+                    .ok()
+                    .map(V::Number),
+                _ => None,
+            },
+            Expression::Boolean(b) => Some(V::Boolean(*b)),
+            Expression::Null => Some(V::Null),
+            Expression::List => node
+                .children
+                .iter()
+                .map(literal)
+                .collect::<Option<Vec<_>>>()
+                .map(V::List),
+            Expression::Record(keys) if keys.len() == node.children.len() => keys
+                .iter()
+                .zip(&node.children)
+                .map(|(key, value)| Some((DisplayText::new(key), literal(value)?)))
+                .collect::<Option<Vec<_>>>()
+                .map(V::Record),
+            _ => None,
+        }
+    }
     struct Owned {
         start: usize,
         end: usize,
@@ -564,15 +614,6 @@ pub(super) fn plain_text(
                 };
                 fields.push(("n".into(), count.to_string()));
                 fields.push(("N".into(), count.to_string()));
-                if name == "Table" {
-                    let columns = get("columns").map(table_columns).unwrap_or_default();
-                    let columns = if columns.is_empty() {
-                        col_children(children)
-                    } else {
-                        columns
-                    };
-                    fields.push(("rows".into(), table_rows(get("data"), columns)));
-                }
                 if name == "Citation" {
                     let identity = match get("source") {
                         Some(V::Snapshot { record_id, .. }) => record_id.as_str().to_owned(),
@@ -598,6 +639,17 @@ pub(super) fn plain_text(
                 let mut ignored = vec![];
                 for child in &node.children {
                     visit(child, tree, index, context, &mut ignored, citations);
+                }
+            }
+            Kind::Literal(source) => {
+                if let Some(rows) = retired_table(source) {
+                    out.push(Owned {
+                        start: node.span.start,
+                        end: node.span.end,
+                        name: "Table".into(),
+                        fields: vec![("rows".into(), rows)],
+                        tool: None,
+                    });
                 }
             }
             Kind::Reference { n } => out.push(Owned {

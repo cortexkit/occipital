@@ -1,5 +1,5 @@
-//! The tool display samples the apps pin, `phone-reader-tool-display-v7`. Its
-//! README says what each file shows and what changed from v6. A test session
+//! The tool display samples the apps pin, `phone-reader-tool-display-v8`. Its
+//! README says what each file shows and what changed from v7. A test session
 //! on the OpenCode 2 runner serves four calls with their keys and pins; the display store holds
 //! the views and writes a provider would have sent. `served_samples` says how
 //! the set is checked and rewritten. v2 was recorded the same way on the
@@ -40,7 +40,7 @@ pub(super) fn reserved(module: &str) -> Principal {
 /// catalog has no aliases until the apps' first release, so a template naming
 /// any other digest is refused.
 const SAMPLE_TOOL_CATALOG: &str =
-    "sha256:6e3239281ade150b0935a2ca239ead0f7f922ab0fdeeffc470a19fc0fbf3ddb0";
+    "sha256:f144092fdccf4813f84f84f034356532bc6770e7ae63dce3bf0fc2f7600f20d3";
 
 pub(super) fn template(profile: &str, source: &str) -> Value {
     assert_eq!(
@@ -242,7 +242,7 @@ async fn the_tool_display_samples_are_what_the_reader_serves() {
         .with_call_pins(slot),
     )));
     app.set_tool_display(tool);
-    let mut served = Served::new("phone-reader-tool-display-v7", app);
+    let mut served = Served::new("phone-reader-tool-display-v8", app);
     let session = json!({"session": "ses_head", "harness": "opencode2"});
     let request = |method: &str, extra: Value| {
         let mut params = session.clone();
@@ -502,7 +502,7 @@ async fn the_view_halves_samples_are_what_the_reader_serves() {
     served.check();
 }
 
-/// `phone-reader-tool-tail-v2`: a command whose view declares its last output
+/// `phone-reader-tool-tail-v3`: a command whose view declares its last output
 /// lines as a completion-only field (`completion_fields`, `text_lines`,
 /// tool-display 0.1.12). `display.views` serves the field in the view's
 /// `recordSchema`, and `session.tool_records` serves the completion with the
@@ -579,7 +579,7 @@ async fn the_tool_tail_samples_are_what_the_reader_serves() {
         .with_call_pins(slot),
     )));
     app.set_tool_display(tool);
-    let mut served = Served::new("phone-reader-tool-tail-v2", app);
+    let mut served = Served::new("phone-reader-tool-tail-v3", app);
     let session = |method: &str, extra: Value| {
         let mut params = json!({"session": "ses_head", "harness": "opencode2"});
         for (name, value) in extra.as_object().unwrap() {

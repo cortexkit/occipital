@@ -1,4 +1,4 @@
-//! The notice records samples the apps pin, `phone-reader-notice-records-v1.1`:
+//! The notice records samples the apps pin, `phone-reader-notice-records-v2`:
 //! the data a module writes for its own notices, which the apps draw as a card
 //! from that module's notice view instead of the folded notice text
 //! (`crate::notices::notice_records`, tool-display §10). Its README says what
@@ -296,7 +296,7 @@ async fn the_notice_records_samples_are_what_the_reader_serves() {
     app.set_notices(notices);
     let hints = tokio::sync::broadcast::channel(16).0;
     app.set_tool_display(Arc::new(ToolDisplay::new(store, None, hints)));
-    let mut served = Served::new("phone-reader-notice-records-v1.1", app);
+    let mut served = Served::new("phone-reader-notice-records-v2", app);
     let request = |method: &str, members: Value| {
         let mut params = json!({"session": SESSION, "harness": "opencode2"});
         for (name, value) in members.as_object().unwrap() {

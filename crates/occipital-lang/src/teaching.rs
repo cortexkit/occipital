@@ -41,8 +41,8 @@ pub struct ReplyTeaching {
 /// The reply teaching text of the embedded catalog, built once per process.
 ///
 /// It teaches the tags a reply can use when the runner records no tool-output
-/// references, handles or map records: in catalog v1, Badge, Styled, Callout,
-/// Table with written rows, and LinkCard. LinkCard stays in because the
+/// references, handles or map records: in catalog v1, Badge, Styled, Callout
+/// and LinkCard. LinkCard stays in because the
 /// store-time network is not known when the prompt is written; the catalog
 /// drops it only when the network is known to be off.
 pub fn reply_teaching() -> &'static ReplyTeaching {

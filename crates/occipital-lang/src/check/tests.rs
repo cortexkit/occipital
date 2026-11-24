@@ -446,11 +446,18 @@ fn literal_and_statically_known_bounds_use_prop_type() {
     );
     clean("<Progress value={-200} />", Profile::ShowUi);
     clean("<Table data={[]} displayRows={50} />", Profile::ShowUi);
-    assert!(codes(
-        "<Table data={[]} displayRows={11} />",
-        &context(Profile::Reply)
-    )
-    .contains(&Code::PropType));
+}
+
+/// Replies no longer hold tables: a Markdown table draws better there.
+#[test]
+fn a_reply_refuses_a_table() {
+    assert_eq!(
+        codes(
+            "<Table data={[{service: \"api\"}]} />",
+            &context(Profile::Reply)
+        ),
+        vec![Code::ReplyForbidden]
+    );
 }
 
 #[test]
@@ -712,9 +719,17 @@ fn reserved_writes_are_refused_when_name_errors_skip_type_inference() {
 
 #[test]
 fn reply_value_grammar_accepts_only_section_3_7_forms() {
+    // A written list of records passes the grammar; a chart's data in a reply
+    // must still come from a tool, so only the type refuses it.
+    assert_eq!(
+        codes(
+            "<Chart kind=\"bar\" data={[{x: -1, y: null, z: [true, \"s\"]}]} x=\"z\" y=\"x\" />",
+            &context(Profile::Reply)
+        ),
+        vec![Code::PropType]
+    );
     for source in [
-        "<Table data={[{x: -1, y: null, z: [true, \"s\"]}]} />",
-        "<Table data={Parse($$tc(1), \"json\", {columns: {x: \"number\"}})} />",
+        "<Chart kind=\"bar\" data={Parse($$tc(1), \"json\", {columns: {x: \"number\"}})} x=\"label\" y=\"x\" />",
         "<Image image={Artifact(\"art_1\")} />",
         "<ImageGroup images={[Artifact(\"art_1\"), $$tc(1)]} />",
     ] {

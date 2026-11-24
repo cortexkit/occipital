@@ -205,7 +205,6 @@ fn reply_forms_cover_every_reply_catalog_component() {
             &[("title", "Note"), ("body", "Body")],
             "Note: Body",
         ),
-        ("Table", &[("N", "12")], "[table: 12 rows]"),
         (
             "LinkCard",
             &[

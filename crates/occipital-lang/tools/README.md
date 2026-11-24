@@ -13,8 +13,9 @@ The exact command used from the repository root to produce the committed literal
 python3 crates/occipital-lang/tools/catalog_digest.py crates/occipital-lang/catalog/catalog-v1.json > crates/occipital-lang/catalog/catalog-v1.digest
 ```
 
-The tool sets `catalog.digest` to null before canonicalizing and hashing with
-SHA-256, as `digestRule` requires. The literal is not the catalog file checksum.
+The tool sets `catalog.digest` to null and leaves out the `teaching` section
+before canonicalizing and hashing with SHA-256, as `digestRule` requires, so
+rewording what models are taught never changes the digest. The literal is not the catalog file checksum.
 The Rust catalog digest test reads this literal; Rust output must never generate it.
 
 The tool catalog 1.1, which only tool templates name, is catalog 1.0 with the
