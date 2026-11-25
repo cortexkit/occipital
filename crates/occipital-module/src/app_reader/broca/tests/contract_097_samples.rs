@@ -282,3 +282,74 @@ async fn the_host_frames_samples_are_what_the_reader_serves() {
     }
     served.check();
 }
+
+/// A file of Agent Runner's recordings in `tests/data/thalamus-host-frames-v1/`,
+/// copied byte for byte from real Claude Code runs: two messages Claude Code
+/// 2.1.332 stored beside one tool result, and one Claude Code 2.1.331 stored
+/// as its own `system` message.
+fn recording(case: &str, file: &str) -> Value {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data/thalamus-host-frames-v1")
+        .join(case)
+        .join(file);
+    serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
+}
+
+/// `phone-reader-host-frames-recorded-v1`: the two recorded read entries,
+/// served as Agent Runner serves them, on one newest page. Each row lists
+/// the words parts the runner's own display row holds, with the same keys,
+/// words and order, and the row's text is the runner's.
+#[tokio::test]
+async fn the_recorded_host_frames_are_what_the_reader_serves() {
+    let cases = ["two-frames-2.1.332", "one-frame-2.1.331"];
+    let entries = cases
+        .iter()
+        .map(|case| recording(case, "session-read-message.json"))
+        .collect();
+    let mut served = Served::new("phone-reader-host-frames-recorded-v1", chat(entries));
+    let request = json!({"method": super::super::super::TRANSCRIPT_PAGE,
+        "params": {"session": "ses_head", "harness": "claude-code", "limit": 50}});
+    let reply = served.read(1, &request).await;
+    let rows = decoded(&reply)["result"]["messages"].clone();
+    served.keep("01-newest-page", &request, reply);
+    let rows = rows.as_array().unwrap();
+    assert_eq!(rows.len(), cases.len());
+    for (row, case) in rows.iter().zip(cases) {
+        let runner = recording(case, "display-entry.json")["row"].clone();
+        // The runner's words parts: its text parts no host wrote.
+        let words: Vec<(Value, Value)> = runner["parts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|part| part["type"] == "text" && part["host"] != true)
+            .map(|part| (part["part"].clone(), part["text"].clone()))
+            .collect();
+        let listed: Vec<Value> = words
+            .iter()
+            .map(|(key, _)| json!({"partKey": key, "code": CLAUDE_CODE_MID_TURN}))
+            .collect();
+        assert_eq!(row["hostFrames"], json!(listed), "{case}");
+        for (key, text) in &words {
+            let part = row["parts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|part| &part["partKey"] == key)
+                .unwrap();
+            assert_eq!(
+                (&part["type"], &part["text"]),
+                (&json!("text"), text),
+                "{case}"
+            );
+        }
+        assert_eq!(
+            (&row["role"], &row["text"]),
+            (&json!("user"), &runner["text"]),
+            "{case}"
+        );
+        for (key, host) in keys(row) {
+            assert_eq!(key.contains("#host_frame:"), host, "{case} {key}");
+        }
+    }
+    served.check();
+}
