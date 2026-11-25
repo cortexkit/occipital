@@ -218,6 +218,112 @@ impl Receipts {
         })?)
     }
 
+    /// Keep a send to be resent (`super::send_retry`), in one step with the
+    /// receipt a repeat is answered with and its queue row, which the apps list
+    /// with `held` while it is kept. A message already recorded within
+    /// [`RETENTION_MS`] keeps its receipt, as in [`Self::record_send`]; its
+    /// queue row and kept request stay as first written.
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn keep(
+        &self,
+        kept: &super::send_retry::Kept,
+        digest: &str,
+        mode: &str,
+        send_id: &str,
+        receipt: &Value,
+        harness: Option<&str>,
+    ) -> Result<(), crate::Error> {
+        let (session, id, now) = (&kept.session, &kept.client_message_id, kept.kept_at);
+        self.0.with_conn(|conn| {
+            let tx = conn.unchecked_transaction()?;
+            tx.execute(
+                "INSERT INTO harness_app_send(session,client_message_id,content_digest,mode,send_id,receipt_json,follow_until,created_at) \
+                 VALUES(?1,?2,?3,?4,?5,?6,NULL,?7) \
+                 ON CONFLICT(session,client_message_id) DO UPDATE SET content_digest=excluded.content_digest,mode=excluded.mode,\
+                 send_id=excluded.send_id,receipt_json=excluded.receipt_json,follow_until=NULL,created_at=excluded.created_at \
+                 WHERE harness_app_send.created_at < ?8",
+                params![session, id, digest, mode, send_id, receipt.to_string(), now, now.saturating_sub(RETENTION_MS)],
+            )?;
+            let queued = Queued {
+                session: session.clone(),
+                client_message_id: id.clone(),
+                harness: harness.map(str::to_owned),
+                send_id: send_id.to_owned(),
+                accepted_at: now,
+                steer_until: None,
+            };
+            SendQueue::insert(&tx, &queued, false)?;
+            super::send_retry::insert(&tx, kept)?;
+            tx.commit()
+        })?;
+        Ok(())
+    }
+
+    /// The runner took a kept send: it is no longer kept, its receipt becomes
+    /// the runner's answer, and its queue row goes on as a fresh send's would.
+    /// `end` is `None` while the runner holds it (it stays listed `queued` and
+    /// is followed until `follow`'s deadline, for a worker steer); otherwise it
+    /// ended at once, delivered, unconfirmed or unsent.
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn taken(
+        &self,
+        session: &str,
+        id: &str,
+        send_id: &str,
+        receipt: &Value,
+        follow: Option<(i64, &str)>,
+        end: Option<&End>,
+        now: i64,
+    ) -> Result<(), crate::Error> {
+        self.0.with_conn(|conn| {
+            let tx = conn.unchecked_transaction()?;
+            tx.execute(
+                "UPDATE harness_app_send SET send_id=?3, receipt_json=?4, follow_until=?5 \
+                 WHERE session=?1 AND client_message_id=?2",
+                params![session, id, send_id, receipt.to_string(), follow.map(|(until, _)| until)],
+            )?;
+            // A worker's steer goes out under its own send id and deadline.
+            tx.execute(
+                "UPDATE harness_app_send_queue SET send_id=?3, steer_until=?4 \
+                 WHERE session=?1 AND client_message_id=?2 AND state='queued'",
+                params![session, id, send_id, follow.map(|(until, _)| until)],
+            )?;
+            tx.execute(
+                "DELETE FROM harness_app_send_run WHERE session=?1 AND client_message_id=?2",
+                params![session, id],
+            )?;
+            if let Some((_, run_id)) = follow {
+                tx.execute(
+                    "INSERT INTO harness_app_send_run(session,client_message_id,run_id) VALUES(?1,?2,?3)",
+                    params![session, id, run_id],
+                )?;
+            }
+            if let Some(end) = end {
+                SendQueue::update(&tx, session, id, end, None, now)?;
+            }
+            super::send_retry::remove(&tx, session, id)?;
+            tx.commit()
+        })?;
+        Ok(())
+    }
+
+    /// Stop resending a kept send: it is listed unsent with `reason`.
+    pub(super) fn give_up(
+        &self,
+        session: &str,
+        id: &str,
+        reason: &str,
+        now: i64,
+    ) -> Result<(), crate::Error> {
+        self.0.with_conn(|conn| {
+            let tx = conn.unchecked_transaction()?;
+            SendQueue::update(&tx, session, id, &End::Unsent(reason.into()), None, now)?;
+            super::send_retry::remove(&tx, session, id)?;
+            tx.commit()
+        })?;
+        Ok(())
+    }
+
     #[cfg(test)]
     pub fn followed(&self, limit: usize) -> Result<Vec<Followed>, crate::Error> {
         self.followed_after(limit, &Default::default())

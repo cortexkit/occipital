@@ -8,6 +8,7 @@ pub mod resolve;
 mod route;
 pub mod send;
 pub mod send_queue;
+pub mod send_retry;
 pub mod send_store;
 pub mod uploads;
 

@@ -1,0 +1,1 @@
+{"method":"session.enqueue_user_message","params":{"clientMessageId":"c-steer","harness":"broca","mode":"steer","session":"ses_head","text":"Skip the staging step."}}
