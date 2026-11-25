@@ -1,14 +1,16 @@
-//! What runner contract 0.9.6 adds to the rows the apps read, and the three
-//! sample sets the apps pin for it, each served through Occipital's own
-//! handlers for a Claude Code chat as a phone's route reaches it.
-//! `served_samples` says how a set is checked and rewritten.
+//! What runner contract 0.9.6 adds to the rows the apps read, and the sample
+//! sets the apps pin for it, each served through Occipital's own handlers for
+//! a Claude Code chat as a phone's route reaches it. `served_samples` says how
+//! a set is checked and rewritten.
 //!
-//! - `phone-reader-host-frame-v1`: messages the person sent while a Claude
-//!   Code turn ran. Claude Code stores each inside two fixed sentences of its
-//!   own as a `system` message; the read's `host_frame` fact names that
-//!   wrapper (llm-runner §9.7.1.1). The six messages are the contract's own
-//!   recordings (`steer-frame-claude-code-v1`), which predate the fact, so this
-//!   test adds the fact a runner now serves for each.
+//! - Messages the person sent while a Claude Code turn ran: Claude Code
+//!   stores each inside two fixed sentences of its own as a `system` message,
+//!   and the read's `host_frame` fact names that wrapper (llm-runner
+//!   §9.7.1.1). The six messages are the contract's own recordings
+//!   (`steer-frame-claude-code-v1`), which predate the fact, so these tests add
+//!   the fact a runner now serves for each. Their set,
+//!   `phone-reader-host-frame-v1`, is frozen: its rows predate `hostFrames`,
+//!   and `contract_097_samples` serves its messages in the set that replaces it.
 //! - `phone-reader-runner-entry-v1`: the empty reply Agent Runner writes when
 //!   Claude Code saved no reply for a finished step, marked with the read's
 //!   `runner_entry` fact (llm-runner §4.7), beside a model's own empty reply,
@@ -169,53 +171,6 @@ async fn serve(set: &'static str, entries: Vec<Value>) -> (Served, Value) {
     let rows = decoded(&reply)["result"]["messages"].clone();
     served.keep("01-newest-page", &request, reply);
     (served, rows)
-}
-
-/// `phone-reader-host-frame-v1`: the six recorded messages, each with the
-/// fact a runner now serves, then the first one again with no fact, as an
-/// older runner serves it. The recordings name their sender `chat-app`; here
-/// each is sent by this module, as a message the person types in the apps is,
-/// so the rows carry no other sender's mark.
-#[tokio::test]
-async fn the_host_frame_samples_are_what_the_reader_serves() {
-    let from_the_apps = |mut entry: Value| {
-        entry["sender"] = json!(crate::MODULE_ID);
-        entry
-    };
-    let mut chat: Vec<Value> = (1..=6)
-        .map(|n| {
-            let mut entry = from_the_apps(steer(n));
-            entry["host_frame"] = frame();
-            entry["ordinal"] = json!(n);
-            entry
-        })
-        .collect();
-    let mut older = from_the_apps(steer(1));
-    older["mid"] = json!("steer-1-without-the-fact");
-    older["ordinal"] = json!(7);
-    chat.push(older);
-    let said: Vec<String> = (1..=6).map(|n| words(&steer(n)).to_owned()).collect();
-    let (served, rows) = serve("phone-reader-host-frame-v1", chat).await;
-    let shown: Vec<(Value, Value)> = rows
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|row| {
-            (
-                row["role"].clone(),
-                row["parts"].as_array().unwrap().len().into(),
-            )
-        })
-        .collect();
-    // In stored order: the six framed ones, then the unframed one.
-    let mut expected: Vec<(Value, Value)> = (0..6).map(|_| (json!("user"), json!(3))).collect();
-    expected.push((json!("system"), json!(1)));
-    assert_eq!(shown, expected);
-    for (row, said) in rows.as_array().unwrap().iter().zip(&said) {
-        assert_eq!(row["text"], json!(said));
-        assert_eq!(row["sentBy"], Value::Null);
-    }
-    served.check();
 }
 
 /// `phone-reader-runner-entry-v1`: Agent Runner's recorded Claude Code chat

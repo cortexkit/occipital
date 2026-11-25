@@ -128,6 +128,18 @@ struct Entry {
     /// cut. Never read from the entry itself.
     #[serde(skip)]
     origin: Option<String>,
+    /// The messages a host wrapped in sentences of its own, once each wrapper
+    /// is verified and split off, in stored order. Never read from the entry
+    /// itself.
+    #[serde(skip)]
+    host_frames: Vec<FramedWords>,
+}
+
+/// One message the person sent that a host wrapped: the key of the part that
+/// holds the person's words, and the wrapper's code.
+struct FramedWords {
+    part: String,
+    code: String,
 }
 
 #[derive(Deserialize)]
@@ -380,25 +392,24 @@ impl DisplayProfile {
     /// apply when the row is built, as for Broca, and an exact read keeps all.
     /// The contract itself cuts a relayed message's header, and only when the
     /// stored text carries it exactly.
-    /// The contract also splits a host's wrapper from the person's words when
-    /// the stored text carries it exactly. An entry never has both facts; if a
-    /// runner sent both, the relay header wins and the wrapper stays in the
-    /// text, as before either fact existed.
+    /// The contract also splits a host's wrapper from the person's words in
+    /// each stored part the frames name, where the stored text carries it
+    /// exactly. `frames` is empty for a relayed message (see [`read_frames`]).
     fn project(
         self,
         body: &Value,
         relay: Option<&Attribution>,
-        frame: Option<&HostFrame>,
+        frames: &[HostFrame],
     ) -> Result<DisplayRow, ProjectionError> {
         let profile = match self {
             Self::OpenCode2 => serializer_profile::OPENCODE_V2,
             Self::ClaudeCode => serializer_profile::ANTHROPIC_MESSAGES,
             Self::Pi => serializer_profile::PI,
         };
-        let facts = match (relay, frame) {
-            (Some(relay), _) => ProjectionFacts::default().with_attribution(relay),
-            (None, Some(frame)) => ProjectionFacts::default().with_host_frame(frame),
-            (None, None) => ProjectionFacts::default(),
+        let facts = match relay {
+            Some(relay) => ProjectionFacts::default().with_attribution(relay),
+            None if !frames.is_empty() => ProjectionFacts::default().with_host_frames(frames),
+            None => ProjectionFacts::default(),
         };
         display::project_with_facts(profile, body, None, &facts)
     }
@@ -410,6 +421,30 @@ impl DisplayProfile {
     fn written_when_finished(self) -> bool {
         matches!(self, Self::Pi)
     }
+}
+
+/// The wrappers a read names around the person's words: the `host_frames`
+/// list (llm-runner §9.7.1.1), or the single `host_frame` an older runner
+/// serves, as a list of one. The contract refuses some together: both
+/// members, a list naming a part twice or out of order, or either beside a
+/// relay header. Refused facts read as absent, so they cost only themselves:
+/// the relay header still applies, and otherwise the text stays whole.
+fn read_frames(raw: &Value, relayed: bool) -> Vec<HostFrame> {
+    let list = raw
+        .get("host_frames")
+        .map(|fact| serde_json::from_value::<Vec<HostFrame>>(fact.clone()));
+    let single = raw
+        .get("host_frame")
+        .map(|fact| serde_json::from_value::<HostFrame>(fact.clone()));
+    let frames = match (list, single) {
+        (Some(Ok(list)), None) => list,
+        (None, Some(Ok(single))) => vec![single],
+        _ => return Vec::new(),
+    };
+    if attribution::check_host_frames(relayed, None, Some(&frames)).is_err() {
+        return Vec::new();
+    }
+    frames
 }
 
 /// A read entry's members beside its message body, for a display-row runner.
@@ -500,10 +535,8 @@ pub fn display_rows(
         let relay = raw
             .get("attribution")
             .and_then(|fact| serde_json::from_value::<Attribution>(fact.clone()).ok());
-        let frame = raw
-            .get("host_frame")
-            .and_then(|fact| serde_json::from_value::<HostFrame>(fact.clone()).ok());
-        let projected = profile.project(&raw["message"], relay.as_ref(), frame.as_ref());
+        let frames = read_frames(raw, relay.is_some());
+        let projected = profile.project(&raw["message"], relay.as_ref(), &frames);
         let facts = serde_json::from_value::<EntryFacts>(raw.clone());
         let mid = raw["mid"].as_str().filter(|mid| !mid.is_empty());
         let (mut row, facts, mid) = match (projected, facts, mid) {
@@ -522,9 +555,20 @@ pub fn display_rows(
         let (_, ordinal) = identity(raw, profile.name())?;
         // Set only when the contract verified the header and cut it.
         let relayed = row.attribution.take();
-        // Set only when the contract verified the wrapper and split it off:
-        // the row is then the person's, with the wrapper as host parts.
-        let framed = row.host_frame.take().map(|fact| fact.part.to_string());
+        // The frames the contract verified and split off: the row is then the
+        // person's, with each wrapper as host parts. Projected without the
+        // runner's own part keys, a stored part is keyed by its position, so
+        // a frame's words are the part keyed by the frame's `part`.
+        let framed: Vec<FramedWords> = row
+            .host_frames
+            .take()
+            .unwrap_or_default()
+            .into_iter()
+            .map(|fact| FramedWords {
+                part: fact.part.to_string(),
+                code: fact.code,
+            })
+            .collect();
         let tool_times = facts.tool_times.or_else(|| projected_tool_times(&row));
         let only_results = !row.parts.is_empty()
             && row
@@ -566,6 +610,7 @@ pub fn display_rows(
             reasoning_summaries: Vec::new(),
             runner_entry: facts.runner_entry.or(row.runner_entry),
             origin: relayed.as_ref().map(|fact| fact.module.clone()),
+            host_frames: Vec::new(),
         };
         let header_part = relayed.as_ref().map(|fact| fact.part.to_string());
         let mut parts = Vec::new();
@@ -585,8 +630,10 @@ pub fn display_rows(
             }
             // A split wrapper's two edges are host text parts of the framed
             // part, keyed `<stored key>#host_frame:head` and `…:tail`.
-            let edge = match (&framed, &part) {
-                (Some(_), DisplayPart::Text(text)) if text.host => Some(text.host_code.clone()),
+            let edge = match &part {
+                DisplayPart::Text(text) if text.host && !framed.is_empty() => {
+                    Some(text.host_code.clone())
+                }
                 _ => None,
             };
             let Some((key, part, call_id)) = display_part(part) else {
@@ -604,7 +651,7 @@ pub fn display_rows(
             let stored = slot.parse::<usize>().unwrap_or(position);
             // The wrapper's edges and the words between them are what the
             // frame says they are; a `host_parts` fact never applies to them.
-            if framed.as_deref() == Some(slot) {
+            if framed.iter().any(|frame| frame.part == slot) {
                 let part = match (part, edge) {
                     (Part::Text(text) | Part::Injected(text), Some(code)) => {
                         Part::Host { text, code }
@@ -660,7 +707,10 @@ pub fn display_rows(
                     .is_some_and(|id| calls.contains(id));
         }
         parsed.push(Some(Parsed {
-            entry,
+            entry: Entry {
+                host_frames: framed,
+                ..entry
+            },
             parts,
             written_when_finished: profile.written_when_finished(),
         }));
@@ -1332,6 +1382,18 @@ fn project(
     // A message another module relayed, drawn as from that module.
     if let Some(module) = &message.entry.origin {
         display["origin"] = json!({"module": module});
+    }
+    // Each message the person sent that a host wrapped, in stored order: the
+    // part holding its words, and the wrapper's code. A host can wrap several
+    // in one stored message, and the apps draw each as its own message, from
+    // the part this names, never by reading the keys of the parts around it.
+    if !message.entry.host_frames.is_empty() {
+        display["hostFrames"] = message
+            .entry
+            .host_frames
+            .iter()
+            .map(|frame| json!({"partKey": frame.part, "code": frame.code}))
+            .collect();
     }
     // A reply another model wrote in place of the one asked for, which the
     // apps note quietly under the reply, naming both. Only a reply may carry

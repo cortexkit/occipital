@@ -16,6 +16,8 @@ pub mod tails;
 
 use serde_json::Value;
 
+use crate::broca_entries::PART_KEY;
+
 /// The value of a read's `view` member that asks for this view.
 pub const VIEW: &str = "simple";
 /// The rule's version. Raise it whenever [`admit`] changes what it admits or
@@ -101,6 +103,7 @@ pub fn admit(display: &mut Value, answers_ask: bool) -> bool {
             if let Some(parts) = display["parts"].as_array_mut() {
                 parts.retain(|part| part["type"] != "injected" || persons_own(part));
             }
+            trim_host_frames(display);
             true
         }
         "assistant" => {
@@ -146,6 +149,37 @@ fn keep_parts(display: &mut Value, keep: impl Fn(&Value) -> bool) {
         if row.contains_key("files") {
             row.insert("files".into(), Value::Array(Vec::new()));
         }
+    }
+    trim_host_frames(display);
+}
+
+/// Keep only the `hostFrames` entries whose words part the row still holds,
+/// so each names a part the apps can draw, and drop the member once none
+/// does. A wrapped message whose words are all a host's tagged notice is one
+/// the view leaves out.
+fn trim_host_frames(display: &mut Value) {
+    let held: Vec<String> = display["parts"]
+        .as_array()
+        .map(|parts| {
+            parts
+                .iter()
+                .filter_map(|part| part[PART_KEY].as_str().map(str::to_owned))
+                .collect()
+        })
+        .unwrap_or_default();
+    let Some(row) = display.as_object_mut() else {
+        return;
+    };
+    let Some(frames) = row.get_mut("hostFrames").and_then(Value::as_array_mut) else {
+        return;
+    };
+    frames.retain(|frame| {
+        frame["partKey"]
+            .as_str()
+            .is_some_and(|key| held.iter().any(|held| held == key))
+    });
+    if frames.is_empty() {
+        row.remove("hostFrames");
     }
 }
 
