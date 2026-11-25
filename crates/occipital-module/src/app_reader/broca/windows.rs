@@ -23,6 +23,7 @@ impl BrocaSource {
         entries.truncate(served);
         self.size_images(&mut rows).await;
         self.settle_say(&mut rows).await?;
+        self.mark_hand_offs(&mut rows).await;
         // The apps draw every system row as a prompt card that opens on tap, so
         // one with nothing in it, such as the entry the Pi runner writes when a
         // session starts, is left out of pages. So is the user entry a runner wrote for a

@@ -1323,6 +1323,26 @@ impl BrocaSource {
     /// rather than served either way: an app keeps a page until its version
     /// moves, and settling the calls doesn't move it, so a guess would stay on
     /// the app's screen after the plan can be read again.
+    /// Mark `handOff: true` on each row a voice front sent (`sentBy` naming a
+    /// module the daemon's catalog lists as providing [`VOICE_FRONT`]): what a
+    /// voice call hands the agent. The apps draw such a row as a line from the
+    /// call in either view, never as the person's words or as an ordinary
+    /// module message, and the Simple view shows it
+    /// (`occipital_app_reader::simple::admit`). The catalog is read only for
+    /// rows some module sent.
+    async fn mark_hand_offs(&self, rows: &mut [Row]) {
+        let sent_by = |row: &Row| row.display["sentBy"]["module"].as_str().map(str::to_owned);
+        if !rows.iter().any(|row| sent_by(row).is_some()) {
+            return;
+        }
+        let fronts = self.route.voice_fronts().await;
+        for row in rows {
+            if sent_by(row).is_some_and(|module| fronts.contains(&module)) {
+                row.display["handOff"] = Value::Bool(true);
+            }
+        }
+    }
+
     async fn settle_say(&self, rows: &mut [Row]) -> Result<(), ReadError> {
         if !occipital_app_reader::say::any_marked(rows.iter().map(|row| &row.display)) {
             return Ok(());
@@ -2480,6 +2500,7 @@ impl TranscriptSource for BrocaSource {
         // does, so an older unanswered call cannot consume an id-less result.
         let mut rows = self.rows(&snapshot.entries, true, &snapshot.pruned_reasoning)?;
         self.settle_say(&mut rows).await?;
+        self.mark_hand_offs(&mut rows).await;
         let mut row = rows.remove(0);
         if let Some(reason) = row
             .display
@@ -2508,9 +2529,6 @@ impl TranscriptSource for BrocaSource {
         page.messages
             .first()
             .is_some_and(|entry| entry["mid"] == mid && entry["ordinal"].as_u64().is_some())
-    }
-    async fn voice_fronts(&self) -> HashSet<String> {
-        self.route.voice_fronts().await
     }
 
     /// The wake rows among `rows` whose record holds the person's answer to

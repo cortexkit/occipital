@@ -850,8 +850,9 @@ fn hand_off_view() -> cortexkit_role_tool_provider::views::NoticeView {
 const HAND_OFF_ROW: &str = "<ToolHeader icon=\"message\" title=\"From your call\" />\n";
 const HAND_OFF_PAGE: &str = "<TextContent text={input.said} />\n";
 
-/// The sample set `phone-reader-simple-hand-off-v1`: what a voice call hands
-/// the agent, in the Simple view. The person types a message; a call hands
+/// The sample set `phone-reader-simple-hand-off-v2`: what a voice call hands
+/// the agent, in both views (v1's full view had no `handOff` mark, so
+/// Occipital no longer serves it). The person types a message; a call hands
 /// the agent a question, which it answers with `say`; a second hand-off's
 /// record never arrived; and a module that doesn't front calls sends the
 /// agent a message too. The voice front writes each hand-off's record, the
@@ -910,7 +911,7 @@ async fn the_hand_off_samples_are_what_the_reader_serves() {
     .await;
     assert_eq!(reply, Ok(cortexkit_role_tool_display::WriteReply::Stored));
     let mut served = Sample {
-        served: Served::new("phone-reader-simple-hand-off-v1", c.app.clone()),
+        served: Served::new("phone-reader-simple-hand-off-v2", c.app.clone()),
         corr: 0,
     };
 
@@ -928,12 +929,20 @@ async fn the_hand_off_samples_are_what_the_reader_serves() {
     }
     assert!(rows[0].get("handOff").is_none() && rows[2].get("handOff").is_none());
 
-    // 02: the full view is unchanged: the hand-offs carry only `sentBy`.
+    // 02: the full view: every row, and the two hand-offs marked `handOff`
+    // too, with all their parts; the other module's message carries only
+    // `sentBy`.
     let mut full = page(json!({"limit": 10}));
     full["params"].as_object_mut().unwrap().remove("view");
     let whole = served.read("02-full-page", full).await;
-    let rows = whole["result"]["messages"].as_array().unwrap();
-    assert!(rows.iter().all(|row| row.get("handOff").is_none()));
+    let marked: Vec<&str> = whole["result"]["messages"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|row| row["handOff"] == true)
+        .map(|row| row["messageId"].as_str().unwrap())
+        .collect();
+    assert_eq!(marked, ["m3", "m7"]);
 
     // 03: the hand-offs' records: the first joins, the second has none.
     let records = json!({"method": crate::notices::wakes::READ, "params": {"session": SESSION,

@@ -99,11 +99,12 @@ The apps reach these operations through Callosum, and the desktop app directly:
 `session.transcript_page` and `session.transcript_watch` take `view: "simple"`
 for the apps' Simple view: only the person's messages, the agent's `say`
 messages and the asks it files, the person's answers to asks, and the
-messages a voice call hands the agent (marked `handOff`), each trimmed to
-what the view draws. Its pages and claims are their own stream, with a
-version ending `:simple:3`. A page reads back a bounded number of messages and
+messages a voice call hands the agent, each trimmed to what the view draws.
+A hand-off's row carries `handOff: true` in either view. Simple pages and
+claims are their own stream, with a version ending `:simple:3`. A page reads
+back a bounded number of messages and
 says where it stopped, so it can hold fewer rows than asked. The sample sets
-`phone-reader-simple-v4` and `phone-reader-simple-hand-off-v1` show every case.
+`phone-reader-simple-v4` and `phone-reader-simple-hand-off-v2` show every case.
 
 With `acceptHeldCopy: true` on either operation, a newest page and every claim
 answer carry `heldCopy`, naming the copy of the chat they served. A claim that

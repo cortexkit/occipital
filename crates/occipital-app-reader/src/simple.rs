@@ -15,8 +15,6 @@
 
 pub mod tails;
 
-use std::collections::HashSet;
-
 use serde_json::Value;
 
 use crate::broca_entries::PART_KEY;
@@ -74,25 +72,23 @@ pub(crate) fn claims_key(session: &str) -> String {
 /// Whether the Simple view shows the full row `display`, trimming it to what
 /// the view draws when it does. `answers_ask` says the row is a wake whose
 /// record holds the person's answer to an ask, which only the module that
-/// keeps wake records knows. `voice_fronts` are the modules that run voice
-/// calls with the agent, which only the module reading the daemon's catalog
-/// knows.
+/// keeps wake records knows.
 ///
 /// - The person's message: role `user`, none of the marks that make it
 ///   someone else's words, and still some text, a file or an unreadable part
 ///   once host-written parts are dropped. Its other parts stay as served.
-/// - A hand-off from a voice call: a message one of `voice_fronts` sent
-///   (`sentBy`), carrying to the agent what the person said on the call. It
-///   keeps its text parts and gains `handOff: true`, so the apps draw it as
-///   a line from the call, never as the person's own message: its text is
-///   the module's, framing the person's words. Those words alone come from
-///   the notice record the module writes for the hand-off.
+/// - A hand-off from a voice call: a row the module marked `handOff`, the
+///   message a voice-call module sent carrying to the agent what the person
+///   said on the call. It keeps its text parts. The apps draw it as a line
+///   from the call, never as the person's own message: its text is the
+///   module's, framing the person's words. Those words alone come from the
+///   notice record the voice-call module writes for the hand-off.
 /// - The agent's `say` messages and the asks it files: an assistant row keeps
 ///   only its `message` parts and its `ask` calls that file an ask, each
 ///   whole, and none of its prose, reasoning or other calls.
 /// - The person's answer to an ask: a wake row, with no parts, since the apps
 ///   draw it from the wake record.
-pub fn admit(display: &mut Value, answers_ask: bool, voice_fronts: &HashSet<String>) -> bool {
+pub fn admit(display: &mut Value, answers_ask: bool) -> bool {
     let role = display["role"].as_str().unwrap_or_default().to_owned();
     if display.get("notice").is_some() {
         if !answers_ask {
@@ -103,10 +99,7 @@ pub fn admit(display: &mut Value, answers_ask: bool, voice_fronts: &HashSet<Stri
     }
     match role.as_str() {
         "user" => {
-            let from_a_call = display["sentBy"]["module"]
-                .as_str()
-                .is_some_and(|module| voice_fronts.contains(module));
-            if from_a_call {
+            if display["handOff"] == true {
                 return keep_hand_off(display);
             }
             const OTHERS: [&str; 3] = ["speaksFor", "sentBy", "origin"];
@@ -136,8 +129,7 @@ pub fn admit(display: &mut Value, answers_ask: bool, voice_fronts: &HashSet<Stri
 }
 
 /// Keep a hand-off's text parts, whatever spans they hold, since the module
-/// frames the person's words as it likes; mark it `handOff`. One with no text
-/// left is not shown.
+/// frames the person's words as it likes. One with no text left is not shown.
 fn keep_hand_off(display: &mut Value) -> bool {
     let text = |part: &Value| {
         matches!(part["type"].as_str(), Some("text" | "injected"))
@@ -153,7 +145,6 @@ fn keep_hand_off(display: &mut Value) -> bool {
     if parts.is_empty() {
         return false;
     }
-    display["handOff"] = Value::Bool(true);
     trim_host_frames(display);
     true
 }
