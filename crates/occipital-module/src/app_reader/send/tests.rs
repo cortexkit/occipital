@@ -15,6 +15,7 @@ mod promote_1116;
 mod promote_queued_1116;
 mod promote_samples;
 mod prompt;
+mod runner_restart;
 mod stop_all_samples;
 mod structured_output_pi_1120;
 use std::{
@@ -2029,16 +2030,18 @@ async fn runner_refusals_reach_the_app_by_code_and_nothing_is_recorded() {
             ("runner_refused", Some(detail))
         );
     }
-    // A lost route is safe to resend: the key is derived from the app's id.
+    // A lost route keeps the send to resend, under the key derived from the
+    // app's id; a repeat meanwhile is answered from its receipt.
     f.runner.unreachable.store(true, Ordering::SeqCst);
     let lost = f.sender.send(message("m1", "hello")).await.unwrap();
-    assert_eq!(
-        (lost["code"].clone(), lost["terminal"].clone()),
-        (json!("not_sent"), json!(false))
-    );
+    assert_eq!((&lost["ok"], &lost["held"]), (&json!(true), &json!(true)));
+    let repeat = f.sender.send(message("m1", "hello")).await.unwrap();
+    assert_eq!(repeat["duplicate"], true);
     f.runner.unreachable.store(false, Ordering::SeqCst);
-    let sent = f.sender.send(message("m1", "hello")).await.unwrap();
-    assert_eq!(sent["effectId"], lost["effectId"]);
+    assert!(f.sender.resend_kept_now("s").await);
+    let written = f.runner.written();
+    assert_eq!(written.len(), 1);
+    assert_eq!(written[0]["send_id"], lost["effectId"]);
 }
 
 /// Prefrontal's vectors, replayed through the send: the first send's receipt, the

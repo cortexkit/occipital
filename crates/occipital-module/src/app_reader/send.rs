@@ -256,6 +256,24 @@ pub struct Sender {
     /// reader is attached), which stretches the followers' timed checks to
     /// [`BACKSTOP_INTERVAL`].
     notices_live: Arc<std::sync::atomic::AtomicBool>,
+    /// This sender, once [`Sender::start`] has it, so a send kept for its
+    /// runner can start that session's resender (`resend`).
+    me: std::sync::OnceLock<Weak<Sender>>,
+    /// The sessions whose kept sends a resender is working through.
+    resending: Mutex<std::collections::HashSet<String>>,
+}
+
+/// How [`Sender::deliver`] ended.
+enum Delivered {
+    /// The runner answered, and the receipt is the app's answer.
+    Answered(Value),
+    /// A call to the runner failed before the send went out, or the send's own
+    /// call got no answer. The move admission comes back with it, so the send
+    /// can be kept under it.
+    Unreachable {
+        message: String,
+        admitted: Option<crate::moves::state::Admitted>,
+    },
 }
 
 fn wall_clock() -> i64 {
@@ -290,6 +308,8 @@ impl Sender {
             model_names: std::sync::OnceLock::new(),
             moves: std::sync::OnceLock::new(),
             notices_live: Arc::default(),
+            me: std::sync::OnceLock::new(),
+            resending: Mutex::default(),
         }
     }
 
@@ -415,39 +435,8 @@ impl Sender {
         }
         let request = SendRequest::parse(&params)?;
         let key = send_key(&request)?;
-        let content = if request.attachments().is_empty() {
-            request.content()
-        } else {
-            let Some(uploads) = self.uploads.clone() else {
-                return Err(SendRefusal::new(
-                    "provider_unavailable",
-                    "upload storage is unavailable",
-                ));
-            };
-            let Some(device) = device else {
-                return Err(SendRefusal::new(
-                    super::uploads::codes::UPLOAD_NOT_YOURS,
-                    "only the device that uploaded a file may send it",
-                ));
-            };
-            let (device, session, ids) = (
-                device.to_owned(),
-                request.session.clone(),
-                request.attachments().to_vec(),
-            );
-            let digests =
-                tokio::task::spawn_blocking(move || uploads.digests(&device, &session, &ids))
-                    .await
-                    .map_err(|error| store_error(error.to_string()))?
-                    .map_err(|error| SendRefusal {
-                        code: error.code,
-                        message: error.message,
-                        detail: error.detail,
-                    })?;
-            request.content_by_bytes(&digests)
-        };
+        let digest = self.digest(device, &request).await?;
         let requested = request.mode.unwrap_or(Mode::Queue);
-        let digest = format!("{:x}", Sha256::digest(content.to_string()));
         // Concurrent attempts for one message are answered one after the other,
         // so the second sees the first one's receipt instead of racing it.
         let lock = request
@@ -532,10 +521,108 @@ impl Sender {
         };
 
         let head_id = runner_send_id(target.reference(), key, Role::Head);
+        // A chat with sends kept for its runner waits behind them, so nothing
+        // overtakes a message the person sent before it.
+        if self.keeps(&request.session).await {
+            return self
+                .keep(
+                    &request,
+                    device,
+                    &params,
+                    &digest,
+                    &head_id,
+                    admitted,
+                    "kept behind earlier sends",
+                )
+                .await;
+        }
+        match self
+            .deliver(
+                target,
+                &request,
+                device,
+                &digest,
+                requested,
+                head_id.clone(),
+                admitted,
+                false,
+            )
+            .await?
+        {
+            Delivered::Answered(receipt) => Ok(receipt),
+            Delivered::Unreachable { message, admitted } => {
+                self.keep(
+                    &request, device, &params, &digest, &head_id, admitted, &message,
+                )
+                .await
+            }
+        }
+    }
+
+    /// The send's content digest, over its text and each named file's bytes,
+    /// which a repeat must match: the files are uploads `device` opened.
+    async fn digest(
+        &self,
+        device: Option<&str>,
+        request: &SendRequest,
+    ) -> Result<String, SendRefusal> {
+        let content = if request.attachments().is_empty() {
+            request.content()
+        } else {
+            let Some(uploads) = self.uploads.clone() else {
+                return Err(SendRefusal::new(
+                    "provider_unavailable",
+                    "upload storage is unavailable",
+                ));
+            };
+            let Some(device) = device else {
+                return Err(SendRefusal::new(
+                    super::uploads::codes::UPLOAD_NOT_YOURS,
+                    "only the device that uploaded a file may send it",
+                ));
+            };
+            let (device, session, ids) = (
+                device.to_owned(),
+                request.session.clone(),
+                request.attachments().to_vec(),
+            );
+            let digests =
+                tokio::task::spawn_blocking(move || uploads.digests(&device, &session, &ids))
+                    .await
+                    .map_err(|error| store_error(error.to_string()))?
+                    .map_err(|error| SendRefusal {
+                        code: error.code,
+                        message: error.message,
+                        detail: error.detail,
+                    })?;
+            request.content_by_bytes(&digests)
+        };
+        Ok(format!("{:x}", Sha256::digest(content.to_string())))
+    }
+
+    /// Send `request` to the runner session `target`, under `head_id` for a
+    /// head, and record the receipt and queue row its answer gives. A call to
+    /// the runner that fails before the send goes out, or whose outcome is
+    /// unknown, comes back as [`Delivered::Unreachable`] with the move admission,
+    /// so the caller can keep the send; a worker steer that fails so is answered
+    /// `not_sent`, as it always was. `resend` names a kept send the resender
+    /// sends again: its receipt and queue row exist, and are rewritten.
+    #[allow(clippy::too_many_arguments)]
+    async fn deliver(
+        &self,
+        target: Arc<dyn SendTarget>,
+        request: &SendRequest,
+        device: Option<&str>,
+        digest: &str,
+        requested: Mode,
+        head_id: String,
+        admitted: Option<crate::moves::state::Admitted>,
+        resend: bool,
+    ) -> Result<Delivered, SendRefusal> {
         let head = match target.call("session.head", json!({})).await {
             Ok(head) => head,
             Err(RunnerError::Unreachable(message)) => {
-                return Ok(not_sent(Some(&head_id), &request, &message))
+                return Ok(Delivered::Unreachable { message, admitted })
             }
             Err(RunnerError::Refused {
                 code,
@@ -598,19 +685,26 @@ impl Sender {
             SendGrant::Unknown => false,
         };
         let content = match self
-            .prompt_content(target.as_ref(), &request, &meta, describe.as_ref(), device)
+            .prompt_content(target.as_ref(), request, &meta, describe.as_ref(), device)
             .await?
         {
             Ok(content) => content,
-            Err(message) => return Ok(not_sent(Some(&head_id), &request, &message)),
+            Err(message) if worker => {
+                return Ok(Delivered::Answered(not_sent(
+                    Some(&head_id),
+                    request,
+                    &message,
+                )))
+            }
+            Err(message) => return Ok(Delivered::Unreachable { message, admitted }),
         };
         let (send_id, reply, follow_until) = if worker {
             match self
-                .worker_steer(target.as_ref(), &request, &head, &content)
+                .worker_steer(target.as_ref(), request, &head, &content)
                 .await?
             {
                 Ok(sent) => sent,
-                Err(message) => return Ok(not_sent(None, &request, &message)),
+                Err(message) => return Ok(Delivered::Answered(not_sent(None, request, &message))),
             }
         } else {
             let delivery = match requested {
@@ -620,7 +714,7 @@ impl Sender {
                 }
                 Mode::Interrupt => Planned::String(Delivery::Interrupt),
             };
-            let body = runner_body(&request, &head_id, &delivery, &content)?;
+            let body = runner_body(request, &head_id, &delivery, &content)?;
             let outcome = target.call("session.send", body).await;
             let worker = trial
                 && matches!(&outcome, Err(RunnerError::Refused { code, detail, .. })
@@ -631,17 +725,22 @@ impl Sender {
             // owns the worker may interrupt it.
             if worker && requested != Mode::Interrupt {
                 match self
-                    .worker_steer(target.as_ref(), &request, &head, &content)
+                    .worker_steer(target.as_ref(), request, &head, &content)
                     .await?
                 {
                     Ok(sent) => sent,
-                    Err(message) => return Ok(not_sent(None, &request, &message)),
+                    Err(message) => {
+                        return Ok(Delivered::Answered(not_sent(None, request, &message)))
+                    }
                 }
             } else {
                 match outcome {
                     Ok(reply) => (head_id, reply, None),
+                    // Never sent, or no answer: the caller keeps it and resends it
+                    // under the same send id, which the runner answers with the
+                    // send it already has if this one did reach it.
                     Err(RunnerError::Unreachable(message)) => {
-                        return Ok(not_sent(Some(&head_id), &request, &message))
+                        return Ok(Delivered::Unreachable { message, admitted })
                     }
                     Err(RunnerError::Refused {
                         code,
@@ -673,7 +772,7 @@ impl Sender {
                 "ok": false, "effectId": send_id, "code": reply.state,
                 "reason": reply.reason, "terminal": true,
             }),
-            _ => accepted(&send_id, &request),
+            _ => accepted(&send_id, request),
         };
         // The log line names the mode the app asked for, how it went out (to a
         // head, or as a worker's steer) and the runner's state, so a trace of
@@ -708,7 +807,57 @@ impl Sender {
         // Accepted, but the runner already can't confirm it ran: nothing to follow,
         // and it is listed `unknown` at once rather than taken for delivered.
         let unconfirmed_now = receipt["ok"] == true && unconfirmed(&reply);
-        if let (Some(id), Some(receipts)) = (&request.client_message_id, &self.receipts) {
+        let digest = digest.to_owned();
+        if let (true, Some(id), Some(receipts)) =
+            (resend, &request.client_message_id, &self.receipts)
+        {
+            // A kept send's receipt and queue row exist: the runner's answer
+            // replaces the receipt, and the row ends at once unless the runner
+            // holds the send, when its follower watches it as any other.
+            let end = if receipt["ok"] != true {
+                Some(End::Unsent(
+                    receipt["reason"]
+                        .as_str()
+                        .or_else(|| receipt["code"].as_str())
+                        .unwrap_or(NOT_SENT_REASON)
+                        .to_owned(),
+                ))
+            } else if unconfirmed_now {
+                Some(End::Unconfirmed)
+            } else if follow.is_some() {
+                None
+            } else {
+                Some(End::Delivered)
+            };
+            let (session, id, row) = (request.session.clone(), id.clone(), receipt.clone());
+            let receipts = receipts.clone();
+            let now = (self.clock)();
+            let sid = send_id.clone();
+            let run_id = match &follow {
+                Some(Follow::Steer { run_id, .. }) => run_id.clone(),
+                _ => None,
+            };
+            let ended = end.is_some();
+            tokio::task::spawn_blocking(move || {
+                let _admitted = admitted;
+                receipts.taken(
+                    &session,
+                    &id,
+                    &sid,
+                    &row,
+                    held.zip(run_id.as_deref()),
+                    end.as_ref(),
+                    now,
+                )
+            })
+            .await
+            .map_err(|error| store_error(error.to_string()))?
+            .map_err(|error| store_error(error.to_string()))?;
+            tracing::info!(target: "app_send", session = %request.session,
+                client_message_id = request.client_message_id.as_deref().unwrap_or_default(),
+                state = %reply.state, ended, "kept send taken by the runner");
+            let _ = self.queue_changed.send(request.session.clone());
+        } else if let (Some(id), Some(receipts)) = (&request.client_message_id, &self.receipts) {
             let (session, id, row) = (request.session.clone(), id.clone(), receipt.clone());
             let receipts = receipts.clone();
             let mode = requested.as_str();
@@ -773,7 +922,7 @@ impl Sender {
                 follow,
             );
         }
-        Ok(receipt)
+        Ok(Delivered::Answered(receipt))
     }
 
     fn stored(
@@ -1371,6 +1520,8 @@ impl Sender {
     /// weakly, so it ends with it. Each task comes with a name for health reports.
     pub fn start(self: &Arc<Self>) -> Vec<(&'static str, tokio::task::JoinHandle<()>)> {
         let mut started = Vec::new();
+        let _ = self.me.set(Arc::downgrade(self));
+        self.resume_kept();
         if let Some(pruning) = self.spawn_pruning() {
             started.push(("send receipt pruning", pruning));
         }
@@ -1990,6 +2141,7 @@ fn refusal_cause(error: &Value) -> Option<String> {
 }
 
 pub mod promote;
+mod resend;
 pub mod stop;
 pub mod stop_all;
 #[cfg(test)]

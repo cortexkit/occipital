@@ -96,6 +96,18 @@ impl Sender {
                 detail: Some(json!({"field": "clientMessageId"})),
             });
         };
+        // A message kept to be resent hasn't reached the runner, so nothing
+        // can move it into a turn. It is answered as a send the runner doesn't
+        // hold is, which the apps already read.
+        if self
+            .is_kept(&request.session, &request.client_message_id)
+            .await
+        {
+            crate::app_reader::observe::answer("outcome=not_queued kept".to_owned());
+            return serde_json::to_value(PromoteReply::NotQueued).map_err(|error| {
+                SendRefusal::new("internal", format!("cannot encode the answer: {error}"))
+            });
+        }
         let target = self
             .targets
             .open(&request.session, request.harness.as_deref())

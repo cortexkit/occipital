@@ -483,6 +483,8 @@ async fn a_message_without_files_keeps_its_send_bytes() {
         .any(|m| m.starts_with("session.upload")));
 }
 
+/// A send whose call got no answer is kept, its file still waiting, and the
+/// resend names the copy the first attempt made rather than uploading again.
 #[tokio::test]
 async fn a_resent_message_reuses_the_runners_copy() {
     let p = Prompt::new();
@@ -497,19 +499,14 @@ async fn a_resent_message_reuses_the_runners_copy() {
         .send_from(Some(PHONE), with_files("m1", "see", &[&id]))
         .await
         .unwrap();
-    assert_eq!(lost["code"], codes::NOT_SENT);
+    assert_eq!((&lost["ok"], &lost["held"]), (&json!(true), &json!(true)));
     assert!(
         p.uploads.prompt_file(PHONE, "s", &id).is_ok(),
         "not sent yet"
     );
 
     p.runner.calls.lock().unwrap().clear();
-    let receipt = p
-        .sender
-        .send_from(Some(PHONE), with_files("m1", "see", &[&id]))
-        .await
-        .unwrap();
-    assert_eq!(receipt["ok"], true);
+    assert!(p.sender.resend_kept_now("s").await);
     assert_eq!(
         p.runner.methods(),
         [
@@ -527,7 +524,7 @@ async fn a_resent_message_reuses_the_runners_copy() {
 
 /// The app may upload a message's file again before retrying it, as prefrontal's
 /// records show: the new upload id carries the same bytes, so the message is the
-/// same one.
+/// same one, answered from its receipt while it is kept.
 #[tokio::test]
 async fn a_retry_that_uploaded_the_file_again_is_the_same_message() {
     let p = Prompt::new();
@@ -537,44 +534,21 @@ async fn a_retry_that_uploaded_the_file_again_is_the_same_message() {
         .lock()
         .unwrap()
         .push_back(Err(RunnerError::Unreachable("route lost".into())));
-    p.sender
+    let kept = p
+        .sender
         .send_from(Some(PHONE), with_files("m1", "see", &[&first]))
         .await
         .unwrap();
 
-    // The reply was lost, so nothing is recorded here, but the runner may hold the
-    // message: the retry names the copy the first attempt made.
     let again = p.upload("image/png", b"abc").await;
     p.runner.calls.lock().unwrap().clear();
-    let receipt = p
+    let repeat = p
         .sender
         .send_from(Some(PHONE), with_files("m1", "see", &[&again]))
         .await
         .unwrap();
-    assert_eq!(receipt["duplicate"], false, "{receipt}");
-    assert_eq!(
-        p.runner.methods(),
-        [
-            "session.head",
-            "role.describe",
-            "session.upload_status",
-            "session.send"
-        ]
-    );
-    assert_eq!(
-        p.runner.last_send()["content"],
-        json!([{"type": "upload", "upload_id": "ru-1"}])
-    );
-
-    // Accepted now: a third copy is answered from the receipt, untouched by the runner.
-    let third = p.upload("image/png", b"abc").await;
-    p.runner.calls.lock().unwrap().clear();
-    let repeat = p
-        .sender
-        .send_from(Some(PHONE), with_files("m1", "see", &[&third]))
-        .await
-        .unwrap();
     assert_eq!(repeat["duplicate"], true, "{repeat}");
+    assert_eq!(repeat["effectId"], kept["effectId"]);
     assert!(p.runner.methods().is_empty());
 
     // Different bytes under the same message id are a conflict.

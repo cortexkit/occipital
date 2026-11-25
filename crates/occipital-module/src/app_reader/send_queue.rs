@@ -128,7 +128,35 @@ impl SendQueue {
         {
             return Err("harness_app_send_wait_schema_ahead".into());
         }
+        if store
+            .migrate(super::send_retry::NAMESPACE, super::send_retry::MIGRATIONS)?
+            .store_ahead()
+        {
+            return Err("harness_app_send_retry_schema_ahead".into());
+        }
         Ok(Arc::new(Self(store)))
+    }
+
+    /// The session's first kept send, in the order the app sent them.
+    pub(super) fn first_kept(
+        &self,
+        session: &str,
+    ) -> Result<Option<super::send_retry::Kept>, crate::Error> {
+        Ok(self
+            .0
+            .with_read(|conn| super::send_retry::first(conn, session))?)
+    }
+
+    /// Every session with a kept send, for resuming them after a restart.
+    pub(super) fn kept_sessions(&self) -> Result<Vec<String>, crate::Error> {
+        Ok(self.0.with_read(super::send_retry::sessions)?)
+    }
+
+    /// Whether this message is kept to be resent.
+    pub(super) fn is_kept(&self, session: &str, id: &str) -> Result<bool, crate::Error> {
+        Ok(self
+            .0
+            .with_read(|conn| super::send_retry::kept(conn, session, id))?)
     }
 
     pub(super) fn insert(
@@ -223,7 +251,8 @@ impl SendQueue {
     /// Queued sends after `after`, in key order. A worker send that came here
     /// when its agent moved from another computer has only its queue row, since
     /// a move carries no receipts; a worker send made here is followed through the
-    /// run its receipt names, even before its recovery batch is read.
+    /// run its receipt names, even before its recovery batch is read. A send kept
+    /// to be resent is left to its resender: the runner hasn't got it to answer for.
     pub(super) fn queued_after(
         &self,
         limit: usize,
@@ -234,6 +263,7 @@ impl SendQueue {
                 "SELECT session,client_message_id,harness,send_id,accepted_at,steer_until FROM harness_app_send_queue q \
                  WHERE state='queued' AND (session,client_message_id)>(?2,?3) AND (steer_until IS NULL OR NOT EXISTS \
                  (SELECT 1 FROM harness_app_send s WHERE s.session=q.session AND s.client_message_id=q.client_message_id AND s.follow_until IS NOT NULL)) \
+                 AND NOT EXISTS (SELECT 1 FROM harness_app_send_retry r WHERE r.session=q.session AND r.client_message_id=q.client_message_id) \
                  ORDER BY session,client_message_id LIMIT ?1",
             )?
             .query_map(params![limit as i64, after.0, after.1], |row| {
@@ -268,9 +298,11 @@ impl SendQueue {
             self.0.with_read(|conn| {
                 conn.prepare(
                 "SELECT q.client_message_id,q.send_id,q.accepted_at,q.state,q.reason,q.ended_at,\
-                 w.runner_code,w.retry_after_ms,w.cause FROM harness_app_send_queue q \
+                 w.runner_code,w.retry_after_ms,w.cause,r.kept_at,r.give_up_at FROM harness_app_send_queue q \
                  LEFT JOIN harness_app_send_wait w \
                  ON w.session=q.session AND w.client_message_id=q.client_message_id \
+                 LEFT JOIN harness_app_send_retry r \
+                 ON r.session=q.session AND r.client_message_id=q.client_message_id \
                  WHERE q.session=?1 AND (q.state='queued' OR q.ended_at>=?2) \
                  ORDER BY q.accepted_at, q.client_message_id LIMIT ?3",
             )?
@@ -297,6 +329,13 @@ impl SendQueue {
                     }
                     if let Some(cause) = row.get::<_, Option<String>>(8)? {
                         entry["cause"] = json!(cause);
+                    }
+                    // Kept to be resent: the runner hasn't taken it yet, and
+                    // this module gives up at `untilMs`.
+                    if let (Some(since), Some(until)) =
+                        (row.get::<_, Option<i64>>(9)?, row.get::<_, Option<i64>>(10)?)
+                    {
+                        entry["held"] = json!({"sinceMs": since, "untilMs": until});
                     }
                     Ok(entry)
                 },
