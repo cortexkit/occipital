@@ -6,6 +6,7 @@
 use super::*;
 use occipital_app_reader::source::ReadError;
 
+mod capacity_refusal_1125b;
 mod capacity_wait;
 mod delivery_wave3;
 mod host_refused_0858;

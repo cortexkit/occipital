@@ -2158,6 +2158,7 @@ fn activity_follows_the_contracts_run_states() {
     }
     assert_eq!(activity_for(None), None);
 }
+mod capacity_refusal_1125b;
 mod capacity_wait_1122;
 mod history_intake_samples;
 mod host_parity_wave1;
