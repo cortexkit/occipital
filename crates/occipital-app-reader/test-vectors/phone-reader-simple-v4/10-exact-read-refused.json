@@ -1,0 +1,1 @@
+{"code":"invalid_request","message":"view cannot be combined with messageOrdinal, aroundMessageId or afterOrdinal: a read of one message by position reads the full stream"}

@@ -418,6 +418,13 @@ pub trait TranscriptSource: Send + Sync {
     async fn answered_asks(&self, _rows: &[Row]) -> HashSet<String> {
         HashSet::new()
     }
+    /// The modules that run voice calls with the agent and hand what the
+    /// person says on a call to it as a message, which the Simple view shows
+    /// (see [`crate::simple::admit`]). Only the module, which reads the
+    /// daemon's catalog, knows; a source without it answers none.
+    async fn voice_fronts(&self) -> HashSet<String> {
+        HashSet::new()
+    }
     fn changes(&self) -> watch::Receiver<u64>;
     fn activity(&self) -> Option<(&'static str, i64)>;
     /// A disconnected feed cannot authorize an activity-token cache hit.

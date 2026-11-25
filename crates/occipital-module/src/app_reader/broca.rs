@@ -353,7 +353,19 @@ pub trait BrocaRoute: Send + Sync {
     async fn runner_build(&self) -> Option<String> {
         None
     }
+    /// The modules the daemon's catalog lists as fronting voice calls (see
+    /// [`VOICE_FRONT`]), whose messages to the agent are hand-offs from a
+    /// call. None when that isn't known.
+    async fn voice_fronts(&self) -> HashSet<String> {
+        HashSet::new()
+    }
 }
+
+/// The capability a module provides when it runs voice calls with an agent
+/// and hands what the person says on a call to the agent as a message. No
+/// shared crate names it; prefrontal finds the module it lets read and message
+/// a head during a call by the same name.
+const VOICE_FRONT: &str = "head-session-voice-front/v1";
 
 #[async_trait]
 pub trait BrocaRoutes: Send + Sync {
@@ -468,9 +480,10 @@ struct DaemonRoute {
 }
 
 /// Each runner module's build, as the daemon's catalog lists it: its
-/// `module_version`, plus `+<commit>` when its provenance names one. Shared
-/// by every session's route, and read again when the catalog's generation
-/// moves (see [`crate::catalog_generation`]).
+/// `module_version`, plus `+<commit>` when its provenance names one; and the
+/// daemon-verified modules that provide [`VOICE_FRONT`]. Shared by every
+/// session's route, and read again when the catalog's generation moves (see
+/// [`crate::catalog_generation`]).
 ///
 /// A runner can't change what it declares in `role.describe` without a
 /// restart, and a new build is how it gains or loses an op or group. Nothing
@@ -487,6 +500,7 @@ struct RunnerBuilds {
 struct BuildsState {
     checked: Option<crate::catalog_generation::Checked>,
     builds: HashMap<String, String>,
+    voice_fronts: HashSet<String>,
 }
 
 impl RunnerBuilds {
@@ -500,14 +514,28 @@ impl RunnerBuilds {
     }
 
     /// `runner`'s build, reading the catalog first when the last read is no
-    /// longer fresh. A failed read keeps the builds read before, so a daemon
-    /// hiccup doesn't make every cache look stale.
+    /// longer fresh.
     async fn of(&self, calls: &SubcConsumer, runner: &str) -> Option<String> {
+        let state = self.read(calls).await;
+        state.builds.get(runner).cloned()
+    }
+
+    /// The voice-front modules, reading the catalog first when the last read
+    /// is no longer fresh.
+    async fn voice_fronts(&self, calls: &SubcConsumer) -> HashSet<String> {
+        self.read(calls).await.voice_fronts.clone()
+    }
+
+    /// The state, read again from the catalog when the last read is no longer
+    /// fresh. A failed read keeps what was read before, so a daemon hiccup
+    /// doesn't make every cache look stale.
+    async fn read(&self, calls: &SubcConsumer) -> tokio::sync::MutexGuard<'_, BuildsState> {
         let mut state = self.state.lock().await;
         if !self.generation.fresh(state.checked.as_ref()) {
             state.checked = Some(self.generation.check());
             match calls.catalog_list().await {
                 Ok(listed) => {
+                    state.voice_fronts = voice_fronts(&listed.modules);
                     state.builds = listed
                         .modules
                         .into_iter()
@@ -529,8 +557,24 @@ impl RunnerBuilds {
                 }
             }
         }
-        state.builds.get(runner).cloned()
+        state
     }
+}
+
+/// The modules among `modules` that provide [`VOICE_FRONT`] and that the daemon
+/// verified by their launch nonce, since any module may claim a capability
+/// and a hand-off is shown to the person as a line from their call.
+fn voice_fronts(modules: &[subc_client_rs::CatalogEntry]) -> HashSet<String> {
+    modules
+        .iter()
+        .filter(|module| {
+            module.nonce_verified
+                && module.capabilities.as_ref().is_some_and(|declared| {
+                    declared.provides.iter().any(|name| name == VOICE_FRONT)
+                })
+        })
+        .map(|module| module.module_id.clone())
+        .collect()
 }
 
 fn target(resolved: &Resolved) -> RouteTarget {
@@ -711,6 +755,10 @@ impl BrocaRoute for DaemonRoute {
         self.builds
             .of(&self.calls, &self.resolved.reference.runner)
             .await
+    }
+
+    async fn voice_fronts(&self) -> HashSet<String> {
+        self.builds.voice_fronts(&self.calls).await
     }
 
     async fn subscribe(&self, live_ids: bool) -> Result<Box<dyn EventStream>, ReadError> {
@@ -2461,6 +2509,10 @@ impl TranscriptSource for BrocaSource {
             .first()
             .is_some_and(|entry| entry["mid"] == mid && entry["ordinal"].as_u64().is_some())
     }
+    async fn voice_fronts(&self) -> HashSet<String> {
+        self.route.voice_fronts().await
+    }
+
     /// The wake rows among `rows` whose record holds the person's answer to
     /// an ask, from the wake records prefrontal wrote before each wake. The
     /// rows were read from this session, which named each one's send then.

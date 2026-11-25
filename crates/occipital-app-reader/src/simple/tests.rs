@@ -16,15 +16,15 @@ fn the_persons_words_and_files_stay_and_host_parts_go() {
         text("Please check the build."),
         json!({"type": "file", "mime": "image/png"}),
     ]);
-    assert!(admit(&mut row, false));
+    assert!(admit(&mut row, false, &HashSet::new()));
     assert_eq!(row["parts"].as_array().unwrap().len(), 2, "{row}");
     assert_eq!(row["text"], "words", "the person's text stays as served");
 
     let mut files_only = person(vec![json!({"type": "file", "mime": "image/png"})]);
-    assert!(admit(&mut files_only, false));
+    assert!(admit(&mut files_only, false, &HashSet::new()));
 
     let mut host_only = person(vec![json!({"type": "injected", "host": true, "text": "x"})]);
-    assert!(!admit(&mut host_only, false));
+    assert!(!admit(&mut host_only, false, &HashSet::new()));
 }
 
 /// Text that is only balanced tagged spans is a host's block, not the
@@ -34,11 +34,11 @@ fn text_made_only_of_tagged_spans_is_left_out() {
     let mut spans = person(vec![text(
         "<system-reminder>\nInbox: 2 notices.\n</system-reminder>\n<context kind=\"x\">a</context>",
     )]);
-    assert!(!admit(&mut spans, false));
+    assert!(!admit(&mut spans, false, &HashSet::new()));
 
     let words = "<system-reminder>\nInbox: 1 notice.\n</system-reminder>\nWhat broke?";
     let mut mixed = person(vec![text(words)]);
-    assert!(admit(&mut mixed, false));
+    assert!(admit(&mut mixed, false, &HashSet::new()));
     assert_eq!(mixed["parts"][0]["text"], words);
 
     // A block that starts with a reminder is served `injected` whole, the
@@ -48,16 +48,16 @@ fn text_made_only_of_tagged_spans_is_left_out() {
         injected("<system-reminder>\nInbox: 2 notices.\n</system-reminder>"),
         injected(words),
     ]);
-    assert!(admit(&mut served, false));
+    assert!(admit(&mut served, false, &HashSet::new()));
     assert_eq!(served["parts"], json!([injected(words)]));
     let mut reminder = person(vec![injected("<system-reminder>x</system-reminder>")]);
-    assert!(!admit(&mut reminder, false));
+    assert!(!admit(&mut reminder, false, &HashSet::new()));
 
     // A `<` that opens no balanced span is the person's.
     let mut angle = person(vec![text("<b>bold")]);
-    assert!(admit(&mut angle, false));
+    assert!(admit(&mut angle, false, &HashSet::new()));
     let mut less = person(vec![text("a < b")]);
-    assert!(admit(&mut less, false));
+    assert!(admit(&mut less, false, &HashSet::new()));
 }
 
 #[test]
@@ -65,13 +65,13 @@ fn someone_elses_words_are_left_out() {
     for mark in ["speaksFor", "sentBy", "origin"] {
         let mut row = person(vec![text("Hello")]);
         row[mark] = json!({"module": "wernicke"});
-        assert!(!admit(&mut row, false), "{mark}");
+        assert!(!admit(&mut row, false, &HashSet::new()), "{mark}");
     }
     let mut unknown = json!({"role": "unknown", "unreadable": true,
         "parts": [text("[Unreadable transcript entry]")]});
-    assert!(!admit(&mut unknown, false));
+    assert!(!admit(&mut unknown, false, &HashSet::new()));
     let mut unreadable_part = person(vec![json!({"type": "unreadable", "partIndex": 0})]);
-    assert!(admit(&mut unreadable_part, false));
+    assert!(admit(&mut unreadable_part, false, &HashSet::new()));
 }
 
 #[test]
@@ -89,7 +89,7 @@ fn an_agent_row_keeps_only_its_say_messages_and_filed_asks() {
         ask,
         {"type": "tool", "tool": "ask", "input": {"action": "dismiss", "id": "ask_1"}},
     ]});
-    assert!(admit(&mut row, false));
+    assert!(admit(&mut row, false, &HashSet::new()));
     assert_eq!(row["parts"], json!([say, ask]));
     assert_eq!(
         (&row["text"], &row["blockSummaries"], &row["files"]),
@@ -99,10 +99,10 @@ fn an_agent_row_keeps_only_its_say_messages_and_filed_asks() {
 
     let mut created = json!({"role": "assistant", "parts": [
         {"type": "tool", "tool": "ask", "input": {"action": "create", "question": "?"}}]});
-    assert!(admit(&mut created, false));
+    assert!(admit(&mut created, false, &HashSet::new()));
     let mut prose = json!({"role": "assistant", "parts": [text("Done."),
         {"type": "tool", "tool": "ask", "input": {"action": "append", "id": "ask_1"}}]});
-    assert!(!admit(&mut prose, false));
+    assert!(!admit(&mut prose, false, &HashSet::new()));
 }
 
 #[test]
@@ -111,9 +111,9 @@ fn a_wake_shows_only_when_it_answers_an_ask() {
         json!({"role": "user", "notice": {"sender": "prefrontal"}, "text": "<system-reminder>",
             "parts": [text("<system-reminder>Inbox</system-reminder>")]})
     };
-    assert!(!admit(&mut wake(), false));
+    assert!(!admit(&mut wake(), false, &HashSet::new()));
     let mut answered = wake();
-    assert!(admit(&mut answered, true));
+    assert!(admit(&mut answered, true, &HashSet::new()));
     assert_eq!(answered["parts"], json!([]));
     assert_eq!(answered["text"], "");
 }
@@ -121,7 +121,7 @@ fn a_wake_shows_only_when_it_answers_an_ask() {
 #[test]
 fn a_simple_version_names_its_rule() {
     let version = version("history:7:incarnation:abc");
-    assert_eq!(version, "history:7:incarnation:abc:simple:2");
+    assert_eq!(version, "history:7:incarnation:abc:simple:3");
     assert!(is_version(&version));
     assert!(!is_version("history:7:incarnation:abc"));
 }
@@ -132,16 +132,50 @@ fn an_unpinned_ask_uses_its_actual_action_even_when_arguments_are_cut() {
         let e = json!({"mid":"m","ordinal":1,"message":{"role":"assistant","content":[{"type":"tool_call","tool_call_id":"c","name":"ask","input":{"a":"x".repeat(3000),"action":action}}]}});
         let mut row = crate::broca_entries::rows(&[e], false).unwrap().remove(0);
         assert_eq!(row.display["parts"][0]["argumentsTruncated"], true);
-        assert_eq!(admit(&mut row.display, false), visible);
+        assert_eq!(admit(&mut row.display, false, &HashSet::new()), visible);
     }
 }
 
 #[test]
 fn simple_tool_summaries_describe_only_the_retained_calls() {
     let mut row = json!({"role":"assistant","parts":[{"type":"tool","tool":"bash","callId":"x"},{"type":"tool","tool":"ask","input":{"action":"create"}},{"type":"tool","tool":"ask","input":{"action":"dismiss"}}],"toolCalls":[{"name":"bash","callId":"x"},{"name":"ask","arguments":"create"},{"name":"ask","arguments":"dismiss"}]});
-    assert!(admit(&mut row, false));
+    assert!(admit(&mut row, false, &HashSet::new()));
     assert_eq!(
         row["toolCalls"],
         json!([{"name":"ask","arguments":"create"}])
     );
+}
+
+/// A message the voice front sent is a hand-off: it keeps its text parts as
+/// served, tagged spans included, and gains `handOff`. The same message from
+/// a module that doesn't front calls stays out, and a hand-off with no text
+/// left is not shown.
+#[test]
+fn a_hand_off_from_a_call_is_shown_as_one() {
+    let fronts = HashSet::from(["colliculus".to_owned()]);
+    let from = |module: &str, parts: Vec<Value>| {
+        let mut row = person(parts);
+        row["sentBy"] = json!({"module": module});
+        row
+    };
+    let said = "<call>\nIs the release ready to tag?\n</call>";
+    let mut hand_off = from(
+        "colliculus",
+        vec![
+            text(said),
+            json!({"type": "injected", "host": true, "text": "a host note"}),
+            json!({"type": "file", "name": "screen.png"}),
+        ],
+    );
+    assert!(admit(&mut hand_off, false, &fronts));
+    assert_eq!(hand_off["handOff"], json!(true));
+    assert_eq!(hand_off["parts"], json!([text(said)]));
+    assert_eq!(hand_off["text"], json!("words"));
+
+    let mut other = from("basal", vec![text(said)]);
+    assert!(!admit(&mut other, false, &fronts));
+    let mut unknown = from("colliculus", vec![text(said)]);
+    assert!(!admit(&mut unknown, false, &HashSet::new()));
+    let mut empty = from("colliculus", vec![text("  ")]);
+    assert!(!admit(&mut empty, false, &fronts));
 }

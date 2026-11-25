@@ -98,17 +98,18 @@ The apps reach these operations through Callosum, and the desktop app directly:
 
 `session.transcript_page` and `session.transcript_watch` take `view: "simple"`
 for the apps' Simple view: only the person's messages, the agent's `say`
-messages and the asks it files, and the person's answers to asks, each trimmed
-to what the view draws. Its pages and claims are their own stream, with a
-version ending `:simple:2`. A page reads back a bounded number of messages and
-says where it stopped, so it can hold fewer rows than asked. The sample set
-`phone-reader-simple-v2` shows every case.
+messages and the asks it files, the person's answers to asks, and the
+messages a voice call hands the agent (marked `handOff`), each trimmed to
+what the view draws. Its pages and claims are their own stream, with a
+version ending `:simple:3`. A page reads back a bounded number of messages and
+says where it stopped, so it can hold fewer rows than asked. The sample sets
+`phone-reader-simple-v4` and `phone-reader-simple-hand-off-v1` show every case.
 
 With `acceptHeldCopy: true` on either operation, a newest page and every claim
 answer carry `heldCopy`, naming the copy of the chat they served. A claim that
 sends it back is checked against exactly that copy while it is kept, so one
 app's claim is never answered from another app's copy of the same chat. A page
-back carries none. `phone-reader-held-copy-v1` shows every case.
+back carries none. `phone-reader-held-copy-v2` shows every case.
 
 An uploaded file goes into the model's prompt or into the session's project. An
 app that asks for the prompt (`prompt: true` on `upload.begin`) gets it when the

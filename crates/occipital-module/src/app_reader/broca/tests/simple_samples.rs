@@ -1,4 +1,4 @@
-//! The sample set `phone-reader-simple-v3`: the Simple view of a busy chat as
+//! The sample set `phone-reader-simple-v4`: the Simple view of a busy chat as
 //! the apps read it with `view: "simple"` (`occipital_app_reader::simple`).
 //! Its README says what each file shows. The chat is a Broca head whose plan
 //! gives the agent prefrontal's `say` and `ask`: the person's messages and
@@ -14,9 +14,10 @@ use cortexkit_test_support::ScratchDir;
 use subc_client_rs::HandlerOutcome;
 use subc_protocol::Principal;
 
-// The frozen v1 replies include hidden tool summaries, and v2's ask records
-// lack the `outcome` every record carries, so Occipital no longer serves them.
-const SET: &str = "phone-reader-simple-v3";
+// The frozen v1 replies include hidden tool summaries, v2's ask records lack
+// the `outcome` every record carries, and v3's versions name Simple rule 2, so
+// Occipital no longer serves them.
+const SET: &str = "phone-reader-simple-v4";
 const SESSION: &str = "alfonso:head";
 /// The agent's own prose between the messages the view shows.
 const FILLER: u64 = 1_300;
@@ -203,6 +204,7 @@ struct Chat {
     app: Arc<super::super::super::AppReader>,
     route: Arc<FakeRoute>,
     store: Arc<DisplayStore>,
+    notices: Arc<crate::notices::Notices>,
     hints: tokio::sync::broadcast::Sender<crate::display::app::Hint>,
     _dir: ScratchDir,
     _tasks: Vec<tokio::task::JoinHandle<()>>,
@@ -251,7 +253,7 @@ async fn chat(message_tool: bool, entries: Vec<Value>) -> Chat {
         .with_call_pins(pins)
         .with_notices(notice_slot),
     )));
-    app.set_notices(notices);
+    app.set_notices(notices.clone());
     app.set_tool_display(Arc::new(crate::display::app::ToolDisplay::new(
         store.clone(),
         None,
@@ -261,6 +263,7 @@ async fn chat(message_tool: bool, entries: Vec<Value>) -> Chat {
         app,
         route,
         store,
+        notices,
         hints,
         _dir: dir,
         _tasks: vec![notices_task, pins_task],
@@ -348,7 +351,7 @@ async fn the_simple_view_samples_are_what_the_reader_serves() {
     let first = &newest["result"];
     assert_eq!(first["view"], "simple");
     assert!(
-        first["version"].as_str().unwrap().ends_with(":simple:2"),
+        first["version"].as_str().unwrap().ends_with(":simple:3"),
         "{first}"
     );
     let rows = first["messages"].as_array().unwrap();
@@ -490,7 +493,7 @@ async fn the_simple_view_samples_are_what_the_reader_serves() {
     assert_eq!(outside["result"]["claim"], "outside_window", "{outside}");
 
     // 08: a full claim sent with the view names the full version: expired.
-    let full = version.as_str().unwrap().trim_end_matches(":simple:2");
+    let full = version.as_str().unwrap().trim_end_matches(":simple:3");
     let expired = served
         .read(
             "08-full-claim-on-the-view",
@@ -677,8 +680,8 @@ async fn late_record_after_full_reads(refreshed: bool) {
     );
 }
 
-/// The sample set `phone-reader-held-copy-v1`: claims that name the copy they
-/// hold (`heldCopy`). The phone reads the Simple view's newest three rows and
+/// The sample set `phone-reader-held-copy-v2` (v1's versions name Simple rule
+/// 2): claims that name the copy they hold (`heldCopy`). The phone reads the Simple view's newest three rows and
 /// pages back; prefrontal's record for the `say` in `m1307` then lands, which
 /// changes that row in place; the desktop reads a wider page. Both copies end
 /// at the same message and the desktop's holds the phone's floor, so a claim
@@ -688,7 +691,7 @@ async fn late_record_after_full_reads(refreshed: bool) {
 async fn a_claim_naming_its_copy_is_checked_against_that_copy() {
     let c = chat(true, entries()).await;
     let mut served = Sample {
-        served: Served::new("phone-reader-held-copy-v1", c.app.clone()),
+        served: Served::new("phone-reader-held-copy-v2", c.app.clone()),
         corr: 0,
     };
     let held = |extra: Value| {
@@ -804,4 +807,183 @@ async fn answered_say_crossing_a_page_boundary_is_kept_in_either_view() {
         );
         assert_eq!(reply["result"]["messages"][0]["parts"][0]["text"], "Done.");
     }
+}
+
+/// The voice front in the hand-off samples, as the daemon's catalog lists it.
+const VOICE: &str = "colliculus";
+
+/// A message the voice front sent the agent from a call, with its send id.
+fn hand_off(ordinal: u64, send: &str, said: &str) -> Value {
+    let mut entry = person(
+        ordinal,
+        &format!(
+            "The person said on the call:\n{said}\nAnswer with say, replying to this message."
+        ),
+    );
+    entry["sender"] = json!(VOICE);
+    entry["send_id"] = json!(send);
+    entry["delivered_as"] = json!({"mode": "steer"});
+    entry
+}
+
+/// The voice front's notice view for a hand-off's record: the person's words
+/// from the call, as `said`.
+fn hand_off_view() -> cortexkit_role_tool_provider::views::NoticeView {
+    use cortexkit_role_tool_provider::views::{
+        NoticeView, NoticeViewDefinition, NoticeViewTemplates,
+    };
+    NoticeView::new(
+        NoticeViewDefinition::new(
+            "hand_off",
+            1,
+            json!({"type": "object", "properties": {"said": {"type": "string"}},
+                "required": ["said"], "additionalProperties": false}),
+        ),
+        NoticeViewTemplates::new(
+            super::tool_display_samples::template("tool_row", HAND_OFF_ROW),
+            super::tool_display_samples::template("tool_page", HAND_OFF_PAGE),
+        ),
+        1,
+    )
+}
+
+const HAND_OFF_ROW: &str = "<ToolHeader icon=\"message\" title=\"From your call\" />\n";
+const HAND_OFF_PAGE: &str = "<TextContent text={input.said} />\n";
+
+/// The sample set `phone-reader-simple-hand-off-v1`: what a voice call hands
+/// the agent, in the Simple view. The person types a message; a call hands
+/// the agent a question, which it answers with `say`; a second hand-off's
+/// record never arrived; and a module that doesn't front calls sends the
+/// agent a message too. The voice front writes each hand-off's record, the
+/// person's words from the call, before it sends.
+#[tokio::test]
+async fn the_hand_off_samples_are_what_the_reader_serves() {
+    let mut answered = entry(
+        5,
+        json!({"role": "assistant", "content": [
+            {"type": "text", "text": "Checking the tag."},
+            call("call_say", "say", json!({"text": "Yes, the release is ready to tag.",
+                "level": "chat"})),
+        ]}),
+    );
+    answered["tool_times"] = json!([{"tool_call_id": "call_say", "started_at": 5_000,
+        "finished_at": 6_000, "call_key": "ck_say", "schema_pin": pin("say", 's')}]);
+    let mut other = person(8, "Flow run finished.");
+    other["sender"] = json!("basal");
+    other["send_id"] = json!("basal-send-1");
+    let entries = vec![
+        person(1, "Morning."),
+        prose(2),
+        hand_off(3, "vf-call-1", "Is the release ready to tag?"),
+        prose(4),
+        answered,
+        result(6, "call_say", "sent"),
+        hand_off(7, "vf-call-2", "And tell me when it's out."),
+        other,
+        prose(9),
+    ];
+    let c = chat(true, entries).await;
+    c.route
+        .voice_fronts
+        .lock()
+        .unwrap()
+        .insert(VOICE.to_owned());
+    let view = hand_off_view();
+    let state = crate::display::store::ViewState::View {
+        manifest: serde_jcs::to_vec(&view).unwrap(),
+        input_schema: serde_jcs::to_vec(&view.notice.data_schema).unwrap(),
+    };
+    c.store
+        .keep_view(VOICE, "nv1:colliculus:hand_off:1", &state, "1.0", 1)
+        .unwrap();
+    let write = json!({"kind": "notice", "runner": {"kind": "reserved", "module_id": "broca"},
+        "session": SESSION, "send_id": "vf-call-1",
+        "body": {"view": "hand_off:1", "data": {"said": "Is the release ready to tag?"}}});
+    let reply = crate::notices::notice_records::store(
+        Some(&c.notices),
+        None,
+        Some(Principal::Reserved {
+            module_id: VOICE.into(),
+        }),
+        &write,
+    )
+    .await;
+    assert_eq!(reply, Ok(cortexkit_role_tool_display::WriteReply::Stored));
+    let mut served = Sample {
+        served: Served::new("phone-reader-simple-hand-off-v1", c.app.clone()),
+        corr: 0,
+    };
+
+    // 01: the person's message, both hand-offs marked `handOff` with their
+    // text, and the `say` answer; not the prose, nor the other module's message.
+    let newest = served
+        .read("01-simple-page", page(json!({"limit": 10})))
+        .await;
+    assert_eq!(ids(&newest), ["m1", "m3", "m5", "m7"]);
+    let rows = newest["result"]["messages"].as_array().unwrap();
+    for row in [&rows[1], &rows[3]] {
+        assert_eq!(row["handOff"], json!(true), "{row}");
+        assert_eq!(row["sentBy"], json!({"module": VOICE}), "{row}");
+        assert_eq!(row["parts"].as_array().unwrap().len(), 1, "{row}");
+    }
+    assert!(rows[0].get("handOff").is_none() && rows[2].get("handOff").is_none());
+
+    // 02: the full view is unchanged: the hand-offs carry only `sentBy`.
+    let mut full = page(json!({"limit": 10}));
+    full["params"].as_object_mut().unwrap().remove("view");
+    let whole = served.read("02-full-page", full).await;
+    let rows = whole["result"]["messages"].as_array().unwrap();
+    assert!(rows.iter().all(|row| row.get("handOff").is_none()));
+
+    // 03: the hand-offs' records: the first joins, the second has none.
+    let records = json!({"method": crate::notices::wakes::READ, "params": {"session": SESSION,
+        "harness": "broca", "messageIds": ["m3", "m7"], "acceptNoticeRecords": true}});
+    let read = served.read("03-hand-off-records", records).await;
+    assert_eq!(
+        read["result"],
+        json!({"messages": {}, "notices": {"m3": {"sender": VOICE,
+            "view": "nv1:colliculus:hand_off:1",
+            "data": {"said": "Is the release ready to tag?"}}}})
+    );
+
+    // 04 to 06: the voice front's notice view, and its row and page templates.
+    let views = json!({"method": crate::display::app::VIEWS,
+        "params": {"pins": ["nv1:colliculus:hand_off:1"]}});
+    let answer = served.read("04-notice-view", views).await;
+    let answer = answer["result"]["views"]["nv1:colliculus:hand_off:1"].clone();
+    assert_eq!(answer["provider"], VOICE, "{answer}");
+    for (n, slot, source) in [(5, "row", HAND_OFF_ROW), (6, "page", HAND_OFF_PAGE)] {
+        let request = json!({"method": crate::display::app::TEMPLATE,
+            "params": {"digest": answer[slot]}});
+        let document = served
+            .read(&format!("{n:02}-template-{slot}"), request)
+            .await;
+        assert_eq!(document["result"]["template"]["source"], source);
+    }
+    served.served.check();
+}
+
+/// Only a module the daemon verified by its launch nonce counts as a voice
+/// front, since any module may claim the capability in its manifest.
+#[test]
+fn a_voice_front_is_a_verified_module_providing_the_capability() {
+    let entry = |id: &str, provides: &[&str], verified: bool| -> subc_client_rs::CatalogEntry {
+        serde_json::from_value(json!({"module_id": id, "roles": [], "control_ops": [],
+            "capabilities": {"provides": provides, "requires": [], "must_never_reach": []},
+            "nonce_verified": verified}))
+        .unwrap()
+    };
+    let modules = [
+        entry(
+            VOICE,
+            &["media-provider/v1", "head-session-voice-front/v1"],
+            true,
+        ),
+        entry("claimant", &["head-session-voice-front/v1"], false),
+        entry("aft", &["tool-views/v1"], true),
+    ];
+    assert_eq!(
+        super::super::voice_fronts(&modules),
+        HashSet::from([VOICE.to_owned()])
+    );
 }

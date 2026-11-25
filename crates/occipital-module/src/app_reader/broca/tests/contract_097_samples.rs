@@ -1,5 +1,5 @@
 //! Runner contract 0.9.7's list of host frames (llm-runner §9.7.1.1), and the
-//! sample set the apps pin for it, `phone-reader-host-frames-v1`, served
+//! sample set the apps pin for it, `phone-reader-host-frames-v2`, served
 //! through Occipital's own handlers for a Claude Code chat as a phone's route
 //! reaches it. `served_samples` says how a set is checked and rewritten.
 //!
@@ -172,7 +172,8 @@ fn chat(entries: Vec<Value>) -> Arc<super::super::super::AppReader> {
     )))
 }
 
-/// `phone-reader-host-frames-v1`, in stored order:
+/// `phone-reader-host-frames-v2` (v1's Simple page names Simple rule 2), in
+/// stored order:
 /// - rows 1 to 6: the six messages Claude Code 2.1.331 recorded, each with the
 ///   single `host_frame` fact, as `phone-reader-host-frame-v1` holds them;
 /// - row 7: the reply whose tool call the next rows' results answer;
@@ -225,7 +226,7 @@ async fn the_host_frames_samples_are_what_the_reader_serves() {
     older.as_object_mut().unwrap().remove("host_frame");
     entries.push(older);
 
-    let mut served = Served::new("phone-reader-host-frames-v1", chat(entries));
+    let mut served = Served::new("phone-reader-host-frames-v2", chat(entries));
     let page = |view: Option<&str>| {
         let mut params = json!({"session": "ses_head", "harness": "claude-code", "limit": 50});
         if let Some(view) = view {

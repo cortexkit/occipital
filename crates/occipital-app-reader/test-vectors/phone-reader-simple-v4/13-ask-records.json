@@ -1,0 +1,1 @@
+{"result":{"calls":{"ck_ask_done":{"detail":false,"record":{"action":"create","askId":"ask_2222222222222222","durationMs":40,"outcome":"success"}},"ck_ask_open":{"detail":false,"record":{"action":"create","askId":"ask_1111111111111111","durationMs":40,"outcome":"success"}}},"loadingWindowMs":5000}}

@@ -1,6 +1,7 @@
 //! The apps' Simple view of a chat: the person's messages, what the agent says
-//! through `say`, the asks it files, and the person's answers to asks, without
-//! the tool calls, reasoning and prose between them. A read asks for it with
+//! through `say`, the asks it files, the person's answers to asks, and what a
+//! voice call hands the agent, without the tool calls, reasoning and prose
+//! between them. A read asks for it with
 //! `view: "simple"`, and Occipital filters the chat for it, so the apps read
 //! only the messages the view shows.
 //!
@@ -14,6 +15,8 @@
 
 pub mod tails;
 
+use std::collections::HashSet;
+
 use serde_json::Value;
 
 use crate::broca_entries::PART_KEY;
@@ -22,7 +25,7 @@ use crate::broca_entries::PART_KEY;
 pub const VIEW: &str = "simple";
 /// The rule's version. Raise it whenever [`admit`] changes what it admits or
 /// keeps, so the apps drop the Simple copies an earlier rule built.
-pub const RULE: u32 = 2;
+pub const RULE: u32 = 3;
 
 /// Internal override when projecting a call's arguments loses its actual action.
 /// The full and Simple wire rows never carry this member.
@@ -71,17 +74,25 @@ pub(crate) fn claims_key(session: &str) -> String {
 /// Whether the Simple view shows the full row `display`, trimming it to what
 /// the view draws when it does. `answers_ask` says the row is a wake whose
 /// record holds the person's answer to an ask, which only the module that
-/// keeps wake records knows.
+/// keeps wake records knows. `voice_fronts` are the modules that run voice
+/// calls with the agent, which only the module reading the daemon's catalog
+/// knows.
 ///
 /// - The person's message: role `user`, none of the marks that make it
 ///   someone else's words, and still some text, a file or an unreadable part
 ///   once host-written parts are dropped. Its other parts stay as served.
+/// - A hand-off from a voice call: a message one of `voice_fronts` sent
+///   (`sentBy`), carrying to the agent what the person said on the call. It
+///   keeps its text parts and gains `handOff: true`, so the apps draw it as
+///   a line from the call, never as the person's own message: its text is
+///   the module's, framing the person's words. Those words alone come from
+///   the notice record the module writes for the hand-off.
 /// - The agent's `say` messages and the asks it files: an assistant row keeps
 ///   only its `message` parts and its `ask` calls that file an ask, each
 ///   whole, and none of its prose, reasoning or other calls.
 /// - The person's answer to an ask: a wake row, with no parts, since the apps
 ///   draw it from the wake record.
-pub fn admit(display: &mut Value, answers_ask: bool) -> bool {
+pub fn admit(display: &mut Value, answers_ask: bool, voice_fronts: &HashSet<String>) -> bool {
     let role = display["role"].as_str().unwrap_or_default().to_owned();
     if display.get("notice").is_some() {
         if !answers_ask {
@@ -92,6 +103,12 @@ pub fn admit(display: &mut Value, answers_ask: bool) -> bool {
     }
     match role.as_str() {
         "user" => {
+            let from_a_call = display["sentBy"]["module"]
+                .as_str()
+                .is_some_and(|module| voice_fronts.contains(module));
+            if from_a_call {
+                return keep_hand_off(display);
+            }
             const OTHERS: [&str; 3] = ["speaksFor", "sentBy", "origin"];
             if OTHERS.iter().any(|mark| display.get(*mark).is_some()) {
                 return false;
@@ -116,6 +133,29 @@ pub fn admit(display: &mut Value, answers_ask: bool) -> bool {
         }
         _ => false,
     }
+}
+
+/// Keep a hand-off's text parts, whatever spans they hold, since the module
+/// frames the person's words as it likes; mark it `handOff`. One with no text
+/// left is not shown.
+fn keep_hand_off(display: &mut Value) -> bool {
+    let text = |part: &Value| {
+        matches!(part["type"].as_str(), Some("text" | "injected"))
+            && part["host"] != true
+            && part["text"]
+                .as_str()
+                .is_some_and(|text| !text.trim().is_empty())
+    };
+    let Some(parts) = display["parts"].as_array_mut() else {
+        return false;
+    };
+    parts.retain(text);
+    if parts.is_empty() {
+        return false;
+    }
+    display["handOff"] = Value::Bool(true);
+    trim_host_frames(display);
+    true
 }
 
 /// Keep only the parts `keep` admits, and empty the row's summaries of the

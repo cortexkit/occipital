@@ -49,6 +49,8 @@ struct FakeRoute {
     plan_view: Mutex<Option<Result<Value, ReadError>>>,
     /// The runner build the catalog names, or `None` for unknown.
     build: Mutex<Option<String>>,
+    /// The modules the catalog lists as fronting voice calls.
+    voice_fronts: Mutex<HashSet<String>>,
 }
 
 /// A `role.describe` answer that passes the contract's check, declaring `groups`.
@@ -244,6 +246,7 @@ impl FakeRoute {
             media: Mutex::new(HashMap::new()),
             plan_view: Mutex::new(None),
             build: Mutex::new(None),
+            voice_fronts: Mutex::new(HashSet::new()),
         })
     }
 
@@ -292,6 +295,10 @@ fn runner_accepts(op: ReadOp, params: &Value) {
 impl BrocaRoute for FakeRoute {
     async fn runner_build(&self) -> Option<String> {
         self.build.lock().unwrap().clone()
+    }
+
+    async fn voice_fronts(&self) -> HashSet<String> {
+        self.voice_fronts.lock().unwrap().clone()
     }
 
     async fn read(&self, op: ReadOp, params: Value) -> Result<Value, ReadError> {

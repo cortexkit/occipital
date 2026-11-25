@@ -291,10 +291,11 @@ fn serve(tail: &Tail, before: u64, limit: usize) -> Found {
 /// The Simple rows among `page`'s, each trimmed to what the view draws.
 async fn admitted(source: &dyn TranscriptSource, page: Vec<Row>) -> Vec<Row> {
     let asks: HashSet<String> = source.answered_asks(&page).await;
+    let fronts = source.voice_fronts().await;
     page.into_iter()
         .filter_map(|mut row| {
             let answers = asks.contains(&row.mid);
-            super::admit(&mut row.display, answers).then_some(row)
+            super::admit(&mut row.display, answers, &fronts).then_some(row)
         })
         .collect()
 }
