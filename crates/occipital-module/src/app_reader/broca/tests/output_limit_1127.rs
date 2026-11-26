@@ -8,8 +8,9 @@
 //! `output_limit` or `tool_loop`. Occipital builds rows from the
 //! `session.read` page, which reads as before: each cut call is an unanswered
 //! call and the extra member is ignored. Occipital reads neither
-//! `run.tool_calls` nor `run.result`; those bodies are kept so the checksums
-//! verify whole.
+//! `run.tool_calls` nor `run.result`, but a run's error reaches the apps from
+//! the session's last run, which carries the same error, so the two
+//! `run.result` errors stand in for it there.
 
 use super::*;
 use std::path::{Path, PathBuf};
@@ -27,6 +28,31 @@ fn the_output_limit_samples_keep_their_checksums() {
         let (expected, name) = line.split_once("  ").unwrap();
         let bytes = std::fs::read(root().join(name)).unwrap();
         assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected, "{name}");
+    }
+}
+
+/// A run stopped for its output limit or for a tool loop names its code to
+/// the apps as `providerCode`, as every code the runner contract names does.
+/// The runner's message stays out.
+#[tokio::test]
+async fn a_run_stopped_for_its_output_limit_or_a_tool_loop_names_its_code() {
+    for (file, code) in [
+        ("run-result-output-limit.json", "output_limit"),
+        ("run-result-tool-loop.json", "tool_loop"),
+    ] {
+        let body: Value =
+            serde_json::from_slice(&std::fs::read(root().join(file)).unwrap()).unwrap();
+        let error = body["result"]["error"].clone();
+        assert_eq!(error["provider_code"], code, "{file}");
+        let expected = format!(
+            r#"{{"error":{{"class":"permanent","providerCode":"{code}"}},"reason":"error","runId":"r-cut","state":"error"}}"#
+        );
+        super::session_facts::assert_last_run_phone_bytes(
+            json!({"run_id": "r-cut", "state": "error", "reason": "error"}),
+            Some(error),
+            &expected,
+        )
+        .await;
     }
 }
 
