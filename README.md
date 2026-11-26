@@ -1,5 +1,10 @@
 # Occipital
 
+> [!WARNING]
+> **Alpha.** Occipital is in early development and is not yet released for general use.
+> Breaking changes will happen between versions, including changes to its settings,
+> stored data and interfaces. Pin an exact version if you depend on it.
+
 Occipital is how data reaches and renders in the CortexKit phone and desktop apps. It turns what agents and tools produce into what the apps show: a chart or a callout in a reply, a tool's own view of a command it ran.
 
 It holds:

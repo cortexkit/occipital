@@ -1,5 +1,10 @@
 # cortexkit-occipital-lang
 
+> [!WARNING]
+> **Alpha.** cortexkit-occipital-lang is in early development and is not yet released for general use.
+> Breaking changes will happen between versions, including changes to its settings,
+> stored data and interfaces. Pin an exact version if you depend on it.
+
 The rich UI language the CortexKit apps draw with: agents write it in their
 replies, tool providers write tool row and page templates in it, and every
 app runs this one implementation, so a reply or row draws the same

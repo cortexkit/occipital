@@ -1,5 +1,10 @@
 # cortexkit-occipital-refs
 
+> [!WARNING]
+> **Alpha.** cortexkit-occipital-refs is in early development and is not yet released for general use.
+> Breaking changes will happen between versions, including changes to its settings,
+> stored data and interfaces. Pin an exact version if you depend on it.
+
 Finds mentions of issues, pull requests and agents in text, so the CortexKit
 apps can draw them as links and chips. "PR #499" in a reply becomes a link to
 pull request 499 of the repository the agent works in, and `@CKDESK` names the

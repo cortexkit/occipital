@@ -1,5 +1,10 @@
 # cortexkit-occipital-registry
 
+> [!WARNING]
+> **Alpha.** cortexkit-occipital-registry is in early development and is not yet released for general use.
+> Breaking changes will happen between versions, including changes to its settings,
+> stored data and interfaces. Pin an exact version if you depend on it.
+
 Tool templates for the CortexKit apps. A tool provider describes how its
 tool's calls draw in the apps with a view: a record schema and row and page
 templates written in the `cortexkit-occipital-lang` language. This crate
