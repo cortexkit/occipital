@@ -1,0 +1,379 @@
+{
+  "result": {
+    "head": {
+      "session": "00e01c18b76c0892",
+      "sub_index": 0,
+      "wal_seq": 10
+    },
+    "history_version": 0,
+    "incarnation": "inc_a2551afaf66343b2bfd9afcf14fba320",
+    "messages": [
+      {
+        "created_at": 3,
+        "delivered_as": {
+          "mode": "idle_start"
+        },
+        "message": {
+          "id": "m0003",
+          "text": "hello",
+          "time": {
+            "created": 3
+          },
+          "type": "user"
+        },
+        "mid": "m0003",
+        "ordinal": 1,
+        "role": "user",
+        "run": {
+          "episode": "1",
+          "final": false,
+          "run_id": "run_b2540148fa70a6d42bf39392"
+        },
+        "send_id": "request-guards",
+        "sender": "prefrontal-core",
+        "time": {
+          "created": 3
+        },
+        "tool_calls": [],
+        "written_at": 3
+      },
+      {
+        "completed_at": 901,
+        "created_at": 900,
+        "message": {
+          "content": [
+            {
+              "id": "call-0",
+              "name": "bash",
+              "state": {
+                "error": {
+                  "message": "The tool call was not executed because the output token limit was reached before you could complete the arguments. Break large payloads into smaller tool calls and reissue the call with complete arguments.",
+                  "type": "tool.input-incomplete"
+                },
+                "input": {},
+                "status": "error"
+              },
+              "type": "tool"
+            }
+          ],
+          "finish": "length",
+          "id": "m0900",
+          "time": {
+            "completed": 901,
+            "created": 900
+          },
+          "type": "assistant"
+        },
+        "mid": "m0900",
+        "ordinal": 2,
+        "role": "assistant",
+        "run": {
+          "episode": "1",
+          "final": false,
+          "run_id": "run_b2540148fa70a6d42bf39392"
+        },
+        "time": {
+          "completed": 901,
+          "created": 900
+        },
+        "tool_calls": [
+          {
+            "call_key": "m0900/call-0",
+            "indeterminate": false,
+            "tool_call_id": "call-0"
+          }
+        ],
+        "tool_times": [
+          {
+            "call_key": "m0900/call-0",
+            "reason": "arguments_incomplete",
+            "tool_call_id": "call-0",
+            "unanswered": "not_executed"
+          }
+        ],
+        "written_at": 900
+      },
+      {
+        "completed_at": 902,
+        "created_at": 901,
+        "message": {
+          "content": [
+            {
+              "id": "call-1",
+              "name": "bash",
+              "state": {
+                "error": {
+                  "message": "The tool call was not executed because the output token limit was reached before you could complete the arguments. Break large payloads into smaller tool calls and reissue the call with complete arguments.",
+                  "type": "tool.input-incomplete"
+                },
+                "input": {},
+                "status": "error"
+              },
+              "type": "tool"
+            }
+          ],
+          "finish": "length",
+          "id": "m0901",
+          "time": {
+            "completed": 902,
+            "created": 901
+          },
+          "type": "assistant"
+        },
+        "mid": "m0901",
+        "ordinal": 3,
+        "role": "assistant",
+        "run": {
+          "episode": "1",
+          "final": false,
+          "run_id": "run_b2540148fa70a6d42bf39392"
+        },
+        "time": {
+          "completed": 902,
+          "created": 901
+        },
+        "tool_calls": [
+          {
+            "call_key": "m0901/call-1",
+            "indeterminate": false,
+            "tool_call_id": "call-1"
+          }
+        ],
+        "tool_times": [
+          {
+            "call_key": "m0901/call-1",
+            "reason": "arguments_incomplete",
+            "tool_call_id": "call-1",
+            "unanswered": "not_executed"
+          }
+        ],
+        "written_at": 901
+      },
+      {
+        "completed_at": 903,
+        "created_at": 902,
+        "message": {
+          "content": [
+            {
+              "id": "call-2",
+              "name": "bash",
+              "state": {
+                "content": [
+                  {
+                    "text": "ok",
+                    "type": "text"
+                  }
+                ],
+                "input": {
+                  "command": "true"
+                },
+                "status": "completed"
+              },
+              "type": "tool"
+            }
+          ],
+          "finish": "tool-calls",
+          "id": "m0902",
+          "time": {
+            "completed": 903,
+            "created": 902
+          },
+          "type": "assistant"
+        },
+        "mid": "m0902",
+        "ordinal": 4,
+        "role": "assistant",
+        "run": {
+          "episode": "1",
+          "final": false,
+          "run_id": "run_b2540148fa70a6d42bf39392"
+        },
+        "time": {
+          "completed": 903,
+          "created": 902
+        },
+        "tool_calls": [
+          {
+            "call_key": "m0902/call-2",
+            "indeterminate": false,
+            "tool_call_id": "call-2"
+          }
+        ],
+        "tool_times": [
+          {
+            "call_key": "m0902/call-2",
+            "tool_call_id": "call-2"
+          }
+        ],
+        "written_at": 902
+      },
+      {
+        "completed_at": 904,
+        "created_at": 903,
+        "message": {
+          "content": [
+            {
+              "id": "call-3",
+              "name": "bash",
+              "state": {
+                "error": {
+                  "message": "The tool call was not executed because the output token limit was reached before you could complete the arguments. Break large payloads into smaller tool calls and reissue the call with complete arguments.",
+                  "type": "tool.input-incomplete"
+                },
+                "input": {},
+                "status": "error"
+              },
+              "type": "tool"
+            }
+          ],
+          "finish": "length",
+          "id": "m0903",
+          "time": {
+            "completed": 904,
+            "created": 903
+          },
+          "type": "assistant"
+        },
+        "mid": "m0903",
+        "ordinal": 5,
+        "role": "assistant",
+        "run": {
+          "episode": "1",
+          "final": false,
+          "run_id": "run_b2540148fa70a6d42bf39392"
+        },
+        "time": {
+          "completed": 904,
+          "created": 903
+        },
+        "tool_calls": [
+          {
+            "call_key": "m0903/call-3",
+            "indeterminate": false,
+            "tool_call_id": "call-3"
+          }
+        ],
+        "tool_times": [
+          {
+            "call_key": "m0903/call-3",
+            "reason": "arguments_incomplete",
+            "tool_call_id": "call-3",
+            "unanswered": "not_executed"
+          }
+        ],
+        "written_at": 903
+      },
+      {
+        "completed_at": 905,
+        "created_at": 904,
+        "message": {
+          "content": [
+            {
+              "id": "call-4",
+              "name": "bash",
+              "state": {
+                "error": {
+                  "message": "The tool call was not executed because the output token limit was reached before you could complete the arguments. Break large payloads into smaller tool calls and reissue the call with complete arguments.",
+                  "type": "tool.input-incomplete"
+                },
+                "input": {},
+                "status": "error"
+              },
+              "type": "tool"
+            }
+          ],
+          "finish": "length",
+          "id": "m0904",
+          "time": {
+            "completed": 905,
+            "created": 904
+          },
+          "type": "assistant"
+        },
+        "mid": "m0904",
+        "ordinal": 6,
+        "role": "assistant",
+        "run": {
+          "episode": "1",
+          "final": false,
+          "run_id": "run_b2540148fa70a6d42bf39392"
+        },
+        "time": {
+          "completed": 905,
+          "created": 904
+        },
+        "tool_calls": [
+          {
+            "call_key": "m0904/call-4",
+            "indeterminate": false,
+            "tool_call_id": "call-4"
+          }
+        ],
+        "tool_times": [
+          {
+            "call_key": "m0904/call-4",
+            "reason": "arguments_incomplete",
+            "tool_call_id": "call-4",
+            "unanswered": "not_executed"
+          }
+        ],
+        "written_at": 904
+      },
+      {
+        "completed_at": 906,
+        "created_at": 905,
+        "message": {
+          "content": [
+            {
+              "id": "call-5",
+              "name": "bash",
+              "state": {
+                "error": {
+                  "message": "The tool call was not executed because the output token limit was reached before you could complete the arguments. Break large payloads into smaller tool calls and reissue the call with complete arguments.",
+                  "type": "tool.input-incomplete"
+                },
+                "input": {},
+                "status": "error"
+              },
+              "type": "tool"
+            }
+          ],
+          "finish": "length",
+          "id": "m0905",
+          "time": {
+            "completed": 906,
+            "created": 905
+          },
+          "type": "assistant"
+        },
+        "mid": "m0905",
+        "ordinal": 7,
+        "role": "assistant",
+        "run": {
+          "episode": "1",
+          "final": true,
+          "run_id": "run_b2540148fa70a6d42bf39392"
+        },
+        "time": {
+          "completed": 906,
+          "created": 905
+        },
+        "tool_calls": [
+          {
+            "call_key": "m0905/call-5",
+            "indeterminate": false,
+            "tool_call_id": "call-5"
+          }
+        ],
+        "tool_times": [
+          {
+            "call_key": "m0905/call-5",
+            "tool_call_id": "call-5",
+            "unanswered": "not_executed"
+          }
+        ],
+        "written_at": 905
+      }
+    ]
+  }
+}

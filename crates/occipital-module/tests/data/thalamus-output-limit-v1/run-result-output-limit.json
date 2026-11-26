@@ -1,0 +1,24 @@
+{
+  "result": {
+    "error": {
+      "class": "permanent",
+      "message": "Three consecutive model steps reached the output limit with incomplete tool arguments.",
+      "provider_code": "output_limit"
+    },
+    "finish": "length",
+    "run_id": "run_b2540148fa70a6d42bf39392",
+    "state": "error",
+    "usage": {
+      "by_model": [
+        {
+          "model": "",
+          "provider": "",
+          "steps": 6,
+          "unreported_steps": 6
+        }
+      ],
+      "steps": 6,
+      "unreported_steps": 6
+    }
+  }
+}

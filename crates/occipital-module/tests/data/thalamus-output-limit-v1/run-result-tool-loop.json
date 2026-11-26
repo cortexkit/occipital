@@ -1,0 +1,16 @@
+{
+  "result": {
+    "error": {
+      "class": "permanent",
+      "message": "The run stopped before repeating the same tool call for the twentieth time.",
+      "provider_code": "tool_loop"
+    },
+    "run_id": "run_b2540148fa70a6d42bf39392",
+    "state": "error",
+    "usage": {
+      "by_model": [],
+      "steps": 0,
+      "unreported_steps": 0
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "result": {
+    "calls": [
+      {
+        "args": {},
+        "call_key": "m0900/call-0",
+        "name": "bash",
+        "ordinal": 2,
+        "outcome": "not_executed",
+        "position": 0,
+        "reason": "arguments_incomplete",
+        "result_bytes": 250,
+        "result_ordinal": 2,
+        "tool_call_id": "call-0"
+      },
+      {
+        "args": {},
+        "call_key": "m0901/call-1",
+        "name": "bash",
+        "ordinal": 3,
+        "outcome": "not_executed",
+        "position": 0,
+        "reason": "arguments_incomplete",
+        "result_bytes": 250,
+        "result_ordinal": 3,
+        "tool_call_id": "call-1"
+      },
+      {
+        "args": {
+          "command": "true"
+        },
+        "call_key": "m0902/call-2",
+        "dispatched_to": "aft",
+        "name": "bash",
+        "ordinal": 4,
+        "outcome": "succeeded",
+        "position": 0,
+        "result_bytes": 29,
+        "result_ordinal": 4,
+        "tool_call_id": "call-2"
+      },
+      {
+        "args": {},
+        "call_key": "m0903/call-3",
+        "name": "bash",
+        "ordinal": 5,
+        "outcome": "not_executed",
+        "position": 0,
+        "reason": "arguments_incomplete",
+        "result_bytes": 250,
+        "result_ordinal": 5,
+        "tool_call_id": "call-3"
+      },
+      {
+        "args": {},
+        "call_key": "m0904/call-4",
+        "name": "bash",
+        "ordinal": 6,
+        "outcome": "not_executed",
+        "position": 0,
+        "reason": "arguments_incomplete",
+        "result_bytes": 250,
+        "result_ordinal": 6,
+        "tool_call_id": "call-4"
+      },
+      {
+        "args": {},
+        "call_key": "m0905/call-5",
+        "name": "bash",
+        "ordinal": 7,
+        "outcome": "not_executed",
+        "position": 0,
+        "result_bytes": 250,
+        "result_ordinal": 7,
+        "tool_call_id": "call-5"
+      }
+    ],
+    "run_id": "run_b2540148fa70a6d42bf39392"
+  }
+}
