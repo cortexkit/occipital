@@ -335,8 +335,12 @@ fn pointer_vectors() -> (Value, Value) {
 /// Notices with the pointing wake stored by [`WAKER`], and message `m1` named
 /// as that wake's row.
 async fn woken(dir: &ScratchDir) -> (crate::store::Store, Arc<Notices>, Value) {
+    woken_by(dir, pointer_vectors().0).await
+}
+
+/// [`woken`] with `wake` as the pointing wake's write.
+async fn woken_by(dir: &ScratchDir, wake: Value) -> (crate::store::Store, Arc<Notices>, Value) {
     let (main, notices) = started(dir);
-    let (wake, _) = pointer_vectors();
     let outcome = crate::notices::wakes::write(Some(&notices), writer(WAKER), &wake).await;
     assert!(matches!(outcome, HandlerOutcome::Response(_)));
     notices.sent(vec![Sent {
@@ -415,6 +419,38 @@ async fn a_wake_keeps_its_own_card_when_the_pointed_record_does_not_qualify() {
     let elsewhere = with(write, "/session", json!("another-session"));
     stored(&notices, &elsewhere).await.unwrap();
     assert_eq!(records_of(&notices, serving(true)).await["notices"], none);
+}
+
+/// The pointed record is drawn in the wake's place, so a wake that holds
+/// anything besides that one notice, a second item or items it left out,
+/// keeps its own card even when the record qualifies.
+#[tokio::test]
+async fn a_wake_with_more_than_its_one_notice_keeps_its_own_card() {
+    let (wake, record) = pointer_vectors();
+    let item = wake["body"]["items"][0].clone();
+    for (tag, body) in [
+        (
+            "two items",
+            with(
+                wake["body"].clone(),
+                "/items",
+                json!([item.clone(), item.clone()]),
+            ),
+        ),
+        (
+            "items left out",
+            with(wake["body"].clone(), "/omittedItems", json!(3)),
+        ),
+    ] {
+        let dir = ScratchDir::new("occipital-notice-pointer-crowded");
+        let (_main, notices, kept) = woken_by(&dir, with(wake.clone(), "/body", body)).await;
+        stored(&notices, &record["write"]).await.unwrap();
+        assert_eq!(
+            records_of(&notices, serving(true)).await,
+            json!({"messages": {"m1": kept}, "notices": {}}),
+            "{tag}"
+        );
+    }
 }
 
 /// A wake that rode a tool result gets the record its wake points at as the

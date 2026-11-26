@@ -22,10 +22,12 @@
 //! (tool-display §8.4). Then the record is keyed by a record id the writer
 //! never sends, and prefrontal's wake record points at it as
 //! `notice_record: {writer, id}`. The row takes the pointed record in place of
-//! the wake's own card only when it is kept for the wake's own session under
-//! the module the pointer names, as attested at its write, that writer serves
-//! its view, and its `data` fits the view's data schema. Otherwise the row
-//! keeps the wake's card, so it never shows both.
+//! the wake's own card only when the wake holds that one notice and nothing
+//! else (one item, no `omittedItems`), so a card in its place hides nothing,
+//! and the record is kept for the wake's own session under the module the
+//! pointer names, as attested at its write, that writer serves its view, and
+//! its `data` fits the view's data schema. Otherwise the row keeps the wake's
+//! card, so it never shows both.
 
 use std::sync::Arc;
 
@@ -108,17 +110,24 @@ impl NoticeStore {
     }
 
     /// The record `wake`, kept for `session`, points at, when it qualifies
-    /// (tool-display §8.4): kept for that same session, never another's, under
-    /// the writer the pointer names (the sender column holds each record's
-    /// attested writer), its view served and its `data` fitting that view.
+    /// (tool-display §8.4): the wake's only item, with nothing omitted, since
+    /// the record is drawn in the wake's place; kept for that same session,
+    /// never another's, under the writer the pointer names (the sender column
+    /// holds each record's attested writer); its view served and its `data`
+    /// fitting that view.
     fn pointed_record_of(
         &self,
         session: &str,
         wake: &Value,
         serves: &ServesView,
     ) -> Result<Option<Value>, StoreError> {
+        let alone = wake["items"]
+            .as_array()
+            .is_some_and(|items| items.len() == 1)
+            && wake.get("omittedItems").is_none();
         let Some(pointer) = wake
             .get("notice_record")
+            .filter(|_| alone)
             .and_then(|pointer| serde_json::from_value::<NoticeRecordRef>(pointer.clone()).ok())
         else {
             return Ok(None);

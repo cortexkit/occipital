@@ -306,10 +306,11 @@ A wake record may point at another module's notice record as
 `notice_record: {writer, id}`, such as prefrontal's wake for a background
 command AFT ran, whose record AFT keyed by an id it never sends. The wake's
 row, or its riding notice, then gets that record under `notices` or
-`noticeRecord`, in place of the wake's own card, only when the record is kept
+`noticeRecord`, in place of the wake's own card, only when the wake holds that
+one notice and nothing else (one item, no `omittedItems`), the record is kept
 for the wake's session under that writer, the writer serves its view, and its
 `data` fits the view's data schema. Otherwise the reply carries the wake record
-alone. The wire is pinned by `phone-reader-wake-notice-record-v1`.
+alone. The wire is pinned by `phone-reader-wake-notice-record-v2`.
 
 ## Agent moves
 

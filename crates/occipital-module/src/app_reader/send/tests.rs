@@ -16,6 +16,7 @@ mod promote_1116;
 mod promote_queued_1116;
 mod promote_samples;
 mod prompt;
+mod run_stopped_1127;
 mod runner_restart;
 mod step_liveness_1126;
 mod stop_all_samples;
