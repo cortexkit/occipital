@@ -151,6 +151,11 @@ fn a_fallback_reason_reaches_the_row() {
     assert_eq!(reply(reason.clone()), reason);
     let bare = json!({"requested": "claude-opus-5-5", "answered": "claude-opus-4-8"});
     assert_eq!(reply(bare.clone()), bare);
+    // From runner contract 0.9.9 a provider that names no refusal category
+    // leaves it out; the reason still reaches the row.
+    let uncategorized = json!({"requested": "claude-opus-5-5", "answered": "claude-opus-4-8",
+        "by": "provider", "cause": "refused_here"});
+    assert_eq!(reply(uncategorized.clone()), uncategorized);
 }
 
 /// The app's newest page of the chat holding `entries`, kept in `set`.
@@ -223,24 +228,46 @@ async fn the_runner_entry_samples_are_what_the_reader_serves() {
 /// answered later in its round, and a fallback recorded with no reason.
 #[tokio::test]
 async fn the_fallback_reason_samples_are_what_the_reader_serves() {
+    fallback_samples("phone-reader-fallback-reason-v1", &fallbacks()).await;
+}
+
+/// `phone-reader-fallback-reason-v2`: the v1 replies, and a fourth whose
+/// provider named no refusal category, which runner contract 0.9.9 leaves out.
+#[tokio::test]
+async fn the_fallback_reason_v2_samples_are_what_the_reader_serves() {
+    let mut fallbacks = fallbacks().to_vec();
+    fallbacks.push(
+        json!({"requested": "claude-opus-5-5", "answered": "claude-opus-4-8",
+        "by": "provider", "cause": "refused_here"}),
+    );
+    fallback_samples("phone-reader-fallback-reason-v2", &fallbacks).await;
+}
+
+/// The fallback facts of the v1 samples, one per reply.
+fn fallbacks() -> [Value; 3] {
+    [
+        json!({"requested": "claude-opus-5-5", "answered": "claude-opus-4-8",
+            "by": "client", "category": "cyber", "cause": "refused_here"}),
+        json!({"requested": "claude-opus-5-5", "answered": "claude-opus-4-8",
+            "by": "provider", "category": "cyber", "cause": "round"}),
+        json!({"requested": "claude-opus-5-5", "answered": "claude-opus-4-8"}),
+    ]
+}
+
+/// Serve one reply per fact in `fallbacks` as `set`, and check each row's note
+/// is that fact.
+async fn fallback_samples(set: &'static str, fallbacks: &[Value]) {
     let reply = |ordinal: u64, fallback: Value| {
         json!({"mid": format!("m-reply-{ordinal}"), "ordinal": ordinal,
             "written_at": 1_795_515_400_000_u64 + ordinal, "model_fallback": fallback,
             "message": {"role": "assistant",
                 "content": [{"type": "text", "text": format!("Reply {ordinal}.")}]}})
     };
-    let fallbacks = [
-        json!({"requested": "claude-opus-5-5", "answered": "claude-opus-4-8",
-            "by": "client", "category": "cyber", "cause": "refused_here"}),
-        json!({"requested": "claude-opus-5-5", "answered": "claude-opus-4-8",
-            "by": "provider", "category": "cyber", "cause": "round"}),
-        json!({"requested": "claude-opus-5-5", "answered": "claude-opus-4-8"}),
-    ];
-    let chat = (1..=3)
+    let chat = (1..)
         .zip(fallbacks.iter().cloned())
         .map(|(ordinal, fallback)| reply(ordinal, fallback))
         .collect();
-    let (served, rows) = serve("phone-reader-fallback-reason-v1", chat).await;
+    let (served, rows) = serve(set, chat).await;
     let notes: Vec<Value> = rows
         .as_array()
         .unwrap()
