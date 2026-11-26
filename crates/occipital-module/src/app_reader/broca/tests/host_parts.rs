@@ -38,12 +38,14 @@ fn row(entry: &Value) -> Value {
 /// only the sender's words. The text of a coded part is kept too, as the
 /// fallback for a code an app doesn't know. In a reply, a host part is left
 /// out, and `model_fallback` reaches the row as `modelFallback` only when
-/// the read names it: a boundary marker that doesn't parse names none.
+/// the read names it: a boundary marker that doesn't parse names none. Since
+/// runner contract 0.9.9 a fallback's reason may come without the provider's
+/// refusal category, and still reaches the row.
 #[test]
 fn the_contract_cases_serve_host_parts_apart_from_the_persons_words() {
     let file = vector("display-host-codes.json");
     let cases = file["cases"].as_array().unwrap();
-    assert_eq!(cases.len(), 7);
+    assert_eq!(cases.len(), 8);
     let mut fallbacks = 0;
     for case in cases {
         let name = case["name"].as_str().unwrap();
@@ -98,7 +100,7 @@ fn the_contract_cases_serve_host_parts_apart_from_the_persons_words() {
         assert_eq!(row["text"], words, "{name}");
     }
     // The parsed boundary marker and the runner's own record.
-    assert_eq!(fallbacks, 2);
+    assert_eq!(fallbacks, 3);
 }
 
 /// Broca names a reply's host parts by served part key too, and leaves the
