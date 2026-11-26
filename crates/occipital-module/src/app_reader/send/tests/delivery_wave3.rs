@@ -1,4 +1,4 @@
-//! Agent Runner's wave-3 send states (`tests/data/thalamus-host-parity-wave3/`,
+//! Thalamus's wave-3 send states (`tests/data/thalamus-host-parity-wave3/`,
 //! checksums pinned in the Broca reader's `host_parity_wave3` tests).
 //!
 //! On an interrupt with a steer still waiting, Pi runs the steer as its own

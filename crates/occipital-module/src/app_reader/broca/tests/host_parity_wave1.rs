@@ -1,4 +1,4 @@
-//! Agent Runner's wave-1 samples for its run-answer fix, recorded from its
+//! Thalamus's wave-1 samples for its run-answer fix, recorded from its
 //! committed tree and copied unchanged into
 //! `tests/data/thalamus-host-parity-wave1/` with its README.
 //!
@@ -79,7 +79,7 @@ fn the_runners_empty_final_entry_is_an_empty_assistant_row() {
     }
 }
 
-/// A Pi session's run status (Pi is one of the hosts Agent Runner runs) names
+/// A Pi session's run status (Pi is one of the hosts Thalamus runs) names
 /// its provider error with the contract's `provider_error`, with
 /// the provider's own code in `provider_detail_code`, so a send whose run
 /// ended on it is listed with a code the apps can word.

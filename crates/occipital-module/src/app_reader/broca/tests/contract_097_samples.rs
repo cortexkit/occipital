@@ -284,7 +284,7 @@ async fn the_host_frames_samples_are_what_the_reader_serves() {
     served.check();
 }
 
-/// A file of Agent Runner's recordings in `tests/data/thalamus-host-frames-v1/`,
+/// A file of Thalamus's recordings in `tests/data/thalamus-host-frames-v1/`,
 /// copied byte for byte from real Claude Code runs: two messages Claude Code
 /// 2.1.332 stored beside one tool result, and one Claude Code 2.1.331 stored
 /// as its own `system` message.
@@ -297,7 +297,7 @@ fn recording(case: &str, file: &str) -> Value {
 }
 
 /// `phone-reader-host-frames-recorded-v1`: the two recorded read entries,
-/// served as Agent Runner serves them, on one newest page. Each row lists
+/// served as Thalamus serves them, on one newest page. Each row lists
 /// the words parts the runner's own display row holds, with the same keys,
 /// words and order, and the row's text is the runner's.
 #[tokio::test]

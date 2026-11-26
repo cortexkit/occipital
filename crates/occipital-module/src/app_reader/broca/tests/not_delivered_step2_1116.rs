@@ -1,4 +1,4 @@
-//! Agent Runner's endings for a prompt it could never hand to its host, step 2:
+//! Thalamus's endings for a prompt it could never hand to its host, step 2:
 //! a prompt proven never forwarded is retried once and then ends
 //! `not_delivered`, and a run whose hand-over failed for good now ends in an
 //! error (class `handover_failed`, `host_relaunch_failed`, `runner` or
@@ -124,7 +124,7 @@ fn every_run_finished_frame_ends_its_run() {
     }
 }
 
-/// Agent Runner's `host_unavailable` ending (runner contract 0.8.57,
+/// Thalamus's `host_unavailable` ending (runner contract 0.8.57,
 /// `tests/data/thalamus-host-unavailable-1116/`) ends its run's live view the
 /// same way.
 #[test]

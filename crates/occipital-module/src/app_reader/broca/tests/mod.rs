@@ -924,7 +924,7 @@ async fn a_feed_attached_after_a_stamped_run_ended_seeds_no_stamp() {
     assert!(lease.events.try_recv().is_err());
 }
 
-/// Agent Runner's recorded `run_finished` for a send it never handed to its
+/// Thalamus's recorded `run_finished` for a send it never handed to its
 /// host (`tests/data/thalamus-send-not-delivered-1116/06-…`, copied
 /// unchanged) ends that run's live view and wakes the chat's watches, like
 /// any run's end.

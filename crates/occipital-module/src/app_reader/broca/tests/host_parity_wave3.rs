@@ -1,4 +1,4 @@
-//! Agent Runner's wave-3 samples: Pi and Claude Code serving capability groups
+//! Thalamus's wave-3 samples: Pi and Claude Code serving capability groups
 //! OpenCode 2 already declares. Recorded from real Pi 1.6.0 and Claude Code
 //! 2.1.330 against the runner's committed tree, and copied unchanged into
 //! `tests/data/thalamus-host-parity-wave3/`, one folder per set with its README.

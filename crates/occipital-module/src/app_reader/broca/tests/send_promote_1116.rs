@@ -1,4 +1,4 @@
-//! Agent Runner's `role.describe` for its three hosts once they declare
+//! Thalamus's `role.describe` for its three hosts once they declare
 //! `send_promote` ("Send now": the runner moves a message still waiting for the
 //! running turn into that turn, `session.promote`), recorded by Thalamus in
 //! `tests/data/thalamus-send-promote-1116/` (files 10-12, copied unchanged). The

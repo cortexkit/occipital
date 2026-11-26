@@ -1,4 +1,4 @@
-//! Agent Runner's recorded `session.promote` answers ("Send now": the runner
+//! Thalamus's recorded `session.promote` answers ("Send now": the runner
 //! moves a message still waiting for the running turn into that turn) for its
 //! OpenCode 2, Pi and Claude Code hosts, from Thalamus's
 //! `tests/data/thalamus-send-promote-1116/` (copied unchanged), served through

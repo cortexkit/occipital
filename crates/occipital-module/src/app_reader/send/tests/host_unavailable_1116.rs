@@ -1,4 +1,4 @@
-//! Agent Runner's `not_delivered` reason `host_unavailable` (runner contract
+//! Thalamus's `not_delivered` reason `host_unavailable` (runner contract
 //! 0.8.57): a send accepted while its host couldn't be started or reached, and
 //! never handed to it, ends so five minutes later. Recorded from Agent
 //! Runner's committed tree and copied unchanged into

@@ -11,7 +11,7 @@
 //!   the fact a runner now serves for each. Their set,
 //!   `phone-reader-host-frame-v1`, is frozen: its rows predate `hostFrames`,
 //!   and `contract_097_samples` serves its messages in the set that replaces it.
-//! - `phone-reader-runner-entry-v1`: the empty reply Agent Runner writes when
+//! - `phone-reader-runner-entry-v1`: the empty reply Thalamus writes when
 //!   Claude Code saved no reply for a finished step, marked with the read's
 //!   `runner_entry` fact (llm-runner §4.7), beside a model's own empty reply,
 //!   which carries no mark.
@@ -178,7 +178,7 @@ async fn serve(set: &'static str, entries: Vec<Value>) -> (Served, Value) {
     (served, rows)
 }
 
-/// `phone-reader-runner-entry-v1`: Agent Runner's recorded Claude Code chat
+/// `phone-reader-runner-entry-v1`: Thalamus's recorded Claude Code chat
 /// (`thalamus-host-parity-wave1`), whose last entry is the empty reply the
 /// runner wrote, now with the `runner_entry` fact it serves. Two copies of that
 /// entry follow, invented to show the other cases: one with a code from a

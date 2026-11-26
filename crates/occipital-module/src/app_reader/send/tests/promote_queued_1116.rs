@@ -1,4 +1,4 @@
-//! Agent Runner holding a queued send while the agent's turn runs, on all
+//! Thalamus holding a queued send while the agent's turn runs, on all
 //! three of its hosts (OpenCode 2, Pi and Claude Code), and "Send now" moving
 //! it into that turn. Each host's replies were recorded on the real host and
 //! copied unchanged into `tests/data/thalamus-send-promote-v2-1116/` (its

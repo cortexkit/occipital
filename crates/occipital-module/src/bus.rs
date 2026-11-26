@@ -526,7 +526,7 @@ mod tests {
         assert_eq!(woken, 4);
     }
 
-    /// Agent Runner's send-state notice bodies as recorded from its runner store,
+    /// Thalamus's send-state notice bodies as recorded from its runner store,
     /// copied unchanged, each on the subject its README names for the sender in
     /// the file name. Occipital's wake their send in every state the runner
     /// produces, `retracted` included, a state only the notice has; those for

@@ -1108,7 +1108,7 @@ async fn a_send_first_answered_unconfirmed_is_listed_unknown_at_once() {
 
 /// Thalamus's recorded `session.send` and `session.send_status` bodies from Agent
 /// Runner, copied unchanged, for a head send in queue mode and one in steer mode.
-/// Agent Runner's `state` is the run's state, so only `delivered.as` says where the
+/// Thalamus's `state` is the run's state, so only `delivered.as` says where the
 /// send stands: a first answer with no `delivered` is followed, `unknown` lists the
 /// send `unknown` whether the run is `finished` or still `active`, a repeat of the
 /// same send answered `unknown` is listed so at once, `pending` stays queued and
@@ -1209,7 +1209,7 @@ async fn send_outcomes_are_listed_by_delivery(set: &str) {
     }
 }
 
-/// Agent Runner's first answers to a send that starts a run, recorded on its
+/// Thalamus's first answers to a send that starts a run, recorded on its
 /// OpenCode 2, Pi and Claude Code hosts (`tests/data/thalamus-send-answers-early-1116/`,
 /// copied unchanged). It now answers `pending` right after its durable write,
 /// already naming the run it committed, and hands the prompt to the host after.
@@ -1280,7 +1280,7 @@ async fn early_answers_are_only_accepted(set: &str, bodies: &[&str], names_run: 
     }
 }
 
-/// Thalamus's recorded bodies for a send Agent Runner proved never reached its
+/// Thalamus's recorded bodies for a send Thalamus proved never reached its
 /// host, copied unchanged. The first reply is `pending` (in the second set already
 /// naming its run), so the send is followed; once the runner reads `not_delivered`
 /// the send is listed `unsent` with the runner's reason and the code of the run it
@@ -1469,7 +1469,7 @@ async fn a_queued_send_refused_for_its_account_lists_the_runs_code() {
     }
 }
 
-/// Agent Runner's recorded `run.status` for a run the model provider refused as
+/// Thalamus's recorded `run.status` for a run the model provider refused as
 /// too long (`tests/data/thalamus-length-refusal-1116/03-…`, copied unchanged):
 /// `error` with `provider_code: context_overflow`, the provider's own code in
 /// `provider_detail_code`. A queued send whose turn ended so is listed unsent
@@ -1603,7 +1603,7 @@ async fn a_send_first_answered_not_delivered_is_final_for_its_id() {
     assert!(f.receipts.queue().list("s", START).unwrap().is_none());
 }
 
-/// Agent Runner's not-delivered step 2, every ending's recorded send replies
+/// Thalamus's not-delivered step 2, every ending's recorded send replies
 /// and `run.status`, from `tests/data/thalamus-not-delivered-step2-1116/`:
 /// - a prompt proven never forwarded (five endings) is first held (`pending`),
 ///   then reads `not_delivered`, `handover_failed`: listed unsent with that

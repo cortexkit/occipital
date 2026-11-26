@@ -1,4 +1,4 @@
-//! Agent Runner's Pi runs that return a structured result (`structured_output`,
+//! Thalamus's Pi runs that return a structured result (`structured_output`,
 //! llm-runner 0.8.66), recorded by Thalamus from a send-started Pi 1.6.0
 //! against a stand-in model and copied unchanged into
 //! `tests/data/thalamus-structured-output-pi-1120/`. Each file holds a run's

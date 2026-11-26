@@ -2,7 +2,7 @@
 //! for a message the runner proved never reached the agent's host
 //! (`not_delivered`, runner contract 0.8.54).
 //!
-//! Each runner answer is Agent Runner's own recorded body, copied unchanged in
+//! Each runner answer is Thalamus's own recorded body, copied unchanged in
 //! `tests/data/thalamus-send-not-delivered-1116/`, and every reply is served
 //! through Occipital's real request handling, so it is byte for byte what a
 //! phone receives:

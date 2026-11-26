@@ -358,9 +358,9 @@ async fn a_tool_changed_frame_keeps_the_live_words() {
     .await;
 }
 
-/// Agent Runner's `tool_changed` frame on each host it runs (OpenCode 2, Pi, Claude
+/// Thalamus's `tool_changed` frame on each host it runs (OpenCode 2, Pi, Claude
 /// Code), as recorded in `tests/data/runner-tool-versions-v1`, plus Claude Code's
-/// frame after Agent Runner learned to move a running Claude Code session onto a
+/// frame after Thalamus learned to move a running Claude Code session onto a
 /// tool's new minor version, as it already did on the other hosts, so the frame's
 /// `expected` names that minor version's pin (`runner-tool-versions-v1-cc2`, Claude
 /// Code 2.1.331): a control frame with a

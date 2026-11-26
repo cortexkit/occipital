@@ -1,4 +1,4 @@
-//! Agent Runner's capacity wait (`tests/data/runner-capacity-wait-1122`, recorded
+//! Thalamus's capacity wait (`tests/data/runner-capacity-wait-1122`, recorded
 //! on OpenCode 2): routing refused a run's next model request with
 //! `concurrency_full`, and the run waits for routing's reset instead of failing.
 //! Only `run.status.paused.json` reaches a path of this reader; the routing and

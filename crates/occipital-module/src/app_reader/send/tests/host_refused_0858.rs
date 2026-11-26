@@ -88,7 +88,7 @@ async fn a_host_refused_send_lists_its_cause_and_is_final() {
     assert_eq!(receipt["terminal"], true, "{receipt}");
 }
 
-/// Agent Runner's recorded bodies for each of the four causes, copied unchanged
+/// Thalamus's recorded bodies for each of the four causes, copied unchanged
 /// (`tests/data/thalamus-host-refused-1117/`): the first answer is `pending`
 /// naming its run, so the send is followed; `session.send_status` then says
 /// `not_delivered`, reason `host_refused`, with no cause of its own; and the

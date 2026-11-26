@@ -1,4 +1,4 @@
-//! Agent Runner's samples for host-written user text marked on reads,
+//! Thalamus's samples for host-written user text marked on reads,
 //! recorded from its committed tree and copied unchanged into
 //! `tests/data/thalamus-host-text-1123/`. Occipital builds rows from the
 //! `session.read` entries alone; the display and `tag_read` bodies are kept so

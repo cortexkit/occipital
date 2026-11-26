@@ -1,4 +1,4 @@
-//! Agent Runner's samples for runner contract 0.9.6, copied unchanged into
+//! Thalamus's samples for runner contract 0.9.6, copied unchanged into
 //! `tests/data/`. Occipital builds rows from the `session.read` entries alone;
 //! the display entries are kept so the checksums verify whole, and give the
 //! words each row must carry.
@@ -8,7 +8,7 @@
 //!   reaches the apps as the person's row: their words as its text, and
 //!   Claude Code's two wrapper sentences as host parts. Two of the messages
 //!   copy a wrapper sentence into the words; those copies stay words.
-//! - `thalamus-runner-entry-v1`: the empty reply Agent Runner writes when the
+//! - `thalamus-runner-entry-v1`: the empty reply Thalamus writes when the
 //!   host stored none, marked `runner_entry`, and a Pi model's own empty
 //!   reply, which carries no mark.
 
@@ -33,7 +33,7 @@ fn row(entry: Value, profile: broca_entries::DisplayProfile) -> Value {
 }
 
 /// Every file of `set` matches its `SHA256SUMS`, whose own digest starts with
-/// `sums`, the value Agent Runner published with the set.
+/// `sums`, the value Thalamus published with the set.
 fn check_sums(set: &str, sums: &str, files: usize) {
     let listed = std::fs::read(root(set).join("SHA256SUMS")).unwrap();
     assert!(
