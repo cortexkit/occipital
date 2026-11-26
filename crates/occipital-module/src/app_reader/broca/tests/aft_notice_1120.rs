@@ -27,8 +27,8 @@ use cortexkit_test_support::ScratchDir;
 use std::collections::HashMap;
 use subc_protocol::Principal;
 
-const AFT: &str = "aft";
-const SESSION: &str = "ses_aft_notice_samples";
+pub(super) const AFT: &str = "aft";
+pub(super) const SESSION: &str = "ses_aft_notice_samples";
 /// The notices in the order the chat holds them. `still-running` rides a tool
 /// result; the others are their own messages.
 const KINDS: [&str; 7] = [
@@ -41,12 +41,12 @@ const KINDS: [&str; 7] = [
     "watch-task-exit",
 ];
 
-fn data(path: &str) -> Vec<u8> {
+pub(super) fn data(path: &str) -> Vec<u8> {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/aft-notice-1120");
     std::fs::read(root.join(path)).unwrap()
 }
 
-fn json_file(path: &str) -> Value {
+pub(super) fn json_file(path: &str) -> Value {
     serde_json::from_slice(&data(path)).unwrap()
 }
 
@@ -65,7 +65,7 @@ fn on_current_catalog(bytes: Vec<u8>) -> Vec<u8> {
 }
 
 /// AFT's write for notice `kind`.
-fn write(kind: &str) -> Value {
+pub(super) fn write(kind: &str) -> Value {
     json_file(&format!("records/{kind}.write.json"))
 }
 
@@ -111,7 +111,7 @@ impl crate::display::pull::Providers for AftRecords {
 /// The agent directory (Entorhinal), which tells the reader which runner hosts
 /// a session. It knows only the session AFT's records were written to: an
 /// OpenCode 2 chat on Thalamus's runner.
-struct ByHarnessForAft;
+pub(super) struct ByHarnessForAft;
 
 #[async_trait]
 impl Entorhinal for ByHarnessForAft {
@@ -171,7 +171,7 @@ fn chat() -> Vec<Value> {
 
 /// The record the apps are served for notice `kind`: AFT's body, its view
 /// qualified by AFT.
-fn served(kind: &str) -> Value {
+pub(super) fn served(kind: &str) -> Value {
     let body: NoticeBody = serde_json::from_value(write(kind)["body"].clone()).unwrap();
     let writer = Principal::Reserved {
         module_id: AFT.into(),
@@ -179,20 +179,13 @@ fn served(kind: &str) -> Value {
     serde_json::to_value(NoticeRecord::from_body(&writer, body).unwrap()).unwrap()
 }
 
-#[tokio::test]
-async fn aft_s_notices_reach_the_apps_with_aft_s_own_views() {
-    let dir = ScratchDir::new("occipital-aft-notice-1120");
-    let descriptor = crate::store::tests::descriptor(&dir);
-    let main = crate::store::open(&descriptor).unwrap();
-    let file = Arc::new(crate::notices::NoticeStore::open(&descriptor, main.data_root()).unwrap());
-    let (notices, _task) = crate::notices::Notices::start(file);
-    let slot = crate::notices::NoticeSlot::default();
-    let _ = slot.set(notices.clone());
-    let store = Arc::new(DisplayStore::open(&descriptor, main.data_root()).unwrap());
-
-    // AFT's views, as its bucket delivers each one.
-    let (fetcher, _fetching) =
-        crate::display::views::start(store.clone(), Arc::new(AftViews), None);
+/// AFT's three notice views, each offered to `store` as AFT's bucket delivers
+/// it and kept by the time this returns, with their keys. The views task runs
+/// until the returned handle drops.
+pub(super) async fn keep_aft_views(
+    store: &Arc<DisplayStore>,
+) -> (Vec<String>, tokio::task::JoinHandle<()>) {
+    let (fetcher, fetching) = crate::display::views::start(store.clone(), Arc::new(AftViews), None);
     let mut keys = Vec::new();
     let mut entries: Vec<_> = std::fs::read_dir(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/aft-notice-1120/views"),
@@ -234,6 +227,22 @@ async fn aft_s_notices_reach_the_apps_with_aft_s_own_views() {
             "{key} wasn't kept"
         );
     }
+    (keys, fetching)
+}
+
+#[tokio::test]
+async fn aft_s_notices_reach_the_apps_with_aft_s_own_views() {
+    let dir = ScratchDir::new("occipital-aft-notice-1120");
+    let descriptor = crate::store::tests::descriptor(&dir);
+    let main = crate::store::open(&descriptor).unwrap();
+    let file = Arc::new(crate::notices::NoticeStore::open(&descriptor, main.data_root()).unwrap());
+    let (notices, _task) = crate::notices::Notices::start(file);
+    let slot = crate::notices::NoticeSlot::default();
+    let _ = slot.set(notices.clone());
+    let store = Arc::new(DisplayStore::open(&descriptor, main.data_root()).unwrap());
+
+    // AFT's views, as its bucket delivers each one.
+    let (keys, _fetching) = keep_aft_views(&store).await;
 
     // AFT's records, each read back as its announcement names it.
     let announced: HashMap<String, Value> = KINDS

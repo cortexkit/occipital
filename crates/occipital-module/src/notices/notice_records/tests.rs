@@ -29,9 +29,9 @@ fn writer(module: &str) -> Option<Principal> {
     })
 }
 
-/// Every view served, or none.
+/// Every view served, with a data schema that takes any data, or none.
 fn serving(serves: bool) -> ServesView {
-    Arc::new(move |_: &str, _: &str| serves)
+    Arc::new(move |_: &str, _: &str| serves.then(Schema::default))
 }
 
 async fn stored(notices: &Arc<Notices>, write: &Value) -> Result<WriteReply, ErrorBody> {
@@ -301,4 +301,156 @@ async fn a_riding_notice_gets_its_record_when_asked() {
     assert_eq!(asked["text"], "Build example finished.");
     let plain = read(json!({"callKeys": ["call-1"]})).await;
     assert!(plain.get("noticeRecord").is_none(), "{plain}");
+}
+
+/// The module that wakes the agent in the pointer tests, as prefrontal does.
+const WAKER: &str = "example-waker";
+
+/// The contract's wake that points at a notice record
+/// (`awaited_work_notice_record`), and the record-key-only notice it points
+/// at (`record_key_without_send`), as the contract packages them.
+fn pointer_vectors() -> (Value, Value) {
+    let (_, text) = cortexkit_role_tool_display::vectors::FILES
+        .iter()
+        .find(|(name, _)| *name == "wakes.json")
+        .unwrap();
+    let wakes: Value = serde_json::from_str(text).unwrap();
+    let wake = wakes["writes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["tag"] == "awaited_work_notice_record")
+        .unwrap()["write"]
+        .clone();
+    let record = vectors()["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["tag"] == "record_key_without_send")
+        .unwrap()
+        .clone();
+    (wake, record)
+}
+
+/// Notices with the pointing wake stored by [`WAKER`], and message `m1` named
+/// as that wake's row.
+async fn woken(dir: &ScratchDir) -> (crate::store::Store, Arc<Notices>, Value) {
+    let (main, notices) = started(dir);
+    let (wake, _) = pointer_vectors();
+    let outcome = crate::notices::wakes::write(Some(&notices), writer(WAKER), &wake).await;
+    assert!(matches!(outcome, HandlerOutcome::Response(_)));
+    notices.sent(vec![Sent {
+        runner: "example-runner".into(),
+        session: "session-example".into(),
+        mid: "m1".into(),
+        sender: WAKER.into(),
+        send_id: "send-awaited-work".into(),
+    }]);
+    (main, notices, wake["body"].clone())
+}
+
+async fn records_of(notices: &Arc<Notices>, serves: ServesView) -> Value {
+    let asked = json!({"messageIds": ["m1"], "acceptNoticeRecords": true});
+    notices
+        .wake_records("example-runner", "session-example", &asked, Some(serves))
+        .await
+        .unwrap()
+}
+
+/// A wake that points at a notice record its writer stored under a record id
+/// it never sent gives its row that record, beside the wake record, which
+/// stays the fallback; without the opt-in the reply is unchanged.
+#[tokio::test]
+async fn a_wake_s_row_takes_the_record_its_wake_points_at() {
+    let dir = ScratchDir::new("occipital-notice-pointer");
+    let (_main, notices, wake) = woken(&dir).await;
+    let (_, record) = pointer_vectors();
+    stored(&notices, &record["write"]).await.unwrap();
+    assert_eq!(
+        records_of(&notices, serving(true)).await,
+        json!({"messages": {"m1": wake}, "notices": {"m1": record["served"]}})
+    );
+    let plain = notices
+        .wake_records(
+            "example-runner",
+            "session-example",
+            &json!({"messageIds": ["m1"]}),
+            Some(serving(true)),
+        )
+        .await
+        .unwrap();
+    assert_eq!(plain, json!({"messages": {"m1": wake}}));
+}
+
+/// Every way the pointed record fails to qualify leaves the row with the
+/// wake's own card alone: no record, a view its writer doesn't serve, data
+/// that doesn't fit the view, a record another module wrote under the same
+/// id, and a record kept for another session.
+#[tokio::test]
+async fn a_wake_keeps_its_own_card_when_the_pointed_record_does_not_qualify() {
+    let none = json!({});
+    let (_, record) = pointer_vectors();
+    let write = record["write"].clone();
+    let dir = ScratchDir::new("occipital-notice-pointer-missing");
+    let (_main, notices, _) = woken(&dir).await;
+    assert_eq!(records_of(&notices, serving(true)).await["notices"], none);
+
+    let dir = ScratchDir::new("occipital-notice-pointer-refused");
+    let (_main, notices, _) = woken(&dir).await;
+    stored(&notices, &write).await.unwrap();
+    assert_eq!(records_of(&notices, serving(false)).await["notices"], none);
+    let unfit = occipital_registry::view::input(&json!({"type": "object", "required": ["absent"]}));
+    let serves_unfit: ServesView = Arc::new(move |_: &str, _: &str| Some(unfit.clone()));
+    assert_eq!(records_of(&notices, serves_unfit).await["notices"], none);
+
+    let dir = ScratchDir::new("occipital-notice-pointer-other-writer");
+    let (_main, notices, _) = woken(&dir).await;
+    store(Some(&notices), None, writer("another-writer"), &write)
+        .await
+        .unwrap();
+    assert_eq!(records_of(&notices, serving(true)).await["notices"], none);
+
+    let dir = ScratchDir::new("occipital-notice-pointer-other-session");
+    let (_main, notices, _) = woken(&dir).await;
+    let elsewhere = with(write, "/session", json!("another-session"));
+    stored(&notices, &elsewhere).await.unwrap();
+    assert_eq!(records_of(&notices, serving(true)).await["notices"], none);
+}
+
+/// A wake that rode a tool result gets the record its wake points at as the
+/// notice's `noticeRecord`, as a wake row does.
+#[tokio::test]
+async fn a_riding_wake_gets_the_record_its_wake_points_at() {
+    let dir = ScratchDir::new("occipital-notice-pointer-riding");
+    let (_main, notices, wake) = woken(&dir).await;
+    let (_, record) = pointer_vectors();
+    stored(&notices, &record["write"]).await.unwrap();
+    let mut arrivals = notices.arrivals();
+    notices.seen(vec![Notice {
+        runner: "example-runner".into(),
+        session: "session-example".into(),
+        call_key: "call-1".into(),
+        send_id: "send-awaited-work".into(),
+        sender: WAKER.into(),
+        text: "The background command finished.".into(),
+        delivered_as: "tool_result".into(),
+        speaks_for: None,
+        position: Some(0),
+    }]);
+    tokio::time::timeout(std::time::Duration::from_secs(5), arrivals.recv())
+        .await
+        .unwrap()
+        .unwrap();
+    let read = notices
+        .read(
+            "example-runner",
+            "session-example",
+            &json!({"callKeys": ["call-1"], "acceptNoticeRecords": true}),
+            Some(serving(true)),
+        )
+        .await
+        .unwrap();
+    let notice = &read["calls"]["call-1"][0];
+    assert_eq!(notice["wake"], wake);
+    assert_eq!(notice["noticeRecord"], record["served"]);
 }

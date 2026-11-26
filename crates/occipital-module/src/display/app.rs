@@ -249,20 +249,23 @@ impl ToolDisplay {
     }
 
     /// Whether `writer` serves the notice view `key` names, as kept: the
-    /// condition a notice record joins on (tool-display §10.2). A view not
-    /// kept yet is asked for, so a later read can join it.
-    pub fn serves_notice_view(&self, writer: &str, key: &str) -> bool {
+    /// condition a notice record joins on (tool-display §10.2). When it does,
+    /// the view's data schema in the language's subset, which a record a wake
+    /// points at must fit (§8.4). A view not kept yet is asked for, so a later
+    /// read can join it.
+    pub fn serves_notice_view(&self, writer: &str, key: &str) -> Option<occipital_lang::Schema> {
         match self.store.view(writer, key) {
             Ok(Some(ViewState::View { manifest, .. })) => {
-                serde_json::from_slice::<NoticeView>(&manifest).is_ok()
+                let view = serde_json::from_slice::<NoticeView>(&manifest).ok()?;
+                Some(occipital_registry::view::input(&view.notice.data_schema))
             }
             Ok(None) => {
                 if let Some(views) = &self.views {
                     views.want(writer, key);
                 }
-                false
+                None
             }
-            _ => false,
+            _ => None,
         }
     }
 

@@ -143,9 +143,22 @@ impl NoticeStore {
         sender: &str,
         send_id: &str,
     ) -> Result<Option<Value>, StoreError> {
-        let body = self.kept_for_send(SendTable::Wakes, session, sender, send_id)?;
+        Ok(self
+            .wake_kept(session, sender, send_id)?
+            .map(|(_, record)| record))
+    }
+
+    /// [`Self::wake_of`]'s record with the session it was kept for, which is
+    /// another session's for a row whose history moved here.
+    pub(super) fn wake_kept(
+        &self,
+        session: &str,
+        sender: &str,
+        send_id: &str,
+    ) -> Result<Option<(String, Value)>, StoreError> {
+        let found = self.found_for_send(SendTable::Wakes, session, sender, send_id)?;
         // The body was stored as checked canonical JSON, so it parses.
-        Ok(body.and_then(|body| serde_json::from_slice(&body).ok()))
+        Ok(found.and_then(|(kept, body)| Some((kept, serde_json::from_slice(&body).ok()?))))
     }
 
     /// Keep `body` in `table` for `sender`'s send `send_id` to `session`,
@@ -199,6 +212,41 @@ impl NoticeStore {
         sender: &str,
         send_id: &str,
     ) -> Result<Option<Vec<u8>>, StoreError> {
+        Ok(self
+            .found_for_send(table, session, sender, send_id)?
+            .map(|(_, body)| body))
+    }
+
+    /// The body `table` keeps for `sender`'s send `send_id` to exactly
+    /// `session`, with no fallback to another session.
+    pub(super) fn kept_in(
+        &self,
+        table: SendTable,
+        session: &str,
+        sender: &str,
+        send_id: &str,
+    ) -> Result<Option<Vec<u8>>, StoreError> {
+        let name = table.name();
+        self.file.with_conn(|conn| {
+            conn.query_row(
+                &format!(
+                    "SELECT body FROM {name} WHERE session = ?1 AND sender = ?2 AND send_id = ?3"
+                ),
+                rusqlite::params![session, sender, send_id],
+                |row| row.get(0),
+            )
+            .optional()
+        })
+    }
+
+    /// [`Self::kept_for_send`]'s body with the session it was kept for.
+    fn found_for_send(
+        &self,
+        table: SendTable,
+        session: &str,
+        sender: &str,
+        send_id: &str,
+    ) -> Result<Option<(String, Vec<u8>)>, StoreError> {
         let name = table.name();
         let mut found: Vec<(String, Vec<u8>)> = self.file.with_conn(|conn| {
             let mut statement = conn.prepare(&format!(
@@ -216,7 +264,7 @@ impl NoticeStore {
             None if found.len() == 1 => Some(0),
             None => None,
         };
-        Ok(position.map(|position| found.swap_remove(position).1))
+        Ok(position.map(|position| found.swap_remove(position)))
     }
 
     /// Keep which send each of `sends` came from. A message's send never
@@ -303,8 +351,9 @@ impl Notices {
     /// `session` whose send has a record, the record as its writer wrote it.
     /// A message with none is left out. A read that asks for notice records
     /// (`acceptNoticeRecords`) also gets `notices`: for each message whose send
-    /// has a notice record its writer's view serves, as `serves` tells, the
-    /// record as the apps read it.
+    /// has a notice record its writer's view serves, as `serves` tells, or
+    /// whose wake points at one that qualifies (tool-display §8.4), the record
+    /// as the apps read it.
     pub async fn wake_records(
         &self,
         runner: &str,
@@ -342,18 +391,18 @@ impl Notices {
                 let Some((sender, send_id)) = send else {
                     continue;
                 };
+                let wake = store
+                    .wake_kept(&session, &sender, &send_id)
+                    .map_err(super::unavailable)?;
                 if let Some(serves) = &serves {
                     if let Some(record) = store
-                        .notice_record_of(&session, &sender, &send_id, serves)
+                        .notice_record_for(&session, &sender, &send_id, wake.as_ref(), serves)
                         .map_err(super::unavailable)?
                     {
                         notices.insert(mid.clone(), record);
                     }
                 }
-                if let Some(record) = store
-                    .wake_of(&session, &sender, &send_id)
-                    .map_err(super::unavailable)?
-                {
+                if let Some((_, record)) = wake {
                     messages.insert(mid, record);
                 }
             }

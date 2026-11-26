@@ -626,7 +626,8 @@ impl Notices {
     /// words and `wake` on one whose send has a wake record. A read that asks
     /// for notice records (`acceptNoticeRecords`) also gets `noticeRecord` on
     /// one whose send has a record its writer's view serves, as `serves`
-    /// tells. A call no notice rode is left out.
+    /// tells, or whose wake points at one that qualifies (tool-display §8.4).
+    /// A call no notice rode is left out.
     pub async fn read(
         &self,
         runner: &str,
@@ -649,11 +650,17 @@ impl Notices {
                 let mut notices = Vec::with_capacity(kept.len());
                 for kept in kept {
                     let wake = store
-                        .wake_of(&session, &kept.sender, &kept.send_id)
+                        .wake_kept(&session, &kept.sender, &kept.send_id)
                         .map_err(unavailable)?;
                     let record = match &serves {
                         Some(serves) => store
-                            .notice_record_of(&session, &kept.sender, &kept.send_id, serves)
+                            .notice_record_for(
+                                &session,
+                                &kept.sender,
+                                &kept.send_id,
+                                wake.as_ref(),
+                                serves,
+                            )
                             .map_err(unavailable)?,
                         None => None,
                     };
@@ -665,7 +672,7 @@ impl Notices {
                     if let Some(agent) = kept.speaks_for {
                         notice["speaksFor"] = json!({ "agentId": agent });
                     }
-                    if let Some(wake) = wake {
+                    if let Some((_, wake)) = wake {
                         notice["wake"] = wake;
                     }
                     if let Some(record) = record {

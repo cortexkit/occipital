@@ -556,10 +556,10 @@ impl AppReader {
         let _ = self.notices.set(notices);
     }
 
-    /// Whether a module serves a notice view, from the views kept beside the
-    /// tool views: what a notice record joins on. None before the display
-    /// files are open, so no notice record joins until then and its row draws
-    /// the folded notice.
+    /// Whether a module serves a notice view, and its data schema when it
+    /// does, from the views kept beside the tool views: what a notice record
+    /// joins on. None before the display files are open, so no notice record
+    /// joins until then and its row draws the folded notice.
     fn notice_views(&self) -> Option<crate::notices::notice_records::ServesView> {
         let display = self.tool_display.get()?.clone();
         Some(Arc::new(move |writer: &str, key: &str| {

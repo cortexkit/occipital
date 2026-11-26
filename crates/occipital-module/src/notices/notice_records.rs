@@ -16,10 +16,23 @@
 //! `nv1:<writer>:<name>:<version>`, so a module draws only its own notices with
 //! its own views. The apps read it beside the wake records, when they ask with
 //! `acceptNoticeRecords`.
+//!
+//! A module may also write a record for work another module tells the agent
+//! about, such as a background command whose end prefrontal's wake reports
+//! (tool-display §8.4). Then the record is keyed by a record id the writer
+//! never sends, and prefrontal's wake record points at it as
+//! `notice_record: {writer, id}`. The row takes the pointed record in place of
+//! the wake's own card only when it is kept for the wake's own session under
+//! the module the pointer names, as attested at its write, that writer serves
+//! its view, and its `data` fits the view's data schema. Otherwise the row
+//! keeps the wake's card, so it never shows both.
 
 use std::sync::Arc;
 
-use cortexkit_role_tool_display::{NoticeBody, NoticeRecord, NoticeWrite, WriteReply};
+use cortexkit_role_tool_display::{
+    NoticeBody, NoticeRecord, NoticeRecordRef, NoticeWrite, WriteReply,
+};
+use occipital_lang::Schema;
 use serde_json::Value;
 use subc_client_rs::HandlerOutcome;
 use subc_protocol::{ErrorBody, Principal};
@@ -46,9 +59,10 @@ CREATE INDEX notice_records_age ON notice_records (written_at_ms);";
 pub const OPT_IN: &str = "acceptNoticeRecords";
 
 /// Whether `writer` serves the notice view whose qualified key is `key`: the
-/// join's last condition. The app reader answers it from the views kept
-/// beside the tool views.
-pub type ServesView = Arc<dyn Fn(&str, &str) -> bool + Send + Sync>;
+/// join's last condition. When it does, the view's data schema, in the
+/// language's subset, which a pointed record's `data` must fit. The app reader
+/// answers it from the views kept beside the tool views.
+pub type ServesView = Arc<dyn Fn(&str, &str) -> Option<Schema> + Send + Sync>;
 
 /// Whether a read asked for notice records.
 pub(super) fn asked(params: &Value) -> bool {
@@ -70,21 +84,69 @@ impl NoticeStore {
         let Some(body) = self.kept_for_send(SendTable::Notices, session, sender, send_id)? else {
             return Ok(None);
         };
-        // The body was stored after its checks, so it decodes and qualifies.
-        let Ok(body) = serde_json::from_slice::<NoticeBody>(&body) else {
-            return Ok(None);
-        };
-        let writer = Principal::Reserved {
-            module_id: sender.to_owned(),
-        };
-        let Ok(record) = NoticeRecord::from_body(&writer, body) else {
-            return Ok(None);
-        };
-        if !serves(sender, &record.view) {
-            return Ok(None);
-        }
-        Ok(serde_json::to_value(record).ok())
+        Ok(served(sender, &body, serves, false))
     }
+
+    /// The notice record a row draws for `sender`'s send `send_id` in
+    /// `session`: the send's own record, else the one its wake points at.
+    /// `wake` is the send's wake record with the session it was kept for.
+    pub(super) fn notice_record_for(
+        &self,
+        session: &str,
+        sender: &str,
+        send_id: &str,
+        wake: Option<&(String, Value)>,
+        serves: &ServesView,
+    ) -> Result<Option<Value>, StoreError> {
+        if let Some(record) = self.notice_record_of(session, sender, send_id, serves)? {
+            return Ok(Some(record));
+        }
+        match wake {
+            Some((kept, wake)) => self.pointed_record_of(kept, wake, serves),
+            None => Ok(None),
+        }
+    }
+
+    /// The record `wake`, kept for `session`, points at, when it qualifies
+    /// (tool-display §8.4): kept for that same session, never another's, under
+    /// the writer the pointer names (the sender column holds each record's
+    /// attested writer), its view served and its `data` fitting that view.
+    fn pointed_record_of(
+        &self,
+        session: &str,
+        wake: &Value,
+        serves: &ServesView,
+    ) -> Result<Option<Value>, StoreError> {
+        let Some(pointer) = wake
+            .get("notice_record")
+            .and_then(|pointer| serde_json::from_value::<NoticeRecordRef>(pointer.clone()).ok())
+        else {
+            return Ok(None);
+        };
+        let Some(body) = self.kept_in(SendTable::Notices, session, &pointer.writer, &pointer.id)?
+        else {
+            return Ok(None);
+        };
+        Ok(served(&pointer.writer, &body, serves, true))
+    }
+}
+
+/// `sender`'s kept notice record `body` as the apps read it, when `serves`
+/// says the sender serves its view, and with `fits`, when its `data` also fits
+/// that view's data schema.
+fn served(sender: &str, body: &[u8], serves: &ServesView, fits: bool) -> Option<Value> {
+    // The body was stored after its checks, so it decodes and qualifies.
+    let body = serde_json::from_slice::<NoticeBody>(body).ok()?;
+    let writer = Principal::Reserved {
+        module_id: sender.to_owned(),
+    };
+    let record = NoticeRecord::from_body(&writer, body).ok()?;
+    let schema = serves(sender, &record.view)?;
+    let served = serde_json::to_value(record).ok()?;
+    if fits && !schema.accepts(&served["data"]) {
+        return None;
+    }
+    Some(served)
 }
 
 /// Serve one `display.write` with `kind: "notice"`. `writer` is the route's

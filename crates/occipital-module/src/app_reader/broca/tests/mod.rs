@@ -2136,6 +2136,7 @@ mod text_upload_1108;
 mod thalamus_096_samples;
 mod tool_output_samples;
 mod unreadable_samples;
+mod wake_notice_record_1126;
 mod wake_records_samples;
 
 /// The chat's activity follows the llm-runner role crate's `RunState`: a
