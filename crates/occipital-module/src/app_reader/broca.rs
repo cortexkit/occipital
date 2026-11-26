@@ -2059,24 +2059,45 @@ async fn pump(
         } else {
             deadline = None;
         }
-        let linger_elapsed = tokio::select! {
+        // Why the feed ends, for the log: a feed that ends while apps watch
+        // leaves their live text without a source until one reopens it.
+        let ended: std::borrow::Cow<'static, str> = tokio::select! {
             biased;
-            changed = users.changed() => { if changed.is_ok() { continue; } else { false } }
-            _ = async { match deadline { Some(at) => tokio::time::sleep_until(at).await, None => std::future::pending().await } } => true,
+            changed = users.changed() => { if changed.is_ok() { continue; } else { "no_watchers".into() } }
+            _ = async { match deadline { Some(at) => tokio::time::sleep_until(at).await, None => std::future::pending().await } } => "linger_elapsed".into(),
             event = stream.next() => match event {
-                Ok(Some(event)) => { if source.observe(event) { continue; } false },
-                Ok(None) | Err(_) => false,
+                Ok(Some(event)) => {
+                    let kind = event_kind(&event);
+                    if source.observe(event) { continue; }
+                    format!("event_unreadable kind={kind}").into()
+                }
+                Ok(None) => "stream_ended".into(),
+                Err(error) => format!("stream_failed code={} {}", error.code, error.message).into(),
             }
         };
         // Serialize linger expiry with acquisition so a reconnect at the deadline
         // cannot receive a lease for a feed that is already being detached.
         let _feed = source.feed.lock().await;
-        if linger_elapsed && *users.borrow() != 0 {
+        if ended == "linger_elapsed" && *users.borrow() != 0 {
             continue;
         }
+        let reference = source.resolved.guard().reference.clone();
+        tracing::info!(target: "app_reader", runner = %reference.runner,
+            session = %reference.session, reason = %ended, "live subscription ended");
         source.lost();
         break;
     }
+}
+
+/// A live frame's kind and event type, such as `display/text_delta`, naming
+/// what it is without any of its text.
+fn event_kind(envelope: &Value) -> String {
+    let kind = envelope["kind"].as_str().unwrap_or("?");
+    let event = envelope["event"]["type"]
+        .as_str()
+        .or_else(|| envelope["unit"]["type"].as_str())
+        .unwrap_or("?");
+    format!("{kind}/{event}")
 }
 
 #[derive(Deserialize)]
