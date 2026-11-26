@@ -13,8 +13,9 @@
 # feature passes through. Tests and generated files are exempt.
 #
 # And it checks that git tracks nothing under .cortexkit/ outside the folders
-# the repository may publish (release-notes/, skills/, rules/ and WORKER.md):
-# everything else there is private. It lists every tracked file and checks it
+# the repository may publish (release-notes/, skills/, rules/ and WORKER.md)
+# and the project settings files the daemon reads (a top-level
+# `<module>.jsonc`): everything else there is private. It lists every tracked file and checks it
 # against that allowlist, rather than asking git which tracked files are
 # ignored, because a stray `!` line in any .gitignore would un-ignore a
 # private file and hide it from that question.
@@ -93,7 +94,7 @@ done < <(git ls-files '*.rs' '*.swift' '*.py' '*.sh')
 if ! tracked="$(git ls-files -- .cortexkit)"; then
   problem "git ls-files failed, so .cortexkit/ could not be checked"
 else
-  outside="$(printf '%s\n' "$tracked" | grep -vE '^\.cortexkit/(release-notes/|skills/|rules/|WORKER\.md$)' | grep -v '^$' || true)"
+  outside="$(printf '%s\n' "$tracked" | grep -vE '^\.cortexkit/(release-notes/|skills/|rules/|WORKER\.md$|[a-z0-9-]+\.jsonc$)' | grep -v '^$' || true)"
   if [ -n "$outside" ]; then
     problem "git tracks private files under .cortexkit/: $(printf '%s' "$outside" | tr '\n' ' ')"
   fi
