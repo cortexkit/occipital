@@ -1,0 +1,48 @@
+{
+  "first_ordinal": 1,
+  "head": {
+    "session": "00e01c18b76c0892",
+    "sub_index": 1,
+    "wal_seq": 3
+  },
+  "history_version": 0,
+  "incarnation": "inc_188d1740e5a34f4ea8dfad44db5d88f0",
+  "input": {
+    "attachments": "unknown"
+  },
+  "last_ordinal": 1,
+  "last_run_state": {
+    "run_id": "run_3e23cafd5945de8e60b80dbb",
+    "state": "active"
+  },
+  "model": {
+    "model": "claude-opus-5",
+    "provider": "anthropic"
+  },
+  "released": {
+    "at_ms": 1000000,
+    "delete_after_ms": 1000000
+  },
+  "retention_policy": {
+    "archive_after_days": 0,
+    "backup": false,
+    "keep": {
+      "days": 7
+    },
+    "request_dumps": false
+  },
+  "retention_state": {
+    "source": "starter"
+  },
+  "sender": {
+    "interrupt": true,
+    "modes": [
+      "tool_result",
+      "turn_system_cleared",
+      "steer",
+      "idle_start"
+    ],
+    "owner": true
+  },
+  "updated_at": 1000000
+}

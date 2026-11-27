@@ -1,0 +1,7 @@
+{
+  "code": "backup_unsupported",
+  "detail": {
+    "reason": "message_bodies_not_backed_up"
+  },
+  "message": "the runner cannot accept this session retention policy"
+}

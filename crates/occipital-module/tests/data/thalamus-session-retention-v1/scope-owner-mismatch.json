@@ -1,0 +1,10 @@
+{
+  "code": "scope_owner_mismatch",
+  "detail": {
+    "owner": {
+      "kind": "reserved",
+      "module_id": "prefrontal-core"
+    }
+  },
+  "message": "only the session's owner may do this"
+}

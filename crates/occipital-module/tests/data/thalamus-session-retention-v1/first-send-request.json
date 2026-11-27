@@ -1,0 +1,16 @@
+{
+  "model": {
+    "model": "claude-opus-5",
+    "provider": "anthropic"
+  },
+  "prompt": "probe transcript",
+  "retention_policy": {
+    "archive_after_days": 0,
+    "backup": false,
+    "keep": {
+      "days": 7
+    },
+    "request_dumps": false
+  },
+  "send_id": "first"
+}

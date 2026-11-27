@@ -1,0 +1,7 @@
+{
+  "code": "session_released",
+  "detail": {
+    "delete_after_ms": 1000000
+  },
+  "message": "the owner has released this session"
+}

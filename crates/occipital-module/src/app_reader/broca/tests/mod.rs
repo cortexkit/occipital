@@ -2195,6 +2195,7 @@ mod session_facts;
 mod session_retention_1123;
 mod simple_samples;
 mod tag_rows;
+mod thalamus_retention_1127;
 mod tool_display_samples;
 mod tool_times_samples;
 mod tool_versions_samples;
