@@ -72,6 +72,13 @@ pub const METHODS: [&str; 6] = [BEGIN, CHUNK, STATUS, FINISH, ABORT, PLACE];
 /// the project folder instead.
 pub const PROMPT_MAX_BYTES: u64 = 32 << 20;
 
+/// How long `upload.begin` waits for the session's runner to say whether the
+/// file may go into the prompt. The check reads the runner, and a busy runner
+/// can take its whole 30-second call deadline, which is also how long a phone
+/// waits for its answer, so the phone would give up first. Past this, the file
+/// goes to the project folder, as when the check fails.
+pub const PROMPT_FIT_WAIT: Duration = Duration::from_secs(3);
+
 /// The piece size the phone is told to send.
 pub const CHUNK_BYTES: u64 = 1 << 20;
 /// The largest payload `upload.chunk` declares; Callosum refuses a larger one before
@@ -355,13 +362,19 @@ impl Uploads {
                 .project_root(&request.session, request.harness.as_deref())
                 .await?;
             // The prompt only when the session's runner takes uploads and its model
-            // isn't known to refuse this type. A failed check means the folder: the
-            // file still reaches the session, as a path.
+            // isn't known to refuse this type. A failed or slow check means the
+            // folder: the file still reaches the session, as a path.
             let fit = if request.prompt && request.size <= PROMPT_MAX_BYTES {
-                resolver
-                    .prompt_fit(&request.session, request.harness.as_deref(), &request.mime)
+                let check = resolver.prompt_fit(
+                    &request.session,
+                    request.harness.as_deref(),
+                    &request.mime,
+                );
+                tokio::time::timeout(PROMPT_FIT_WAIT, check)
                     .await
-                    .unwrap_or(None)
+                    .ok()
+                    .and_then(Result::ok)
+                    .flatten()
             } else {
                 None
             };

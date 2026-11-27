@@ -181,24 +181,41 @@ impl Fixture {
     /// The reader serving uploads where the session's runner and model take, or
     /// don't take, files in the prompt.
     pub fn prompt_wire(&self, accepts: bool) -> Wire {
+        self.prompt_wire_answering(if accepts { Fit::Takes } else { Fit::Refuses })
+    }
+
+    /// The reader serving uploads where the check whether a file may go into the
+    /// prompt answers `fit`.
+    pub fn prompt_wire_answering(&self, fit: Fit) -> Wire {
         let inner = BrocaSources::new(
             Arc::new(Resolver::new(Arc::new(Lookup {
                 root: self.project.clone(),
             }))),
             Arc::new(NoRoutes),
         );
-        let resolver = Arc::new(PromptResolver { inner, accepts });
+        let resolver = Arc::new(PromptResolver { inner, fit });
         Wire::new(Arc::new(
             AppReader::new(resolver).with_uploads(Some(self.uploads.clone())),
         ))
     }
 }
 
+/// How the stand-in runner answers whether a file may go into the prompt.
+#[derive(Clone, Copy)]
+pub(super) enum Fit {
+    /// Its runner and model take the file.
+    Takes,
+    /// Its runner or model doesn't take the file.
+    Refuses,
+    /// It never answers, like a runner too busy to answer the check.
+    Stalls,
+}
+
 /// Sessions found as the reader finds them, and a fixed answer to whether a file
 /// may go into the prompt, standing in for the runner's groups and model facts.
 struct PromptResolver {
     inner: BrocaSources,
-    accepts: bool,
+    fit: Fit,
 }
 
 #[async_trait]
@@ -225,7 +242,11 @@ impl SourceResolver for PromptResolver {
         _harness: Option<&str>,
         _mime: &str,
     ) -> Result<Option<crate::app_reader::PromptFit>, ReadError> {
-        Ok(self.accepts.then(crate::app_reader::PromptFit::default))
+        match self.fit {
+            Fit::Takes => Ok(Some(crate::app_reader::PromptFit::default())),
+            Fit::Refuses => Ok(None),
+            Fit::Stalls => std::future::pending().await,
+        }
     }
 }
 

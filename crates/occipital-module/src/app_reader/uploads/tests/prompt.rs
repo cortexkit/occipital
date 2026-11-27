@@ -99,6 +99,26 @@ async fn without_the_opt_in_or_a_taker_the_file_goes_to_the_folder() {
     assert_eq!(begun["destination"], "folder");
 }
 
+/// A runner too busy to answer the prompt check doesn't hold the begin past
+/// its bound: the file goes to the folder, well before the phone gives up.
+#[tokio::test]
+async fn a_runner_that_does_not_answer_the_check_sends_the_file_to_the_folder() {
+    let f = Fixture::new();
+    let mut wire = f.prompt_wire_answering(Fit::Stalls);
+    wire.bind_all().await;
+    let data = content(100);
+    let started = std::time::Instant::now();
+    let begun = begin_whole(&mut wire, "image/png", &data).await;
+    let waited = started.elapsed();
+    assert_eq!(begun["destination"], "folder");
+    assert!(
+        waited >= PROMPT_FIT_WAIT && waited < PROMPT_FIT_WAIT * 3,
+        "{waited:?}"
+    );
+    let id = begun["upload_id"].as_str().unwrap().to_owned();
+    assert!(wire.id_call(FINISH, &id).await.ok()["path"].is_string());
+}
+
 #[tokio::test]
 async fn a_prompt_upload_whose_bytes_differ_is_refused_at_finish() {
     let f = Fixture::new();
