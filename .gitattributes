@@ -1,3 +1,9 @@
 # The xcframework's static libraries are build output committed as binaries:
 # git must never diff, merge or convert their line endings.
 ports/swift/OccipitalCore.xcframework/**/*.a binary
+# Check text out with LF on every OS. Tests compare sample sets, recordings and
+# vectors byte for byte against their SHA256SUMS, and a CRLF checkout on
+# Windows would change them.
+* text=auto eol=lf
+# This input holds CRLF on purpose, to test whitespace canonicalization.
+crates/occipital-registry/test-vectors/rich-ui-registry-v1/canon-whitespace.input.json -text

@@ -15,7 +15,10 @@ crates/
   occipital-files/       no-replace move, file identity and free space, for placing uploads
 ports/swift/             OccipitalCore.xcframework (built, committed) and the OccipitalKit sources
 Package.swift            the OccipitalKit Swift package
-scripts/                 check.sh, build-xcframework.sh, xcframework-source-hash.sh
+scripts/                 check.sh, build-xcframework.sh, xcframework-source-hash.sh, release-build.sh
+  release/               assets.py (packs and verifies release files), macos-sign-notarize.sh
+  tests/                 the release file tests
+.github/workflows/       ci.yml (tests on every target), release.yml (the signed release)
 ```
 
 `.cortexkit/` is git-ignored: internal design notes, scratch and saved answers never reach the repository.
@@ -73,7 +76,8 @@ scripts/                 check.sh, build-xcframework.sh, xcframework-source-hash
 
 ## Conventions
 
-- **Builds:** on the Rust toolchain `rust-toolchain.toml` pins. Rust builds and tests run on the Linux build server; release builds of `ck-occipital` on the build Mac, from a tree with no modified tracked files. `scripts/check.sh` runs on the Mac, because it reads the local git index.
+- **Builds:** on the Rust toolchain `rust-toolchain.toml` pins. Push CI (`.github/workflows/ci.yml`) runs format, lint and `scripts/check.sh`, and the whole test suite natively on each of the five release targets: macOS arm64, Linux x64 and arm64, Windows x64 and arm64. Day to day, Rust builds and tests also run on the maintainers' Linux build server, and development builds for the maintainers' own computers are built on a macOS build machine from a tree with no modified tracked files.
+- **Releases:** a tag `v<occipital-module version>` runs `.github/workflows/release.yml`. It builds `ck-occipital` with `scripts/release-build.sh` on each target's own runner, signs and notarizes the macOS file, and publishes a release only after that commit's push CI passed its tests on all five targets and every uploaded file matches what was built. It writes `release-manifest.json`, which names the core floor (`OCCIPITAL_REQUIRES_CORE`). A manual run rehearses the release without publishing.
 - **No panics in shipped code:** the language library, the C interface, the registry and the module deny `unwrap`, `expect` and `panic!` outside tests. A broken assumption becomes a status or an error code.
 - **Logging:** through `cortexkit-log` only. Never log message text, file names or credentials.
 - **Public wording:** the repository is public. Prose calls the phone and desktop apps "the apps"; module names are fine.

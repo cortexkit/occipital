@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  # Every pushed branch, so a change can be tested on all five targets before
+  # it lands on main.
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to a pull request supersedes its older run. Every push gets its
+# own group, so a later push never cancels an earlier one's run: each commit
+# pushed to main can be tagged for a release, and the release lane looks for
+# that commit's own green run.
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: never
+  PYTHONDONTWRITEBYTECODE: 1
+  # Builds start cold, so incremental state is only extra disk. Line tables
+  # keep file:line in panics and backtraces at a fraction of full debug info.
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+
+jobs:
+  lint:
+    name: Format, lint and repository checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # rust-toolchain.toml names the one toolchain, with rustfmt and clippy.
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install
+      - run: cargo fmt --all --check
+      - run: cargo fetch --locked
+      - name: Clippy, with and without the show-ui feature
+        run: |
+          cargo clippy --locked --workspace --all-targets -- -D warnings
+          cargo clippy --locked --workspace --all-targets --features occipital-module/show-ui -- -D warnings
+      # That the committed OccipitalCore.xcframework (the iOS build of the
+      # language library) matches its sources, that hand-written files stay
+      # under 5,000 lines, and that git tracks nothing private under .cortexkit/.
+      - name: Repository check
+        run: scripts/check.sh
+      - name: Release asset tests
+        run: python3 -m unittest scripts.tests.release_assets -v
+
+  test:
+    name: Test on ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            runner: macos-latest
+          - target: linux-x64
+            runner: ubuntu-latest
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+          - target: windows-x64
+            runner: windows-latest
+          - target: windows-arm64
+            runner: windows-11-arm
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install
+      - name: Record the Rust version
+        id: rust
+        run: echo "version=$(rustc --version | cut -d ' ' -f 2)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ matrix.target }}-cargo-${{ hashFiles('Cargo.lock') }}-${{ steps.rust.outputs.version }}-${{ github.sha }}
+          restore-keys: |
+            ${{ matrix.target }}-cargo-${{ hashFiles('Cargo.lock') }}-${{ steps.rust.outputs.version }}-
+      # The release lane publishes a tag only from a commit whose push run
+      # passed this step on every target, so keep its name.
+      - name: Test the workspace
+        run: |
+          cargo test --locked --workspace --no-fail-fast
+          cargo test --locked --workspace --no-fail-fast --features occipital-module/show-ui
+      # Desktop builds of the language library turn this serde_json feature on.
+      - name: Test the language library with exact JSON numbers
+        if: matrix.target == 'linux-x64'
+        run: cargo test --locked -p cortexkit-occipital-lang --features serde_json/arbitrary_precision
