@@ -15,9 +15,12 @@ fn now_ms() -> i64 {
         .as_millis() as i64
 }
 
+/// One recorded session, its Unix project folder made absolute here.
 fn sample(held: bool) -> Value {
     let records: Value = serde_json::from_str(if held { HELD } else { OPEN }).unwrap();
-    records[0]["reply"]["result"]["sessions"][usize::from(held)].clone()
+    let mut session = records[0]["reply"]["result"]["sessions"][usize::from(held)].clone();
+    crate::test_paths::localize_roots(&mut session);
+    session
 }
 
 struct PlacementLookup {
