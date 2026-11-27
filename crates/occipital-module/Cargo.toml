@@ -32,7 +32,7 @@ async-nats = { version = "0.50", default-features = false }
 cortexkit-agent-identity = "=0.1.2"
 # The local message bus: the credential, the connection and the durable reader
 # (`crate::bus`).
-cortexkit-bus-client = "=0.1.15"
+cortexkit-bus-client = "=0.1.20"
 # The buckets the bus declares, to find the views buckets this module reads.
 cortexkit-bus-naming = "=0.5.1"
 # The fleet log: one file a day in the module's data folder, filtered by CK_LOG.
