@@ -951,9 +951,7 @@ fn write_stream(
         .cloned()
         .collect();
     let written = writer.finish(carried).map_err(|e| e.to_string())?;
-    std::fs::File::open(path)
-        .and_then(|f| f.sync_all())
-        .map_err(|e| e.to_string())?;
+    crate::durable::sync_file(path).map_err(|e| e.to_string())?;
     tracing::info!(?counts, "agent move stream written");
     Ok(Some(written))
 }

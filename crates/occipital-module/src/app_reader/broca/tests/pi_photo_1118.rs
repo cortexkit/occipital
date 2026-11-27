@@ -42,7 +42,7 @@ impl Entorhinal for OneChat {
         Ok(
             json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref",
             "incarnation":"entorhinal-test", "ended_at_ms":null, "runner":PI_RUNNER_MODULE_ID,
-            "session":SESSION, "harness":"pi", "project_root":"/workspace/head",
+            "session":SESSION, "harness":"pi", "project_root": crate::test_paths::absolute("/workspace/head"),
             "network":"unknown", "network_history":[]}}),
         )
     }

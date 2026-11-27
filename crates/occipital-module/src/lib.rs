@@ -29,6 +29,7 @@ pub mod bus;
 pub mod catalog_generation;
 pub mod commands;
 pub mod display;
+mod durable;
 pub mod key_digest;
 mod key_locks;
 pub mod manifest;
@@ -44,6 +45,8 @@ pub mod show_ui;
 pub mod startup;
 pub mod store;
 pub mod system_text;
+#[cfg(test)]
+mod test_paths;
 #[cfg(test)]
 mod test_tracing;
 

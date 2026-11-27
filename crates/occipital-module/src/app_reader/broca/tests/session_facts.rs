@@ -272,7 +272,7 @@ impl Entorhinal for ChangingNetwork {
         }
         Ok(
             json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref", "incarnation":"entorhinal-test", "ended_at_ms":null,
-            "runner":"broca", "session":"alfonso:s1", "harness":"broca", "project_root":"/workspace/resolved-project",
+            "runner":"broca", "session":"alfonso:s1", "harness":"broca", "project_root": crate::test_paths::absolute("/workspace/resolved-project"),
             "network":"no", "network_history":[{"network":"yes", "since_ms":700}, {"network":"no", "since_ms":710}]}}),
         )
     }
@@ -787,7 +787,7 @@ impl Entorhinal for Unrecorded {
                 json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso",
                 "ref":"test-ref", "incarnation":"entorhinal-test", "ended_at_ms":null,
                 "runner":"broca", "session":params["session"], "harness":"broca",
-                "project_root":"/workspace/magic-context", "network":"no",
+                "project_root": crate::test_paths::absolute("/workspace/magic-context"), "network":"no",
                 "network_history":[]}}),
             );
         }

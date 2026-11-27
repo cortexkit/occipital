@@ -56,9 +56,8 @@ impl Recorder {
             .next(self.corr, Duration::from_secs(5))
             .await
             .expect("the module answers");
-        let normal = |text: String| text.replace(&self.root, PROJECT).into_bytes();
-        let request = serde_json::from_slice(&normal(request.to_string())).unwrap();
-        let reply = normal(String::from_utf8(reply).unwrap());
+        let request = serde_json::from_slice(&normal(&request.to_string(), &self.root)).unwrap();
+        let reply = normal(&String::from_utf8(reply).unwrap(), &self.root);
         self.served.keep(name, &request, reply.clone());
         let reply: Value = serde_json::from_slice(&reply).unwrap();
         if reply.get("result").is_some() {
@@ -67,6 +66,28 @@ impl Recorder {
             reply
         }
     }
+}
+
+/// `json`, a JSON document, with the project folder `root` written as
+/// [`PROJECT`] and `/` between the names of every path under it, so a sample
+/// recorded on any platform has the same bytes. In JSON text a Windows path's
+/// backslashes are escaped, so the folder is looked for as JSON writes it.
+fn normal(json: &str, root: &str) -> Vec<u8> {
+    let quoted = serde_json::to_string(root).unwrap();
+    let escaped = &quoted[1..quoted.len() - 1];
+    let mut out = String::new();
+    let mut rest = json;
+    while let Some(at) = rest.find(escaped) {
+        out.push_str(&rest[..at]);
+        out.push_str(PROJECT);
+        rest = &rest[at + escaped.len()..];
+        // The rest of this path, up to the string's closing quote.
+        let end = rest.find('"').unwrap_or(rest.len());
+        out.push_str(&rest[..end].replace("\\\\", "/"));
+        rest = &rest[end..];
+    }
+    out.push_str(rest);
+    out.into_bytes()
 }
 
 pub(super) fn file_part(id: &str, mime: &str, filename: &str) -> Value {

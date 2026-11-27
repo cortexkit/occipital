@@ -72,7 +72,7 @@ impl Entorhinal for Head {
             json!({"result": {"agent_id": "agent-test", "ref_kind": "alfonso", "ref": "test-ref",
             "incarnation": "entorhinal-test", "ended_at_ms": null,
             "runner": self.runner, "session": "ses_head", "harness": self.harness,
-            "project_root": "/workspace/head", "network": "unknown", "network_history": []}}),
+            "project_root": crate::test_paths::absolute("/workspace/head"), "network": "unknown", "network_history": []}}),
         )
     }
 }

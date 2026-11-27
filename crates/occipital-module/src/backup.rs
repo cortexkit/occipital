@@ -98,10 +98,7 @@ pub fn write_catalog(data_root: &Path, store_file: &str) -> io::Result<()> {
     file.sync_all()?;
     drop(file);
     std::fs::rename(&staged, &path)?;
-    // On Unix a rename is durable only once its folder is synced.
-    #[cfg(unix)]
-    std::fs::File::open(data_root)?.sync_all()?;
-    Ok(())
+    crate::durable::sync_dir(data_root)
 }
 
 #[cfg(test)]

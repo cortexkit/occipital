@@ -201,7 +201,7 @@ fn resolved() -> Resolved {
             session: "alfonso:s1".into(),
         },
         harness: "broca".into(),
-        project_root: "/workspace/project".into(),
+        project_root: crate::test_paths::absolute("/workspace/project").into(),
         network: Network::No,
         network_history: vec![
             NetworkChange {
@@ -1109,7 +1109,7 @@ impl Entorhinal for Lookup {
         assert_eq!(params, json!({"runner":"broca", "session":"alfonso:s1"}));
         Ok(
             json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref", "incarnation":"entorhinal-test", "ended_at_ms":null,
-                "runner":"broca", "session":"alfonso:s1", "harness":"broca", "project_root":"/workspace/resolved-project",
+                "runner":"broca", "session":"alfonso:s1", "harness":"broca", "project_root": crate::test_paths::absolute("/workspace/resolved-project"),
                 "network":"yes", "network_history":[{"network":"yes", "since_ms":700}]}}),
         )
     }
@@ -1129,7 +1129,7 @@ async fn resolved_identity_and_network_reach_the_source_without_owner_adoption()
     );
     assert_eq!(
         resolved.project_root,
-        std::path::Path::new("/workspace/resolved-project")
+        std::path::PathBuf::from(crate::test_paths::absolute("/workspace/resolved-project"))
     );
     let source = BrocaSource::new(resolved, FakeRoute::new());
     assert_eq!(
@@ -1170,7 +1170,7 @@ impl Entorhinal for ByHarness {
             runner => {
                 json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref",
                     "incarnation":"entorhinal-test", "ended_at_ms":null, "runner":runner, "session":"ses_head",
-                    "harness":self.harness(), "project_root":"/workspace/head", "network":"unknown", "network_history":[]}})
+                    "harness":self.harness(), "project_root": crate::test_paths::absolute("/workspace/head"), "network":"unknown", "network_history":[]}})
             }
         })
     }
@@ -1277,7 +1277,7 @@ impl Entorhinal for Hosts {
         Ok(
             json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref",
                 "incarnation":"entorhinal-test", "ended_at_ms":null, "runner":runner, "session":"ses_head",
-                "harness":harness, "project_root":"/workspace/head", "network":"unknown", "network_history":[]}}),
+                "harness":harness, "project_root": crate::test_paths::absolute("/workspace/head"), "network":"unknown", "network_history":[]}}),
         )
     }
 }
@@ -1394,7 +1394,7 @@ impl BrocaRoutes for Routes {
     async fn open(&self, resolved: &Resolved) -> Result<Arc<dyn BrocaRoute>, ReadError> {
         assert_eq!(
             resolved.project_root,
-            std::path::PathBuf::from("/workspace/resolved-project")
+            std::path::PathBuf::from(crate::test_paths::absolute("/workspace/resolved-project"))
         );
         assert_eq!(resolved.harness, "broca");
         assert_eq!(resolved.reference.session, "alfonso:s1");
@@ -2007,7 +2007,8 @@ impl Entorhinal for MovingLookup {
     async fn request(&self, method: &str, params: Value) -> Result<Value, ReadError> {
         let mut reply = Lookup.request(method, params).await?;
         if self.0.load(Ordering::Relaxed) {
-            reply["result"]["project_root"] = json!("/workspace/moved");
+            reply["result"]["project_root"] =
+                json!(crate::test_paths::absolute("/workspace/moved"));
         }
         Ok(reply)
     }
@@ -2048,8 +2049,8 @@ async fn a_moved_binding_retires_the_old_feed_before_attaching_its_replacement()
     assert_eq!(
         *routes.1.lock().unwrap(),
         vec![
-            std::path::PathBuf::from("/workspace/resolved-project"),
-            std::path::PathBuf::from("/workspace/moved")
+            std::path::PathBuf::from(crate::test_paths::absolute("/workspace/resolved-project")),
+            std::path::PathBuf::from(crate::test_paths::absolute("/workspace/moved"))
         ]
     );
 }

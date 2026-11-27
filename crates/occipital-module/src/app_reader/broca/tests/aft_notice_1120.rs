@@ -130,7 +130,7 @@ impl Entorhinal for ByHarnessForAft {
             json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref",
             "incarnation":"entorhinal-test", "ended_at_ms":null,
             "runner":THALAMUS_RUNNER_MODULE_ID, "session":SESSION, "harness":"opencode2",
-            "project_root":"/workspace/head", "network":"unknown", "network_history":[]}}),
+            "project_root": crate::test_paths::absolute("/workspace/head"), "network":"unknown", "network_history":[]}}),
         )
     }
 }

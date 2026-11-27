@@ -20,7 +20,7 @@ impl Entorhinal for AnySession {
         Ok(
             json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref", "incarnation":"entorhinal-test", "ended_at_ms":null,
             "runner":"broca", "session":params["session"], "harness":"broca",
-            "project_root":"/workspace/project", "network":"yes", "network_history":[]}}),
+            "project_root": crate::test_paths::absolute("/workspace/project"), "network":"yes", "network_history":[]}}),
         )
     }
 }

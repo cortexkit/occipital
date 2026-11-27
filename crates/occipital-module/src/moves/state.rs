@@ -146,11 +146,10 @@ impl Saved {
         file.write_all(&serde_json::to_vec(self)?)?;
         file.sync_all()?;
         fs::rename(temporary, path)?;
-        File::open(
+        crate::durable::sync_dir(
             path.parent()
                 .ok_or_else(|| invalid("missing move folder"))?,
-        )?
-        .sync_all()
+        )
     }
 }
 
@@ -242,11 +241,11 @@ impl Cuts {
                     .ok_or_else(|| invalid("missing cut filename"))?,
             );
             fs::copy(path, &to)?;
-            File::open(to)?.sync_all()?;
+            crate::durable::sync_file(&to)?;
         }
-        File::open(&temp)?.sync_all()?;
+        crate::durable::sync_dir(&temp)?;
         fs::rename(temp, backup)?;
-        File::open(&self.dir)?.sync_all()
+        crate::durable::sync_dir(&self.dir)
     }
 
     pub(crate) fn load(&self, cut_id: &str) -> std::io::Result<Option<Cut>> {

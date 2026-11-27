@@ -631,7 +631,7 @@ mod tests {
                     .project_root_by_harness(&harness, &session)
                     .await
                     .unwrap(),
-                PathBuf::from("/fixture/project")
+                PathBuf::from(crate::test_paths::absolute("/fixture/project"))
             );
         }
         assert!(records[1]["reply"]["result"]["runner"].is_null());
@@ -751,6 +751,10 @@ mod tests {
                 .expect("unexpected lookup");
             assert_eq!(method, expected);
             assert_eq!(params, arguments);
+            // The recorded answers name Unix folders, which aren't absolute
+            // on Windows.
+            let mut reply = reply;
+            crate::test_paths::localize_roots(&mut reply);
             Ok(reply)
         }
     }
@@ -795,7 +799,7 @@ mod tests {
         assert_eq!(resolved.harness, "broca");
         assert_eq!(
             resolved.project_root,
-            PathBuf::from("/workspace/session-vectors")
+            PathBuf::from(crate::test_paths::absolute("/workspace/session-vectors"))
         );
         assert_eq!(resolved.network, Network::No);
         assert_eq!(resolved.network_at(Some(699)), Network::Unknown);
@@ -836,7 +840,9 @@ mod tests {
             .unwrap();
         assert_eq!(
             resolved.project_root,
-            PathBuf::from("/workspace/session-vectors/reopened")
+            PathBuf::from(crate::test_paths::absolute(
+                "/workspace/session-vectors/reopened"
+            ))
         );
         assert_eq!(resolved.network, Network::Unknown);
         assert_eq!(resolved.network_at(Some(1000)), Network::Unknown);

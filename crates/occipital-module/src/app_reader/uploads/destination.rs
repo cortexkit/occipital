@@ -231,11 +231,7 @@ pub(crate) fn create_private_dir(path: &Path) -> io::Result<()> {
 /// `MOVEFILE_WRITE_THROUGH`, which returns only once the move is on disk.
 #[cfg(not(any(target_os = "linux", target_os = "macos")))]
 fn sync_dir(path: &Path) -> io::Result<()> {
-    #[cfg(unix)]
-    File::open(path)?.sync_all()?;
-    #[cfg(not(unix))]
-    let _ = path;
-    Ok(())
+    crate::durable::sync_dir(path)
 }
 
 /// Check `path` is a folder this module may write into, creating it when missing.

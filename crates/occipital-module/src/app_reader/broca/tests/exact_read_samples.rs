@@ -38,7 +38,7 @@ impl Entorhinal for ThreeChats {
         Ok(
             json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref",
             "incarnation":"entorhinal-test", "ended_at_ms":null, "runner":runner, "session":session,
-            "harness":harness, "project_root":"/workspace/head", "network":"unknown", "network_history":[]}}),
+            "harness":harness, "project_root": crate::test_paths::absolute("/workspace/head"), "network":"unknown", "network_history":[]}}),
         )
     }
 }

@@ -206,7 +206,7 @@ impl Entorhinal for TagLookup {
         Ok(
             json!({"result":{"agent_id":"agent-test", "ref_kind":"alfonso", "ref":"test-ref", "incarnation":"entorhinal-test", "ended_at_ms":null,
             "runner":"broca", "session":"alfonso:s1", "harness":"broca",
-            "project_root":"/workspace/project", "network":"no", "network_history":[]}}),
+            "project_root": crate::test_paths::absolute("/workspace/project"), "network":"no", "network_history":[]}}),
         )
     }
 }
