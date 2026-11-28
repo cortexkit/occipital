@@ -139,7 +139,7 @@ pub fn run(args: &[String]) -> ExitCode {
     }
     // The fleet log, installed before anything that logs. A start the daemon
     // did not make (no `SUBC_MODULE_ID`) serves without it rather than refusing.
-    if let Err(error) = cortexkit_log::init_from_env() {
+    if let Err(error) = cortexkit_log::init_from_env_with_crates(log_crates()) {
         eprintln!("ck-occipital: fleet log unavailable: {error}");
     }
     let Some(connection_file) = connection_file(args) else {
@@ -157,6 +157,27 @@ pub fn run(args: &[String]) -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(fatal) => fatal.report(),
     }
+}
+
+/// The crates whose events the log names `occipital`, and how loud the others
+/// may be. Any other crate is named `occipital.dep.<crate>` and capped at WARN.
+/// The NATS client logs every reconnect at INFO, about one every ten minutes
+/// as the bus credential is renewed, and each retry during a bus outage at
+/// ERROR. The bus client reports a lost and restored link itself, once each,
+/// so the NATS lines would only repeat it.
+pub(crate) fn log_crates() -> cortexkit_log::Crates {
+    cortexkit_log::Crates::new()
+        .own([
+            "ck_occipital",
+            "occipital_module",
+            "occipital_app_reader",
+            "occipital_files",
+            "cortexkit_occipital_lang",
+            "cortexkit_occipital_registry",
+            "cortexkit_occipital_refs",
+        ])
+        .ceiling("async_nats", cortexkit_log::LevelFilter::WARN)
+        .ceiling("async_nats::connector", cortexkit_log::LevelFilter::OFF)
 }
 
 /// The daemon's connection file, from `--subc <file>` or `--subc=<file>`, as
@@ -177,6 +198,85 @@ pub fn connection_file(args: &[String]) -> Option<std::path::PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod log_policy {
+        use cortexkit_log::{Config, LogLayer};
+        use tracing::{Event, Level, Metadata};
+        use tracing_core::{callsite::DefaultCallsite, field::FieldSet, metadata::Kind};
+        use tracing_subscriber::{layer::SubscriberExt, Layer, Registry};
+
+        /// An event's static metadata, as a crate's `tracing` call would
+        /// register it from `module_path`.
+        macro_rules! event {
+            ($level:ident, $module_path:literal) => {{
+                static CALLSITE: DefaultCallsite = DefaultCallsite::new(&METADATA);
+                static METADATA: Metadata<'static> = Metadata::new(
+                    "test event",
+                    $module_path,
+                    Level::$level,
+                    None,
+                    None,
+                    Some($module_path),
+                    FieldSet::new(&[], tracing_core::identify_callsite!(&CALLSITE)),
+                    Kind::EVENT,
+                );
+                &METADATA
+            }};
+        }
+
+        /// The NATS client's reconnect lines are dropped, and its other
+        /// warnings, the module's own lines and other crates' warnings are
+        /// kept, each under its logger name.
+        #[test]
+        fn the_log_drops_the_nats_client_s_reconnect_lines() {
+            let dir = tempfile::tempdir().unwrap();
+            let mut config = Config::in_dir(crate::MODULE_ID, dir.path());
+            config.spec = Some("info".to_owned());
+            let (layer, handle) = cortexkit_log::layer(config).unwrap();
+            let layer = layer.with_crates(super::log_crates());
+            // The NATS client's `event: connected` and friends, then its
+            // connector's `connected successfully` and its per-retry ERROR.
+            let dropped = [
+                event!(INFO, "async_nats"),
+                event!(INFO, "async_nats::connector"),
+                event!(ERROR, "async_nats::connector"),
+            ];
+            let kept = [
+                event!(WARN, "async_nats::client"),
+                event!(INFO, "occipital_module::bus"),
+                event!(INFO, "occipital_app_reader::display"),
+                event!(WARN, "subc_client_rs::consumer"),
+            ];
+            for metadata in dropped {
+                assert!(
+                    <LogLayer as Layer<Registry>>::register_callsite(&layer, metadata).is_never(),
+                    "{} at {} must be dropped",
+                    metadata.target(),
+                    metadata.level()
+                );
+            }
+            let dispatch = tracing::Dispatch::new(Registry::default().with(layer));
+            for metadata in dropped.into_iter().chain(kept) {
+                // Past the callsite filter, so the write path's check is tested too.
+                dispatch.event(&Event::new(metadata, &metadata.fields().value_set(&[])));
+            }
+            let written = std::fs::read_to_string(handle.path()).unwrap();
+            let loggers: Vec<&str> = written
+                .lines()
+                .map(|line| line.split_whitespace().nth(2).unwrap())
+                .collect();
+            assert_eq!(
+                loggers,
+                [
+                    "occipital.dep.async-nats:",
+                    "occipital:",
+                    "occipital:",
+                    "occipital.dep.subc-client-rs:",
+                ],
+                "{written}"
+            );
+        }
+    }
 
     /// No call or watch this module makes names a consumer identity. Under the
     /// daemon's registration channel every connection is bound to this module

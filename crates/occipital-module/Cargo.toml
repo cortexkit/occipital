@@ -36,7 +36,7 @@ cortexkit-bus-client = "=0.1.20"
 # The buckets the bus declares, to find the views buckets this module reads.
 cortexkit-bus-naming = "=0.5.1"
 # The fleet log: one file a day in the module's data folder, filtered by CK_LOG.
-cortexkit-log = "0.3.6"
+cortexkit-log = "0.3.7"
 cortexkit-project-identity = "=0.1.4"
 # Moving an agent to another computer: the participant's ops and refusals.
 cortexkit-role-agent-data = "=0.3.4"
@@ -92,3 +92,6 @@ cortexkit-role-tool-provider = { version = "=0.15.17", features = ["test-vectors
 cortexkit-role-llm-runner = { version = "=0.10.2", features = ["test-vectors"] }
 tempfile = "3"
 tokio = { version = "1", features = ["test-util"] }
+# For building the NATS client's events in the log policy test.
+tracing-core = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["registry"] }
